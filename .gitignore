@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Claude Code
+.claude/
+
+# 서브프로젝트들 (각각 독립적인 Git 저장소)
+living-craft-front/
+living-craft-backend/
+living-craft-backoffice/
+
+# Example projects (참고용)
+apps-in-toss-examples-main/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

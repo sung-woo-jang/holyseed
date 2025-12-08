@@ -1,5 +1,8 @@
 # Living Craft API 명세서
 
+> 📍 **이 문서 위치**: `living-craft/docs/api/API_SPECIFICATION.md`
+> 📚 **각 프로젝트 가이드**: [Frontend](../../living-craft-front/CLAUDE.md) | [Backend](../../living-craft-backend/CLAUDE.md) | [Backoffice](../../living-craft-backoffice/CLAUDE.md)
+
 > 이 문서는 프론트엔드 페이지 분석을 기반으로 작성된 API 명세서입니다.
 > 각 API에 `[사용 페이지]`를 표시하여 어디서 사용하는지 명시합니다.
 

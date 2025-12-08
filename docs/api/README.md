@@ -11,22 +11,110 @@
 
 ---
 
-## 프로젝트 구조
+## API 문서 위치
+
+이 API 문서는 모노레포 구조에서 다음 위치에 있습니다:
 
 ```
-living-craft/
-├── living-craft-front/      # 고객용 앱 (Granite.js + React Native)
-├── living-craft-backend/    # API 서버 (NestJS + PostgreSQL)
-└── living-craft-backoffice/ # 관리자 백오피스 (Vite + React)
+living-craft/docs/api/
 ```
+
+**모든 프로젝트(Frontend, Backend, Backoffice)에서 이 문서를 참조하여 API를 개발합니다.**
+
+---
+
+## 모노레포 프로젝트 구조
+
+```
+living-craft/                              # 모노레포 루트
+├── docs/api/                              # ⭐ API 문서 위치 (여기!)
+│   ├── README.md                          # API 개요
+│   └── API_SPECIFICATION.md               # 전체 API 명세
+│
+├── living-craft-front/                    # 고객용 앱 (React Native + Granite.js)
+│   ├── CLAUDE.md                          # Frontend 개발 가이드
+│   ├── pages/                             # 라우트 페이지
+│   ├── widgets/                           # 위젯 컴포넌트
+│   └── shared/                            # 공용 리소스
+│
+├── living-craft-backend/                  # API 서버 (NestJS + PostgreSQL)
+│   ├── CLAUDE.md                          # Backend 개발 가이드
+│   ├── src/
+│   │   ├── modules/                       # API 모듈들
+│   │   └── main.ts
+│   └── docker-compose.yml                 # PostgreSQL 설정
+│
+└── living-craft-backoffice/               # 관리자 백오피스 (Vite + React)
+    ├── CLAUDE.md                          # Backoffice 개발 가이드
+    └── src/
+        └── routes/                        # 백오피스 라우트
+```
+
+### 각 프로젝트 상세 정보
+
+| 프로젝트 | 경로 | 주요 기술 | 개발 가이드 |
+|---------|------|----------|------------|
+| **Frontend** | `living-craft-front/` | React Native, Granite.js, TDS | [CLAUDE.md](../../living-craft-front/CLAUDE.md) |
+| **Backend** | `living-craft-backend/` | NestJS, PostgreSQL, TypeORM | [CLAUDE.md](../../living-craft-backend/CLAUDE.md) |
+| **Backoffice** | `living-craft-backoffice/` | Vite, React, Shadcn UI | [CLAUDE.md](../../living-craft-backoffice/CLAUDE.md) |
 
 ### 현재 상태
 
 | 프로젝트 | 상태 | 설명 |
 |---------|------|------|
-| Front | ✅ 완성 | Mock 데이터로 동작, API 연동 필요 |
-| Backend | 🔧 템플릿 | 클린 템플릿 상태, 모듈 개발 필요 |
-| Backoffice | 🔧 기본 구조 | 기본 구조만 존재 |
+| Frontend | ✅ UI 완성 | Mock 데이터로 동작 중, API 연동 대기 |
+| Backend | 🔧 개발 필요 | NestJS 템플릿 상태, 모듈 개발 필요 |
+| Backoffice | 🔧 개발 필요 | Shadcn Admin 템플릿 기반, 기능 구현 필요 |
+
+---
+
+## 개발 시작하기
+
+각 프로젝트를 독립적으로 실행할 수 있습니다.
+
+### Frontend 개발 서버 실행
+
+```bash
+cd living-craft-front
+yarn dev
+# 또는
+npx granite dev
+```
+
+접속: Metro bundler가 시작되며 Apps-in-Toss 환경에서 실행
+
+### Backend 개발 서버 실행
+
+```bash
+cd living-craft-backend
+
+# PostgreSQL 시작 (Docker)
+docker-compose up -d
+
+# 개발 서버 시작
+npm run start:dev
+```
+
+접속: http://localhost:8000
+Swagger: http://localhost:8000/api/docs
+
+### Backoffice 개발 서버 실행
+
+```bash
+cd living-craft-backoffice
+yarn dev
+```
+
+접속: http://localhost:5173
+
+---
+
+### API 개발 워크플로우
+
+1. **이 문서(API_SPECIFICATION.md) 확인** → 구현할 API 명세 파악
+2. **Backend에서 API 구현** → NestJS 모듈, Controller, Service 작성
+3. **Frontend/Backoffice에서 API 연동** → TanStack Query로 데이터 페칭
+4. **테스트 및 검증** → Swagger로 API 테스트, 앱에서 통합 테스트
 
 ---
 

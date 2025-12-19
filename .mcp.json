@@ -6,6 +6,13 @@
         "shadcn@latest",
         "mcp"
       ]
+    },
+    "apps-in-toss": {
+      "command": "ax",
+      "args": [
+        "mcp",
+        "start"
+      ]
     }
   }
 }

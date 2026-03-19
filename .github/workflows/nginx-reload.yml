@@ -1,0 +1,26 @@
+name: Nginx Config Reload
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'infra/nginx/**'
+
+jobs:
+  reload:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate Nginx config
+        run: nginx -t
+
+      - name: Reload Nginx
+        run: nginx -s reload
+
+      - name: Verify Nginx status
+        run: |
+          sleep 2
+          curl -f https://living-craft.p-e.kr/health || exit 1

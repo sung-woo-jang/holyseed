@@ -1,0 +1,26 @@
+# Docker 빌드 시 제외할 파일/폴더 목록 (.gitignore와 비슷한 역할)
+
+# Node.js 관련 파일들
+node_modules          # npm으로 설치된 패키지들 (Docker 이미지에 포함시키면 용량 증가)
+npm-debug.log         # npm 디버그 로그 파일
+Dockerfile*           # Dockerfile들은 이미지에 포함할 필요 없음
+docker-compose*       # Docker Compose 설정 파일들도 불필요
+.git                  # Git 저장소 정보 (보안상 제외)
+.gitignore           # Git ignore 파일
+README.md            # 문서 파일
+.env*                # 환경변수 파일들 (보안상 중요한 정보 포함)
+.nyc_output          # 테스트 커버리지 관련 파일
+coverage             # 테스트 커버리지 결과 파일
+.cache               # 캐시 파일들
+dist                 # 빌드 결과물 (Docker 내에서 새로 빌드하므로 불필요)
+.docker              # Docker 관련 설정 파일들
+.vscode              # Visual Studio Code 설정
+.idea                # IntelliJ IDEA 설정
+*.swp                # Vim 스왑 파일
+*.swo                # Vim 스왑 파일 (다른 확장자)
+*~                   # 임시 백업 파일
+.DS_Store            # macOS에서 생성되는 시스템 파일
+logs                 # 로그 파일들
+*.log                # 모든 로그 파일
+uploads/*            # 업로드된 파일들 (용량이 클 수 있음)
+!uploads/.gitkeep    # 단, .gitkeep 파일은 포함 (폴더 구조 유지용)

@@ -1,0 +1,133 @@
+// ScheduleSelector SCSS Module
+// camelCase 네이밍 컨벤션 사용
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+// 스케줄 섹션 (견적/시공)
+.scheduleSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.scheduleSectionTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+// 라디오 그룹
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.radioItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: hsl(var(--muted) / 0.5);
+  }
+}
+
+.radioLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1;
+  cursor: pointer;
+}
+
+.radioDescription {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+// 요일 선택기
+.daySelector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: hsl(var(--muted) / 0.3);
+  border-radius: var(--radius);
+}
+
+// 시간 설정
+.timeSettings {
+  padding: 0.75rem;
+  background: hsl(var(--muted) / 0.3);
+  border-radius: var(--radius);
+}
+
+.timeRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+
+  @media screen and (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.timeField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+// 공통 라벨 스타일
+.subLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+// 예약 가능 기간
+.bookingPeriod {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.bookingPeriodInput {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  input {
+    width: 80px;
+  }
+}
+
+.bookingPeriodSuffix {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.bookingPeriodHint {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  margin: 0;
+}

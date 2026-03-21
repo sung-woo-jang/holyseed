@@ -1,0 +1,20 @@
+.filmCuttingTable {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.filmCuttingTableWrapper {
+  overflow-x: auto;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+}
+
+.clickableRow {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background-color: hsl(var(--muted));
+  }
+}

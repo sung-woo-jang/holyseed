@@ -1,0 +1,1 @@
+export { useDeleteHoliday } from './useDeleteHoliday'

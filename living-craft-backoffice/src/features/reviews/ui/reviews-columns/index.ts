@@ -1,0 +1,1 @@
+export { reviewsColumns } from './ReviewsColumns'

@@ -1,0 +1,171 @@
+// PortfolioFormPage SCSS Module
+// ServiceFormPage와 동일한 패턴 사용
+
+// 페이지 컨테이너
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 1rem;
+  padding: 1rem;
+
+  @media screen and (min-width: 768px) {
+    gap: 2rem;
+    padding: 2rem;
+  }
+}
+
+// 로딩 컨테이너
+.loadingContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: var(--muted-foreground);
+}
+
+// 페이지 헤더
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  @media screen and (min-width: 768px) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--foreground);
+}
+
+.description {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.headerActions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+
+  @media screen and (min-width: 768px) {
+    margin-top: 0;
+  }
+}
+
+// 폼 본문
+.formBody {
+  flex: 1;
+  width: 100%;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+// 2단 레이아웃 그리드
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+
+  @media screen and (min-width: 1024px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+}
+
+// 단일 컬럼 (전체 너비 사용)
+.formFullWidth {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+// 섹션 카드
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.sectionTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 0.5rem;
+}
+
+// 필드 행
+.fieldRow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+
+  @media screen and (min-width: 640px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+// 라벨 필수 표시
+.labelRequired {
+  color: hsl(var(--destructive));
+  margin-left: 0.125rem;
+}
+
+// 에러 텍스트
+.errorText {
+  font-size: 0.75rem;
+  color: hsl(var(--destructive));
+  margin-top: 0.25rem;
+}
+
+// 푸터
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+// 반응형 디자인 추가 조정
+@media screen and (max-width: 640px) {
+  .page {
+    padding: 1rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .section {
+    padding: 1rem;
+  }
+
+  .headerActions {
+    width: 100%;
+
+    button {
+      flex: 1;
+    }
+  }
+}

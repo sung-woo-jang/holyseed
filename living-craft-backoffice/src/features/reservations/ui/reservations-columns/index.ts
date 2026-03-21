@@ -1,0 +1,1 @@
+export { reservationsColumns } from './ReservationsColumns'

@@ -1,0 +1,1 @@
+export { useFetchFilmDetail } from './useFetchFilmDetail'

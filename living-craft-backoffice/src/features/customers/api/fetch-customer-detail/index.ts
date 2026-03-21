@@ -1,0 +1,1 @@
+export { useFetchCustomerDetail } from './useFetchCustomerDetail'

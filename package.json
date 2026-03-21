@@ -1,0 +1,39 @@
+{
+  "name": "@living-craft/root",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "living-craft-front",
+      "living-craft-backend",
+      "living-craft-backoffice",
+      "packages/*"
+    ],
+    "nohoist": [
+      "**/react-native",
+      "**/react-native/**",
+      "**/@apps-in-toss/**",
+      "**/@granite-js/**",
+      "**/metro",
+      "**/metro/**",
+      "**/babel-preset-granite",
+      "**/jest",
+      "**/jest/**"
+    ]
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "build:front": "turbo run build --filter=@living-craft/front",
+    "build:backend": "turbo run build --filter=@living-craft/backend",
+    "build:backoffice": "turbo run build --filter=@living-craft/backoffice",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\" --ignore-path .prettierignore"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.4",
+    "prettier": "^3.5.3"
+  },
+  "packageManager": "yarn@1.22.22"
+}

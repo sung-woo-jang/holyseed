@@ -133,8 +133,8 @@ psql -h 121.124.104.99 -p 5433 -U postgres -d living_craft
 
 | 환경 | 호스트 | 포트 | DB명 | 사용자 | 비밀번호 |
 |-----|-------|------|------|-------|--------|
-| 로컬/같은 네트워크 | 192.168.45.163 | 5432 | living_craft | postgres | `LivingCraft2024SecureDBPass123` |
-| 외부 네트워크 | 121.124.104.99 | 5433 | living_craft | postgres | `LivingCraft2024SecureDBPass123` |
+| 로컬/같은 네트워크 | 192.168.45.163 | 5432 | living_craft_prod_by_mac_mini | postgres | `Wkdtjddn062$` |
+| 외부 네트워크 | 121.124.104.99 | 5433 | living_craft_prod_by_mac_mini | postgres | `Wkdtjddn062$` |
 
 ### 화면 공유 (macOS)
 

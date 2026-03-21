@@ -1,0 +1,88 @@
+// 공통 섹션 스타일
+// 모든 섹션 컴포넌트에서 사용
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.sectionTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 0.5rem;
+}
+
+.infoList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.infoRow {
+  display: flex;
+  gap: 1rem;
+}
+
+.infoLabel {
+  min-width: 6rem;
+  color: var(--muted-foreground);
+}
+
+.infoValue {
+  flex: 1;
+  color: var(--foreground);
+}
+
+.memoText {
+  font-size: 0.875rem;
+  white-space: pre-wrap;
+  line-height: 1.5;
+  color: var(--foreground);
+}
+
+.photosGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.5rem;
+
+  @media screen and (min-width: 640px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.photoImage {
+  aspect-ratio: 1;
+  width: 100%;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+// 취소 정보 강조
+.cancelSection {
+  .sectionTitle {
+    color: var(--destructive);
+  }
+}
+
+// 반응형
+@media screen and (max-width: 640px) {
+  .section {
+    padding: 1rem;
+  }
+
+  .infoLabel {
+    min-width: 5rem;
+  }
+
+  .photosGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

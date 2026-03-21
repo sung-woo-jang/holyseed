@@ -1,0 +1,1 @@
+export { useUpdateOperatingHours } from './useUpdateOperatingHours'

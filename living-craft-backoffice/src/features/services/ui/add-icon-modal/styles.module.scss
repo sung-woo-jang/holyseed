@@ -1,0 +1,14 @@
+.modalContent {
+  max-width: 500px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.required {
+  color: hsl(var(--destructive));
+}

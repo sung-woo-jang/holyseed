@@ -1,0 +1,1 @@
+export { PiecesTable } from './PiecesTable'

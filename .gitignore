@@ -13,10 +13,6 @@
 # Claude Code
 .claude/
 
-# 서브프로젝트들 (각각 독립적인 Git 저장소)
-living-craft-front/
-living-craft-backend/
-living-craft-backoffice/
 
 # Example projects (참고용)
 apps-in-toss-examples-main/
@@ -11708,3 +11704,9 @@ yarn-error.log*
 /node_modules/zod-to-json-schema/postesm.ts
 /node_modules/zod-to-json-schema/README.md
 /node_modules/.package-lock.json
+
+# Turborepo
+.turbo
+
+# Root node_modules
+node_modules

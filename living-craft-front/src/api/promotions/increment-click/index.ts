@@ -1,0 +1,1 @@
+export { useIncrementPromotionClick } from './useIncrementPromotionClick';

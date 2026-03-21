@@ -1,0 +1,1 @@
+export { ReservationDetailWidget } from './ReservationDetailWidget'

@@ -1,0 +1,180 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1770600094310,
+  "projectRoot": "/Users/jangseong-u/Desktop/Project/living-craft/living-craft-front",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "react",
+        "version": "18.2.0",
+        "category": "frontend"
+      },
+      {
+        "name": "jest",
+        "version": "29.7.0",
+        "category": "testing"
+      }
+    ],
+    "packageManager": "yarn",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "yarn build",
+    "testCommand": "yarn test",
+    "lintCommand": "yarn lint",
+    "devCommand": "yarn dev",
+    "scripts": {
+      "dev": "granite dev",
+      "build": "granite build",
+      "test": "jest --passWithNoTests",
+      "typecheck": "tsc --noEmit",
+      "lint": "eslint .",
+      "lint:fix": "eslint --fix .",
+      "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss,md}\"",
+      "fix:all": "npm run lint:fix && npm run format",
+      "ts:check": "tsc -b"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": "type-based"
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs",
+      "pages",
+      "src"
+    ],
+    "gitBranches": {
+      "defaultBranch": "master",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 7,
+      "lastAccessed": 1770600094202,
+      "keyFiles": [
+        "Carousel.md",
+        "Image.md",
+        "NavigationBar.md",
+        "card.md",
+        "llms.md"
+      ]
+    },
+    "pages": {
+      "path": "pages",
+      "purpose": "Page components",
+      "fileCount": 3,
+      "lastAccessed": 1770600094205,
+      "keyFiles": [
+        "_404.tsx",
+        "index.tsx",
+        "unauthorized.tsx"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 2,
+      "lastAccessed": 1770600094246,
+      "keyFiles": [
+        "_app.tsx",
+        "router.gen.ts"
+      ]
+    },
+    "docs/api": {
+      "path": "docs/api",
+      "purpose": "API routes",
+      "fileCount": 2,
+      "lastAccessed": 1770600094248,
+      "keyFiles": [
+        "API_SPECIFICATION.md",
+        "README.md"
+      ]
+    },
+    "docs/assets": {
+      "path": "docs/assets",
+      "purpose": "Static assets",
+      "fileCount": 2,
+      "lastAccessed": 1770600094249,
+      "keyFiles": [
+        "Thumbnail-Tabbar.B3GwW4mW.png",
+        "thumbnail-navigation-nongame.Dqi4C07P.png"
+      ]
+    },
+    "src/api": {
+      "path": "src/api",
+      "purpose": "API routes",
+      "fileCount": 10,
+      "lastAccessed": 1770600094253,
+      "keyFiles": [
+        "apiResponseTypes.ts",
+        "axios-types.ts",
+        "axios.ts"
+      ]
+    },
+    "src/components": {
+      "path": "src/components",
+      "purpose": "UI components",
+      "fileCount": 0,
+      "lastAccessed": 1770600094255,
+      "keyFiles": []
+    },
+    "src/mocks": {
+      "path": "src/mocks",
+      "purpose": "Mock data",
+      "fileCount": 2,
+      "lastAccessed": 1770600094256,
+      "keyFiles": [
+        "index.ts",
+        "mockData.ts"
+      ]
+    },
+    "src/types": {
+      "path": "src/types",
+      "purpose": "Type definitions",
+      "fileCount": 4,
+      "lastAccessed": 1770600094256,
+      "keyFiles": [
+        "index.ts",
+        "navigation.ts",
+        "reservation.ts"
+      ]
+    }
+  },
+  "hotPaths": [],
+  "userDirectives": []
+}api/API_SPECIFICATION.md",
+      "accessCount": 1,
+      "lastAccessed": 1770600372552,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

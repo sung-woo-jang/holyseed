@@ -1,0 +1,42 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run Database Migrations
+        run: NODE_ENV=production npm run migration:run
+
+      - name: Restart PM2
+        run: |
+          pm2 restart living-craft-backend --update-env
+          pm2 save
+
+      - name: Check PM2 status
+        run: pm2 status
+
+      - name: Health Check
+        run: |
+          sleep 5
+          curl -f http://localhost:8000/health || exit 1

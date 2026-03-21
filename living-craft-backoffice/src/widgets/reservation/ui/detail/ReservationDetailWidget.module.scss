@@ -1,0 +1,126 @@
+// ReservationDetailWidget SCSS Module
+// 예약 상세 위젯 레이아웃
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 1rem;
+  padding: 1rem;
+
+  @media screen and (min-width: 768px) {
+    gap: 2rem;
+    padding: 2rem;
+  }
+}
+
+// 로딩 컨테이너
+.loadingContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: var(--muted-foreground);
+}
+
+// 위젯 헤더
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  @media screen and (min-width: 768px) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--foreground);
+}
+
+.description {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.headerActions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+
+  @media screen and (min-width: 768px) {
+    margin-top: 0;
+  }
+}
+
+// 본문 컨테이너
+.body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+// 섹션 카드
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+// 푸터
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+// 반응형 디자인
+@media screen and (max-width: 640px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .section {
+    padding: 1rem;
+  }
+
+  .headerActions {
+    width: 100%;
+
+    button {
+      flex: 1;
+    }
+  }
+}

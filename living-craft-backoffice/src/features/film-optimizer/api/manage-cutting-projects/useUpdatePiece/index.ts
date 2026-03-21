@@ -1,0 +1,1 @@
+export { useUpdatePiece } from './useUpdatePiece'

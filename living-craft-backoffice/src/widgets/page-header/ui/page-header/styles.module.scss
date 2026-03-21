@@ -1,0 +1,40 @@
+// PageHeader SCSS Module
+
+.pageHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  @media screen and (min-width: 768px) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.pageHeaderContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pageHeaderTitle {
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--foreground);
+
+  @media screen and (min-width: 768px) {
+    font-size: 1.875rem;
+  }
+}
+
+.pageHeaderDescription {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.pageHeaderAction {
+  // 액션 버튼 영역은 자식 요소가 자체 스타일을 가지므로 별도 스타일 불필요
+}

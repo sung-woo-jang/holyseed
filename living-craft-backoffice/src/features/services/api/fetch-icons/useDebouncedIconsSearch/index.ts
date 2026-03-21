@@ -1,0 +1,1 @@
+export { useDebouncedIconsSearch } from './useDebouncedIconsSearch'

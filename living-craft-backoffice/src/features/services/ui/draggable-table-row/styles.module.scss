@@ -1,0 +1,32 @@
+// DraggableTableRow SCSS Module
+// camelCase 네이밍 컨벤션 사용
+
+// 클릭 가능한 행
+.clickableRow {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background-color: var(--muted);
+  }
+}
+
+// 드래그 핸들
+.dragHandle {
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background-color: var(--muted);
+  }
+
+  &:active {
+    cursor: grabbing;
+    background-color: var(--accent);
+  }
+}

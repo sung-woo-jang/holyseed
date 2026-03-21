@@ -655,7 +655,7 @@ curl https://living-craft.p-e.kr/health
 
 ### 데이터베이스 연결 실패
 
-**증상**: Backend 로그에 "ECONNREFUSED 127.0.0.1:5432"
+**증상**: Backend 로그에 "ECONNREFUSED 127.0.0.1:5432" 또는 "password authentication failed"
 
 **해결 방법**:
 
@@ -673,8 +673,46 @@ docker logs living_craft_postgres
 docker restart living_craft_postgres
 
 # 5. Backend 서버 재시작
-pm2 restart living-craft-backend
+pm2 restart living-craft-backend --update-env
 ```
+
+### 데이터베이스 사용자 계정 관리
+
+**프로덕션 환경의 PostgreSQL 사용자**:
+
+| 사용자명 | 비밀번호 | 역할 | 비고 |
+|---------|---------|------|------|
+| `postgres` | `.env.production`의 `DB_PASSWORD` 값 | 수퍼유저 | 시스템 관리 용도 |
+| `livingcraft_user` | `.env.production`의 `DB_PASSWORD` 값 | 제한된 권한 | 애플리케이션 연동 (현재는 미사용) |
+
+**사용자 생성 (필요 시)**:
+
+```bash
+# livingcraft_user 계정 생성
+docker exec living_craft_postgres psql -U postgres -c \
+  "CREATE USER livingcraft_user WITH PASSWORD 'LivingCraft2024!SecureDB#Pass';"
+
+# 데이터베이스 권한 부여
+docker exec living_craft_postgres psql -U postgres -c \
+  "GRANT ALL PRIVILEGES ON DATABASE living_craft TO livingcraft_user;"
+
+# 스키마 권한 부여
+docker exec living_craft_postgres psql -U postgres -d living_craft -c \
+  "GRANT ALL ON SCHEMA public TO livingcraft_user;"
+```
+
+**사용자 비밀번호 변경**:
+
+```bash
+docker exec living_craft_postgres psql -U postgres -c \
+  "ALTER USER postgres WITH PASSWORD '새로운_비밀번호';"
+```
+
+**주의사항**:
+
+- ⚠️ 비밀번호 변경 후 PostgreSQL 컨테이너를 **반드시 재시작**해야 합니다
+- ⚠️ 비밀번호는 `.env.production`에 저장된 값과 **반드시 일치**해야 합니다
+- ⚠️ 강력한 비밀번호를 사용하세요 (최소 20자 이상, 대문자/소문자/숫자/특수문자 포함)
 
 ### 마이그레이션 실패
 

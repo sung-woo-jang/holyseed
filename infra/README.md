@@ -103,9 +103,9 @@ ssh living-craft-external
 
 ```bash
 # psql 커맨드라인
-psql -h 192.168.45.163 -p 5432 -U postgres -d living_craft_prod
+psql -h 192.168.45.163 -p 5432 -U postgres -d living_craft
 
-# 비밀번호 입력: password123 (또는 .env.production의 DB_PASSWORD)
+# 비밀번호 입력: .env.production의 DB_PASSWORD
 ```
 
 #### 외부에서 접속 (DBeaver, TablePlus 등 GUI 도구)
@@ -120,21 +120,21 @@ psql -h 192.168.45.163 -p 5432 -U postgres -d living_craft_prod
 **DBeaver 접속 설정**:
 - **Host**: 121.124.104.99
 - **Port**: 5433 (위에서 설정한 외부 포트)
-- **Database**: living_craft_prod
+- **Database**: living_craft
 - **Username**: postgres
 - **Password**: (`.env.production`의 `DB_PASSWORD` 값)
 
 **CLI로 접속**:
 ```bash
-psql -h 121.124.104.99 -p 5433 -U postgres -d living_craft_prod
+psql -h 121.124.104.99 -p 5433 -U postgres -d living_craft
 ```
 
 #### PostgreSQL 접속 정보 정리
 
 | 환경 | 호스트 | 포트 | DB명 | 사용자 | 비밀번호 |
 |-----|-------|------|------|-------|--------|
-| 로컬/같은 네트워크 | 192.168.45.163 | 5432 | living_craft_prod | postgres | `.env`의 DB_PASSWORD |
-| 외부 네트워크 | 121.124.104.99 | 5433 | living_craft_prod | postgres | `.env.production`의 DB_PASSWORD |
+| 로컬/같은 네트워크 | 192.168.45.163 | 5432 | living_craft | postgres | `.env.production`의 DB_PASSWORD |
+| 외부 네트워크 | 121.124.104.99 | 5433 | living_craft | postgres | `.env.production`의 DB_PASSWORD |
 
 ### 화면 공유 (macOS)
 

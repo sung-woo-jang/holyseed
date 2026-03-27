@@ -14,20 +14,8 @@ import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 
 // Modules
-import { FilesModule } from '@shared/files/files.module';
-import { HealthModule } from '@shared/health/health.module';
-import { IconsModule } from '@lc/modules/icons/icons.module';
-import { AdminModule } from '@lc/modules/admin/admin.module';
-import { UsersModule } from '@lc/modules/admin/users/users.module';
-import { CustomersModule } from '@lc/modules/customers/customers.module';
-import { ServicesModule } from '@lc/modules/services/services.module';
-import { SettingsModule } from '@lc/modules/settings/settings.module';
-import { ReservationsModule } from '@lc/modules/reservations/reservations.module';
-import { ReviewsModule } from '@lc/modules/reviews/reviews.module';
-import { PortfoliosModule } from '@lc/modules/portfolios/portfolios.module';
-import { AddressModule } from '@shared/address/address.module';
-import { FilmOptimizerModule } from '@lc/modules/film-optimizer/film-optimizer.module';
-import { PromotionsModule } from '@lc/modules/promotions/promotions.module';
+import { SharedModule } from '@/shared/shared.module';
+import { LivingCraftModule } from '@/projects/lc/lc.module';
 
 @Module({
   imports: [
@@ -47,20 +35,8 @@ import { PromotionsModule } from '@lc/modules/promotions/promotions.module';
     }),
 
     // Feature modules
-    FilesModule,
-    HealthModule,
-    IconsModule,
-    UsersModule, // 전역 JwtAuthGuard에서 UsersService 사용
-    AdminModule,
-    CustomersModule,
-    ServicesModule,
-    SettingsModule,
-    ReservationsModule,
-    ReviewsModule,
-    PortfoliosModule,
-    AddressModule,
-    FilmOptimizerModule,
-    PromotionsModule,
+    SharedModule, // 공유 모듈 (files, health, address)
+    LivingCraftModule, // Living Craft 프로젝트 통합 모듈
   ],
   providers: [
     // Global Exception Filter

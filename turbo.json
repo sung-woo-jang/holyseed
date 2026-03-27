@@ -5,21 +5,47 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": ["dist/**", ".next/**"]
+      "outputs": [
+        "dist/**",
+        ".next/**",
+        "build/**"
+      ]
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": ["^lint"],
+      "inputs": [
+        "src/**",
+        "test/**",
+        ".eslintrc*",
+        "eslint.config.*"
+      ],
+      "outputs": []
+    },
+    "format": {
+      "inputs": [
+        "src/**",
+        "test/**",
+        ".prettierrc*"
+      ],
+      "outputs": []
     },
     "typecheck": {
-      "dependsOn": ["^typecheck"]
+      "dependsOn": ["^typecheck"],
+      "inputs": [
+        "src/**",
+        "test/**",
+        "tsconfig*.json"
+      ],
+      "outputs": []
     },
     "test": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**", "test/**"]
+      "inputs": ["src/**", "test/**"],
+      "outputs": []
     }
   }
 }

@@ -4,7 +4,7 @@ import { BaseEntity } from '@common/entities/base.entity';
 import { Service } from './service.entity';
 import { District } from '@lc/modules/admin/districts/entities/district.entity';
 
-@Entity('service_regions')
+@Entity('service_regions', { schema: 'lc' })
 @Unique(['serviceId', 'districtId'])
 export class ServiceRegion extends BaseEntity {
   @ApiProperty({

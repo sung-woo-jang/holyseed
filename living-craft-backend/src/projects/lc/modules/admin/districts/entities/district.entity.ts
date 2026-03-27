@@ -20,7 +20,7 @@ import { DistrictLevel } from '@common/enums/district-level.enum';
  *
  * Self-referencing 관계를 사용하여 부모-자식 관계를 표현합니다.
  */
-@Entity('districts')
+@Entity('districts', { schema: 'lc' })
 @Index(['code'])
 @Index(['parentId'])
 @Index(['level'])

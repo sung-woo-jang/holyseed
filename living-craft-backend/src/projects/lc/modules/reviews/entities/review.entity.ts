@@ -5,7 +5,7 @@ import { Customer } from '@lc/modules/customers/entities';
 import { Service } from '@lc/modules/services/entities';
 import { Reservation } from '@lc/modules/reservations/entities';
 
-@Entity('reviews')
+@Entity('reviews', { schema: 'lc' })
 export class Review extends BaseEntity {
   @ApiProperty({
     description: '예약',

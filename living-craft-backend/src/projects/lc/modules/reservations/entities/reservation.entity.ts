@@ -15,7 +15,7 @@ export enum ReservationStatus {
   CANCELLED = 'cancelled',
 }
 
-@Entity('reservations')
+@Entity('reservations', { schema: 'lc' })
 export class Reservation extends BaseEntity {
   @ApiProperty({
     description: '예약 번호',

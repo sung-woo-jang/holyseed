@@ -39,7 +39,7 @@ export interface PackingResultJson {
   wastePercentage: number;
 }
 
-@Entity('cutting_projects')
+@Entity('cutting_projects', { schema: 'lc' })
 export class CuttingProject extends BaseEntity {
   @ApiProperty({
     description: '프로젝트 이름',

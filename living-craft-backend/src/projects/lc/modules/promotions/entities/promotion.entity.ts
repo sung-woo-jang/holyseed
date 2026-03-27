@@ -8,7 +8,7 @@ export enum PromotionLinkType {
   INTERNAL = 'internal',
 }
 
-@Entity('promotions')
+@Entity('promotions', { schema: 'lc' })
 export class Promotion extends BaseEntity {
   @ApiProperty({
     description: '프로모션 제목',

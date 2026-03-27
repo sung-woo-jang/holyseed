@@ -13,7 +13,7 @@ import { ServiceRegion } from './service-region.entity';
 import { ServiceSchedule } from './service-schedule.entity';
 import { ServiceHoliday } from './service-holiday.entity';
 
-@Entity('services')
+@Entity('services', { schema: 'lc' })
 export class Service extends BaseEntity {
   @ApiProperty({
     description: '서비스 제목',

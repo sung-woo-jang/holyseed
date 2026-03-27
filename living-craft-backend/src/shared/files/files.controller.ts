@@ -20,7 +20,7 @@ import { ERROR_MESSAGES } from '@common/constants';
 import { UploadReservationPhotosResponseDto } from './dto/response';
 
 @ApiTags('파일 테스트')
-@Controller('files')
+@Controller('shared/files')
 @SwaggerBaseApply()
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}

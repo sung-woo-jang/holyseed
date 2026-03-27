@@ -6,7 +6,7 @@ import { DashboardService } from './dashboard.service';
 @ApiTags('Admin - Dashboard')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller('admin/dashboard')
+@Controller('lc/admin/dashboard')
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 

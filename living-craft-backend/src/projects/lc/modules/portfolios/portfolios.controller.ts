@@ -6,7 +6,7 @@ import { PortfoliosService } from './portfolios.service';
 import { PortfoliosQueryDto } from './dto/request';
 import { PortfolioListResponseDto, PortfolioDetailDto } from './dto/response';
 
-@Controller('portfolios')
+@Controller('lc/portfolios')
 @ApiTags('포트폴리오')
 export class PortfoliosController {
   constructor(private readonly portfoliosService: PortfoliosService) {}

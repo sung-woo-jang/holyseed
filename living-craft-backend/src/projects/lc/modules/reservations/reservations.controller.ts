@@ -43,7 +43,7 @@ import {
   ICurrentCustomer,
 } from '@lc/modules/customers/decorators';
 
-@Controller('')
+@Controller('lc')
 @ApiTags('예약')
 export class ReservationsController {
   constructor(private readonly reservationsService: ReservationsService) {}

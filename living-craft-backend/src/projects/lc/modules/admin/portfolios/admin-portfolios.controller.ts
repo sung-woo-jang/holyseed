@@ -35,7 +35,7 @@ import { CreatePortfolioMultipartDto } from './dto/request/create-portfolio-mult
 import { UpdatePortfolioMultipartDto } from './dto/request/update-portfolio-multipart.dto';
 import { Portfolio } from '@lc/modules/portfolios/entities';
 
-@Controller('admin/portfolios')
+@Controller('lc/admin/portfolios')
 @ApiTags('관리자 > 포트폴리오 관리')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)

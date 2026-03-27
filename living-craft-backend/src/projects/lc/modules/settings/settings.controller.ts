@@ -11,7 +11,7 @@ import { SettingsService } from './settings.service';
 import { UpdateOperatingHoursDto, AddHolidayDto } from './dto/request';
 import { OperatingHoursResponseDto } from './dto/response';
 
-@Controller('admin/settings')
+@Controller('lc/admin/settings')
 @ApiTags('관리자 - 운영 설정')
 @ApiBearerAuth()
 @Public()

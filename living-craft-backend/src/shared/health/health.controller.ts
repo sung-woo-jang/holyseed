@@ -7,7 +7,7 @@ import {
 } from './docs';
 
 @ApiTags('헬스체크')
-@Controller('health')
+@Controller('shared/health')
 export class HealthController {
   @Get()
   @Public()

@@ -34,7 +34,7 @@ import {
 } from './dto/response';
 import { SuccessResponseDto } from '@common/dto/response/success-response.dto';
 
-@Controller('admin/film-optimizer')
+@Controller('lc/admin/film-optimizer')
 @ApiTags('필름 재단 최적화 (관리자)')
 @ApiBearerAuth()
 export class FilmOptimizerController {

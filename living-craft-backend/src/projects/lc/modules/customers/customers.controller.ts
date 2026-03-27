@@ -17,7 +17,7 @@ import {
 import { CustomerJwtAuthGuard } from './guards';
 import { CurrentCustomer, ICurrentCustomer } from './decorators';
 
-@Controller('')
+@Controller('lc')
 @ApiTags('고객 인증')
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}

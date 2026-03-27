@@ -20,7 +20,7 @@ import {
 } from '@lc/modules/icons/dto';
 import { Icon } from './entities/icon.entity';
 
-@Controller('icons')
+@Controller('lc/icons')
 @ApiTags('아이콘')
 export class IconsController {
   constructor(private readonly iconsService: IconsService) {}

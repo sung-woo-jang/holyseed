@@ -33,7 +33,7 @@ import {
   ICurrentCustomer,
 } from '@lc/modules/customers/decorators';
 
-@Controller('')
+@Controller('lc')
 @ApiTags('리뷰')
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}

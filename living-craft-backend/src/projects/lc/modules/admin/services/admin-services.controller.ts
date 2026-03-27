@@ -26,7 +26,7 @@ import {
 } from './dto/request';
 import { Service } from '@lc/modules/services/entities';
 
-@Controller('admin/services')
+@Controller('lc/admin/services')
 @ApiTags('관리자 > 서비스 관리')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)

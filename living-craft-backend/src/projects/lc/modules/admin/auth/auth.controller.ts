@@ -15,7 +15,7 @@ import { Public } from '@common/decorators/public.decorator';
 import { IJwtPayload } from '@common/interfaces';
 
 @ApiTags('관리자 > 인증')
-@Controller('admin/auth')
+@Controller('lc/admin/auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 

@@ -31,7 +31,7 @@ import { Promotion } from './entities';
 // Public API (Front용)
 // ============================================
 
-@Controller('promotions')
+@Controller('lc/promotions')
 @ApiTags('프로모션 배너')
 export class PromotionsController {
   constructor(private readonly promotionsService: PromotionsService) {}
@@ -62,7 +62,7 @@ export class PromotionsController {
 // Admin API
 // ============================================
 
-@Controller('admin/promotions')
+@Controller('lc/admin/promotions')
 @ApiTags('관리자 > 프로모션 배너 관리')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)

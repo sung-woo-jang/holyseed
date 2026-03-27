@@ -22,8 +22,9 @@
     "paths": {
       "@/*": ["src/*"],
       "@common/*": ["src/common/*"],
-      "@modules/*": ["src/modules/*"],
-      "@config/*": ["src/config/*"]
+      "@config/*": ["src/config/*"],
+      "@lc/*": ["src/projects/lc/*"],
+      "@shared/*": ["src/shared/*"]
     }
   }
 }

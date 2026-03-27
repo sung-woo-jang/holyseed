@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { AppDataSource } from './data-source';
-import { Icon } from '@modules/icons/entities/icon.entity';
+import { Icon } from '@lc/modules/icons/entities/icon.entity';
 import { parseAllIcons } from './utils/icon-parser';
 
 /**

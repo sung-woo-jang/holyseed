@@ -1,9 +1,9 @@
 import { AppDataSource } from './data-source';
-import { Service } from '@modules/services/entities/service.entity';
-import { ServiceRegion } from '@modules/services/entities/service-region.entity';
-import { District } from '@modules/admin/districts/entities/district.entity';
+import { Service } from '@lc/modules/services/entities/service.entity';
+import { ServiceRegion } from '@lc/modules/services/entities/service-region.entity';
+import { District } from '@lc/modules/admin/districts/entities/district.entity';
 import { DistrictLevel } from '@common/enums/district-level.enum';
-import { Icon } from '@modules/icons/entities/icon.entity';
+import { Icon } from '@lc/modules/icons/entities/icon.entity';
 
 /**
  * 기본 서비스 데이터 생성

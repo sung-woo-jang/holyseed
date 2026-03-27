@@ -1,5 +1,5 @@
 import { AppDataSource } from './data-source';
-import { Customer } from '@modules/customers/entities/customer.entity';
+import { Customer } from '@lc/modules/customers/entities/customer.entity';
 import { faker } from '@faker-js/faker/locale/ko';
 
 export async function createCustomers(): Promise<void> {

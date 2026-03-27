@@ -2,7 +2,7 @@ import { AppDataSource } from './data-source';
 import {
   OperatingSetting,
   OperatingType,
-} from '@modules/settings/entities/operating-setting.entity';
+} from '@lc/modules/settings/entities/operating-setting.entity';
 
 /**
  * 운영 시간 설정 데이터 생성

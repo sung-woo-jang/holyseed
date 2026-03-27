@@ -1,5 +1,5 @@
 import { AppDataSource } from './data-source';
-import { District } from '@modules/admin/districts/entities/district.entity';
+import { District } from '@lc/modules/admin/districts/entities/district.entity';
 import { DistrictLevel } from '@common/enums/district-level.enum';
 
 const districtsData = require('./data/districts.json');

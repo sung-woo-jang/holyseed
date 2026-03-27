@@ -1,9 +1,9 @@
 import { AppDataSource } from './data-source';
-import { Review } from '@modules/reviews/entities/review.entity';
+import { Review } from '@lc/modules/reviews/entities/review.entity';
 import {
   Reservation,
   ReservationStatus,
-} from '@modules/reservations/entities/reservation.entity';
+} from '@lc/modules/reservations/entities/reservation.entity';
 import { faker } from '@faker-js/faker';
 
 export async function createReviews(): Promise<void> {

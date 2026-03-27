@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '@common/entities/base.entity';
 import { UserRole, UserStatus } from '@common/enums';
 
-@Entity('admin_users')
+@Entity('admin_users', { schema: 'lc' })
 export class User extends BaseEntity {
   @ApiProperty({
     description: '사용자 UUID',

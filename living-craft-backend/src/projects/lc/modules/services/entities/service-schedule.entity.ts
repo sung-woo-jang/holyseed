@@ -21,7 +21,7 @@ export enum ScheduleMode {
   EVERYDAY_EXCEPT = 'everyday_except',
 }
 
-@Entity('service_schedules')
+@Entity('service_schedules', { schema: 'lc' })
 @Index(['serviceId'], { unique: true })
 export class ServiceSchedule extends BaseEntity {
   @ApiProperty({

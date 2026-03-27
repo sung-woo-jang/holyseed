@@ -8,7 +8,7 @@ import { Promotion } from '@lc/modules/promotions/entities/promotion.entity';
  * 아이콘 엔티티
  * TDS (Toss Design System) 아이콘 마스터 데이터
  */
-@Entity('icons')
+@Entity('icons', { schema: 'lc' })
 export class Icon extends BaseEntity {
   /**
    * 아이콘 이름

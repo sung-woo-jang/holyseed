@@ -3,7 +3,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { BaseEntity } from '@common/entities/base.entity';
 import { CuttingProject } from './cutting-project.entity';
 
-@Entity('cutting_pieces')
+@Entity('cutting_pieces', { schema: 'lc' })
 export class CuttingPiece extends BaseEntity {
   @ApiProperty({
     description: '프로젝트 ID',

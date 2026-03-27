@@ -2,7 +2,7 @@ import { Entity, Column } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '@common/entities/base.entity';
 
-@Entity('holidays')
+@Entity('holidays', { schema: 'lc' })
 export class Holiday extends BaseEntity {
   @ApiProperty({
     description: '휴무일 (YYYY-MM-DD)',

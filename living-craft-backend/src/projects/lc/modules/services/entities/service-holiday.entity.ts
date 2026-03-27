@@ -7,7 +7,7 @@ import { Service } from './service.entity';
  * 서비스별 휴무일 엔티티
  * 전역 휴무일과 별도로 서비스별로 특정 날짜를 휴무로 지정할 수 있음
  */
-@Entity('service_holidays')
+@Entity('service_holidays', { schema: 'lc' })
 @Index(['serviceId', 'date'], { unique: true })
 export class ServiceHoliday extends BaseEntity {
   @ApiProperty({

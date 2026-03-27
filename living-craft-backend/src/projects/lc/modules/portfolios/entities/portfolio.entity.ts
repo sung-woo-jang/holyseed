@@ -3,7 +3,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { BaseEntity } from '@common/entities/base.entity';
 import { Service } from '@lc/modules/services/entities';
 
-@Entity('portfolios')
+@Entity('portfolios', { schema: 'lc' })
 export class Portfolio extends BaseEntity {
   @ApiProperty({
     description: '카테고리',

@@ -7,7 +7,7 @@ export enum OperatingType {
   CONSTRUCTION = 'construction',
 }
 
-@Entity('operating_settings')
+@Entity('operating_settings', { schema: 'lc' })
 export class OperatingSetting extends BaseEntity {
   @ApiProperty({
     description: '운영 타입 (견적/시공)',

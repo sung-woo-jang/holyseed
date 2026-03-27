@@ -63,12 +63,12 @@ const { authorizationCode, referrer } = await appLogin();
 
 | 기능 | 엔드포인트 | 설명 |
 |------|-----------|------|
-| 인증 | `POST /api/auth/login` | 토스 로그인 |
-| 서비스 | `GET /api/services` | 서비스 목록 조회 |
-| 포트폴리오 | `GET /api/portfolios` | 작업 사례 조회 |
-| 예약 | `POST /api/reservations` | 예약 생성 |
-| 리뷰 | `GET /api/reviews` | 리뷰 목록 조회 |
-| 마이페이지 | `GET /api/users/me/*` | 내 정보, 예약, 리뷰 |
+| 인증 | `POST /api/lc/auth/login` | 토스 로그인 |
+| 서비스 | `GET /api/lc/services` | 서비스 목록 조회 |
+| 포트폴리오 | `GET /api/lc/portfolios` | 작업 사례 조회 |
+| 예약 | `POST /api/lc/reservations` | 예약 생성 |
+| 리뷰 | `GET /api/lc/reviews` | 리뷰 목록 조회 |
+| 마이페이지 | `GET /api/lc/users/me/*` | 내 정보, 예약, 리뷰 |
 
 ### 백오피스용 API (Backoffice → Backend)
 

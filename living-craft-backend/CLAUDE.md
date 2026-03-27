@@ -4,16 +4,28 @@
 
 ## 프로젝트 개요
 
-**NestJS 클린 템플릿** - 새 프로젝트를 빠르게 시작할 수 있는 최소한의 NestJS 기반 백엔드 템플릿입니다.
+**Living Craft Backend** - 멀티 프로젝트 아키텍처를 지원하는 NestJS 기반 백엔드 서버입니다.
 
-### 주요 기능
+### 멀티 프로젝트 구조
 
-- **파일 업로드**: 이미지 및 문서 업로드 기능 (Multer)
+이 백엔드는 여러 프로젝트를 하나의 서버에서 관리할 수 있도록 설계되었습니다:
+
+- **프로젝트 격리**: 각 프로젝트는 독립된 API 경로, 데이터베이스 스키마, 모듈을 가집니다
+- **공유 모듈**: 파일 업로드, 헬스 체크 등 공통 기능은 공유 모듈로 관리
+- **스키마 분리**: 각 프로젝트는 별도의 PostgreSQL 스키마를 사용하여 데이터 격리
+
+### Living Craft (lc) 프로젝트
+
+- **API Prefix**: `/api/lc/*` (고객용), `/api/lc/admin/*` (관리자용)
+- **데이터베이스 스키마**: `lc`
+- **모듈 위치**: `src/projects/lc/modules/`
+- **Swagger 문서**: `/lc/docs` (고객용), `/lc/admin-docs` (관리자용)
+
+### 공유 모듈
+
+- **파일 업로드**: 이미지 및 문서 업로드 기능 (Multer + Sharp + NCP Object Storage)
 - **헬스 체크**: 서버 상태 모니터링
-
-### 제거된 기능
-
-인증 및 사용자 관리 모듈은 제거되었습니다. 필요한 경우 토스 로그인 등 원하는 인증 방식을 추가하세요.
+- **주소 검색**: 주소 검색 API 프록시
 
 ## 개발 명령어
 
@@ -83,14 +95,29 @@ npm run format
 - **File Upload**: Multer
 - **API Documentation**: Swagger
 
-### 모듈 구조
-
-최소한의 모듈만 포함된 클린 템플릿:
+### 디렉토리 구조
 
 ```
-src/modules/
-├── files/          # 파일 업로드 및 관리
-└── health/         # 헬스 체크 엔드포인트
+src/
+├── projects/           # 프로젝트별 모듈
+│   └── lc/            # Living Craft 프로젝트
+│       ├── lc.module.ts
+│       └── modules/   # LC 전용 모듈들
+│           ├── auth/
+│           ├── services/
+│           ├── portfolios/
+│           ├── reservations/
+│           ├── reviews/
+│           ├── users/
+│           └── admin/
+├── shared/            # 공유 모듈
+│   ├── files/        # 파일 업로드
+│   ├── health/       # 헬스 체크
+│   ├── address/      # 주소 검색
+│   └── shared.module.ts
+├── common/            # 공통 유틸리티
+├── config/            # 설정 파일
+└── database/          # 데이터베이스 설정
 ```
 
 ### 주요 설계 패턴
@@ -98,8 +125,10 @@ src/modules/
 **경로 별칭** (Jest 및 tsconfig에서 설정됨):
 - `@/` → `src/`
 - `@common/` → `src/common/`
-- `@modules/` → `src/modules/`
 - `@config/` → `src/config/`
+- `@database/` → `src/database/`
+- `@lc/` → `src/projects/lc/`
+- `@shared/` → `src/shared/`
 
 **글로벌 필터**:
 - `HttpExceptionFilter`를 통한 전역 예외 처리
@@ -108,6 +137,13 @@ src/modules/
 - TypeORM을 사용한 엔티티 우선 접근법
 - 공통 필드(id, timestamps)를 위한 Base Entity 패턴 사용
 - 개발 모드에서는 synchronize: true 사용 (마이그레이션 불필요)
+- **프로젝트별 스키마 분리**: Living Craft는 `lc` 스키마 사용
+
+**멀티 프로젝트 패턴**:
+- 각 프로젝트는 `src/projects/{project-name}/` 디렉토리에 위치
+- 프로젝트별로 독립적인 모듈, 컨트롤러, 서비스 구성
+- Global Prefix로 API 경로 분리 (`/api/lc/*`)
+- Swagger 문서도 프로젝트별로 분리
 
 ## 개발 환경 설정
 
@@ -123,10 +159,12 @@ src/modules/
 ### 환경 변수 설정
 - `.env` 파일 사용, `.env.local`로 폴백
 - 데이터베이스 기본값: localhost:5432, postgres/password123, living_craft_dev
+- 데이터베이스 스키마: lc (Living Craft 전용)
 
 ### 개발 환경 접속 포인트
 - API 서버: http://localhost:8000
-- Swagger API 문서: http://localhost:8000/api/docs
+- Living Craft Swagger (고객용): http://localhost:8000/lc/docs
+- Living Craft Swagger (관리자용): http://localhost:8000/lc/admin-docs
 - 헬스 체크: http://localhost:8000/health
 - pgAdmin: http://localhost:5050 (admin@livingcraft.com / admin123)
 
@@ -233,25 +271,30 @@ type TApiResponse<T> = {
 
 #### 모듈 구조
 
+Living Craft 프로젝트의 모듈은 `src/projects/lc/modules/` 아래에 위치합니다:
+
 ```
-module-name/
-├── dto/
-│   ├── request/
-│   │   ├── create-item.dto.ts
-│   │   ├── update-item.dto.ts
-│   │   └── index.ts
-│   ├── response/
-│   │   ├── item-response.dto.ts
-│   │   └── index.ts
-│   └── index.ts
-├── entities/
-│   ├── item.entity.ts
-│   └── index.ts
-├── module-name.controller.ts
-├── module-name.service.ts
-├── module-name.module.ts
-└── index.ts
+src/projects/lc/modules/
+└── module-name/
+    ├── dto/
+    │   ├── request/
+    │   │   ├── create-item.dto.ts
+    │   │   ├── update-item.dto.ts
+    │   │   └── index.ts
+    │   ├── response/
+    │   │   ├── item-response.dto.ts
+    │   │   └── index.ts
+    │   └── index.ts
+    ├── entities/
+    │   ├── item.entity.ts
+    │   └── index.ts
+    ├── module-name.controller.ts
+    ├── module-name.service.ts
+    ├── module-name.module.ts
+    └── index.ts
 ```
+
+공유 모듈은 `src/shared/` 아래에 위치합니다.
 
 #### 엔티티 작성 패턴
 
@@ -259,7 +302,7 @@ module-name/
 import { Entity, Column } from 'typeorm';
 import { BaseEntity } from '@common/entities/base.entity';
 
-@Entity('products')
+@Entity('products', { schema: 'lc' })  // LC 스키마 지정
 export class Product extends BaseEntity {
   @Column({ length: 200 })
   name: string;
@@ -274,6 +317,8 @@ export class Product extends BaseEntity {
   stockQuantity: number;
 }
 ```
+
+**중요**: Living Craft 프로젝트의 모든 엔티티는 `{ schema: 'lc' }` 옵션을 지정해야 합니다.
 
 #### DTO 작성 패턴
 
@@ -438,7 +483,8 @@ export class ProductController {
 // 좋은 예: 경로 별칭 사용
 import { BaseEntity } from '@common/entities/base.entity';
 import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
-import { Product } from '@modules/products/entities/product.entity';
+import { Product } from '@lc/modules/products/entities/product.entity';
+import { FileService } from '@shared/files/file.service';
 
 // 나쁜 예: 상대 경로 남용
 import { BaseEntity } from '../../common/entities/base.entity';
@@ -485,11 +531,75 @@ import { Product } from '../products/entities/product.entity';
 6. **환경 변수 검증**: 중요한 환경 변수는 validation schema에서 검증
 7. **전역 필터 활용**: HttpExceptionFilter가 자동으로 에러 응답 포맷팅
 
+## 새로운 프로젝트 추가 방법
+
+멀티 프로젝트 아키텍처에서 새로운 프로젝트를 추가하려면:
+
+### 1. 프로젝트 디렉토리 생성
+
+```bash
+mkdir -p src/projects/{project-name}/modules
+```
+
+### 2. 프로젝트 모듈 생성
+
+```typescript
+// src/projects/{project-name}/{project-name}.module.ts
+import { Module } from '@nestjs/common';
+
+@Module({
+  imports: [
+    // 프로젝트의 모듈들을 import
+  ],
+})
+export class ProjectNameModule {}
+```
+
+### 3. 데이터베이스 스키마 생성
+
+PostgreSQL에서 새 스키마를 생성합니다:
+
+```sql
+CREATE SCHEMA IF NOT EXISTS {project_name};
+```
+
+### 4. 엔티티에 스키마 지정
+
+모든 엔티티에 `{ schema: '{project_name}' }` 옵션을 추가합니다.
+
+### 5. AppModule에 등록
+
+```typescript
+// src/app.module.ts
+import { ProjectNameModule } from './projects/{project-name}/{project-name}.module';
+
+@Module({
+  imports: [
+    // ...
+    ProjectNameModule,
+  ],
+})
+export class AppModule {}
+```
+
+### 6. Global Prefix 설정
+
+```typescript
+// src/main.ts
+const app = await NestFactory.create(AppModule);
+app.setGlobalPrefix('api/{project-name}');
+```
+
+### 7. Swagger 설정 (선택사항)
+
+프로젝트별 Swagger 문서를 설정합니다.
+
 ## 환경별 설정
 
 ### 개발 환경 (Development)
 - 포트: 8000
 - 데이터베이스: living_craft_dev
+- 스키마: lc (Living Craft), 추가 프로젝트별 스키마
 - synchronize: true (자동 스키마 동기화)
 - 로깅: 활성화
 - Swagger UI: 활성화

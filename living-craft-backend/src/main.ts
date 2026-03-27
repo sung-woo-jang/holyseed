@@ -112,14 +112,14 @@ async function bootstrap() {
     const generalDocument = SwaggerModule.createDocument(app, generalConfig)
     const filteredGeneralDocument = filterGeneralApis(generalDocument)
 
-    SwaggerModule.setup('docs', app, filteredGeneralDocument, {
+    SwaggerModule.setup('lc/docs', app, filteredGeneralDocument, {
       swaggerOptions: {
         persistAuthorization: true, // 새로고침 시 인증 토큰 유지
         tagsSorter: 'alpha', // 태그 알파벳순 정렬
         operationsSorter: 'alpha', // API 알파벳순 정렬
       },
       customSiteTitle: 'Living Craft API - 고객용 문서',
-      jsonDocumentUrl: '/docs/json',
+      jsonDocumentUrl: '/lc/docs/json',
     })
 
     // ========================================
@@ -145,23 +145,23 @@ async function bootstrap() {
     const adminDocument = SwaggerModule.createDocument(app, adminConfig)
     const filteredAdminDocument = filterAdminApis(adminDocument)
 
-    SwaggerModule.setup('admin-docs', app, filteredAdminDocument, {
+    SwaggerModule.setup('lc/admin-docs', app, filteredAdminDocument, {
       swaggerOptions: {
         persistAuthorization: true,
         tagsSorter: 'alpha',
         operationsSorter: 'alpha',
       },
       customSiteTitle: 'Living Craft API - 관리자 문서',
-      jsonDocumentUrl: '/admin-docs/json',
+      jsonDocumentUrl: '/lc/admin-docs/json',
     })
 
     // 로깅
-    console.log('📚 [고객용] Swagger UI: http://localhost:8000/docs')
-    console.log('📄 [고객용] Swagger JSON: http://localhost:8000/docs/json')
+    console.log('📚 [고객용] Swagger UI: http://localhost:8000/lc/docs')
+    console.log('📄 [고객용] Swagger JSON: http://localhost:8000/lc/docs/json')
     console.log(`📊 [고객용] API 개수: ${Object.keys(filteredGeneralDocument.paths).length}개`)
     console.log('')
-    console.log('🔐 [관리자] Swagger UI: http://localhost:8000/admin-docs')
-    console.log('🔒 [관리자] Swagger JSON: http://localhost:8000/admin-docs/json')
+    console.log('🔐 [관리자] Swagger UI: http://localhost:8000/lc/admin-docs')
+    console.log('🔒 [관리자] Swagger JSON: http://localhost:8000/lc/admin-docs/json')
     console.log(`📊 [관리자] API 개수: ${Object.keys(filteredAdminDocument.paths).length}개`)
   }
 

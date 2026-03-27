@@ -1,6 +1,6 @@
 import * as bcrypt from 'bcrypt';
 import { AppDataSource } from './data-source';
-import { User } from '@modules/admin/users/entities/user.entity';
+import { User } from '@lc/modules/admin/users/entities/user.entity';
 import { UserRole, UserStatus } from '@common/enums';
 
 export async function createInitialAdmin() {

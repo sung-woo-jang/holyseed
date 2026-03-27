@@ -1,6 +1,6 @@
 import { AppDataSource } from './data-source';
-import { Portfolio } from '@modules/portfolios/entities/portfolio.entity';
-import { Service } from '@modules/services/entities/service.entity';
+import { Portfolio } from '@lc/modules/portfolios/entities/portfolio.entity';
+import { Service } from '@lc/modules/services/entities/service.entity';
 import { faker } from '@faker-js/faker';
 
 interface PortfolioTemplate {

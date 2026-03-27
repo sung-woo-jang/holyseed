@@ -1,5 +1,5 @@
 import { AppDataSource } from './data-source';
-import { Holiday } from '@modules/settings/entities/holiday.entity';
+import { Holiday } from '@lc/modules/settings/entities/holiday.entity';
 import { faker } from '@faker-js/faker';
 import { addDays, format } from 'date-fns';
 

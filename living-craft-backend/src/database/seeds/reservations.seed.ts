@@ -2,9 +2,9 @@ import { AppDataSource } from './data-source';
 import {
   Reservation,
   ReservationStatus,
-} from '@modules/reservations/entities/reservation.entity';
-import { Customer } from '@modules/customers/entities/customer.entity';
-import { Service } from '@modules/services/entities/service.entity';
+} from '@lc/modules/reservations/entities/reservation.entity';
+import { Customer } from '@lc/modules/customers/entities/customer.entity';
+import { Service } from '@lc/modules/services/entities/service.entity';
 import { faker } from '@faker-js/faker';
 import { addDays, subDays, format } from 'date-fns';
 

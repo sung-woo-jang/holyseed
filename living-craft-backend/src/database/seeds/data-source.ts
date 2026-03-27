@@ -2,17 +2,17 @@ import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 
 // Entities
-import { User } from '@modules/admin/users/entities/user.entity';
-import { District } from '@modules/admin/districts/entities/district.entity';
-import { Icon } from '@modules/icons/entities/icon.entity';
-import { Customer } from '@modules/customers/entities/customer.entity';
-import { Service } from '@modules/services/entities/service.entity';
-import { ServiceRegion } from '@modules/services/entities/service-region.entity';
-import { OperatingSetting } from '@modules/settings/entities/operating-setting.entity';
-import { Holiday } from '@modules/settings/entities/holiday.entity';
-import { Reservation } from '@modules/reservations/entities/reservation.entity';
-import { Review } from '@modules/reviews/entities/review.entity';
-import { Portfolio } from '@modules/portfolios/entities/portfolio.entity';
+import { User } from '@lc/modules/admin/users/entities/user.entity';
+import { District } from '@lc/modules/admin/districts/entities/district.entity';
+import { Icon } from '@lc/modules/icons/entities/icon.entity';
+import { Customer } from '@lc/modules/customers/entities/customer.entity';
+import { Service } from '@lc/modules/services/entities/service.entity';
+import { ServiceRegion } from '@lc/modules/services/entities/service-region.entity';
+import { OperatingSetting } from '@lc/modules/settings/entities/operating-setting.entity';
+import { Holiday } from '@lc/modules/settings/entities/holiday.entity';
+import { Reservation } from '@lc/modules/reservations/entities/reservation.entity';
+import { Review } from '@lc/modules/reviews/entities/review.entity';
+import { Portfolio } from '@lc/modules/portfolios/entities/portfolio.entity';
 
 // 환경 변수 로드
 dotenv.config();

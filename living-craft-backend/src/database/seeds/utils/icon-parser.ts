@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { IconType } from '@modules/icons/enums/icon-type.enum';
+import { IconType } from '@lc/modules/icons/enums/icon-type.enum';
 
 /**
  * 파싱된 아이콘 데이터 인터페이스

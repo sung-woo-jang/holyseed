@@ -23,8 +23,8 @@
 ### Base URL
 
 ```
-개발: http://localhost:8000/api
-운영: https://api.living-craft.com/api
+개발: http://localhost:8000/api/lc
+운영: https://api.living-craft.com/api/lc
 ```
 
 ### 인증 헤더
@@ -74,7 +74,7 @@ interface SuccessResponse<T> {
 토스 앱에서 받은 인가 코드로 로그인합니다.
 
 ```
-POST /api/auth/login
+POST /api/lc/auth/login
 ```
 
 **Request Body**
@@ -126,7 +126,7 @@ interface LoginResponse {
 ### 1.2 토큰 갱신
 
 ```
-POST /api/auth/refresh
+POST /api/lc/auth/refresh
 ```
 
 **Request Body**
@@ -149,7 +149,7 @@ interface RefreshResponse {
 ### 1.3 로그아웃
 
 ```
-POST /api/auth/logout
+POST /api/lc/auth/logout
 ```
 
 **Headers**: `Authorization: Bearer {accessToken}`
@@ -167,7 +167,7 @@ POST /api/auth/logout
 서비스 목록, 지역 정보, 지역별 기본 비용을 함께 조회합니다.
 
 ```
-GET /api/services
+GET /api/lc/services
 ```
 
 **Response**
@@ -246,7 +246,7 @@ interface Service {
 운영 시간은 백오피스에서 유연하게 설정 가능합니다.
 
 ```
-POST /api/services/available-times
+POST /api/lc/services/available-times
 ```
 
 **Request Body**
@@ -310,7 +310,7 @@ interface AvailableTimesData {
 `[/, /portfolio]`
 
 ```
-GET /api/portfolios
+GET /api/lc/portfolios
 ```
 
 **Query Parameters**
@@ -362,7 +362,7 @@ interface PortfolioListData {
 `[/portfolio/:id]`
 
 ```
-GET /api/portfolios/:id
+GET /api/lc/portfolios/:id
 ```
 
 **Response**
@@ -432,7 +432,7 @@ type ReservationStatus =
 예약 생성 전 사진을 사전 업로드합니다. 최대 5장까지 업로드 가능합니다.
 
 ```
-POST /api/files/reservations/upload-photos
+POST /api/lc/files/reservations/upload-photos
 ```
 
 **Headers**: `Authorization: Bearer {accessToken}` (선택사항)
@@ -481,7 +481,7 @@ interface UploadReservationPhotosResponse {
 `[/reservation/confirmation]`
 
 ```
-POST /api/reservations
+POST /api/lc/reservations
 ```
 
 **Headers**: `Authorization: Bearer {accessToken}`
@@ -547,7 +547,7 @@ interface CreateReservationData {
 `[/reviews/write/:reservationId]`
 
 ```
-GET /api/reservations/:id
+GET /api/lc/reservations/:id
 ```
 
 **Headers**: `Authorization: Bearer {accessToken}`
@@ -604,7 +604,7 @@ interface ReservationDetail {
 `[/my/reservations]`
 
 ```
-POST /api/reservations/:id/cancel
+POST /api/lc/reservations/:id/cancel
 ```
 
 **Headers**: `Authorization: Bearer {accessToken}`
@@ -620,7 +620,7 @@ POST /api/reservations/:id/cancel
 `[/, /reviews]`
 
 ```
-GET /api/reviews
+GET /api/lc/reviews
 ```
 
 **Query Parameters**
@@ -673,7 +673,7 @@ interface ReviewListData {
 `[/reviews/write/:reservationId]`
 
 ```
-POST /api/reviews
+POST /api/lc/reviews
 ```
 
 **Headers**: `Authorization: Bearer {accessToken}`
@@ -728,7 +728,7 @@ interface CreateReviewData {
 `[/my]`
 
 ```
-GET /api/users/me
+GET /api/lc/users/me
 ```
 
 **Headers**: `Authorization: Bearer {accessToken}`
@@ -762,7 +762,7 @@ interface UserProfile {
 `[/my/reservations]`
 
 ```
-GET /api/users/me/reservations
+GET /api/lc/users/me/reservations
 ```
 
 **Headers**: `Authorization: Bearer {accessToken}`
@@ -816,7 +816,7 @@ interface MyReservationListItem {
 `[/my/reviews]`
 
 ```
-GET /api/users/me/reviews
+GET /api/lc/users/me/reviews
 ```
 
 **Headers**: `Authorization: Bearer {accessToken}`
@@ -860,7 +860,7 @@ interface MyReviewListItem {
 #### 관리자 로그인
 
 ```
-POST /api/admin/auth/login
+POST /api/lc/admin/auth/login
 ```
 
 **Request Body**
@@ -904,7 +904,7 @@ interface AdminLoginResponse {
 #### 운영 시간 조회
 
 ```
-GET /api/admin/settings/operating-hours
+GET /api/lc/admin/settings/operating-hours
 ```
 
 **Response**
@@ -949,7 +949,7 @@ interface OperatingHoursData {
 #### 운영 시간 수정
 
 ```
-POST /api/admin/settings/operating-hours
+POST /api/lc/admin/settings/operating-hours
 ```
 
 **Request Body**
@@ -993,7 +993,7 @@ interface UpdateOperatingHoursRequest {
 #### 휴무일 추가
 
 ```
-POST /api/admin/settings/holidays
+POST /api/lc/admin/settings/holidays
 ```
 
 **Request Body**
@@ -1016,7 +1016,7 @@ interface AddHolidayRequest {
 #### 휴무일 삭제
 
 ```
-POST /api/admin/settings/holidays/:date/delete
+POST /api/lc/admin/settings/holidays/:date/delete
 ```
 
 **Response**: 없음 (SuccessResponse의 message로 결과 반환)
@@ -1028,7 +1028,7 @@ POST /api/admin/settings/holidays/:date/delete
 #### 전체 예약 목록 조회
 
 ```
-GET /api/admin/reservations
+GET /api/lc/admin/reservations
 ```
 
 **Query Parameters**
@@ -1091,7 +1091,7 @@ interface AdminReservationListData {
 #### 예약 상태 변경
 
 ```
-POST /api/admin/reservations/:id/status
+POST /api/lc/admin/reservations/:id/status
 ```
 
 **Request Body**
@@ -1119,7 +1119,7 @@ interface UpdateReservationStatusRequest {
 #### 시공 일정 지정
 
 ```
-POST /api/admin/reservations/:id/schedule-construction
+POST /api/lc/admin/reservations/:id/schedule-construction
 ```
 
 견적 확정(`estimate_confirmed`) 상태의 예약에 대해 시공 일정을 지정합니다.
@@ -1156,7 +1156,7 @@ interface ScheduleConstructionRequest {
 #### 예약 취소 (관리자)
 
 ```
-POST /api/admin/reservations/:id/cancel
+POST /api/lc/admin/reservations/:id/cancel
 ```
 
 **Response**: 없음 (SuccessResponse의 message로 "예약이 취소되었습니다." 반환)
@@ -1168,7 +1168,7 @@ POST /api/admin/reservations/:id/cancel
 #### 서비스 목록 조회
 
 ```
-GET /api/admin/services
+GET /api/lc/admin/services
 ```
 
 **Response**
@@ -1180,7 +1180,7 @@ GET /api/admin/services
 #### 서비스 생성
 
 ```
-POST /api/admin/services
+POST /api/lc/admin/services
 ```
 
 **Request Body**
@@ -1225,7 +1225,7 @@ interface CreateServiceRequest {
 #### 서비스 수정
 
 ```
-POST /api/admin/services/:id
+POST /api/lc/admin/services/:id
 ```
 
 **Request Body**: `CreateServiceRequest`와 동일
@@ -1235,7 +1235,7 @@ POST /api/admin/services/:id
 #### 서비스 삭제
 
 ```
-POST /api/admin/services/:id/delete
+POST /api/lc/admin/services/:id/delete
 ```
 
 **Response**: 없음 (SuccessResponse의 message로 "서비스가 삭제되었습니다." 반환)
@@ -1247,7 +1247,7 @@ POST /api/admin/services/:id/delete
 #### 포트폴리오 목록 조회
 
 ```
-GET /api/admin/portfolios
+GET /api/lc/admin/portfolios
 ```
 
 **Response**
@@ -1262,7 +1262,7 @@ interface AdminPortfolioListData {
 #### 포트폴리오 생성
 
 ```
-POST /api/admin/portfolios
+POST /api/lc/admin/portfolios
 ```
 
 **Request Body**
@@ -1306,7 +1306,7 @@ interface CreatePortfolioRequest {
 #### 포트폴리오 수정
 
 ```
-POST /api/admin/portfolios/:id
+POST /api/lc/admin/portfolios/:id
 ```
 
 **Request Body**: `CreatePortfolioRequest`와 동일
@@ -1316,7 +1316,7 @@ POST /api/admin/portfolios/:id
 #### 포트폴리오 삭제
 
 ```
-POST /api/admin/portfolios/:id/delete
+POST /api/lc/admin/portfolios/:id/delete
 ```
 
 **Response**: 없음 (SuccessResponse의 message로 "포트폴리오가 삭제되었습니다." 반환)
@@ -1328,7 +1328,7 @@ POST /api/admin/portfolios/:id/delete
 #### 리뷰 목록 조회
 
 ```
-GET /api/admin/reviews
+GET /api/lc/admin/reviews
 ```
 
 **Query Parameters**
@@ -1341,7 +1341,7 @@ GET /api/admin/reviews
 #### 리뷰 삭제
 
 ```
-POST /api/admin/reviews/:id/delete
+POST /api/lc/admin/reviews/:id/delete
 ```
 
 **Response**: 없음 (SuccessResponse의 message로 "리뷰가 삭제되었습니다." 반환)
@@ -1353,7 +1353,7 @@ POST /api/admin/reviews/:id/delete
 #### 고객 목록 조회
 
 ```
-GET /api/admin/customers
+GET /api/lc/admin/customers
 ```
 
 **Query Parameters**
@@ -1401,7 +1401,7 @@ interface CustomerListData {
 #### 고객 상세 조회
 
 ```
-GET /api/admin/customers/:id
+GET /api/lc/admin/customers/:id
 ```
 
 **Response**
@@ -1466,7 +1466,7 @@ interface CustomerDetail {
 외부 API를 프록시하여 CORS 문제를 해결합니다.
 
 ```
-GET /api/address/search?query=강남구
+GET /api/lc/address/search?query=강남구
 ```
 
 **Response**

@@ -26,7 +26,7 @@ import {
 } from './dto/request';
 import { AdminReservationListResponseDto } from './dto/response';
 
-@Controller('admin/reservations')
+@Controller('lc/admin/reservations')
 @ApiTags('관리자 > 예약 관리')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)

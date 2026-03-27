@@ -17,7 +17,7 @@ import { DistrictLevel } from '@common/enums/district-level.enum';
 
 @ApiTags('관리자 > 행정구역 관리')
 @ApiBearerAuth()
-@Controller('admin/districts')
+@Controller('lc/admin/districts')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.SUPERADMIN)
 export class DistrictsController {

@@ -28,7 +28,7 @@ import {
 } from './dto';
 import { ServiceHoliday, ServiceSchedule } from './entities';
 
-@Controller('services')
+@Controller('lc/services')
 @ApiTags('서비스')
 export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}

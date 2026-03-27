@@ -24,7 +24,7 @@ import {
   AdminCustomerDetailDto,
 } from './dto/response';
 
-@Controller('admin/customers')
+@Controller('lc/admin/customers')
 @ApiTags('관리자 > 고객 관리')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)

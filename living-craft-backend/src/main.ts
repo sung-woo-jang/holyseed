@@ -18,17 +18,15 @@ function filterGeneralApis(document: OpenAPIObject): OpenAPIObject {
   const filteredPaths = {}
 
   for (const [path, pathItem] of Object.entries(document.paths)) {
-    // /api/admin 경로 제외
-    if (path.startsWith('/api/admin')) {
+    // /api/lc/admin 경로 제외 (관리자 API)
+    if (path.startsWith('/api/lc/admin')) {
       continue
     }
 
-    // /api/services/admin 경로 제외
-    if (path.startsWith('/api/services/admin')) {
-      continue
+    // /api/lc로 시작하거나 /api/shared로 시작하는 경로만 포함
+    if (path.startsWith('/api/lc') || path.startsWith('/api/shared')) {
+      filteredPaths[path] = pathItem
     }
-
-    filteredPaths[path] = pathItem
   }
 
   return {
@@ -44,14 +42,8 @@ function filterAdminApis(document: OpenAPIObject): OpenAPIObject {
   const filteredPaths = {}
 
   for (const [path, pathItem] of Object.entries(document.paths)) {
-    // /api/services/admin 먼저 체크 (더 구체적인 패턴)
-    if (path.startsWith('/api/services/admin')) {
-      filteredPaths[path] = pathItem
-      continue
-    }
-
-    // /api/admin으로 시작하는 경로 포함
-    if (path.startsWith('/api/admin')) {
+    // /api/lc/admin으로 시작하는 경로만 포함
+    if (path.startsWith('/api/lc/admin')) {
       filteredPaths[path] = pathItem
     }
   }

@@ -29,7 +29,7 @@ import { plainToInstance } from 'class-transformer';
 
 @ApiTags('관리자 > 사용자 관리')
 @ApiBearerAuth()
-@Controller('admin/users')
+@Controller('lc/admin/users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.SUPERADMIN)
 export class UsersController {

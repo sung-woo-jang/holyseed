@@ -22,7 +22,7 @@ import { AdminReviewsService } from './admin-reviews.service';
 import { AdminReviewsQueryDto } from './dto/request';
 import { AdminReviewListResponseDto } from './dto/response';
 
-@Controller('admin/reviews')
+@Controller('lc/admin/reviews')
 @ApiTags('관리자 > 리뷰 관리')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)

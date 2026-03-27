@@ -8,8 +8,8 @@ export enum ContentType {
   Text = 'text/plain',
 }
 
-// baseURL에 /api 포함
-const BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api`
+// baseURL에 /api/lc 포함
+const BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/lc`
 
 const createAxiosInstance = (
   contentType: string,

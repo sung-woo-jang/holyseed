@@ -24,7 +24,7 @@ export enum ContentType {
  * API 베이스 URL
  * 환경 변수에서 API_BASE_URL을 가져오거나 기본값 사용
  */
-const BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000/api';
+const BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000/api/lc';
 
 // 디버깅용 로그
 if (__DEV__) {

@@ -42,8 +42,6 @@ import {
   useServiceFormPage,
   type ServiceFormValues,
 } from '@/features/services/model'
-import { RegionFeeSelector } from '@/features/services/ui/region-fee-selector/RegionFeeSelector'
-import { ScheduleSelector } from '@/features/services/ui/schedule-selector'
 import styles from './ServiceFormPage.module.scss'
 
 export function ServiceFormPage() {
@@ -513,25 +511,6 @@ export function ServiceFormPage() {
                     드래그 앤 드롭으로 가능합니다.
                   </p>
                 </div>
-              </div>
-            </div>
-
-            {/* 전체 너비: 서비스 지역 */}
-            <div className={styles.formFullWidth}>
-              <div className={styles.section}>
-                <h3 className={styles.sectionTitle}>
-                  서비스 지역 <span className={styles.labelRequired}>*</span>
-                </h3>
-                <RegionFeeSelector />
-                {errors.regions && <FieldError errors={[errors.regions]} />}
-              </div>
-            </div>
-
-            {/* 전체 너비: 예약 일정 설정 */}
-            <div className={styles.formFullWidth}>
-              <div className={styles.section}>
-                <h3 className={styles.sectionTitle}>예약 일정 설정</h3>
-                <ScheduleSelector />
               </div>
             </div>
           </div>

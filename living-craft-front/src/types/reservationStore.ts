@@ -1,13 +1,6 @@
-import { Service } from '@api/types';
 import { AccordionStepsState, StepKey, StepStatus } from '@components/ui/accordion-step';
 
-import {
-  AddressEstimateInfo,
-  AddressSearchResult,
-  AddressSelection,
-  CityData,
-  RegionData,
-} from './reservation';
+import { AddressSearchResult } from './reservation';
 
 /**
  * 예약 UI 상태
@@ -27,19 +20,6 @@ export interface ReservationState {
   selectedAddress: AddressSearchResult | null;
   isAddressSearchDrawerOpen: boolean;
 
-  // 지역 선택 상태
-  addressSelection: AddressSelection;
-  isRegionBottomSheetOpen: boolean;
-  isCityBottomSheetOpen: boolean;
-  regions: RegionData[];
-  cities: CityData[];
-  isLoadingRegions: boolean;
-  isLoadingCities: boolean;
-
-  // 견적 비용 상태
-  addressEstimateInfo: AddressEstimateInfo | null;
-  isCheckingEstimateFee: boolean;
-
   // Accordion 상태 (통합 예약 페이지용)
   accordionSteps: AccordionStepsState;
 }
@@ -54,16 +34,6 @@ export interface ReservationActions {
   // 주소 검색 상태
   selectAddress: (address: AddressSearchResult) => void;
   resetAddressSearch: () => void;
-
-  // 지역 선택 액션
-  setAddressSelection: (selection: Partial<AddressSelection>) => void;
-  selectRegion: (region: RegionData) => void;
-  selectCity: (city: CityData) => void;
-  resetRegionSelection: () => void;
-
-  // 견적 비용 액션
-  checkEstimateFee: (serviceId: number, services: Service[]) => void;
-  resetEstimateFeeInfo: () => void;
 
   // Accordion 액션 (통합 예약 페이지용)
   setStepStatus: (step: StepKey, status: StepStatus) => void;

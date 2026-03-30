@@ -1,9 +1,8 @@
 import { HomePortfolioSection } from '@components/home/HomePortfolioSection';
 import { HomePromoCarouselSection } from '@components/home/HomePromoCarouselSection';
 import { HomeReviewsSection } from '@components/home/HomeReviewsSection';
-import { HomeServicesSection } from '@components/home/HomeServicesSection';
 import { createRoute } from '@granite-js/react-native';
-import { useBottomNavHeight, usePortfolios, usePromotions, useRefresh, useReviews, useServices } from '@hooks';
+import { useBottomNavHeight, usePortfolios, usePromotions, useRefresh, useReviews } from '@hooks';
 import { colors } from '@toss/tds-colors';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -25,12 +24,11 @@ function Page() {
 
   // 각 섹션의 쿼리 수집
   const promosQuery = usePromotions();
-  const servicesQuery = useServices();
   const portfoliosQuery = usePortfolios({ limit: 5, page: 1 });
   const reviewsQuery = useReviews({ limit: 5, page: 1 });
 
   // 모든 쿼리를 한 번에 새로고침
-  const { refreshing, onRefresh } = useRefresh([promosQuery, servicesQuery, portfoliosQuery, reviewsQuery]);
+  const { refreshing, onRefresh } = useRefresh([promosQuery, portfoliosQuery, reviewsQuery]);
 
   return (
     <View style={styles.container}>
@@ -47,7 +45,6 @@ function Page() {
         }
       >
         <HomePromoCarouselSection />
-        <HomeServicesSection />
         <HomePortfolioSection />
         <HomeReviewsSection />
       </ScrollView>

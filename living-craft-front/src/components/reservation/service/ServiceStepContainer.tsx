@@ -1,45 +1,35 @@
-import { getServiceableRegionsForService } from '@api';
 import { AccordionStep } from '@components/ui/accordion-step';
 import { useScrollContext } from '@contexts';
 import { useReservationValidation, useServices } from '@hooks';
 import { useReservationStore } from '@store';
 import type { ReservationFormData } from '@types';
 import { safeLayoutAnimation, scheduleScrollToStep } from '@utils';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { View } from 'react-native';
 
 import { AddressManagementSection } from './AddressManagementSection';
-import { ServiceSelectionStep } from './ServiceSelectionStep';
+import { ServiceSelector } from './ServiceSelector';
 import { ServiceSummary } from './ServiceSummary';
 
-export interface ServiceStepContainerProps {
-  serviceIdParam: number | null;
-}
-
-export function ServiceStepContainer({ serviceIdParam }: ServiceStepContainerProps) {
+/**
+ * 서비스 선택 단계 컨테이너
+ *
+ * 변경 사항 (Phase 3):
+ * - serviceIdParam 제거 (URL 파라미터로 서비스 자동 선택하지 않음)
+ * - ServiceSelectionStep → ServiceSelector로 교체
+ * - 지역 선택 UI 완전 제거 (주소 검색만 사용)
+ * - 서비스 변경 시 주소 초기화 로직 제거
+ */
+export function ServiceStepContainer() {
   // ===== Context =====
   const { scrollViewRef, stepRefs } = useScrollContext();
 
   // ===== Store =====
-  const {
-    accordionSteps,
-    toggleStepExpanded,
-    completeStep,
-    goToStep,
-    resetAddressSearch,
-    resetEstimateFeeInfo,
-    addressSelection,
-    update,
-  } = useReservationStore([
+  const { accordionSteps, toggleStepExpanded, completeStep, goToStep } = useReservationStore([
     'accordionSteps',
     'toggleStepExpanded',
     'completeStep',
     'goToStep',
-    'resetAddressSearch',
-    'resetEstimateFeeInfo',
-    'addressSelection',
-    'update',
   ]);
 
   // ===== Form =====
@@ -47,7 +37,7 @@ export function ServiceStepContainer({ serviceIdParam }: ServiceStepContainerPro
   const { canProceedToNext } = useReservationValidation();
 
   // ===== Data Fetching =====
-  const { data: services } = useServices();
+  const { data: services, isLoading } = useServices();
 
   // ===== Computed =====
   const currentService = watch('service');
@@ -55,16 +45,12 @@ export function ServiceStepContainer({ serviceIdParam }: ServiceStepContainerPro
   const hasAddress = Boolean(currentAddress?.trim());
   const canProceed = canProceedToNext('service') && hasAddress;
 
-  const filteredRegions = useMemo(() => {
-    if (!currentService || !services) return [];
-    return getServiceableRegionsForService(services, currentService.id);
-  }, [currentService, services]);
-
-  // ===== Refs =====
-  const paramsProcessedRef = useRef(false);
-  const prevServiceIdRef = useRef<number | null>(null);
-
   // ===== 핸들러 =====
+  const handleServiceChange = (serviceId: number) => {
+    const service = services?.find((s) => s.id === serviceId);
+    setValue('service', service || null);
+  };
+
   const handleToggle = () => {
     safeLayoutAnimation();
     toggleStepExpanded('service');
@@ -83,55 +69,6 @@ export function ServiceStepContainer({ serviceIdParam }: ServiceStepContainerPro
     goToStep('service');
     scheduleScrollToStep(scrollViewRef, stepRefs.current.service);
   };
-
-  // ===== 서비스 변경 시 주소 초기화 핸들러 =====
-  const resetAddressState = useCallback(() => {
-    resetAddressSearch();
-    resetEstimateFeeInfo();
-    setValue('customerInfo.address', '');
-    setValue('customerInfo.detailAddress', '');
-  }, [resetAddressSearch, resetEstimateFeeInfo, setValue]);
-
-  // ===== Query params 기반 서비스 자동 선택 =====
-  useEffect(() => {
-    if (currentService) return;
-    if (paramsProcessedRef.current) return;
-
-    if (serviceIdParam && services && services.length > 0) {
-      const targetService = services.find((s) => s.id === serviceIdParam);
-      if (targetService) {
-        setValue('service', targetService);
-        paramsProcessedRef.current = true;
-      }
-    }
-  }, [serviceIdParam, services, currentService, setValue]);
-
-  // ===== 서비스 변경 감지 =====
-  useEffect(() => {
-    if (!currentService) {
-      prevServiceIdRef.current = null;
-      return;
-    }
-
-    // 초기 마운트 시에는 실행하지 않음
-    if (prevServiceIdRef.current === null) {
-      prevServiceIdRef.current = currentService.id;
-      return;
-    }
-
-    // 실제로 서비스가 변경된 경우에만 주소 초기화
-    if (prevServiceIdRef.current !== currentService.id) {
-      resetAddressState();
-      prevServiceIdRef.current = currentService.id;
-    }
-  }, [currentService?.id, resetAddressState]);
-
-  // ===== 서비스 선택 시 자동으로 지역 선택 시트 열기 =====
-  useEffect(() => {
-    if (currentService && !addressSelection.region && !addressSelection.city) {
-      update({ isRegionBottomSheetOpen: true });
-    }
-  }, [currentService?.id, addressSelection.region, addressSelection.city, update]);
 
   const accordionStep = accordionSteps.service!;
 
@@ -154,12 +91,13 @@ export function ServiceStepContainer({ serviceIdParam }: ServiceStepContainerPro
         isCompleteDisabled={!canProceed || !hasAddress}
         hideCompleteButton={false}
       >
-        <ServiceSelectionStep withScrollView={false} />
-        <AddressManagementSection
-          currentService={currentService}
+        <ServiceSelector
           services={services}
-          filteredRegions={filteredRegions}
+          value={currentService?.id}
+          onChange={handleServiceChange}
+          isLoading={isLoading}
         />
+        <AddressManagementSection />
       </AccordionStep>
     </View>
   );

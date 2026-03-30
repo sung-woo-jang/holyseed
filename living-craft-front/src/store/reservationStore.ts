@@ -1,4 +1,3 @@
-import { checkEstimateFeeByRegion } from '@api/serviceableRegions';
 import { getNextStep, initialAccordionSteps, STEP_ORDER } from '@components/ui/accordion-step';
 import { StoreWithShallow, useStoreWithShallow } from '@types';
 import { immer } from 'zustand/middleware/immer';
@@ -15,20 +14,11 @@ const initialState: ReservationState = {
   showAddressDetailInput: false,
   selectedAddress: null,
   isAddressSearchDrawerOpen: false,
-  addressSelection: { region: null, city: null },
-  isRegionBottomSheetOpen: false,
-  isCityBottomSheetOpen: false,
-  regions: [],
-  cities: [],
-  isLoadingRegions: false,
-  isLoadingCities: false,
-  addressEstimateInfo: null,
-  isCheckingEstimateFee: false,
   accordionSteps: initialAccordionSteps,
 };
 
 const reservationStore = createWithEqualityFn(
-  immer<ReservationStore>((set, get) => ({
+  immer<ReservationStore>((set) => ({
     ...initialState,
 
     // 단순 상태 업데이트 통합 함수
@@ -51,73 +41,6 @@ const reservationStore = createWithEqualityFn(
         state.showAddressDetailInput = false;
         state.selectedAddress = null;
         state.isAddressSearchDrawerOpen = false;
-        state.addressSelection = { region: null, city: null };
-        state.cities = [];
-      }),
-
-    // 지역 선택 액션
-    setAddressSelection: (selection) =>
-      set((state) => {
-        Object.assign(state.addressSelection, selection);
-      }),
-
-    selectRegion: (region) => {
-      // RegionSelectBottomSheet 먼저 닫기
-      set((state) => {
-        state.addressSelection = { region, city: null };
-        state.isRegionBottomSheetOpen = false;
-        state.isCityBottomSheetOpen = false; // 애니메이션 충돌 방지
-        state.cities = []; // 이전 구/군 목록 초기화
-      });
-
-      // RegionSelectBottomSheet 닫기 애니메이션 완료 후 CitySelectBottomSheet 열기
-      setTimeout(() => {
-        set((state) => {
-          state.isCityBottomSheetOpen = true;
-        });
-      }, 350); // 애니메이션 duration(250ms) + 여유(100ms)
-    },
-
-    selectCity: (city) =>
-      set((state) => {
-        // 완전히 새 객체로 교체하여 shallow equality 비교가 확실히 실패하도록 보장
-        state.addressSelection = {
-          region: state.addressSelection.region,
-          city: city,
-        };
-        state.isCityBottomSheetOpen = false;
-      }),
-
-    resetRegionSelection: () =>
-      set((state) => {
-        state.addressSelection = { region: null, city: null };
-        state.isRegionBottomSheetOpen = false;
-        state.isCityBottomSheetOpen = false;
-        state.cities = [];
-      }),
-
-    // 견적 비용 액션
-    checkEstimateFee: (serviceId, services) => {
-      const { addressSelection } = get();
-      const { region, city } = addressSelection;
-
-      if (!serviceId || !region || !city || !services || services.length === 0) {
-        set((state) => {
-          state.addressEstimateInfo = null;
-        });
-        return;
-      }
-
-      const estimateInfo = checkEstimateFeeByRegion(services, serviceId, region.id, city.id);
-      set((state) => {
-        state.addressEstimateInfo = estimateInfo;
-      });
-    },
-
-    resetEstimateFeeInfo: () =>
-      set((state) => {
-        state.addressEstimateInfo = null;
-        state.isCheckingEstimateFee = false;
       }),
 
     // Accordion 액션 (통합 예약 페이지용)

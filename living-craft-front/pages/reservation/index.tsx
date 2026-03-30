@@ -13,31 +13,18 @@ import { useCallback, useEffect } from 'react';
 import { FormProvider } from 'react-hook-form';
 import { Alert, BackHandler, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-export interface ReservationPageParams {
-  serviceId?: string;
-}
-
-export const Route = createRoute<ReservationPageParams>('/reservation', {
-  validateParams: (params): ReservationPageParams => {
-    const rawParams = params as Record<string, unknown> | undefined;
-    return {
-      serviceId:
-        typeof rawParams?.serviceId === 'string'
-          ? rawParams.serviceId
-          : typeof rawParams?.serviceId === 'number'
-            ? String(rawParams.serviceId)
-            : undefined,
-    };
-  },
+/**
+ * 예약 페이지
+ *
+ * 변경 사항 (Phase 3):
+ * - serviceId URL 파라미터 제거 (서비스는 페이지 내에서 선택)
+ */
+export const Route = createRoute('/reservation', {
   component: Page,
 });
 
 function Page() {
   const navigation = Route.useNavigation();
-
-  // ===== Params =====
-  const params = Route.useParams();
-  const serviceIdParam = params?.serviceId ? parseInt(params.serviceId, 10) : null;
 
   // ===== Store =====
   const {
@@ -104,7 +91,7 @@ function Page() {
             keyboardShouldPersistTaps="handled"
             automaticallyAdjustKeyboardInsets
           >
-            <ServiceStepContainer serviceIdParam={serviceIdParam} />
+            <ServiceStepContainer />
             <DateTimeStepContainer />
             <CustomerStepContainer />
             <ConfirmationStepContainer onSubmitSuccess={handleSubmitSuccess} />

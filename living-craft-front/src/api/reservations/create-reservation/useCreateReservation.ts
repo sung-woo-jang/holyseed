@@ -3,8 +3,8 @@
  */
 
 import type { SuccessResponse } from '@api';
-import type { ImageState } from '@types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { ImageState } from '@types';
 import { showSuccessToast } from '@utils/toast';
 
 import { generateQueryKeysFromUrl } from '../../../hooks/query-keys';

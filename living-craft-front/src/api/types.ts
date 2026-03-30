@@ -155,25 +155,6 @@ export interface User {
 // ========================================
 
 /**
- * 서비스 가능 지역 - 시/군/구
- */
-export interface ServiceCity {
-  id: string;
-  name: string;
-  estimateFee: number | null;
-}
-
-/**
- * 서비스 가능 지역 - 시/도
- */
-export interface ServiceRegion {
-  id: string;
-  name: string;
-  estimateFee: number;
-  cities: ServiceCity[];
-}
-
-/**
  * 아이콘 타입
  */
 export type IconType = 'FILL' | 'MONO' | 'COLOR';
@@ -201,7 +182,6 @@ export interface Service {
   requiresTimeSelection: boolean;
   isActive?: boolean;
   sortOrder?: number;
-  serviceableRegions?: ServiceRegion[];
   createdAt?: string;
   updatedAt?: string;
 }

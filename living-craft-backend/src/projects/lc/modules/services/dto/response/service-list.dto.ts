@@ -1,51 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IconListDto } from '@lc/modules/icons/dto/response/icon-list.dto';
-
-export class CityDto {
-  @ApiProperty({
-    description: '시/군/구 ID',
-    example: '1',
-  })
-  id: string;
-
-  @ApiProperty({
-    description: '시/군/구 이름',
-    example: '강남구',
-  })
-  name: string;
-
-  @ApiPropertyOptional({
-    description: '출장비 (null이면 상위 지역 기본값 사용)',
-    example: 15000,
-  })
-  estimateFee: number | null;
-}
-
-export class ServiceableRegionDto {
-  @ApiProperty({
-    description: '시/도 ID',
-    example: '1',
-  })
-  id: string;
-
-  @ApiProperty({
-    description: '시/도 이름',
-    example: '서울특별시',
-  })
-  name: string;
-
-  @ApiProperty({
-    description: '기본 출장비',
-    example: 0,
-  })
-  estimateFee: number;
-
-  @ApiProperty({
-    description: '시/군/구 목록',
-    type: [CityDto],
-  })
-  cities: CityDto[];
-}
+import { ApiProperty } from '@nestjs/swagger';
+import { IconDto } from './icon.dto';
 
 export class ServiceListItemDto {
   @ApiProperty({
@@ -68,9 +22,9 @@ export class ServiceListItemDto {
 
   @ApiProperty({
     description: '아이콘 정보',
-    type: IconListDto,
+    type: IconDto,
   })
-  icon: IconListDto;
+  icon: IconDto;
 
   @ApiProperty({
     description: '아이콘 배경색 (HEX)',
@@ -95,10 +49,4 @@ export class ServiceListItemDto {
     example: false,
   })
   requiresTimeSelection: boolean;
-
-  @ApiProperty({
-    description: '서비스 가능 지역 목록',
-    type: [ServiceableRegionDto],
-  })
-  serviceableRegions: ServiceableRegionDto[];
 }

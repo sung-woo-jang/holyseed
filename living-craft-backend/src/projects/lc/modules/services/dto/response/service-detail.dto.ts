@@ -1,10 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IconListDto } from '@lc/modules/icons/dto/response/icon-list.dto';
-import { ServiceableRegionDto } from './service-list.dto';
+import { IconDto } from './icon.dto';
 
 /**
- * 서비스 상세 정보 DTO (관리자용)
- * ServiceListItemDto와 유사하지만 추가 필드 포함 (isActive, sortOrder, timestamps)
+ * 서비스 상세 정보 DTO
  */
 export class ServiceDetailDto {
   @ApiProperty({
@@ -27,9 +25,9 @@ export class ServiceDetailDto {
 
   @ApiProperty({
     description: '아이콘 정보',
-    type: IconListDto,
+    type: IconDto,
   })
-  icon: IconListDto;
+  icon: IconDto;
 
   @ApiProperty({
     description: '아이콘 배경색 (HEX)',
@@ -54,34 +52,4 @@ export class ServiceDetailDto {
     example: false,
   })
   requiresTimeSelection: boolean;
-
-  @ApiProperty({
-    description: '활성화 여부',
-    example: true,
-  })
-  isActive: boolean;
-
-  @ApiProperty({
-    description: '정렬 순서',
-    example: 1,
-  })
-  sortOrder: number;
-
-  @ApiProperty({
-    description: '서비스 가능 지역 목록',
-    type: [ServiceableRegionDto],
-  })
-  serviceableRegions: ServiceableRegionDto[];
-
-  @ApiProperty({
-    description: '생성 일시',
-    example: '2024-01-15T10:30:00.000Z',
-  })
-  createdAt: string;
-
-  @ApiProperty({
-    description: '수정 일시',
-    example: '2024-01-15T10:30:00.000Z',
-  })
-  updatedAt: string;
 }

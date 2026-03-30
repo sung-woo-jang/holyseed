@@ -28,7 +28,7 @@ import { ServicesService } from '@lc/modules/services/services.service';
 import { SettingsService } from '@lc/modules/settings/settings.service';
 import { FilesService } from '@shared/files/files.service';
 import { OperatingType } from '@lc/modules/settings/entities';
-import { ScheduleMode } from '@lc/modules/services/entities/service-schedule.entity';
+import { ScheduleMode } from '@common/enums/schedule-mode.enum';
 import { ReservationCodeUtil } from '@common/utils/reservation-code.util';
 import { ERROR_MESSAGES } from '@common/constants';
 
@@ -246,7 +246,7 @@ export class ReservationsService {
 
     // 서비스별 스케줄 조회
     const serviceSchedule =
-      await this.servicesService.getServiceSchedule(serviceId);
+      null // 서비스별 스케줄 제거;
 
     // 예약 가능 기간 체크
     if (serviceSchedule) {
@@ -280,7 +280,7 @@ export class ReservationsService {
 
     // 서비스별 휴무일 체크
     const serviceHolidays =
-      await this.servicesService.getServiceHolidays(serviceId);
+      [] // 서비스별 휴무일 제거;
     const dateString = moment(date).format('YYYY-MM-DD');
     const serviceHoliday = serviceHolidays.find(
       (h) => moment(h.date).format('YYYY-MM-DD') === dateString,
@@ -565,7 +565,7 @@ export class ReservationsService {
 
     // 서비스별 스케줄 조회
     const serviceSchedule =
-      await this.servicesService.getServiceSchedule(serviceId);
+      null // 서비스별 스케줄 제거;
 
     // 예약 가능 최대 날짜 계산 (기본 3개월)
     const bookingPeriodMonths = serviceSchedule?.bookingPeriodMonths || 3;
@@ -582,7 +582,7 @@ export class ReservationsService {
 
     // 서비스별 휴무일 목록 조회
     const serviceHolidays =
-      await this.servicesService.getServiceHolidays(serviceId);
+      [] // 서비스별 휴무일 제거;
 
     // 스케줄 모드에 따른 가능 요일 계산
     const operatingType =

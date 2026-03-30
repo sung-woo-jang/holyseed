@@ -2,53 +2,13 @@ import {
   IsString,
   IsBoolean,
   IsNumber,
-  IsArray,
   IsOptional,
   MaxLength,
   Min,
-  ArrayMinSize,
   Matches,
-  ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ERROR_MESSAGES, FIELD_NAMES } from '@common/constants';
-import { ServiceScheduleInputDto } from './service-schedule.dto';
-
-/**
- * 서비스 지역 입력 DTO
- */
-export class ServiceRegionInputDto {
-  @ApiProperty({
-    description: '지역 ID (District ID)',
-    example: 1,
-  })
-  @IsNumber(
-    {},
-    {
-      message: ERROR_MESSAGES.VALIDATION.IS_NUMBER(FIELD_NAMES.districtId),
-    },
-  )
-  @Min(1, {
-    message: ERROR_MESSAGES.VALIDATION.MIN(FIELD_NAMES.districtId, 1),
-  })
-  districtId: number;
-
-  @ApiProperty({
-    description: '출장비 (원)',
-    example: 10000,
-  })
-  @IsNumber(
-    {},
-    {
-      message: ERROR_MESSAGES.VALIDATION.IS_NUMBER('출장비'),
-    },
-  )
-  @Min(0, {
-    message: ERROR_MESSAGES.VALIDATION.MIN('출장비', 0),
-  })
-  estimateFee: number;
-}
 
 /**
  * 서비스 생성 DTO
@@ -151,27 +111,4 @@ export class CreateServiceDto {
     message: ERROR_MESSAGES.VALIDATION.MIN('정렬 순서', 0),
   })
   sortOrder?: number;
-
-  @ApiProperty({
-    description: '서비스 가능 지역 목록',
-    type: [ServiceRegionInputDto],
-  })
-  @IsArray({
-    message: ERROR_MESSAGES.VALIDATION.IS_ARRAY('지역 목록'),
-  })
-  @ArrayMinSize(1, {
-    message: ERROR_MESSAGES.VALIDATION.ARRAY_NOT_EMPTY('지역 목록'),
-  })
-  @ValidateNested({ each: true })
-  @Type(() => ServiceRegionInputDto)
-  regions: ServiceRegionInputDto[];
-
-  @ApiPropertyOptional({
-    description: '서비스 스케줄 설정 (미입력 시 전역 설정 사용)',
-    type: ServiceScheduleInputDto,
-  })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => ServiceScheduleInputDto)
-  schedule?: ServiceScheduleInputDto;
 }

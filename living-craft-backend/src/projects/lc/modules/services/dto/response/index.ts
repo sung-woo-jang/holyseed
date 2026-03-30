@@ -1,3 +1,4 @@
+export * from './icon.dto';
 export * from './service-list.dto';
 export * from './service-detail.dto';
 export * from './service-admin-list.dto';

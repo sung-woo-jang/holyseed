@@ -66,12 +66,6 @@ export class ServiceAdminListItemDto {
   sortOrder: number;
 
   @ApiProperty({
-    description: '서비스 가능 지역 수',
-    example: 5,
-  })
-  regionsCount: number;
-
-  @ApiProperty({
     description: '생성 일시',
     example: '2024-01-15T10:30:00.000Z',
   })

@@ -1,27 +1,12 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import {
-  Service,
-  ServiceRegion,
-  ServiceSchedule,
-  ServiceHoliday,
-} from './entities';
+import { Service } from './entities';
 import { ServicesController } from './services.controller';
 import { ServicesService } from './services.service';
-import { District } from '@lc/modules/admin/districts/entities/district.entity';
 import { Icon } from '@lc/modules/icons/entities/icon.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      Service,
-      ServiceRegion,
-      ServiceSchedule,
-      ServiceHoliday,
-      District,
-      Icon,
-    ]),
-  ],
+  imports: [TypeOrmModule.forFeature([Service, Icon])],
   controllers: [ServicesController],
   providers: [ServicesService],
   exports: [ServicesService],

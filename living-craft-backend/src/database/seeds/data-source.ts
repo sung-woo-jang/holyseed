@@ -7,7 +7,6 @@ import { District } from '@lc/modules/admin/districts/entities/district.entity';
 import { Icon } from '@lc/modules/icons/entities/icon.entity';
 import { Customer } from '@lc/modules/customers/entities/customer.entity';
 import { Service } from '@lc/modules/services/entities/service.entity';
-import { ServiceRegion } from '@lc/modules/services/entities/service-region.entity';
 import { OperatingSetting } from '@lc/modules/settings/entities/operating-setting.entity';
 import { Holiday } from '@lc/modules/settings/entities/holiday.entity';
 import { Reservation } from '@lc/modules/reservations/entities/reservation.entity';
@@ -30,7 +29,6 @@ export const AppDataSource = new DataSource({
     Icon,
     Customer,
     Service,
-    ServiceRegion,
     OperatingSetting,
     Holiday,
     Reservation,

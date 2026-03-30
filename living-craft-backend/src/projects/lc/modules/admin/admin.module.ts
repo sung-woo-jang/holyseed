@@ -3,7 +3,6 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { DistrictsModule } from '@lc/modules/admin/districts';
 import { AdminReservationsModule } from '@lc/modules/admin/reservations';
-import { AdminServicesModule } from '@lc/modules/admin/services';
 import { AdminPortfoliosModule } from '@lc/modules/admin/portfolios';
 import { AdminReviewsModule } from '@lc/modules/admin/reviews';
 import { AdminCustomersModule } from '@lc/modules/admin/customers';
@@ -15,7 +14,6 @@ import { DashboardModule } from './dashboard/dashboard.module';
     UsersModule,
     DistrictsModule,
     AdminReservationsModule,
-    AdminServicesModule,
     AdminPortfoliosModule,
     AdminReviewsModule,
     AdminCustomersModule,

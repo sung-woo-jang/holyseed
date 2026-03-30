@@ -48,6 +48,8 @@ export interface ServiceScheduleInput {
 /**
  * 서비스 생성 요청
  * POST /api/services/admin 요청
+ *
+ * Phase 4: regions, schedule 필드 제거 (전역 설정 사용)
  */
 export interface CreateServiceRequest {
   title: string
@@ -58,6 +60,4 @@ export interface CreateServiceRequest {
   duration: string
   requiresTimeSelection: boolean
   sortOrder?: number
-  regions: ServiceRegionInput[]
-  schedule?: ServiceScheduleInput
 }

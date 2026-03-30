@@ -1,11 +1,8 @@
-import type {
-  ServiceRegionInput,
-  ServiceScheduleInput,
-} from '../create-service'
-
 /**
  * 서비스 수정 요청
  * POST /api/services/admin/:id/update 요청
+ *
+ * Phase 4: regions, schedule 필드 제거 (전역 설정 사용)
  */
 export interface UpdateServiceRequest {
   title?: string
@@ -16,8 +13,6 @@ export interface UpdateServiceRequest {
   duration?: string
   requiresTimeSelection?: boolean
   sortOrder?: number
-  regions?: ServiceRegionInput[]
-  schedule?: ServiceScheduleInput
 }
 
 /**

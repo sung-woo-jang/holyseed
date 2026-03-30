@@ -42,6 +42,10 @@ import {
   useServiceFormPage,
   type ServiceFormValues,
 } from '@/features/services/model'
+import {
+  type CreateServiceRequest,
+  type UpdateServiceRequest,
+} from '@/shared/types/api'
 import styles from './ServiceFormPage.module.scss'
 
 export function ServiceFormPage() {
@@ -144,7 +148,7 @@ export function ServiceFormPage() {
 
       // API 요청 데이터 생성 (iconName -> iconId 변환)
       const { iconName: _iconName, ...rest } = finalData
-      const apiData = {
+      const apiData: CreateServiceRequest | UpdateServiceRequest = {
         ...rest,
         iconId,
       }
@@ -152,10 +156,10 @@ export function ServiceFormPage() {
       if (isEditMode && id) {
         await updateService.mutateAsync({
           id,
-          data: apiData,
+          data: apiData as UpdateServiceRequest,
         })
       } else {
-        await createService.mutateAsync(apiData)
+        await createService.mutateAsync(apiData as CreateServiceRequest)
       }
       navigate('/services')
     } catch (error) {

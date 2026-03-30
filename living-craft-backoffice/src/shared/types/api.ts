@@ -305,6 +305,10 @@ export interface GroupedServiceRegion {
   }[]
 }
 
+/**
+ * Phase 4: 서비스 생성 요청
+ * regions, schedule 필드 제거 (전역 설정 사용)
+ */
 export interface CreateServiceRequest {
   title: string
   description: string
@@ -314,10 +318,12 @@ export interface CreateServiceRequest {
   duration: string
   requiresTimeSelection: boolean
   sortOrder?: number
-  regions: ServiceRegionInput[]
-  schedule?: ServiceScheduleInput
 }
 
+/**
+ * Phase 4: 서비스 수정 요청
+ * regions, schedule 필드 제거 (전역 설정 사용)
+ */
 export interface UpdateServiceRequest {
   title?: string
   description?: string
@@ -327,8 +333,6 @@ export interface UpdateServiceRequest {
   duration?: string
   requiresTimeSelection?: boolean
   sortOrder?: number
-  regions?: ServiceRegionInput[]
-  schedule?: ServiceScheduleInput
 }
 
 // ===== 행정구역 관련 타입 =====

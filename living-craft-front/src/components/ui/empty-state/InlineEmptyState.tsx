@@ -1,5 +1,4 @@
 import { colors } from '@toss/tds-colors';
-import React from 'react';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
 
 interface InlineEmptyStateProps {

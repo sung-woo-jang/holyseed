@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export const Route = createRoute('/reviews/write/:reservationId', {
-  validateParams: (params) => params as { reservationId: string },
+  validateParams: (params: any) => params as { reservationId: string },
   component: Page,
 });
 

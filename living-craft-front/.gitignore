@@ -33,6 +33,9 @@ build/
 # Granite cache
 .granite/
 
+# Build artifacts
+*.ait
+
 # OS
 .DS_Store
 Thumbs.db

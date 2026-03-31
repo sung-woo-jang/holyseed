@@ -53,8 +53,8 @@ function Page() {
       Alert.alert('처리 중', '예약 처리가 진행 중입니다. 잠시만 기다려주세요.');
       return true;
     };
-    BackHandler.addEventListener('hardwareBackPress', handleBackPress);
-    return () => BackHandler.removeEventListener('hardwareBackPress', handleBackPress);
+    const subscription = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+    return () => subscription.remove();
   }, [isLoading]);
 
   // ===== 페이지 이탈 시 상태 초기화 =====

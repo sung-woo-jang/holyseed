@@ -39,7 +39,7 @@ export async function searchAddress(
       throw new Error(`카카오 API 오류: ${response.status}`);
     }
 
-    const data: KakaoAddressSearchResponse = await response.json();
+    const data = await response.json() as KakaoAddressSearchResponse;
 
     return data.documents
       .map((doc) => ({

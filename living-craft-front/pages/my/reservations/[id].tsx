@@ -58,7 +58,7 @@ function Page() {
                   onPress: () => navigation.goBack(),
                 },
               ]);
-            } catch (err) {
+            } catch {
               Alert.alert('오류', '예약 취소 중 오류가 발생했습니다.');
             }
           },

@@ -1,5 +1,4 @@
 import { colors } from '@toss/tds-colors';
-import React from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
 
 interface ListSeparatorProps {

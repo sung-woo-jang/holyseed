@@ -106,7 +106,7 @@ export function ConfirmationStepContainer({ onSubmitSuccess }: ConfirmationStepC
   const accordionStep = accordionSteps.confirmation!;
 
   return (
-    <View ref={(ref) => (stepRefs.current.confirmation = ref)}>
+    <View ref={(ref) => { stepRefs.current.confirmation = ref; }}>
       <AccordionStep
         stepKey="confirmation"
         stepNumber={4}

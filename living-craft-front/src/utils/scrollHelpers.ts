@@ -5,7 +5,7 @@ import { ScrollView, View } from 'react-native';
  * 특정 step으로 스크롤
  */
 export function scrollToStep(
-  scrollViewRef: RefObject<ScrollView>,
+  scrollViewRef: RefObject<ScrollView | null>,
   stepRef: View | null,
   offset: number = -16
 ): void {
@@ -24,7 +24,7 @@ export function scrollToStep(
  * 지연 후 스크롤 (애니메이션 후 사용)
  */
 export function scheduleScrollToStep(
-  scrollViewRef: RefObject<ScrollView>,
+  scrollViewRef: RefObject<ScrollView | null>,
   stepRef: View | null,
   delay: number = 300,
   offset: number = -16

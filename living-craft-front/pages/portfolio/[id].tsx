@@ -6,7 +6,7 @@ import { Skeleton } from '@toss/tds-react-native';
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export const Route = createRoute('/portfolio/:id', {
-  validateParams: (params) => params as { id: string },
+  validateParams: (params: any) => params as { id: string },
   component: Page,
 });
 

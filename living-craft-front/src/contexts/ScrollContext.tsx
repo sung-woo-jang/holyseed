@@ -5,7 +5,7 @@ import type { ScrollView, View } from 'react-native';
 import type { StepKey } from '../types';
 
 interface ScrollContextValue {
-  scrollViewRef: RefObject<ScrollView>;
+  scrollViewRef: RefObject<ScrollView | null>;
   stepRefs: MutableRefObject<Record<StepKey, View | null>>;
 }
 

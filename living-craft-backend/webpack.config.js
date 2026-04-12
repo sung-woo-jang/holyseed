@@ -1,6 +1,12 @@
 module.exports = function (options, webpack) {
   return {
     ...options,
+    externals: {
+      // 네이티브 모듈을 Webpack 번들링에서 제외
+      bcrypt: 'commonjs bcrypt',
+      sharp: 'commonjs sharp',
+      '@node-rs/bcrypt': 'commonjs @node-rs/bcrypt',
+    },
     watchOptions: {
       // 감시 대상에서 제외할 폴더/파일 패턴
       ignored: [

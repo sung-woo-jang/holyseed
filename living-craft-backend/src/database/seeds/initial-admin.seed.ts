@@ -26,7 +26,7 @@ export async function createInitialAdmin() {
     }
 
     // 비밀번호 해시화
-    const hashedPassword = await bcrypt.hash('Password123!', 10);
+    const hashedPassword = await bcrypt.hash('admin1234!', 10);
 
     // 관리자 계정 생성
     const admin = userRepository.create({
@@ -44,7 +44,7 @@ export async function createInitialAdmin() {
 
     console.log('✅ Admin account created successfully!');
     console.log('📧 Email: admin@example.com');
-    console.log('🔑 Password: Password123!');
+    console.log('🔑 Password: admin1234!');
     console.log('👤 Role: SUPERADMIN');
   } catch (error) {
     console.error('❌ Error creating admin account:', error);

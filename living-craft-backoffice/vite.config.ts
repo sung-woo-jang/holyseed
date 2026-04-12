@@ -15,6 +15,10 @@ export default defineConfig({
       '@/features': path.resolve(__dirname, './src/features'),
       '@/entities': path.resolve(__dirname, './src/entities'),
       '@/shared': path.resolve(__dirname, './src/shared'),
+      // Force single React instance from root node_modules
+      'react': path.resolve(__dirname, '../node_modules/react'),
+      'react-dom': path.resolve(__dirname, '../node_modules/react-dom'),
     },
+    dedupe: ['react', 'react-dom'],
   },
 })

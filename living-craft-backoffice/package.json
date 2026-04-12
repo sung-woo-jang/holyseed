@@ -87,5 +87,9 @@
     "sass": "^1.95.0",
     "shadcn": "^3.5.1",
     "vite": "^7.2.4"
+  },
+  "resolutions": {
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
   }
 }

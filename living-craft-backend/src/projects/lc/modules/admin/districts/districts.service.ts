@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -25,6 +25,7 @@ export class DistrictsService {
   constructor(
     @InjectRepository(District)
     private readonly districtRepository: Repository<District>,
+    @InjectDataSource()
     private readonly dataSource: DataSource,
   ) {}
 

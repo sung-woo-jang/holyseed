@@ -36,7 +36,15 @@
     "seed": "ts-node -r tsconfig-paths/register src/database/seeds/index.ts",
     "seed:icons": "ts-node -r tsconfig-paths/register scripts/seed-icons.ts",
     "typecheck": "tsc --noEmit",
-    "fix:all": "yarn lint:fix && yarn format"
+    "fix:all": "yarn lint:fix && yarn format",
+    "crawler": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/crawler/index.ts",
+    "crawler:test": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/crawler/test-categories.ts",
+    "crawler:test-crawl": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/crawler/test-crawl.ts",
+    "crawler:save-db": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/crawler/save-to-db.ts",
+    "crawler:save-db-v2": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/crawler/save-to-db-v2.ts",
+    "crawler:test-category": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/crawler/test-crawl-category.ts",
+    "zc:migrate": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/migrations/migrate-to-v2.ts",
+    "zc:reset-db": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/migrations/reset-db.ts"
   },
   "dependencies": {
     "@living-craft/shared-types": "*",
@@ -53,6 +61,7 @@
     "@nestjs/typeorm": "^11.0.0",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
+    "cheerio": "^1.2.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
     "connect-typeorm": "^2.0.0",
@@ -67,6 +76,7 @@
     "passport-local": "^1.0.0",
     "passport-naver": "^1.0.6",
     "pg": "^8.16.3",
+    "puppeteer": "^24.40.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "sharp": "^0.34.5",

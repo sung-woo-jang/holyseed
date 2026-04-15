@@ -16,6 +16,7 @@ import { RolesGuard } from '@common/guards/roles.guard';
 // Modules
 import { SharedModule } from '@/shared/shared.module';
 import { LivingCraftModule } from '@/projects/lc/lc.module';
+import { ZcModule } from '@/projects/zc/zc.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { LivingCraftModule } from '@/projects/lc/lc.module';
     // Feature modules
     SharedModule, // 공유 모듈 (files, health, address)
     LivingCraftModule, // Living Craft 프로젝트 통합 모듈
+    ZcModule, // Zippt Crawler 프로젝트 통합 모듈 (/api/zc/* 경로)
   ],
   providers: [
     // Global Exception Filter

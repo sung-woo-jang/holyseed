@@ -1,1 +1,1 @@
-export { District } from './district.entity';
+export { District } from './district.entity'

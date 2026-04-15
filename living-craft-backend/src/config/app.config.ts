@@ -1,4 +1,4 @@
-import { registerAs } from '@nestjs/config';
+import { registerAs } from '@nestjs/config'
 
 export default registerAs('app', () => ({
   port: parseInt(process.env.PORT, 10) || 8000,
@@ -14,4 +14,4 @@ export default registerAs('app', () => ({
     secretKey: process.env.NCP_SECRET_KEY,
     bucketName: process.env.NCP_BUCKET_NAME || 'living-craft',
   },
-}));
+}))

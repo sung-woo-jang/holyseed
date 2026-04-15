@@ -1,1 +1,1 @@
-export * from './operating-hours.dto';
+export * from './operating-hours.dto'

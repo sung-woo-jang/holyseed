@@ -1,1 +1,1 @@
-export * from './portfolios-query.dto';
+export * from './portfolios-query.dto'

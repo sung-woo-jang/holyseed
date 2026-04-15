@@ -1,2 +1,2 @@
-export * from './create-review.dto';
-export * from './reviews-query.dto';
+export * from './create-review.dto'
+export * from './reviews-query.dto'

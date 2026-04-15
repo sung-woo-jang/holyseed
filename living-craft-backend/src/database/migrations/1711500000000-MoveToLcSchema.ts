@@ -1,9 +1,9 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import { MigrationInterface, QueryRunner } from 'typeorm'
 
 export class MoveToLcSchema1711500000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // 1. LC 스키마 생성
-    await queryRunner.query(`CREATE SCHEMA IF NOT EXISTS lc;`);
+    await queryRunner.query(`CREATE SCHEMA IF NOT EXISTS lc;`)
 
     // 2. 기존 테이블들을 lc 스키마로 이동
     const tables = [
@@ -24,7 +24,7 @@ export class MoveToLcSchema1711500000000 implements MigrationInterface {
       'films',
       'cutting_projects',
       'cutting_pieces',
-    ];
+    ]
 
     for (const table of tables) {
       // 테이블이 public 스키마에 존재하는지 확인
@@ -34,17 +34,17 @@ export class MoveToLcSchema1711500000000 implements MigrationInterface {
           WHERE table_schema = 'public'
           AND table_name = '${table}'
         );
-      `);
+      `)
 
       if (tableExists[0].exists) {
-        await queryRunner.query(`ALTER TABLE public.${table} SET SCHEMA lc;`);
-        console.log(`✅ Moved table ${table} to lc schema`);
+        await queryRunner.query(`ALTER TABLE public.${table} SET SCHEMA lc;`)
+        console.log(`✅ Moved table ${table} to lc schema`)
       } else {
-        console.log(`⚠️  Table ${table} does not exist in public schema, skipping...`);
+        console.log(`⚠️  Table ${table} does not exist in public schema, skipping...`)
       }
     }
 
-    console.log('✅ All tables moved to lc schema successfully');
+    console.log('✅ All tables moved to lc schema successfully')
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
@@ -67,7 +67,7 @@ export class MoveToLcSchema1711500000000 implements MigrationInterface {
       'films',
       'cutting_projects',
       'cutting_pieces',
-    ];
+    ]
 
     for (const table of tables) {
       const tableExists = await queryRunner.query(`
@@ -76,17 +76,17 @@ export class MoveToLcSchema1711500000000 implements MigrationInterface {
           WHERE table_schema = 'lc'
           AND table_name = '${table}'
         );
-      `);
+      `)
 
       if (tableExists[0].exists) {
-        await queryRunner.query(`ALTER TABLE lc.${table} SET SCHEMA public;`);
-        console.log(`✅ Moved table ${table} back to public schema`);
+        await queryRunner.query(`ALTER TABLE lc.${table} SET SCHEMA public;`)
+        console.log(`✅ Moved table ${table} back to public schema`)
       }
     }
 
     // lc 스키마 삭제 (주의: 다른 테이블이 있을 수 있으므로 CASCADE 사용)
-    await queryRunner.query(`DROP SCHEMA IF EXISTS lc CASCADE;`);
+    await queryRunner.query(`DROP SCHEMA IF EXISTS lc CASCADE;`)
 
-    console.log('✅ Rollback completed: All tables moved back to public schema');
+    console.log('✅ Rollback completed: All tables moved back to public schema')
   }
 }

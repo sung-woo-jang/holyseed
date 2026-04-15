@@ -1,1 +1,1 @@
-export * from './address-search.dto';
+export * from './address-search.dto'

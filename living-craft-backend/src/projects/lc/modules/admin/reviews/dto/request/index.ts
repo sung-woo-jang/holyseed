@@ -1,1 +1,1 @@
-export * from './admin-reviews-query.dto';
+export * from './admin-reviews-query.dto'

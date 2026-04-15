@@ -1,20 +1,19 @@
-import { DataSource } from 'typeorm';
-import * as dotenv from 'dotenv';
-
+import { District } from '@lc/modules/admin/districts/entities/district.entity'
 // Entities
-import { User } from '@lc/modules/admin/users/entities/user.entity';
-import { District } from '@lc/modules/admin/districts/entities/district.entity';
-import { Icon } from '@lc/modules/icons/entities/icon.entity';
-import { Customer } from '@lc/modules/customers/entities/customer.entity';
-import { Service } from '@lc/modules/services/entities/service.entity';
-import { OperatingSetting } from '@lc/modules/settings/entities/operating-setting.entity';
-import { Holiday } from '@lc/modules/settings/entities/holiday.entity';
-import { Reservation } from '@lc/modules/reservations/entities/reservation.entity';
-import { Review } from '@lc/modules/reviews/entities/review.entity';
-import { Portfolio } from '@lc/modules/portfolios/entities/portfolio.entity';
+import { User } from '@lc/modules/admin/users/entities/user.entity'
+import { Customer } from '@lc/modules/customers/entities/customer.entity'
+import { Icon } from '@lc/modules/icons/entities/icon.entity'
+import { Portfolio } from '@lc/modules/portfolios/entities/portfolio.entity'
+import { Reservation } from '@lc/modules/reservations/entities/reservation.entity'
+import { Review } from '@lc/modules/reviews/entities/review.entity'
+import { Service } from '@lc/modules/services/entities/service.entity'
+import { Holiday } from '@lc/modules/settings/entities/holiday.entity'
+import { OperatingSetting } from '@lc/modules/settings/entities/operating-setting.entity'
+import * as dotenv from 'dotenv'
+import { DataSource } from 'typeorm'
 
 // 환경 변수 로드
-dotenv.config();
+dotenv.config()
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -23,18 +22,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'password123',
   database: process.env.DB_DATABASE || 'living_craft',
-  entities: [
-    User,
-    District,
-    Icon,
-    Customer,
-    Service,
-    OperatingSetting,
-    Holiday,
-    Reservation,
-    Review,
-    Portfolio,
-  ],
+  entities: [User, District, Icon, Customer, Service, OperatingSetting, Holiday, Reservation, Review, Portfolio],
   synchronize: false, // 마이그레이션으로 테이블 생성 후 시드 실행할 것
   logging: false,
-});
+})

@@ -1,1 +1,1 @@
-export * from './district.dto';
+export * from './district.dto'

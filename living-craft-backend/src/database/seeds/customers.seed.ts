@@ -1,20 +1,20 @@
-import { AppDataSource } from './data-source';
-import { Customer } from '@lc/modules/customers/entities/customer.entity';
-import { faker } from '@faker-js/faker/locale/ko';
+import { faker } from '@faker-js/faker/locale/ko'
+import { Customer } from '@lc/modules/customers/entities/customer.entity'
+import { AppDataSource } from './data-source'
 
 export async function createCustomers(): Promise<void> {
-  console.log('🔧 Starting customers seed...');
+  console.log('🔧 Starting customers seed...')
 
-  const customerRepository = AppDataSource.getRepository(Customer);
+  const customerRepository = AppDataSource.getRepository(Customer)
 
   // 기존 데이터 체크 (멱등성)
-  const existingCount = await customerRepository.count();
+  const existingCount = await customerRepository.count()
   if (existingCount > 0) {
-    console.log('ℹ️  Customers already exist. Skipping...');
-    return;
+    console.log('ℹ️  Customers already exist. Skipping...')
+    return
   }
 
-  const customers: Customer[] = [];
+  const customers: Customer[] = []
 
   for (let i = 0; i < 20; i++) {
     const customer = customerRepository.create({
@@ -23,15 +23,13 @@ export async function createCustomers(): Promise<void> {
       email: i < 16 ? faker.internet.email() : null, // 80%는 이메일 있음
       tossUserId: i < 4 ? `toss_user_${faker.string.alphanumeric(8)}` : null, // 20%는 토스 유저
       refreshToken: null,
-    });
+    })
 
-    const saved = await customerRepository.save(customer);
-    customers.push(saved);
+    const saved = await customerRepository.save(customer)
+    customers.push(saved)
   }
 
-  console.log(`✅ Created ${customers.length} customers`);
-  console.log(`   - With Email: ${customers.filter((c) => c.email).length}`);
-  console.log(
-    `   - Toss Users: ${customers.filter((c) => c.tossUserId).length}`,
-  );
+  console.log(`✅ Created ${customers.length} customers`)
+  console.log(`   - With Email: ${customers.filter((c) => c.email).length}`)
+  console.log(`   - Toss Users: ${customers.filter((c) => c.tossUserId).length}`)
 }

@@ -155,6 +155,39 @@ async function bootstrap() {
       jsonDocumentUrl: '/lc/admin-docs/json',
     })
 
+    // ========================================
+    // 3. ZC (전자제품 가격 비교) API 문서
+    // ========================================
+    const zcConfig = new DocumentBuilder()
+      .setTitle('ZC (Zippt Crawler) API')
+      .setDescription('전자제품 가격 비교 서비스 - Dasis 크롤링 데이터 제공')
+      .setVersion('1.0')
+      .addTag('ZC 카테고리', '제품 카테고리 조회')
+      .addTag('ZC 제품', '제품 목록 및 상세 조회')
+      .addTag('ZC 브랜드', '브랜드 목록 및 상세 조회')
+      .addTag('ZC 가격 이력', '가격 변동 이력 조회')
+      .build()
+
+    const zcDocument = SwaggerModule.createDocument(app, zcConfig, {
+      include: [], // 전체 문서 생성
+    })
+
+    // ZC API만 필터링 (/api/zc로 시작하는 경로)
+    const filteredZcDocument = {
+      ...zcDocument,
+      paths: Object.fromEntries(Object.entries(zcDocument.paths).filter(([path]) => path.startsWith('/api/zc/'))),
+    }
+
+    SwaggerModule.setup('zc/docs', app, filteredZcDocument, {
+      swaggerOptions: {
+        persistAuthorization: true,
+        tagsSorter: 'alpha',
+        operationsSorter: 'alpha',
+      },
+      customSiteTitle: 'ZC API - 전자제품 가격 비교',
+      jsonDocumentUrl: '/zc/docs/json',
+    })
+
     // 로깅
     console.log('📚 [고객용] Swagger UI: http://localhost:8000/lc/docs')
     console.log('📄 [고객용] Swagger JSON: http://localhost:8000/lc/docs/json')
@@ -163,6 +196,10 @@ async function bootstrap() {
     console.log('🔐 [관리자] Swagger UI: http://localhost:8000/lc/admin-docs')
     console.log('🔒 [관리자] Swagger JSON: http://localhost:8000/lc/admin-docs/json')
     console.log(`📊 [관리자] API 개수: ${Object.keys(filteredAdminDocument.paths).length}개`)
+    console.log('')
+    console.log('💎 [ZC] Swagger UI: http://localhost:8000/zc/docs')
+    console.log('💎 [ZC] Swagger JSON: http://localhost:8000/zc/docs/json')
+    console.log(`📊 [ZC] API 개수: ${Object.keys(filteredZcDocument.paths).length}개`)
   }
 
   await app.listen(port, '0.0.0.0')

@@ -1,1 +1,1 @@
-export * from './icon.entity';
+export * from './icon.entity'

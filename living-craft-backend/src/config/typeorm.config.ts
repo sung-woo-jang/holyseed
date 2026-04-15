@@ -1,10 +1,9 @@
-import { DataSource } from 'typeorm';
-import * as dotenv from 'dotenv';
-import * as path from 'path';
+import * as path from 'path'
+import * as dotenv from 'dotenv'
+import { DataSource } from 'typeorm'
 
-const envFile =
-  process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
-dotenv.config({ path: path.resolve(process.cwd(), envFile) });
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env'
+dotenv.config({ path: path.resolve(process.cwd(), envFile) })
 
 export default new DataSource({
   type: 'postgres',
@@ -17,11 +16,9 @@ export default new DataSource({
     path.join(__dirname, '../modules/**/*.entity.{ts,js}'),
     path.join(__dirname, '../common/**/*.entity.{ts,js}'),
   ],
-  migrations: [
-    path.join(__dirname, '../database/migrations/*{.ts,.js}'),
-  ],
+  migrations: [path.join(__dirname, '../database/migrations/*{.ts,.js}')],
   synchronize: false,
   logging: false,
   migrationsRun: false,
   ssl: false,
-});
+})

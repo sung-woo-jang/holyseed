@@ -1,13 +1,13 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { IconType } from '@lc/modules/icons/enums/icon-type.enum';
+import * as path from 'path'
+import { IconType } from '@lc/modules/icons/enums/icon-type.enum'
+import * as fs from 'fs'
 
 /**
  * 파싱된 아이콘 데이터 인터페이스
  */
 export interface ParsedIcon {
-  name: string;
-  type: IconType;
+  name: string
+  type: IconType
 }
 
 /**
@@ -18,28 +18,26 @@ export interface ParsedIcon {
  */
 export function parseIconFile(filePath: string, type: IconType): ParsedIcon[] {
   try {
-    const content = fs.readFileSync(filePath, 'utf-8');
+    const content = fs.readFileSync(filePath, 'utf-8')
 
     // ```text ... ``` 블록 내용 추출
-    const match = content.match(/```text\n([\s\S]*?)\n```/);
+    const match = content.match(/```text\n([\s\S]*?)\n```/)
     if (!match) {
-      console.warn(`⚠️  No icon data found in ${filePath}`);
-      return [];
+      console.warn(`⚠️  No icon data found in ${filePath}`)
+      return []
     }
 
     const iconNames = match[1]
       .split('\n')
       .map((line) => line.trim())
-      .filter((line) => line.length > 0 && !line.startsWith('//'));
+      .filter((line) => line.length > 0 && !line.startsWith('//'))
 
-    console.log(
-      `   📋 Parsed ${iconNames.length} icons from ${path.basename(filePath)}`,
-    );
+    console.log(`   📋 Parsed ${iconNames.length} icons from ${path.basename(filePath)}`)
 
-    return iconNames.map((name) => ({ name, type }));
+    return iconNames.map((name) => ({ name, type }))
   } catch (error) {
-    console.error(`❌ Error parsing ${filePath}:`, error.message);
-    return [];
+    console.error(`❌ Error parsing ${filePath}:`, error.message)
+    return []
   }
 }
 
@@ -49,29 +47,20 @@ export function parseIconFile(filePath: string, type: IconType): ParsedIcon[] {
  * @returns 모든 아이콘 데이터 배열
  */
 export function parseAllIcons(frontendDocsPath: string): ParsedIcon[] {
-  console.log(`📂 Parsing icons from: ${frontendDocsPath}`);
+  console.log(`📂 Parsing icons from: ${frontendDocsPath}`)
 
-  const fillIcons = parseIconFile(
-    path.join(frontendDocsPath, 'icons/fill.md'),
-    IconType.FILL,
-  );
+  const fillIcons = parseIconFile(path.join(frontendDocsPath, 'icons/fill.md'), IconType.FILL)
 
-  const monoIcons = parseIconFile(
-    path.join(frontendDocsPath, 'icons/mono.md'),
-    IconType.MONO,
-  );
+  const monoIcons = parseIconFile(path.join(frontendDocsPath, 'icons/mono.md'), IconType.MONO)
 
-  const colorIcons = parseIconFile(
-    path.join(frontendDocsPath, 'icons/colors.md'),
-    IconType.COLOR,
-  );
+  const colorIcons = parseIconFile(path.join(frontendDocsPath, 'icons/colors.md'), IconType.COLOR)
 
-  const allIcons = [...fillIcons, ...monoIcons, ...colorIcons];
+  const allIcons = [...fillIcons, ...monoIcons, ...colorIcons]
 
-  console.log(`\n✅ Total parsed icons: ${allIcons.length}`);
-  console.log(`   - FILL: ${fillIcons.length}개`);
-  console.log(`   - MONO: ${monoIcons.length}개`);
-  console.log(`   - COLOR: ${colorIcons.length}개\n`);
+  console.log(`\n✅ Total parsed icons: ${allIcons.length}`)
+  console.log(`   - FILL: ${fillIcons.length}개`)
+  console.log(`   - MONO: ${monoIcons.length}개`)
+  console.log(`   - COLOR: ${colorIcons.length}개\n`)
 
-  return allIcons;
+  return allIcons
 }

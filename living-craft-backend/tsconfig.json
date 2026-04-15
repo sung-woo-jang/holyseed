@@ -24,6 +24,7 @@
       "@common/*": ["src/common/*"],
       "@config/*": ["src/config/*"],
       "@lc/*": ["src/projects/lc/*"],
+      "@zc/*": ["src/projects/zc/*"],
       "@shared/*": ["src/shared/*"]
     }
   }

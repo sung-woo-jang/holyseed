@@ -1,9 +1,7 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { IJwtPayload } from '@common/interfaces';
+import { IJwtPayload } from '@common/interfaces'
+import { createParamDecorator, ExecutionContext } from '@nestjs/common'
 
-export const CurrentUser = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext): IJwtPayload => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.user;
-  },
-);
+export const CurrentUser = createParamDecorator((data: unknown, ctx: ExecutionContext): IJwtPayload => {
+  const request = ctx.switchToHttp().getRequest()
+  return request.user
+})

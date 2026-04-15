@@ -1,1 +1,1 @@
-export * from './customer-jwt-auth.guard';
+export * from './customer-jwt-auth.guard'

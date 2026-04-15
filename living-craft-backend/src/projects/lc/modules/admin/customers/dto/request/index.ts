@@ -1,1 +1,1 @@
-export * from './admin-customers-query.dto';
+export * from './admin-customers-query.dto'

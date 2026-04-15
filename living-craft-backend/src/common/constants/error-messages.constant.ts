@@ -26,10 +26,8 @@ export const ERROR_MESSAGES = {
     IS_NOT_EMPTY: (field: string) => `${field}는 필수 항목입니다.`,
 
     // 길이 제한
-    MAX_LENGTH: (field: string, max: number) =>
-      `${field}는 ${max}자를 초과할 수 없습니다.`,
-    MIN_LENGTH: (field: string, min: number) =>
-      `${field}는 최소 ${min}자 이상이어야 합니다.`,
+    MAX_LENGTH: (field: string, max: number) => `${field}는 ${max}자를 초과할 수 없습니다.`,
+    MIN_LENGTH: (field: string, min: number) => `${field}는 최소 ${min}자 이상이어야 합니다.`,
 
     // 숫자 범위
     MIN: (field: string, min: number) => `${field}는 ${min} 이상이어야 합니다.`,
@@ -39,27 +37,21 @@ export const ERROR_MESSAGES = {
     DATE_FORMAT: (field: string) => `${field}의 형식은 YYYY-MM-DD여야 합니다.`,
     TIME_FORMAT: (field: string) => `${field}의 형식은 HH:mm이어야 합니다.`,
     PHONE_FORMAT: '올바른 전화번호 형식이 아닙니다.',
-    USERNAME_FORMAT:
-      '사용자명은 소문자, 숫자, 점(.), 언더스코어(_), 하이픈(-)만 사용할 수 있습니다.',
+    USERNAME_FORMAT: '사용자명은 소문자, 숫자, 점(.), 언더스코어(_), 하이픈(-)만 사용할 수 있습니다.',
     INVALID_DATE_FORMAT: '날짜 형식은 YYYY-MM-DD여야 합니다.',
     INVALID_TIME_FORMAT: '시간 형식은 HH:mm이어야 합니다.',
     INVALID_COLOR_FORMAT: '색상 형식은 #RRGGBB여야 합니다.',
 
     // 배열
-    ARRAY_NOT_EMPTY: (field: string) =>
-      `${field}는 최소 1개 이상의 항목이 필요합니다.`,
-    ARRAY_ITEM_STRING: (field: string) =>
-      `${field}의 각 항목은 문자열이어야 합니다.`,
-    ARRAY_ITEM_NUMBER: (field: string) =>
-      `${field}의 각 항목은 숫자여야 합니다.`,
+    ARRAY_NOT_EMPTY: (field: string) => `${field}는 최소 1개 이상의 항목이 필요합니다.`,
+    ARRAY_ITEM_STRING: (field: string) => `${field}의 각 항목은 문자열이어야 합니다.`,
+    ARRAY_ITEM_NUMBER: (field: string) => `${field}의 각 항목은 숫자여야 합니다.`,
 
     // Enum
-    INVALID_ENUM: (field: string, values: string) =>
-      `${field}는 다음 값 중 하나여야 합니다: ${values}`,
+    INVALID_ENUM: (field: string, values: string) => `${field}는 다음 값 중 하나여야 합니다: ${values}`,
 
     // Nested
-    NESTED_VALIDATION: (field: string) =>
-      `${field}의 하위 데이터가 유효하지 않습니다.`,
+    NESTED_VALIDATION: (field: string) => `${field}의 하위 데이터가 유효하지 않습니다.`,
   },
 
   // ============================================
@@ -95,8 +87,7 @@ export const ERROR_MESSAGES = {
     ALREADY_EXISTS: '이미 존재하는 서비스입니다.',
     INACTIVE: '비활성화된 서비스입니다.',
     INVALID_ICON_ID: '존재하지 않는 아이콘 ID입니다.',
-    ICON_NOT_FOUND: (iconName: string) =>
-      `아이콘을 찾을 수 없습니다: ${iconName}`,
+    ICON_NOT_FOUND: (iconName: string) => `아이콘을 찾을 수 없습니다: ${iconName}`,
   },
 
   // 포트폴리오
@@ -140,25 +131,21 @@ export const ERROR_MESSAGES = {
     IMAGE_ONLY: '이미지 파일만 업로드 가능합니다.',
     IMAGE_PROCESSING_ERROR: '이미지 처리 중 오류가 발생했습니다.',
     UNSUPPORTED_DOCUMENT_TYPE: '지원되지 않는 문서 파일 형식입니다.',
-    UNSUPPORTED_DOCUMENT_FORMAT:
-      '지원되지 않는 문서 형식입니다. 지원 형식: PDF, DOC, DOCX, HWP, TXT',
-    DOCUMENT_SAVE_ERROR: (message: string) =>
-      `문서 파일 저장 중 오류가 발생했습니다: ${message}`,
-    DOCUMENT_UPLOAD_ERROR: (message: string) =>
-      `문서 업로드 중 오류가 발생했습니다: ${message}`,
+    UNSUPPORTED_DOCUMENT_FORMAT: '지원되지 않는 문서 형식입니다. 지원 형식: PDF, DOC, DOCX, HWP, TXT',
+    DOCUMENT_SAVE_ERROR: (message: string) => `문서 파일 저장 중 오류가 발생했습니다: ${message}`,
+    DOCUMENT_UPLOAD_ERROR: (message: string) => `문서 업로드 중 오류가 발생했습니다: ${message}`,
   },
 
   // ============================================
   // 3. 시스템 에러
   // ============================================
   SYSTEM: {
-    UNEXPECTED_FIELD: (field: string) =>
-      `'${field}'는 허용되지 않는 필드입니다.`,
+    UNEXPECTED_FIELD: (field: string) => `'${field}'는 허용되지 않는 필드입니다.`,
     VALIDATION_FAILED: '입력 데이터가 유효하지 않습니다.',
     INTERNAL_ERROR: '서버 내부 오류가 발생했습니다.',
     DATABASE_ERROR: '데이터베이스 오류가 발생했습니다.',
   },
-};
+}
 
 /**
  * 필드명 한글 매핑
@@ -243,4 +230,4 @@ export const FIELD_NAMES = {
   districtName: '지역명',
   cityName: '시/군/구',
   baseCost: '기본 비용',
-};
+}

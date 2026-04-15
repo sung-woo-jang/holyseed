@@ -1,33 +1,33 @@
-import { AppDataSource } from './data-source';
-import { Portfolio } from '@lc/modules/portfolios/entities/portfolio.entity';
-import { Service } from '@lc/modules/services/entities/service.entity';
-import { faker } from '@faker-js/faker';
+import { faker } from '@faker-js/faker'
+import { Portfolio } from '@lc/modules/portfolios/entities/portfolio.entity'
+import { Service } from '@lc/modules/services/entities/service.entity'
+import { AppDataSource } from './data-source'
 
 interface PortfolioTemplate {
-  categories: string[];
-  projectNames: string[];
-  tags: string[];
-  descriptions: string[];
+  categories: string[]
+  projectNames: string[]
+  tags: string[]
+  descriptions: string[]
 }
 
 export async function createPortfolios(): Promise<void> {
-  console.log('🔧 Starting portfolios seed...');
+  console.log('🔧 Starting portfolios seed...')
 
-  const portfolioRepository = AppDataSource.getRepository(Portfolio);
-  const serviceRepository = AppDataSource.getRepository(Service);
+  const portfolioRepository = AppDataSource.getRepository(Portfolio)
+  const serviceRepository = AppDataSource.getRepository(Service)
 
   // 기존 데이터 확인
-  const existingCount = await portfolioRepository.count();
+  const existingCount = await portfolioRepository.count()
   if (existingCount > 0) {
-    console.log('ℹ️  Portfolios already exist. Skipping...');
-    return;
+    console.log('ℹ️  Portfolios already exist. Skipping...')
+    return
   }
 
   // 서비스 조회
-  const services = await serviceRepository.find({ order: { id: 'ASC' } });
+  const services = await serviceRepository.find({ order: { id: 'ASC' } })
   if (services.length === 0) {
-    console.log('⚠️  Services not found. Please run services seed first.');
-    return;
+    console.log('⚠️  Services not found. Please run services seed first.')
+    return
   }
 
   // 서비스별 포트폴리오 데이터
@@ -86,38 +86,31 @@ export async function createPortfolios(): Promise<void> {
         '사무실 전체 창문 방충망을 일괄 교체',
       ],
     },
-  };
+  }
 
-  const portfolios: Portfolio[] = [];
-  let sortOrder = 0;
+  const portfolios: Portfolio[] = []
+  let sortOrder = 0
 
   // 각 서비스별로 5건씩 생성
   for (const service of services) {
-    const template = portfolioTemplates[service.title];
-    if (!template) continue;
+    const template = portfolioTemplates[service.title]
+    if (!template) continue
 
     for (let i = 0; i < 5; i++) {
-      const imageCount = faker.number.int({ min: 3, max: 5 });
+      const imageCount = faker.number.int({ min: 3, max: 5 })
       const images = Array.from(
         { length: imageCount },
-        () =>
-          `https://picsum.photos/seed/${faker.string.alphanumeric(10)}/800/600`,
-      );
+        () => `https://picsum.photos/seed/${faker.string.alphanumeric(10)}/800/600`
+      )
 
-      const tagCount = faker.number.int({ min: 2, max: 4 });
-      const tags = faker.helpers.arrayElements(template.tags, tagCount);
+      const tagCount = faker.number.int({ min: 2, max: 4 })
+      const tags = faker.helpers.arrayElements(template.tags, tagCount)
 
       const portfolio = portfolioRepository.create({
         category: template.categories[i],
         projectName: template.projectNames[i],
         client: faker.datatype.boolean(0.7) ? faker.company.name() : null, // 70%만 클라이언트 표시
-        duration: faker.helpers.arrayElement([
-          '1일',
-          '2일',
-          '3일',
-          '반나절',
-          '1-2일',
-        ]),
+        duration: faker.helpers.arrayElement(['1일', '2일', '3일', '반나절', '1-2일']),
         description: template.descriptions[i],
         detailedDescription: `${template.descriptions[i]}\n\n작업 내용:\n- 고품질 자재 사용\n- 전문 시공 기술 적용\n- 꼼꼼한 마무리 작업\n- 사후 관리 서비스 제공`,
         images,
@@ -125,16 +118,16 @@ export async function createPortfolios(): Promise<void> {
         serviceId: service.id,
         isActive: true,
         sortOrder: sortOrder++,
-      });
+      })
 
-      const saved = await portfolioRepository.save(portfolio);
-      portfolios.push(saved);
+      const saved = await portfolioRepository.save(portfolio)
+      portfolios.push(saved)
     }
   }
 
-  console.log(`✅ Created ${portfolios.length} portfolios`);
+  console.log(`✅ Created ${portfolios.length} portfolios`)
   services.forEach((service) => {
-    const count = portfolios.filter((p) => p.serviceId === service.id).length;
-    console.log(`   - ${service.title}: ${count}개`);
-  });
+    const count = portfolios.filter((p) => p.serviceId === service.id).length
+    console.log(`   - ${service.title}: ${count}개`)
+  })
 }

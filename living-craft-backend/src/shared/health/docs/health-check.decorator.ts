@@ -1,7 +1,7 @@
-import { ApiOperationOptions } from '@nestjs/swagger/dist/decorators/api-operation.decorator';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { ApiResponseOptions } from '@nestjs/swagger/dist/decorators/api-response.decorator';
-import { swaggerBaseApplyDecorator } from '@common/decorators/swagger-base-apply.decorator';
+import { swaggerBaseApplyDecorator } from '@common/decorators/swagger-base-apply.decorator'
+import { ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { ApiOperationOptions } from '@nestjs/swagger/dist/decorators/api-operation.decorator'
+import { ApiResponseOptions } from '@nestjs/swagger/dist/decorators/api-response.decorator'
 
 const apiHealthResponse: ApiResponseOptions = {
   status: 200,
@@ -14,27 +14,17 @@ const apiHealthResponse: ApiResponseOptions = {
       environment: 'development',
     },
   },
-};
+}
 
 const apiDetailedHealthResponse: ApiResponseOptions = {
   status: 200,
   description: '서버 상세 상태',
-};
+}
 
-export const HealthCheckSwaggerDecorator = (
-  apiOperation: ApiOperationOptions,
-) => {
-  return swaggerBaseApplyDecorator(
-    ApiOperation(apiOperation),
-    ApiResponse(apiHealthResponse),
-  );
-};
+export const HealthCheckSwaggerDecorator = (apiOperation: ApiOperationOptions) => {
+  return swaggerBaseApplyDecorator(ApiOperation(apiOperation), ApiResponse(apiHealthResponse))
+}
 
-export const DetailedHealthCheckSwaggerDecorator = (
-  apiOperation: ApiOperationOptions,
-) => {
-  return swaggerBaseApplyDecorator(
-    ApiOperation(apiOperation),
-    ApiResponse(apiDetailedHealthResponse),
-  );
-};
+export const DetailedHealthCheckSwaggerDecorator = (apiOperation: ApiOperationOptions) => {
+  return swaggerBaseApplyDecorator(ApiOperation(apiOperation), ApiResponse(apiDetailedHealthResponse))
+}

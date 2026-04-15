@@ -1,10 +1,8 @@
-import Joi from 'joi';
+import Joi from 'joi'
 
 export const validationSchema = Joi.object({
   // Application
-  NODE_ENV: Joi.string()
-    .valid('development', 'production', 'test')
-    .default('development'),
+  NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
   PORT: Joi.number().default(8000),
 
   // Database
@@ -34,4 +32,4 @@ export const validationSchema = Joi.object({
   // Rate Limiting
   RATE_LIMIT_TTL: Joi.number().default(60),
   RATE_LIMIT_MAX: Joi.number().default(100),
-});
+})

@@ -1,6 +1,7 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { PriceHistoryService } from './price-history.service';
+import { PriceHistoryQueryDto } from './dto/query/price-history-query.dto';
 
 @Controller('zc/price-history')
 @ApiTags('ZC 가격 이력')
@@ -8,7 +9,7 @@ export class PriceHistoryController {
   constructor(private readonly priceHistoryService: PriceHistoryService) {}
 
   @Get('products/:productId')
-  @ApiOperation({ summary: '제품의 가격 이력 조회' })
+  @ApiOperation({ summary: '제품의 전체 가격 이력 조회 (필터 없음)' })
   @ApiParam({ name: 'productId', description: '제품 ID (UUID)' })
   @ApiQuery({ name: 'startDate', required: false, description: '시작 날짜 (ISO 8601)' })
   @ApiQuery({ name: 'endDate', required: false, description: '종료 날짜 (ISO 8601)' })
@@ -23,6 +24,25 @@ export class PriceHistoryController {
         productId,
         new Date(startDate),
         new Date(endDate),
+      );
+    }
+
+    return await this.priceHistoryService.findByListingId(productId);
+  }
+
+  @Post('products/:productId/search')
+  @ApiOperation({ summary: '제품의 가격 이력 필터링 조회' })
+  @ApiParam({ name: 'productId', description: '제품 ID (UUID)' })
+  @ApiResponse({ status: 200, description: '가격 이력 목록' })
+  async searchProductPriceHistory(
+    @Param('productId') productId: string,
+    @Body() query: PriceHistoryQueryDto,
+  ) {
+    if (query.startDate && query.endDate) {
+      return await this.priceHistoryService.findByListingIdAndDateRange(
+        productId,
+        new Date(query.startDate),
+        new Date(query.endDate),
       );
     }
 

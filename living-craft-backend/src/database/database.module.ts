@@ -15,7 +15,9 @@ import { SessionEntity } from '@/common/entities/session.entity';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-        synchronize: configService.get('DB_SYNCHRONIZE', false),
+        // synchronize: 항상 true (개발/프로덕션 모두)
+        // 1인 운영 프로젝트로 편의성 우선, 환경변수 없으면 기본값 true
+        synchronize: configService.get('DB_SYNCHRONIZE', true),
         logging: configService.get('NODE_ENV') === 'development',
         ssl:
           configService.get('NODE_ENV') === 'production'

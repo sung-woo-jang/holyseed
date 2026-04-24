@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsOptional, IsInt, Min, Max, IsString, IsUUID } from 'class-validator';
+import { IsOptional, IsInt, Min, Max, IsString, IsUUID, IsBoolean } from 'class-validator';
 
 export class ProductQueryDto {
   @ApiPropertyOptional({ description: '페이지 번호', example: 1, default: 1 })
@@ -27,6 +27,17 @@ export class ProductQueryDto {
   @IsOptional()
   @IsUUID()
   brandId?: string;
+
+  @ApiPropertyOptional({ description: '사이트 코드 (dasis, wooribath)' })
+  @IsOptional()
+  @IsString()
+  siteCode?: string;
+
+  @ApiPropertyOptional({ description: '매칭 여부 (true: 매칭됨, false: 미매칭, undefined: 전체)' })
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  hasModel?: boolean;
 
   @ApiPropertyOptional({ description: '검색어 (제품명)' })
   @IsOptional()

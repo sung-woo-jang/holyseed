@@ -37,6 +37,21 @@ export class ProductModel {
   @Column({ type: 'boolean', default: true, comment: '추적 활성화 여부' })
   isActive: boolean;
 
+  @Column({ type: 'int', nullable: true, comment: '원가 (매입가)' })
+  costPrice: number;
+
+  @Column({ type: 'int', nullable: true, comment: '판매가 (견적용)' })
+  sellingPrice: number;
+
+  @Column({ type: 'float', nullable: true, comment: '마진율 (%)' })
+  marginRate: number;
+
+  @Column({ type: 'text', nullable: true, comment: '가격 메모' })
+  priceNote: string;
+
+  @Column({ type: 'timestamp', nullable: true, comment: '가격 마지막 수정일' })
+  priceUpdatedAt: Date;
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { DatabaseSaverV2 } from '../crawler/save-to-db-v2'
+import { DatabaseSaverV2 } from '../crawler/common/save-to-db-v2'
 import { logger } from '../crawler/utils/logger'
 
 /**

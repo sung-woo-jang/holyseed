@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SiteCategory } from './entities/site-category.entity';
+import { ProductListing } from '../product-listings/entities/product-listing.entity';
 import { CategoryTreeResponseDto } from './dto';
 
 @Injectable()
@@ -9,6 +10,8 @@ export class SiteCategoriesService {
   constructor(
     @InjectRepository(SiteCategory)
     private readonly siteCategoryRepository: Repository<SiteCategory>,
+    @InjectRepository(ProductListing)
+    private readonly productListingRepository: Repository<ProductListing>,
   ) {}
 
   /**
@@ -41,11 +44,9 @@ export class SiteCategoriesService {
     // 제품 개수 조회
     const categoriesWithCount = await Promise.all(
       categories.map(async (cat) => {
-        const productCount = await this.siteCategoryRepository
-          .createQueryBuilder('cat')
-          .leftJoin('cat.productListings', 'listing')
-          .where('cat.id = :id', { id: cat.id })
-          .getCount();
+        const productCount = await this.productListingRepository.count({
+          where: { siteCategoryId: cat.id },
+        });
 
         return {
           ...cat,

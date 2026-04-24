@@ -1,7 +1,7 @@
 import * as path from 'path'
 import axios from 'axios'
 import * as fs from 'fs/promises'
-import { config } from '../config'
+import { config as dasisConfig } from '../sites/dasis/config'
 import { logger } from './logger'
 
 /**
@@ -11,7 +11,7 @@ export class ImageDownloader {
   private downloadDir: string
 
   constructor(downloadDir?: string) {
-    this.downloadDir = downloadDir || config.crawl.imagesDir
+    this.downloadDir = downloadDir || dasisConfig.crawl.imagesDir
   }
 
   /**

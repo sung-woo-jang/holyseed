@@ -23,6 +23,8 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD || 'password123',
   database: process.env.DB_DATABASE || 'living_craft',
   entities: [User, District, Icon, Customer, Service, OperatingSetting, Holiday, Reservation, Review, Portfolio],
-  synchronize: false, // 마이그레이션으로 테이블 생성 후 시드 실행할 것
+  // synchronize: 항상 true (개발/프로덕션 모두)
+  // 1인 운영 프로젝트로 편의성 우선, 자동 스키마 동기화 사용
+  synchronize: true,
   logging: false,
 })

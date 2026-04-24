@@ -1,0 +1,105 @@
+
+    <div id="wrap">
+        <div id="header">
+            <h1><a href="https://www.cafe24.com"><img src="https://m-img.cafe24.com/images/template/ec/logo_cafe24_global_new.svg" alt="cafe24"></a></h1>
+        </div>
+        <div id="content">
+            <div class="mWarn">
+                <div class="inner">
+                    <img src="https://img.echosting.cafe24.com/ec/image_admin/img_404.png" alt="404">
+                    <h2 id="title">다시 한번 확인해주세요!</h2>
+                    <p class="txtDesc" id="desc">접근하신 주소의 페이지는<br>사라졌거나 다른 페이지로 변경되었어요.<br>주소를 다시 확인해주세요.</p>
+                    <div class="mButton">
+                        <a href="javascript:history.back();" class="btnNormal" id="back-btn">이전 페이지로 가기</a>
+                        <a href="/" class="btnEm" id="home-btn">메인 페이지로 가기</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Google API 번역기 스크립트 -->
+    <script src="https://optimizer.poxo.com/jet-translator/main.js"></script>
+    
+    <script>
+        // 다국어 번역 텍스트 정의
+        const translations = {
+            'ko': {
+                title: '다시 한번 확인해주세요!',
+                description: '접근하신 주소의 페이지는<br>사라졌거나 다른 페이지로 변경되었어요.<br>주소를 다시 확인해주세요.',
+                backBtn: '이전 페이지로 가기',
+                homeBtn: '메인 페이지로 가기'
+            },
+            'en': {
+                title: 'Please check again.',
+                description: 'The page you are trying to access has been<br>removed or changed to a different page.<br>Please check the address again.',
+                backBtn: 'Return to Previous Page',
+                homeBtn: 'Go to Home Page'
+            },
+            'ja': {
+                title: '再度ご確認ください',
+                description: 'ページが削除または変更されたため<br>アクセスすることができません。<br>URLを確認してから再度お試しください。',
+                backBtn: '前のページに戻る',
+                homeBtn: 'トップページに戻る'
+            }
+        };
+
+        // 지원하는 언어 코드 목록
+        const supportedLanguages = [
+            'ar', 'bn', 'ca', 'zh-CN', 'zh-TW', 'cs', 'da', 'nl', 'en', 'fr', 'de', 'el', 'gu', 'he', 'hi', 'hu', 'id', 'it', 'ja', 'kn', 'ko', 'ms', 'no', 'ml', 'mr', 'my', 'ne', 'ps', 'fa', 'pl', 'pt', 'ro', 'ru', 'es', 'sv', 'sw', 'ta', 'te', 'th', 'tr', 'uk', 'ur', 'vi'
+        ];
+
+        // 브라우저 언어 감지
+        function getBrowserLanguage() {
+            let lang = navigator.language || navigator.userLanguage;
+            let langCode = lang.split('-')[0]; // 언어 코드만 추출 (예: 'ko-KR' -> 'ko')
+            
+            // 중국어의 경우 간체/번체 구분
+            if (lang.startsWith('zh-CN') || lang.startsWith('zh-Hans')) {
+                return 'zh-CN';
+            } else if (lang.startsWith('zh-TW') || lang.startsWith('zh-Hant')) {
+                return 'zh-TW';
+            }
+            
+            return langCode;
+        }
+
+        // 텍스트 변경 함수
+        function changeLanguage(langCode) {
+            const titleElement = document.getElementById('title');
+            const descElement = document.getElementById('desc');
+            const backBtnElement = document.getElementById('back-btn');
+            const homeBtnElement = document.getElementById('home-btn');
+
+            if (translations[langCode]) {
+                // 지정된 언어 (한국어, 영어, 일본어)
+                titleElement.textContent = translations[langCode].title;
+                descElement.innerHTML = translations[langCode].description;
+                backBtnElement.textContent = translations[langCode].backBtn;
+                homeBtnElement.textContent = translations[langCode].homeBtn;
+            } else {
+                // 그 외 언어는 우선 영어 텍스트로 표시
+                titleElement.textContent = translations['en'].title;
+                descElement.innerHTML = translations['en'].description;
+                backBtnElement.textContent = translations['en'].backBtn;
+                homeBtnElement.textContent = translations['en'].homeBtn;
+                
+                // 지원하는 언어면 JetTranslator로 번역
+                if (supportedLanguages.includes(langCode)) {
+                    if (typeof JetTranslator !== 'undefined') {
+                        JetTranslator.translate(langCode);
+                    }
+                }
+            }
+        }
+
+        // 페이지 로드 시 브라우저 언어에 따라 텍스트 변경
+        document.addEventListener('DOMContentLoaded', function() {
+            const browserLang = getBrowserLanguage();
+            changeLanguage(browserLang);
+        });
+    </script>
+
+
+

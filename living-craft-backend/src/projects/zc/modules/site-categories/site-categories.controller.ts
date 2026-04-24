@@ -1,5 +1,5 @@
-import { Controller, Get, Param } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { Controller, Get, Param, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { SiteCategoriesService } from './site-categories.service';
 import { CategoryResponseDto, CategoryTreeResponseDto } from './dto';
 
@@ -9,18 +9,22 @@ export class SiteCategoriesController {
   constructor(private readonly siteCategoriesService: SiteCategoriesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Dasis 카테고리 전체 목록 조회' })
+  @ApiOperation({ summary: '카테고리 전체 목록 조회' })
+  @ApiQuery({ name: 'siteCode', required: false, description: '사이트 코드 (기본값: dasis)' })
   @ApiResponse({ status: 200, description: '카테고리 목록', type: [CategoryResponseDto] })
-  async getAllCategories() {
-    const siteId = await this.siteCategoriesService.getSiteIdByCode('dasis');
+  async getAllCategories(@Query('siteCode') siteCode?: string) {
+    const code = siteCode || 'dasis';
+    const siteId = await this.siteCategoriesService.getSiteIdByCode(code);
     return await this.siteCategoriesService.findBySiteId(siteId);
   }
 
   @Get('tree')
-  @ApiOperation({ summary: 'Dasis 카테고리 트리 구조 조회' })
+  @ApiOperation({ summary: '카테고리 트리 구조 조회' })
+  @ApiQuery({ name: 'siteCode', required: false, description: '사이트 코드 (기본값: dasis)' })
   @ApiResponse({ status: 200, description: '카테고리 트리', type: [CategoryTreeResponseDto] })
-  async getCategoryTree() {
-    const siteId = await this.siteCategoriesService.getSiteIdByCode('dasis');
+  async getCategoryTree(@Query('siteCode') siteCode?: string) {
+    const code = siteCode || 'dasis';
+    const siteId = await this.siteCategoriesService.getSiteIdByCode(code);
     return await this.siteCategoriesService.findTreeBySiteId(siteId);
   }
 

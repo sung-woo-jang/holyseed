@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { ProductListing } from './entities/product-listing.entity';
+import { ProductModelLink } from '../product-model-links/entities/product-model-link.entity';
 import { ProductQueryDto, ProductListResponseDto } from './dto';
 
 @Injectable()
@@ -9,6 +10,8 @@ export class ProductListingsService {
   constructor(
     @InjectRepository(ProductListing)
     private readonly productListingRepository: Repository<ProductListing>,
+    @InjectRepository(ProductModelLink)
+    private readonly linkRepository: Repository<ProductModelLink>,
   ) {}
 
   /**
@@ -202,5 +205,150 @@ export class ProductListingsService {
       where: { siteId },
       relations: ['site', 'siteCategory', 'brand'],
     });
+  }
+
+  /**
+   * 미매칭 제품 목록 조회 (ProductModel에 연결되지 않은 제품)
+   */
+  async findUnmatched(query: ProductQueryDto): Promise<ProductListResponseDto> {
+    const { page = 1, limit = 20, search, brandId } = query;
+
+    // 연결된 제품 ID 목록 가져오기
+    const linkedProductIds = await this.linkRepository
+      .createQueryBuilder('link')
+      .select('link.listingId')
+      .getRawMany()
+      .then((results) => results.map((r) => r.link_listingId));
+
+    // 미매칭 제품 조회
+    const queryBuilder = this.productListingRepository
+      .createQueryBuilder('listing')
+      .leftJoinAndSelect('listing.site', 'site')
+      .leftJoinAndSelect('listing.siteCategory', 'category')
+      .leftJoinAndSelect('listing.brand', 'brand')
+      .where('listing.isAvailable = :isAvailable', { isAvailable: true })
+      .orderBy('listing.createdAt', 'DESC');
+
+    // 연결된 제품 제외
+    if (linkedProductIds.length > 0) {
+      queryBuilder.andWhere('listing.id NOT IN (:...linkedIds)', { linkedIds: linkedProductIds });
+    }
+
+    // 검색어 필터
+    if (search) {
+      queryBuilder.andWhere('(listing.productName ILIKE :search OR listing.extractedModelName ILIKE :search)', {
+        search: `%${search}%`,
+      });
+    }
+
+    // 브랜드 필터
+    if (brandId) {
+      queryBuilder.andWhere('listing.brandId = :brandId', { brandId });
+    }
+
+    // 총 개수
+    const total = await queryBuilder.getCount();
+
+    // 페이지네이션
+    const products = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
+
+    return {
+      items: products.map((p) => this.mapToResponseDto(p)),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  /**
+   * 제품 검색 (사이트 코드 + 매칭 상태 필터 지원)
+   */
+  async searchWithFilters(query: ProductQueryDto): Promise<ProductListResponseDto> {
+    const {
+      page = 1,
+      limit = 20,
+      categoryId,
+      brandId,
+      siteCode,
+      hasModel,
+      search,
+      minPrice,
+      maxPrice,
+      onSale,
+    } = query;
+
+    const queryBuilder = this.productListingRepository
+      .createQueryBuilder('listing')
+      .leftJoinAndSelect('listing.site', 'site')
+      .leftJoinAndSelect('listing.siteCategory', 'category')
+      .leftJoinAndSelect('listing.brand', 'brand')
+      .leftJoinAndSelect('listing.productImages', 'images')
+      .leftJoin(ProductModelLink, 'link', 'link.listingId = listing.id')
+      .where('listing.isAvailable = :isAvailable', { isAvailable: true })
+      .orderBy('listing.createdAt', 'DESC');
+
+    // 사이트 필터
+    if (siteCode) {
+      queryBuilder.andWhere('site.code = :siteCode', { siteCode });
+    }
+
+    // 카테고리 필터
+    if (categoryId) {
+      queryBuilder.andWhere('listing.siteCategoryId = :categoryId', { categoryId });
+    }
+
+    // 브랜드 필터
+    if (brandId) {
+      queryBuilder.andWhere('listing.brandId = :brandId', { brandId });
+    }
+
+    // 매칭 상태 필터
+    if (hasModel === true) {
+      // 매칭됨: ProductModelLink가 존재
+      queryBuilder.andWhere('link.id IS NOT NULL');
+    } else if (hasModel === false) {
+      // 미매칭: ProductModelLink가 없음
+      queryBuilder.andWhere('link.id IS NULL');
+    }
+
+    // 검색어 필터
+    if (search) {
+      queryBuilder.andWhere('(listing.productName ILIKE :search OR listing.extractedModelName ILIKE :search)', {
+        search: `%${search}%`,
+      });
+    }
+
+    // 가격 필터
+    if (minPrice !== undefined) {
+      queryBuilder.andWhere('listing.currentPrice >= :minPrice', { minPrice });
+    }
+
+    if (maxPrice !== undefined) {
+      queryBuilder.andWhere('listing.currentPrice <= :maxPrice', { maxPrice });
+    }
+
+    // 할인 상품만
+    if (onSale === true) {
+      queryBuilder.andWhere('listing.currentDiscountPrice IS NOT NULL');
+    }
+
+    // 페이지네이션
+    const total = await queryBuilder.getCount();
+    const items = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
+
+    return {
+      items: items.map((item) => this.mapToResponseDto(item)),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 }

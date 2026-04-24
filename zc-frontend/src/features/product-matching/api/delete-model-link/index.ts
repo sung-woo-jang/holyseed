@@ -1,0 +1,1 @@
+export { useDeleteModelLink } from './useDeleteModelLink';

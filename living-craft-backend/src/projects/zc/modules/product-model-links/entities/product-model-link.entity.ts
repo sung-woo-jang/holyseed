@@ -22,6 +22,12 @@ export class ProductModelLink {
   @Column({ type: 'uuid', comment: 'FK to product_models' })
   modelId: string;
 
+  @Column({ type: 'varchar', length: 20, default: 'manual_matched', comment: '매칭 방식 (auto_matched | manual_matched)' })
+  matchType: 'auto_matched' | 'manual_matched';
+
+  @Column({ type: 'float', nullable: true, comment: '자동 매칭 신뢰도 (0.0 ~ 1.0)' })
+  matchConfidence: number;
+
   @Column({ type: 'timestamp', comment: '매칭한 시각' })
   linkedAt: Date;
 

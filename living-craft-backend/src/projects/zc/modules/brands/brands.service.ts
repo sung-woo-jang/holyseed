@@ -18,9 +18,15 @@ export class BrandsService {
     const brands = await this.brandRepository
       .createQueryBuilder('brand')
       .leftJoin('brand.productListings', 'listing')
-      .select('brand.*')
+      .select('brand.id', 'brand_id')
+      .addSelect('brand.name', 'brand_name')
+      .addSelect('brand.createdAt', 'brand_createdAt')
+      .addSelect('brand.updatedAt', 'brand_updatedAt')
       .addSelect('COUNT(listing.id)', 'productCount')
       .groupBy('brand.id')
+      .addGroupBy('brand.name')
+      .addGroupBy('brand.createdAt')
+      .addGroupBy('brand.updatedAt')
       .orderBy('brand.name', 'ASC')
       .getRawMany();
 

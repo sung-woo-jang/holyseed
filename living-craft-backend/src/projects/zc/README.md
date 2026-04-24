@@ -100,8 +100,6 @@ src/projects/zc/
 
 **Base URL**: `/api/zc/*`
 
-모든 API는 **읽기 전용 (GET)** 입니다. 데이터 생성/수정은 크롤러 스크립트를 통해 이루어집니다.
-
 ### 사이트 관리 API
 
 - `GET /api/zc/sites` - 사이트 목록 조회 (Dasis, Naver 등)
@@ -129,6 +127,7 @@ src/projects/zc/
 - `GET /api/zc/product-models` - 통합 제품 모델 목록 조회
 - `GET /api/zc/product-models/:id` - 제품 모델 상세 조회
 - `GET /api/zc/product-models/brand/:brandId` - 브랜드별 제품 모델 조회
+- `POST /api/zc/product-models/:id/price` - 제품 모델 가격 설정 (원가, 판매가, 마진율)
 
 ### 제품 모델 연결 API
 
@@ -136,6 +135,26 @@ src/projects/zc/
 - `GET /api/zc/product-model-links/listing/:listingId` - Listing의 연결 정보
 - `GET /api/zc/product-model-links/model/:modelId` - Model의 모든 Listing 조회
 - `POST /api/zc/product-model-links/:id/delete` - 연결 해제
+
+### 제품 자동 매칭 API
+
+- `GET /api/zc/product-matching/unmatched` - 미매칭 제품 목록 조회
+- `POST /api/zc/product-matching/:listingId/auto-match` - 특정 제품 자동 매칭 실행
+- `POST /api/zc/product-matching/auto-match-all` - 모든 미매칭 제품 일괄 자동 매칭
+- `GET /api/zc/product-matching/:listingId/suggestions` - 매칭 후보 추천 (유사도 순)
+
+### 견적서 API
+
+- `GET /api/zc/quotes` - 견적서 목록 조회
+- `GET /api/zc/quotes/:id` - 견적서 상세 조회
+- `POST /api/zc/quotes` - 견적서 생성
+- `POST /api/zc/quotes/:id/update` - 견적서 수정
+- `POST /api/zc/quotes/:id/delete` - 견적서 삭제
+- `POST /api/zc/quotes/:id/items` - 견적 항목 추가
+- `POST /api/zc/quotes/:id/items/:itemId/update` - 견적 항목 수정
+- `POST /api/zc/quotes/:id/items/:itemId/delete` - 견적 항목 삭제
+- `POST /api/zc/quotes/:id/send` - 견적서 발송 (상태: sent)
+- `POST /api/zc/quotes/:id/duplicate` - 견적서 복제
 
 ### 가격 이력 API
 
@@ -228,6 +247,11 @@ src/projects/zc/
 | specifications | JSONB | 사용자가 정의한 스펙 |
 | thumbnailUrl | TEXT | 대표 이미지 |
 | isActive | BOOLEAN | 추적 활성화 여부 |
+| costPrice | INT | 원가 (매입가) |
+| sellingPrice | INT | 판매가 (견적용) |
+| marginRate | FLOAT | 마진율 (%) |
+| priceNote | TEXT | 가격 메모 |
+| priceUpdatedAt | TIMESTAMP | 가격 마지막 수정일 |
 | createdAt | TIMESTAMP | 생성일시 |
 | updatedAt | TIMESTAMP | 수정일시 |
 
@@ -238,9 +262,11 @@ src/projects/zc/
 | id | UUID | Primary Key |
 | listingId | UUID | FK to product_listings [Unique] |
 | modelId | UUID | FK to product_models |
-| confidence | DECIMAL(3,2) | 매칭 신뢰도 (0.00 ~ 1.00) |
+| matchType | VARCHAR(20) | 매칭 방식 (auto_matched / manual_matched) |
+| matchConfidence | FLOAT | 자동 매칭 신뢰도 (0.0 ~ 1.0) |
+| linkedAt | TIMESTAMP | 매칭한 시각 |
+| linkedBy | VARCHAR(100) | 매칭한 사용자 |
 | createdAt | TIMESTAMP | 생성일시 |
-| updatedAt | TIMESTAMP | 수정일시 |
 
 **Unique Constraint**: listingId (1:1 관계)
 
@@ -270,6 +296,35 @@ src/projects/zc/
 
 **Index**: (listingId, recordedAt)
 
+### quotes 테이블
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| id | UUID | Primary Key |
+| title | VARCHAR(100) | 견적서 제목 |
+| customerName | VARCHAR(100) | 고객명 |
+| customerPhone | VARCHAR(20) | 고객 연락처 |
+| memo | TEXT | 메모 |
+| totalAmount | INT | 총 금액 |
+| status | VARCHAR(20) | 견적서 상태 (draft/sent/accepted/rejected) |
+| validUntil | DATE | 유효 기간 |
+| createdAt | TIMESTAMP | 생성일시 |
+| updatedAt | TIMESTAMP | 수정일시 |
+
+### quote_items 테이블
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| id | UUID | Primary Key |
+| quoteId | UUID | FK to quotes |
+| productModelId | UUID | FK to product_models (선택사항) |
+| productName | VARCHAR(255) | 제품명 |
+| quantity | INT | 수량 |
+| unitPrice | INT | 단가 |
+| totalPrice | INT | 총 가격 (수량 × 단가) |
+| note | TEXT | 항목 메모 |
+| sortOrder | INT | 정렬 순서 |
+
 ## 🤖 크롤러 사용법
 
 ### 환경 변수 설정
@@ -289,13 +344,38 @@ HEADLESS=false
 
 ### 크롤러 실행
 
+#### 기본 사용법
+
 ```bash
-# 전체 크롤링 실행
+# 전체 카테고리 크롤링
 npm run crawler
 
 # 또는 직접 실행
 ts-node -r tsconfig-paths/register src/projects/zc/scripts/crawler/index.ts
 ```
+
+#### 카테고리 필터링 옵션
+
+특정 카테고리만 크롤링하거나 제외할 수 있습니다.
+
+```bash
+# 특정 카테고리만 크롤링 (카테고리 코드로 지정)
+ts-node -r tsconfig-paths/register src/projects/zc/scripts/crawler/index.ts --include=001,002
+
+# 특정 카테고리 제외
+ts-node -r tsconfig-paths/register src/projects/zc/scripts/crawler/index.ts --exclude=003,004
+
+# 포함 + 제외 조합
+ts-node -r tsconfig-paths/register src/projects/zc/scripts/crawler/index.ts --include=001,002 --exclude=001003
+
+# 특정 레벨만 크롤링 (1: 대분류, 2: 중분류, 3: 소분류)
+ts-node -r tsconfig-paths/register src/projects/zc/scripts/crawler/index.ts --level=1
+```
+
+**옵션 설명:**
+- `--include=<카테고리코드1,카테고리코드2>`: 포함할 카테고리 (쉼표로 구분)
+- `--exclude=<카테고리코드1,카테고리코드2>`: 제외할 카테고리 (쉼표로 구분)
+- `--level=<1|2|3>`: 크롤링할 카테고리 레벨 (기본: 1)
 
 ### 크롤링 프로세스
 

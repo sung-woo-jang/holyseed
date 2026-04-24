@@ -22,7 +22,7 @@ import { UserRole } from '@common/enums';
 import { AdminReservationsService } from './admin-reservations.service';
 import {
   AdminReservationsQueryDto,
-  UpdateReservationStatusDto,
+  AdminUpdateReservationStatusDto,
 } from './dto/request';
 import { AdminReservationListResponseDto } from './dto/response';
 
@@ -67,7 +67,7 @@ export class AdminReservationsController {
   @ApiResponse({ status: 404, description: '예약을 찾을 수 없음' })
   async updateStatus(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateReservationStatusDto,
+    @Body() dto: AdminUpdateReservationStatusDto,
   ): Promise<SuccessResponseDto<void>> {
     await this.adminReservationsService.updateStatus(id, dto);
     return new SuccessResponseDto('예약 상태가 변경되었습니다.');

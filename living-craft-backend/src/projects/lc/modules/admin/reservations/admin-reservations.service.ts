@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Reservation, ReservationStatus } from '@lc/modules/reservations/entities';
 import {
   AdminReservationsQueryDto,
-  UpdateReservationStatusDto,
+  AdminUpdateReservationStatusDto,
   AdminReservationStatusUpdate,
 } from './dto/request';
 import { AdminReservationListResponseDto } from './dto/response';
@@ -108,7 +108,7 @@ export class AdminReservationsService {
    */
   async updateStatus(
     id: number,
-    dto: UpdateReservationStatusDto,
+    dto: AdminUpdateReservationStatusDto,
   ): Promise<void> {
     const reservation = await this.reservationRepository.findOne({
       where: { id },

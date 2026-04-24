@@ -4,7 +4,9 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { ProductListing } from '../../product-listings/entities/product-listing.entity';
 
 @Entity({ schema: 'zc', name: 'brands' })
 export class Brand {
@@ -28,4 +30,7 @@ export class Brand {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(() => ProductListing, (listing) => listing.brand)
+  productListings: ProductListing[];
 }

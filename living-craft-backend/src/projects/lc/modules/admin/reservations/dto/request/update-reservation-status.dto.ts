@@ -17,7 +17,7 @@ export enum AdminReservationStatusUpdate {
   CANCELLED = 'cancelled',
 }
 
-export class UpdateReservationStatusDto {
+export class AdminUpdateReservationStatusDto {
   @ApiProperty({
     description: '변경할 예약 상태',
     enum: AdminReservationStatusUpdate,

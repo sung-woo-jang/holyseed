@@ -17,7 +17,9 @@ export default new DataSource({
     path.join(__dirname, '../common/**/*.entity.{ts,js}'),
   ],
   migrations: [path.join(__dirname, '../database/migrations/*{.ts,.js}')],
-  synchronize: false,
+  // synchronize: true 고정 (개발/프로덕션 모두)
+  // 이유: 1인 운영 프로젝트로 데이터 중요도가 낮고, 편의성 우선
+  synchronize: true,
   logging: false,
   migrationsRun: false,
   ssl: false,

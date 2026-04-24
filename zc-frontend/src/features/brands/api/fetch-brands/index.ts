@@ -1,0 +1,1 @@
+export { useFetchBrands } from './useFetchBrands';

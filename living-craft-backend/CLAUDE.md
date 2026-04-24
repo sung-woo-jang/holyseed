@@ -136,8 +136,11 @@ src/
 **데이터베이스 전략**:
 - TypeORM을 사용한 엔티티 우선 접근법
 - 공통 필드(id, timestamps)를 위한 Base Entity 패턴 사용
-- 개발 모드에서는 synchronize: true 사용 (마이그레이션 불필요)
-- **프로젝트별 스키마 분리**: Living Craft는 `lc` 스키마 사용
+- **synchronize: 항상 true (개발/프로덕션 모두)**
+  - ⚠️ **중요**: 이 프로젝트는 1인 운영 프로젝트로 데이터 중요도가 낮고 편의성을 우선시합니다
+  - 마이그레이션 파일 관리 없이 엔티티 변경 시 자동으로 DB 스키마 동기화
+  - **절대 synchronize: false로 변경하지 마세요**
+- **프로젝트별 스키마 분리**: Living Craft는 `lc` 스키마, ZC는 `zc` 스키마 사용
 
 **멀티 프로젝트 패턴**:
 - 각 프로젝트는 `src/projects/{project-name}/` 디렉토리에 위치
@@ -424,26 +427,93 @@ export class ProductService {
 
 #### HTTP 메서드 제약사항
 
-⚠️ **중요**: 이 프로젝트에서는 **GET과 POST만 사용**합니다.
+⚠️ **중요**: 이 프로젝트에서는 **GET과 POST만 사용**하며, **조회에도 POST를 우선 사용**합니다.
 
-- ✅ **GET**: 데이터 조회
-- ✅ **POST**: 생성, 수정, 삭제, 상태 변경 모두 POST로 처리
+**메서드 사용 원칙:**
+- ✅ **GET**: 전체 데이터 조회만 (필터 없음)
+  - 예: `GET /api/products` - 모든 제품 조회
+  - 예: `GET /api/categories` - 모든 카테고리 조회
+- ✅ **POST**: 모든 데이터 요청 (필터/검색/페이지네이션 포함)
+  - 조회: 필터, 검색어, 페이지네이션 등이 필요하면 POST + body
+  - 생성, 수정, 삭제, 상태 변경도 POST
 - ❌ **PUT, PATCH, DELETE**: 사용 금지
 
-**이유**: 일관된 API 규칙 적용 및 프론트엔드 연동 단순화
+**이유**:
+- REST 원칙보다 실용성 우선
+- 쿼리 파라미터보다 body가 더 편리하고 명확
+- 복잡한 필터링 조건은 body에 담는 것이 적합
 
 **예시**:
 ```typescript
-// ✅ 올바른 예시
+// ✅ 올바른 예시 - 조회
+@Post('search')  // 필터링/검색이 있는 조회
+async searchProducts(@Body() dto: SearchProductsDto) {
+  // dto: { page, limit, categoryId, brandId, search, priceRange, ... }
+}
+
+@Get()  // 전체 조회 (필터 없음)
+async getAllProducts() {
+  // 모든 제품 반환
+}
+
+// ✅ 올바른 예시 - 생성/수정/삭제
 @Post('admin')  // 생성
 @Post('admin/:id/update')  // 수정
 @Post('admin/:id/delete')  // 삭제
 @Post('admin/:id/toggle')  // 상태 변경
 
 // ❌ 잘못된 예시
+@Get('search')  // GET + 쿼리 파라미터 사용 금지
+async searchProducts(
+  @Query('page') page?: number,
+  @Query('categoryId') categoryId?: string,
+  // ...
+) {}
+
 @Put('admin/:id')  // PUT 사용 금지
 @Patch('admin/:id')  // PATCH 사용 금지
 @Delete('admin/:id')  // DELETE 사용 금지
+```
+
+**DTO 작성 예시**:
+```typescript
+// 검색/필터용 DTO
+export class SearchProductsDto {
+  @ApiPropertyOptional({ description: '페이지 번호', default: 1 })
+  @IsOptional()
+  @IsNumber()
+  page?: number = 1;
+
+  @ApiPropertyOptional({ description: '페이지당 개수', default: 20 })
+  @IsOptional()
+  @IsNumber()
+  limit?: number = 20;
+
+  @ApiPropertyOptional({ description: '카테고리 ID' })
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
+
+  @ApiPropertyOptional({ description: '브랜드 ID' })
+  @IsOptional()
+  @IsString()
+  brandId?: string;
+
+  @ApiPropertyOptional({ description: '검색어' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({ description: '최소 가격' })
+  @IsOptional()
+  @IsNumber()
+  minPrice?: number;
+
+  @ApiPropertyOptional({ description: '최대 가격' })
+  @IsOptional()
+  @IsNumber()
+  maxPrice?: number;
+}
 ```
 
 #### 컨트롤러 작성 패턴
@@ -599,15 +669,16 @@ app.setGlobalPrefix('api/{project-name}');
 ### 개발 환경 (Development)
 - 포트: 8000
 - 데이터베이스: living_craft_dev
-- 스키마: lc (Living Craft), 추가 프로젝트별 스키마
-- synchronize: true (자동 스키마 동기화)
+- 스키마: lc (Living Craft), zc (ZC Crawler)
+- **synchronize: true** (자동 스키마 동기화)
 - 로깅: 활성화
 - Swagger UI: 활성화
 
 ### 프로덕션 환경 (Production)
 - 포트: 환경변수로 설정
 - 데이터베이스: 프로덕션 DB
-- synchronize: false (마이그레이션 사용)
+- 스키마: lc, zc
+- **synchronize: true** ⚠️ 1인 운영 프로젝트로 편의성 우선 (마이그레이션 미사용)
 - 로깅: 에러만
 - Swagger UI: 비활성화
 

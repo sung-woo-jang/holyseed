@@ -1,1 +1,0 @@
-export { ReviewsTable } from './ReviewsTable'

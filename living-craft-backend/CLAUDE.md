@@ -14,12 +14,12 @@
 - **공유 모듈**: 파일 업로드, 헬스 체크 등 공통 기능은 공유 모듈로 관리
 - **스키마 분리**: 각 프로젝트는 별도의 PostgreSQL 스키마를 사용하여 데이터 격리
 
-### Living Craft (lc) 프로젝트
+### ZC (Zippt Crawler) 프로젝트
 
-- **API Prefix**: `/api/lc/*` (고객용), `/api/lc/admin/*` (관리자용)
-- **데이터베이스 스키마**: `lc`
-- **모듈 위치**: `src/projects/lc/modules/`
-- **Swagger 문서**: `/lc/docs` (고객용), `/lc/admin-docs` (관리자용)
+- **API Prefix**: `/api/zc/*`
+- **데이터베이스 스키마**: `zc`
+- **모듈 위치**: `src/projects/zc/`
+- **Swagger 문서**: `/zc/docs`
 
 ### 공유 모듈
 
@@ -100,16 +100,7 @@ npm run format
 ```
 src/
 ├── projects/           # 프로젝트별 모듈
-│   └── lc/            # Living Craft 프로젝트
-│       ├── lc.module.ts
-│       └── modules/   # LC 전용 모듈들
-│           ├── auth/
-│           ├── services/
-│           ├── portfolios/
-│           ├── reservations/
-│           ├── reviews/
-│           ├── users/
-│           └── admin/
+│   └── zc/            # ZC (Zippt Crawler) 프로젝트
 ├── shared/            # 공유 모듈
 │   ├── files/        # 파일 업로드
 │   ├── health/       # 헬스 체크
@@ -127,7 +118,7 @@ src/
 - `@common/` → `src/common/`
 - `@config/` → `src/config/`
 - `@database/` → `src/database/`
-- `@lc/` → `src/projects/lc/`
+- `@zc/` → `src/projects/zc/`
 - `@shared/` → `src/shared/`
 
 **글로벌 필터**:
@@ -140,12 +131,12 @@ src/
   - ⚠️ **중요**: 이 프로젝트는 1인 운영 프로젝트로 데이터 중요도가 낮고 편의성을 우선시합니다
   - 마이그레이션 파일 관리 없이 엔티티 변경 시 자동으로 DB 스키마 동기화
   - **절대 synchronize: false로 변경하지 마세요**
-- **프로젝트별 스키마 분리**: Living Craft는 `lc` 스키마, ZC는 `zc` 스키마 사용
+- **프로젝트별 스키마 분리**: 각 프로젝트는 별도의 PostgreSQL 스키마 사용 (현재: ZC → `zc` 스키마)
 
 **멀티 프로젝트 패턴**:
 - 각 프로젝트는 `src/projects/{project-name}/` 디렉토리에 위치
 - 프로젝트별로 독립적인 모듈, 컨트롤러, 서비스 구성
-- Global Prefix로 API 경로 분리 (`/api/lc/*`)
+- Global Prefix로 API 경로 분리 (예: `/api/zc/*`)
 - Swagger 문서도 프로젝트별로 분리
 
 ## 개발 환경 설정
@@ -162,12 +153,11 @@ src/
 ### 환경 변수 설정
 - `.env` 파일 사용, `.env.local`로 폴백
 - 데이터베이스 기본값: localhost:5432, postgres/password123, living_craft_dev
-- 데이터베이스 스키마: lc (Living Craft 전용)
+- 데이터베이스 스키마: zc (ZC 프로젝트 전용)
 
 ### 개발 환경 접속 포인트
 - API 서버: http://localhost:8000
-- Living Craft Swagger (고객용): http://localhost:8000/lc/docs
-- Living Craft Swagger (관리자용): http://localhost:8000/lc/admin-docs
+- ZC Swagger: http://localhost:8000/zc/docs
 - 헬스 체크: http://localhost:8000/health
 - pgAdmin: http://localhost:5050 (admin@livingcraft.com / admin123)
 
@@ -274,10 +264,10 @@ type TApiResponse<T> = {
 
 #### 모듈 구조
 
-Living Craft 프로젝트의 모듈은 `src/projects/lc/modules/` 아래에 위치합니다:
+새 프로젝트의 모듈은 `src/projects/{project-name}/modules/` 아래에 위치합니다:
 
 ```
-src/projects/lc/modules/
+src/projects/{project-name}/modules/
 └── module-name/
     ├── dto/
     │   ├── request/
@@ -305,7 +295,7 @@ src/projects/lc/modules/
 import { Entity, Column } from 'typeorm';
 import { BaseEntity } from '@common/entities/base.entity';
 
-@Entity('products', { schema: 'lc' })  // LC 스키마 지정
+@Entity('products', { schema: 'your_schema' })  // 프로젝트 스키마 지정
 export class Product extends BaseEntity {
   @Column({ length: 200 })
   name: string;
@@ -321,7 +311,7 @@ export class Product extends BaseEntity {
 }
 ```
 
-**중요**: Living Craft 프로젝트의 모든 엔티티는 `{ schema: 'lc' }` 옵션을 지정해야 합니다.
+**중요**: 모든 엔티티에 `{ schema: '{project_name}' }` 옵션을 지정해야 합니다.
 
 #### DTO 작성 패턴
 
@@ -553,7 +543,7 @@ export class ProductController {
 // 좋은 예: 경로 별칭 사용
 import { BaseEntity } from '@common/entities/base.entity';
 import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
-import { Product } from '@lc/modules/products/entities/product.entity';
+import { Product } from '@zc/modules/products/entities/product.entity';
 import { FileService } from '@shared/files/file.service';
 
 // 나쁜 예: 상대 경로 남용
@@ -669,7 +659,7 @@ app.setGlobalPrefix('api/{project-name}');
 ### 개발 환경 (Development)
 - 포트: 8000
 - 데이터베이스: living_craft_dev
-- 스키마: lc (Living Craft), zc (ZC Crawler)
+- 스키마: zc (ZC Crawler)
 - **synchronize: true** (자동 스키마 동기화)
 - 로깅: 활성화
 - Swagger UI: 활성화
@@ -677,7 +667,7 @@ app.setGlobalPrefix('api/{project-name}');
 ### 프로덕션 환경 (Production)
 - 포트: 환경변수로 설정
 - 데이터베이스: 프로덕션 DB
-- 스키마: lc, zc
+- 스키마: zc
 - **synchronize: true** ⚠️ 1인 운영 프로젝트로 편의성 우선 (마이그레이션 미사용)
 - 로깅: 에러만
 - Swagger UI: 비활성화

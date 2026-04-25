@@ -9,8 +9,10 @@
 
 ## 프로젝트 개요
 
-React, TypeScript, Vite 기반의 Shadcn 어드민 대시보드 프로젝트입니다. React Router DOM v6을 사용한 클라이언트 사이드 라우팅과 함께 대시보드 페이지, 사용자 관리, 설정 등의
-어드민 UI를 제공하며, RTL(우-좌) 지원과 커스터마이징된 Shadcn 컴포넌트를 포함합니다.
+**Shadcn Admin 스타터** — React, TypeScript, Vite 기반의 Shadcn 어드민 대시보드 스타터입니다.  
+현재 로그인/인증 + 빈 대시보드 + 아이콘 페이지만 있는 최소 상태입니다. 새 어드민 기능 개발 시 여기서 시작하세요.
+
+React Router DOM v6을 사용한 클라이언트 사이드 라우팅과 함께 RTL(우-좌) 지원과 커스터마이징된 Shadcn 컴포넌트를 포함합니다.
 
 ## 개발 명령어
 

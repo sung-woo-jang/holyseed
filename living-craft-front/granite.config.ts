@@ -12,13 +12,7 @@ export default defineConfig({
         primaryColor: '#3182F6', // 화면에 노출될 앱의 기본 색상으로 바꿔주세요.
         icon: '', // 화면에 노출될 앱의 아이콘 이미지 주소로 바꿔주세요.
       },
-      permissions: [
-        { name: 'camera', access: 'access' },
-        { name: 'photos', access: 'read' },
-      ],
-      navigationBar: {
-        withHomeButton: true,
-      },
+      permissions: [],
     }),
   ],
 });

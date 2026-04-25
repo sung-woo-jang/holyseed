@@ -1,1 +1,0 @@
-export { useAddPieces } from './useAddPieces'

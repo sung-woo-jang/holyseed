@@ -15,4 +15,4 @@ export type { TypedAxiosInstance } from './axios-types'
 export { AxiosInterceptor } from './AxiosInterceptor'
 
 // 엔드포인트 내보내기
-export { AUTH_API, ADMIN_API, PUBLIC_API } from './endpoints'
+export { AUTH_API, ADMIN_API } from './endpoints'

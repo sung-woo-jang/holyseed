@@ -1,1 +1,0 @@
-export { customersColumns } from './CustomersColumns'

@@ -1,1 +1,0 @@
-export { useFetchPortfolioDetail } from './useFetchPortfolioDetail'

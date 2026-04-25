@@ -1,1 +1,0 @@
-export { PortfoliosGrid } from './PortfoliosGrid'

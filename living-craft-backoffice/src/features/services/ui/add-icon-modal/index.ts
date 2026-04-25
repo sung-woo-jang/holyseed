@@ -1,1 +1,0 @@
-export { AddIconModal } from './AddIconModal'

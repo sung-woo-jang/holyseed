@@ -1,1 +1,0 @@
-export { useDeleteService } from './useDeleteService'

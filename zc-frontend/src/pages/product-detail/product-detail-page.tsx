@@ -379,9 +379,9 @@ export function ProductDetailPage() {
                         <div className="text-sm text-muted-foreground">
                           {model.modelName}
                         </div>
-                        {model.sellingPrice && (
+                        {model.derivedUnitPrice != null && (
                           <div className="text-sm text-muted-foreground mt-1">
-                            판매가: {model.sellingPrice.toLocaleString()}원
+                            견적단가: {model.derivedUnitPrice.toLocaleString()}원
                           </div>
                         )}
                       </div>

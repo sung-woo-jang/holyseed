@@ -1,7 +1,9 @@
+import { Public } from '@common/decorators';
 import { Controller, Post } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { StatsService } from './stats.service';
 
+@Public()
 @Controller('zc/stats')
 @ApiTags('ZC 통계')
 export class StatsController {

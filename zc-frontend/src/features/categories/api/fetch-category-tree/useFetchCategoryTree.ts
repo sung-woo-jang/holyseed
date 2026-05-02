@@ -11,12 +11,11 @@ export function useFetchCategoryTree(options?: UseFetchCategoryTreeOptions) {
   const { siteCode } = options || {};
 
   return useQuery({
-    queryKey: ['categories', 'tree', siteCode],
+    queryKey: ['site-categories', 'tree', siteCode],
     queryFn: async () => {
       const url = siteCode
-        ? `${ZC_API.CATEGORIES.TREE}?siteCode=${siteCode}`
-        : ZC_API.CATEGORIES.TREE;
-
+        ? `${ZC_API.SITE_CATEGORIES.TREE}?siteCode=${siteCode}`
+        : ZC_API.SITE_CATEGORIES.TREE;
       const response = await axiosInstance.get<CategoryTreeItem[]>(url);
       return response.data;
     },

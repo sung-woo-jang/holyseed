@@ -1,8 +1,12 @@
+import { Public } from '@common/decorators';
 import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { ProductListingsService } from './product-listings.service';
 import { ProductQueryDto, ProductListResponseDto, ProductResponseDto } from './dto';
+import { CreateManualListingDto } from './dto/request/create-manual-listing.dto';
+import { UpdateManualListingDto } from './dto/request/update-manual-listing.dto';
 
+@Public()
 @Controller('zc/product-listings')
 @ApiTags('ZC 제품 리스팅')
 export class ProductListingsController {
@@ -28,6 +32,28 @@ export class ProductListingsController {
   async getProducts(@Query() query: ProductQueryDto): Promise<ProductListResponseDto> {
     const siteId = await this.productListingsService.getSiteIdByCode('dasis');
     return await this.productListingsService.findAllWithPagination(siteId, query);
+  }
+
+  @Post('manual')
+  @ApiOperation({ summary: '수동 제품 listing 생성 (크롤링 없이 직접 입력)' })
+  @ApiResponse({ status: 201, description: '생성 성공' })
+  async createManualListing(@Body() dto: CreateManualListingDto) {
+    const data = await this.productListingsService.createManualListing(dto);
+    return { success: true, message: '수동 제품 생성 성공', data };
+  }
+
+  @Post('manual/:id/update')
+  @ApiOperation({ summary: '수동 제품 listing 수정' })
+  async updateManualListing(@Param('id') id: string, @Body() dto: UpdateManualListingDto) {
+    const data = await this.productListingsService.updateManualListing(id, dto);
+    return { success: true, message: '수동 제품 수정 성공', data };
+  }
+
+  @Post('manual/:id/delete')
+  @ApiOperation({ summary: '수동 제품 listing 삭제' })
+  async deleteManualListing(@Param('id') id: string) {
+    await this.productListingsService.deleteManualListing(id);
+    return { success: true, message: '수동 제품 삭제 성공', data: null };
   }
 
   @Get(':id')

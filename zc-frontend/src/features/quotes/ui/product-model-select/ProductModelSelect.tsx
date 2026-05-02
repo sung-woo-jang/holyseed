@@ -3,19 +3,32 @@ import { Input } from '@/shared/ui';
 import { axiosInstance } from '@/shared/api/axios';
 import { ZC_API } from '@/shared/api/endpoints';
 
-interface ProductModel {
+interface SelectedModel {
   id: string;
   modelName: string;
-  price: number;
+  displayName: string;
+  materialPrice: number;
+  laborCost: number;
+  derivedUnitPrice: number;
 }
 
 interface ProductModelSelectProps {
-  onSelect: (model: ProductModel) => void;
+  onSelect: (model: SelectedModel) => void;
+}
+
+interface SearchResult {
+  id: string;
+  modelName: string;
+  displayName: string;
+  materialPrice: number | null;
+  laborCost: number | null;
+  derivedUnitPrice: number | null;
+  brand?: { name: string } | null;
 }
 
 export function ProductModelSelect({ onSelect }: ProductModelSelectProps) {
   const [search, setSearch] = useState('');
-  const [results, setResults] = useState<ProductModel[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
@@ -29,10 +42,11 @@ export function ProductModelSelect({ onSelect }: ProductModelSelectProps) {
     const timer = setTimeout(async () => {
       setIsLoading(true);
       try {
-        const response = await axiosInstance.get(ZC_API.PRODUCT_MODELS.SEARCH, {
-          params: { query: search, limit: 10 },
+        const response = await axiosInstance.post(ZC_API.PRODUCT_MODELS.SEARCH, {
+          search,
+          limit: 10,
         });
-        setResults(response.data.items || []);
+        setResults(response.data?.data || []);
         setShowResults(true);
       } catch (error) {
         console.error('제품 모델 검색 실패:', error);
@@ -45,8 +59,15 @@ export function ProductModelSelect({ onSelect }: ProductModelSelectProps) {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const handleSelect = (model: ProductModel) => {
-    onSelect(model);
+  const handleSelect = (model: SearchResult) => {
+    onSelect({
+      id: model.id,
+      modelName: model.modelName,
+      displayName: model.displayName,
+      materialPrice: model.materialPrice ?? 0,
+      laborCost: model.laborCost ?? 0,
+      derivedUnitPrice: model.derivedUnitPrice ?? 0,
+    });
     setSearch('');
     setResults([]);
     setShowResults(false);
@@ -63,7 +84,7 @@ export function ProductModelSelect({ onSelect }: ProductModelSelectProps) {
       />
 
       {isLoading && (
-        <div className="absolute mt-1 w-full p-2 bg-white border rounded-md shadow-lg text-sm text-muted-foreground">
+        <div className="absolute mt-1 w-full p-2 bg-white border rounded-md shadow-lg text-sm text-muted-foreground z-10">
           검색중...
         </div>
       )}
@@ -76,9 +97,13 @@ export function ProductModelSelect({ onSelect }: ProductModelSelectProps) {
               className="w-full text-left px-3 py-2 hover:bg-muted transition-colors"
               onClick={() => handleSelect(model)}
             >
-              <div className="font-medium">{model.modelName}</div>
+              <div className="font-medium">{model.displayName || model.modelName}</div>
               <div className="text-xs text-muted-foreground">
-                {model.price.toLocaleString()}원
+                {model.brand?.name && <span className="mr-2">{model.brand.name}</span>}
+                견적단가 {(model.derivedUnitPrice ?? 0).toLocaleString()}원
+                {(model.laborCost ?? 0) > 0 && (
+                  <span className="ml-1">(시공비 {(model.laborCost ?? 0).toLocaleString()}원 포함)</span>
+                )}
               </div>
             </button>
           ))}
@@ -86,7 +111,7 @@ export function ProductModelSelect({ onSelect }: ProductModelSelectProps) {
       )}
 
       {showResults && results.length === 0 && search.length >= 2 && !isLoading && (
-        <div className="absolute mt-1 w-full p-2 bg-white border rounded-md shadow-lg text-sm text-muted-foreground">
+        <div className="absolute mt-1 w-full p-2 bg-white border rounded-md shadow-lg text-sm text-muted-foreground z-10">
           검색 결과가 없습니다.
         </div>
       )}

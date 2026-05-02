@@ -1,7 +1,9 @@
-import { Controller, Get, Param, Post, Body, Delete } from '@nestjs/common';
+import { Public } from '@common/decorators';
+import { Controller, Get, Param, Post, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ProductModelLinksService } from './product-model-links.service';
 
+@Public()
 @Controller('zc/product-model-links')
 @ApiTags('제품 모델 매칭 (수동 연결)')
 export class ProductModelLinksController {
@@ -35,6 +37,14 @@ export class ProductModelLinksController {
       body.modelId,
       body.linkedBy,
     );
+  }
+
+  @Post('search')
+  @ApiOperation({ summary: '매칭 목록 검색 (페이지네이션, 검색어, matchType 필터)' })
+  async searchLinks(
+    @Body() body: { page?: number; limit?: number; search?: string; matchType?: string },
+  ) {
+    return await this.productModelLinksService.search(body);
   }
 
   @Post(':id/delete')

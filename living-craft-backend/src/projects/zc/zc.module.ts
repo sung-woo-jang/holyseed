@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { SitesModule } from './modules/sites/sites.module';
 import { SiteCategoriesModule } from './modules/site-categories/site-categories.module';
+import { CategoriesModule } from './modules/categories/categories.module';
 import { BrandsModule } from './modules/brands/brands.module';
 import { ProductListingsModule } from './modules/product-listings/product-listings.module';
 import { ProductModelsModule } from './modules/product-models/product-models.module';
@@ -21,6 +22,7 @@ import { StatsModule } from './modules/stats/stats.module';
   imports: [
     // Core modules
     SitesModule,
+    CategoriesModule,
     SiteCategoriesModule,
     BrandsModule,
 

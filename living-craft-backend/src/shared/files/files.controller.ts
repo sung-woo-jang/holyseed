@@ -16,10 +16,12 @@ import {
 import { FilesService } from './files.service';
 import { SuccessBaseResponseDto } from '@common/dto/response/success-base-response.dto';
 import { SwaggerBaseApply } from '@common/decorators/swagger-base-apply.decorator';
+import { Public } from '@common/decorators';
 import { ERROR_MESSAGES } from '@common/constants';
 import { UploadReservationPhotosResponseDto } from './dto/response';
 
 @ApiTags('파일 테스트')
+@Public()
 @Controller('shared/files')
 @SwaggerBaseApply()
 export class FilesController {

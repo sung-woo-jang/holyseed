@@ -1,70 +1,85 @@
 export const ZC_API = {
   // 통계
   STATS: {
-    OVERVIEW: '/stats/overview',  // POST: 전체 통계 조회
+    OVERVIEW: '/stats/overview',  // POST
   },
 
   // 사이트
   SITES: {
-    LIST: '/sites',  // GET: 사이트 목록 조회
+    LIST: '/sites',  // GET
   },
 
-  // 제품 리스팅 (크롤링된 제품)
+  // 통합 카테고리 (사용자 정의)
+  CATEGORIES: {
+    LIST: '/categories',           // GET: 전체
+    TREE: '/categories/tree',      // GET: 트리 (사이트 카테고리 매핑 수 포함)
+    CREATE: '/categories',         // POST
+    UPDATE: (id: string) => `/categories/${id}/update`,    // POST
+    DELETE: (id: string) => `/categories/${id}/delete`,    // POST
+    MAPPINGS: (id: string) => `/categories/${id}/mappings`,              // GET/POST
+    MAPPINGS_REMOVE: (id: string) => `/categories/${id}/mappings/remove`, // POST
+  },
+
+  // 사이트별 크롤링 카테고리
+  SITE_CATEGORIES: {
+    LIST: '/site-categories',       // GET: ?siteCode=
+    TREE: '/site-categories/tree',  // GET: ?siteCode=
+  },
+
+  // 브랜드
+  BRANDS: {
+    LIST: '/brands',  // GET
+  },
+
+  // 제품 리스팅 (크롤링 + 수동)
   PRODUCT_LISTINGS: {
-    LIST: '/product-listings',  // GET: 전체 조회
-    SEARCH: '/product-listings/search',  // POST: 필터링/검색
-    UNMATCHED: '/product-listings/unmatched',  // POST: 미매칭 제품 조회
+    LIST: '/product-listings',              // GET
+    SEARCH: '/product-listings/search',     // POST
+    UNMATCHED: '/product-listings/unmatched', // POST
     DETAIL: (id: string) => `/product-listings/${id}`,
+    CREATE_MANUAL: '/product-listings/manual',                      // POST
+    UPDATE_MANUAL: (id: string) => `/product-listings/manual/${id}/update`,  // POST
+    DELETE_MANUAL: (id: string) => `/product-listings/manual/${id}/delete`,  // POST
   },
 
   // 가격 이력
   PRICE_HISTORY: {
     PRODUCT: (id: string) => `/price-history/products/${id}`,
-    SEARCH: (id: string) => `/price-history/products/${id}/search`,  // POST: 필터링
-  },
-
-  // 카테고리
-  CATEGORIES: {
-    TREE: '/categories/tree',  // GET: 전체 트리
-    LIST: '/categories',  // GET: 전체 목록
-  },
-
-  // 브랜드
-  BRANDS: {
-    LIST: '/brands',  // GET: 전체 목록
+    SEARCH: (id: string) => `/price-history/products/${id}/search`,  // POST
   },
 
   // 제품 모델 매칭
   PRODUCT_MODEL_LINKS: {
-    LIST: '/product-model-links',  // GET: 전체 조회
-    SEARCH: '/product-model-links/search',  // POST: 필터링
-    CREATE: '/product-model-links',
-    DELETE: (id: string) => `/product-model-links/${id}/delete`,
+    LIST: '/product-model-links',               // GET
+    SEARCH: '/product-model-links/search',      // POST: { page?, limit?, search?, matchType? }
+    CREATE: '/product-model-links',             // POST
+    DELETE: (id: string) => `/product-model-links/${id}/delete`,  // POST
   },
 
-  // 제품 모델 (사용자 정의 마스터)
+  // 제품 모델 (사용자 정의 단가표)
   PRODUCT_MODELS: {
-    LIST: '/product-models',  // GET: 전체 조회
-    SEARCH: '/product-models/search',  // POST: 필터링/검색
+    LIST: '/product-models',          // GET
+    SEARCH: '/product-models/search', // POST
     DETAIL: (id: string) => `/product-models/${id}`,
-    CREATE: '/product-models',  // POST: 모델 생성
-    LINK_PRODUCT: (id: string) => `/product-models/${id}/link`,  // POST: 제품 연결
-    UNLINK_PRODUCT: (id: string, listingId: string) => `/product-models/${id}/unlink/${listingId}`,  // POST: 연결 해제
-    LINKED_PRODUCTS: (id: string) => `/product-models/${id}/products`,  // GET: 연결된 제품 조회
-    UPDATE_PRICE: (id: string) => `/product-models/${id}/price`,  // POST: 가격 설정
-    CALCULATE_COST: (id: string) => `/product-models/${id}/calculate-cost`,  // POST: 원가 자동 계산
+    CREATE: '/product-models',        // POST
+    LINK_PRODUCT: (id: string) => `/product-models/${id}/link`,                           // POST
+    UNLINK_PRODUCT: (id: string, listingId: string) => `/product-models/${id}/unlink/${listingId}`, // POST
+    LINKED_PRODUCTS: (id: string) => `/product-models/${id}/products`,                    // GET
+    UPDATE_PRICE: (id: string) => `/product-models/${id}/price`,                          // POST
+    CALCULATE_MATERIAL_COST: (id: string) => `/product-models/${id}/calculate-material-cost`, // POST
+    COMPARE: (id: string) => `/product-models/${id}/compare`,                             // GET
   },
 
   // 견적서
   QUOTES: {
-    LIST: '/quotes',  // GET: 전체 조회
-    SEARCH: '/quotes/search',  // POST: 필터링/검색
+    LIST: '/quotes',           // GET
+    SEARCH: '/quotes/search',  // POST
     DETAIL: (id: string) => `/quotes/${id}`,
-    CREATE: '/quotes',
-    UPDATE: (id: string) => `/quotes/${id}/update`,
-    DELETE: (id: string) => `/quotes/${id}/delete`,
-    SEND: (id: string) => `/quotes/${id}/send`,
-    DUPLICATE: (id: string) => `/quotes/${id}/duplicate`,
+    CREATE: '/quotes',         // POST
+    UPDATE: (id: string) => `/quotes/${id}/update`,      // POST
+    DELETE: (id: string) => `/quotes/${id}/delete`,      // POST
+    SEND: (id: string) => `/quotes/${id}/send`,          // POST
+    DUPLICATE: (id: string) => `/quotes/${id}/duplicate`, // POST
     ITEMS: {
       ADD: (quoteId: string) => `/quotes/${quoteId}/items`,
       UPDATE: (quoteId: string, itemId: string) => `/quotes/${quoteId}/items/${itemId}/update`,

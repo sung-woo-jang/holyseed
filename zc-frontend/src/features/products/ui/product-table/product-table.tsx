@@ -43,6 +43,16 @@ const columns: ColumnDef<Product>[] = [
     size: 120,
   },
   {
+    accessorKey: 'site',
+    header: '사이트',
+    cell: ({ row }) => (
+      <span className="text-sm text-muted-foreground">
+        {row.original.site?.name || '-'}
+      </span>
+    ),
+    size: 90,
+  },
+  {
     accessorKey: 'brand',
     header: '브랜드',
     cell: ({ row }) => row.original.brand?.name || '-',

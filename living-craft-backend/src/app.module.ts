@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { PassportModule } from '@nestjs/passport';
+import { JwtModule } from '@nestjs/jwt';
 
 // Config
 import appConfig from './config/app.config';
@@ -12,6 +14,7 @@ import jwtConfig from './config/jwt.config';
 import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
+import { JwtStrategy } from '@common/strategies/jwt.strategy';
 
 // Modules
 import { SharedModule } from '@/shared/shared.module';
@@ -34,11 +37,23 @@ import { ZcModule } from '@/projects/zc/zc.module';
       inject: [ConfigService],
     }),
 
+    // Auth
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('jwt.secret') || 'default-secret',
+        signOptions: { expiresIn: (configService.get<string>('jwt.expiresIn') || '24h') as any },
+      }),
+      inject: [ConfigService],
+    }),
+
     // Feature modules
     SharedModule, // 공유 모듈 (files, health, address)
     ZcModule, // Zippt Crawler 프로젝트 통합 모듈 (/api/zc/* 경로)
   ],
   providers: [
+    JwtStrategy,
     // Global Exception Filter
     {
       provide: APP_FILTER,

@@ -215,11 +215,12 @@ export class DatabaseSaverV2 {
           continue
         }
 
-        // 3. ProductListing 확인/업데이트
+        // 3. ProductListing 확인/업데이트 (수동 row는 건드리지 않음)
         let listing = await productListingRepository.findOne({
           where: {
             siteId: site.id,
             siteProductId: prod.goodsNo,
+            isManual: false,
           },
         })
 

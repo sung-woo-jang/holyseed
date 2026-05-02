@@ -3,23 +3,18 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
 export class UpdatePriceDto {
-  @ApiPropertyOptional({
-    description: '원가 (매입가)',
-    example: 50000,
-  })
+  @ApiPropertyOptional({ description: '자재 원가 (연결된 listing 최저가 또는 수동 입력)', example: 500000 })
   @IsOptional()
-  @IsNumber({}, { message: '원가는 숫자여야 합니다.' })
-  @Min(0, { message: '원가는 0 이상이어야 합니다.' })
-  costPrice?: number;
+  @IsNumber({}, { message: '자재 원가는 숫자여야 합니다.' })
+  @Min(0)
+  materialCost?: number;
 
-  @ApiPropertyOptional({
-    description: '판매가 (견적용)',
-    example: 80000,
-  })
+  @ApiPropertyOptional({ description: '시공비 (고정)', example: 100000 })
   @IsOptional()
-  @IsNumber({}, { message: '판매가는 숫자여야 합니다.' })
-  @Min(0, { message: '판매가는 0 이상이어야 합니다.' })
-  sellingPrice?: number;
+  @IsNumber({}, { message: '시공비는 숫자여야 합니다.' })
+  @Min(0)
+  laborCost?: number;
+
 
   @ApiPropertyOptional({
     description: '마진율 (%)',

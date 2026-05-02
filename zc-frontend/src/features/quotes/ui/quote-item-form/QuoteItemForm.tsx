@@ -14,35 +14,48 @@ export function QuoteItemForm({
   initialData = {},
   onSubmit,
   onCancel,
-  isLoading = false
+  isLoading = false,
 }: QuoteItemFormProps) {
   const [formData, setFormData] = useState({
     productModelId: initialData.productModelId || '',
     productName: initialData.productName || '',
     quantity: initialData.quantity || 1,
-    unitPrice: initialData.unitPrice || 0,
+    materialPrice: initialData.materialPrice ?? 0,
+    laborPrice: initialData.laborPrice ?? 0,
     note: initialData.note || '',
   });
 
+  const unitPrice = formData.materialPrice + formData.laborPrice;
+  const totalPrice = formData.quantity * unitPrice;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      unitPrice,
+    });
   };
 
   const handleChange = (field: string, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleProductModelSelect = (model: { id: string; modelName: string; price: number }) => {
-    setFormData(prev => ({
+  const handleProductModelSelect = (model: {
+    id: string;
+    modelName: string;
+    displayName: string;
+    materialPrice: number;
+    laborCost: number;
+    derivedUnitPrice: number;
+  }) => {
+    setFormData((prev) => ({
       ...prev,
       productModelId: model.id,
-      productName: model.modelName,
-      unitPrice: model.price,
+      productName: model.displayName || model.modelName,
+      materialPrice: model.materialPrice,
+      laborPrice: model.laborCost,
     }));
   };
-
-  const totalPrice = formData.quantity * formData.unitPrice;
 
   return (
     <Card className="p-4">
@@ -51,7 +64,7 @@ export function QuoteItemForm({
           <label className="block text-sm font-medium mb-1">제품 모델 검색</label>
           <ProductModelSelect onSelect={handleProductModelSelect} />
           <p className="text-xs text-muted-foreground mt-1">
-            제품 모델을 선택하거나 직접 입력하세요
+            선택 시 자재단가/시공비 자동 채움
           </p>
         </div>
 
@@ -67,11 +80,9 @@ export function QuoteItemForm({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="block text-sm font-medium mb-1">
-              수량 <span className="text-red-500">*</span>
-            </label>
+            <label className="block text-sm font-medium mb-1">수량</label>
             <Input
               type="number"
               min="1"
@@ -80,25 +91,34 @@ export function QuoteItemForm({
               required
             />
           </div>
-
           <div>
-            <label className="block text-sm font-medium mb-1">
-              단가 <span className="text-red-500">*</span>
-            </label>
+            <label className="block text-sm font-medium mb-1">자재단가 (원)</label>
             <Input
               type="number"
               min="0"
-              value={formData.unitPrice}
-              onChange={(e) => handleChange('unitPrice', parseInt(e.target.value) || 0)}
-              required
+              value={formData.materialPrice}
+              onChange={(e) => handleChange('materialPrice', parseInt(e.target.value) || 0)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">시공비 (원)</label>
+            <Input
+              type="number"
+              min="0"
+              value={formData.laborPrice}
+              onChange={(e) => handleChange('laborPrice', parseInt(e.target.value) || 0)}
             />
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">합계</label>
-          <div className="text-lg font-semibold">
-            {totalPrice.toLocaleString()}원
+        <div className="rounded-md bg-muted/50 p-3 text-sm space-y-1">
+          <div className="flex justify-between text-muted-foreground">
+            <span>견적 단가</span>
+            <span>{unitPrice.toLocaleString()}원</span>
+          </div>
+          <div className="flex justify-between font-semibold">
+            <span>소계 ({formData.quantity}개)</span>
+            <span>{totalPrice.toLocaleString()}원</span>
           </div>
         </div>
 
@@ -117,7 +137,7 @@ export function QuoteItemForm({
           </Button>
           <Button
             type="submit"
-            disabled={isLoading || !formData.productName || formData.quantity < 1 || formData.unitPrice < 0}
+            disabled={isLoading || !formData.productName || formData.quantity < 1}
           >
             {isLoading ? '저장중...' : '추가'}
           </Button>

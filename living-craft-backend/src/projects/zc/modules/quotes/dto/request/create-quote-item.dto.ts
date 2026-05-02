@@ -25,13 +25,26 @@ export class CreateQuoteItemDto {
   @Min(1)
   quantity: number;
 
-  @ApiProperty({
-    description: '단가',
-    example: 50000,
-  })
+  @ApiPropertyOptional({ description: '자재 단가 (자재가 × (1 + 마진율)). 미입력 시 ProductModel에서 자동 계산.' })
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  unitPrice: number;
+  materialPrice?: number;
+
+  @ApiPropertyOptional({ description: '시공비 단가. 미입력 시 ProductModel에서 자동 채움.' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  laborPrice?: number;
+
+  @ApiPropertyOptional({
+    description: '단가 (= materialPrice + laborPrice). materialPrice/laborPrice 지정 시 무시됨.',
+    example: 50000,
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  unitPrice?: number;
 
   @ApiPropertyOptional({
     description: '항목 메모',

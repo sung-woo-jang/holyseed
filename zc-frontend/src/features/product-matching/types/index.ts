@@ -3,4 +3,6 @@ export type {
   ProductModelLink,
   UnmatchedProduct,
   CreateModelLinkDto,
+  ModelLinkSearchParams,
+  ModelLinkSearchResponse,
 } from './product-matching.types';

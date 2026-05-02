@@ -1,3 +1,4 @@
+import { Public } from '@common/decorators';
 import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { QuotesService } from './quotes.service';
@@ -6,6 +7,7 @@ import { UpdateQuoteDto } from './dto/request/update-quote.dto';
 import { CreateQuoteItemDto } from './dto/request/create-quote-item.dto';
 import { QuoteQueryDto } from './dto/query/quote-query.dto';
 
+@Public()
 @Controller('zc/quotes')
 @ApiTags('ZC 견적서 관리')
 export class QuotesController {

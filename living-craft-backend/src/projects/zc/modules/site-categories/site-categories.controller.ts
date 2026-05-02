@@ -1,10 +1,12 @@
+import { Public } from '@common/decorators';
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { SiteCategoriesService } from './site-categories.service';
 import { CategoryResponseDto, CategoryTreeResponseDto } from './dto';
 
-@Controller('zc/categories')
-@ApiTags('ZC 카테고리')
+@Public()
+@Controller('zc/site-categories')
+@ApiTags('ZC 사이트 카테고리')
 export class SiteCategoriesController {
   constructor(private readonly siteCategoriesService: SiteCategoriesService) {}
 

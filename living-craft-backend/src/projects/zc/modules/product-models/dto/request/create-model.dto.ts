@@ -41,15 +41,26 @@ export class CreateModelDto {
   @IsBoolean()
   isActive?: boolean;
 
-  @ApiPropertyOptional({ description: '원가 (최저가 자동 계산)' })
+  @ApiPropertyOptional({ description: '통합 카테고리 ID' })
   @IsOptional()
-  @IsNumber()
-  costPrice?: number;
+  @IsUUID()
+  unifiedCategoryId?: string;
 
-  @ApiPropertyOptional({ description: '판매가 (사용자 설정)' })
+  @ApiPropertyOptional({ description: '자재 원가 (연결된 listing 최저가 자동계산 또는 수동)' })
   @IsOptional()
   @IsNumber()
-  sellingPrice?: number;
+  materialCost?: number;
+
+  @ApiPropertyOptional({ description: '시공비 (고정)', example: 100000 })
+  @IsOptional()
+  @IsNumber()
+  laborCost?: number;
+
+  @ApiPropertyOptional({ description: '자재 마진율 (%)', example: 20 })
+  @IsOptional()
+  @IsNumber()
+  marginRate?: number;
+
 
   @ApiPropertyOptional({ description: '가격 메모' })
   @IsOptional()

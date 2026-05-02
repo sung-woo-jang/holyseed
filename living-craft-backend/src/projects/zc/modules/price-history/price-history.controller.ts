@@ -1,8 +1,10 @@
+import { Public } from '@common/decorators';
 import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { PriceHistoryService } from './price-history.service';
 import { PriceHistoryQueryDto } from './dto/query/price-history-query.dto';
 
+@Public()
 @Controller('zc/price-history')
 @ApiTags('ZC 가격 이력')
 export class PriceHistoryController {

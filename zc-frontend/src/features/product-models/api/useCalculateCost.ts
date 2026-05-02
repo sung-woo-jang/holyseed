@@ -9,7 +9,7 @@ export function useCalculateCost() {
   return useMutation({
     mutationFn: async (modelId: string) => {
       const response = await axiosInstance.post<ProductModel>(
-        ZC_API.PRODUCT_MODELS.CALCULATE_COST(modelId)
+        ZC_API.PRODUCT_MODELS.CALCULATE_MATERIAL_COST(modelId)
       );
       return response.data;
     },

@@ -144,6 +144,7 @@ export function QuoteDetailPage() {
 
           <QuoteItemList
             items={quote.items}
+            quote={quote}
             onDelete={handleDeleteItem}
             isDeleting={deleteItem.isPending}
           />

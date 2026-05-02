@@ -48,8 +48,8 @@ export function ModelDetailPage() {
   // 가격 수정 모드 진입
   const handleStartEditPrice = () => {
     setPriceData({
-      costPrice: model?.costPrice ?? undefined,
-      sellingPrice: model?.sellingPrice ?? undefined,
+      materialCost: model?.materialCost ?? undefined,
+      laborCost: model?.laborCost ?? undefined,
       marginRate: model?.marginRate ?? undefined,
       priceNote: model?.priceNote ?? undefined,
     });
@@ -137,6 +137,9 @@ export function ModelDetailPage() {
           <h1 className="text-3xl font-bold">{model.displayName}</h1>
           <p className="text-muted-foreground mt-1">모델명: {model.modelName}</p>
         </div>
+        <Button variant="outline" size="sm" onClick={() => navigate(`/compare/${id}`)}>
+          사이트 비교
+        </Button>
         <Badge variant={model.isActive ? 'default' : 'secondary'}>
           {model.isActive ? '활성' : '비활성'}
         </Badge>
@@ -182,7 +185,7 @@ export function ModelDetailPage() {
                   onClick={handleCalculateCost}
                   disabled={calculateCost.isPending}
                 >
-                  {calculateCost.isPending ? '계산 중...' : '원가 자동 계산'}
+                  {calculateCost.isPending ? '계산 중...' : '자재가 자동 계산'}
                 </Button>
               )}
               {!editingPrice && (
@@ -196,32 +199,37 @@ export function ModelDetailPage() {
         <CardContent>
           {editingPrice ? (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="costPrice">원가 (원)</Label>
+                  <Label htmlFor="materialCost">자재가 (원)</Label>
                   <Input
-                    id="costPrice"
+                    id="materialCost"
                     type="number"
-                    value={priceData.costPrice ?? ''}
+                    value={priceData.materialCost ?? ''}
                     onChange={(e) =>
-                      setPriceData({
-                        ...priceData,
-                        costPrice: e.target.value ? Number(e.target.value) : undefined,
-                      })
+                      setPriceData({ ...priceData, materialCost: e.target.value ? Number(e.target.value) : undefined })
                     }
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sellingPrice">판매가 (원)</Label>
+                  <Label htmlFor="marginRate">자재 마진율 (%)</Label>
                   <Input
-                    id="sellingPrice"
+                    id="marginRate"
                     type="number"
-                    value={priceData.sellingPrice ?? ''}
+                    value={priceData.marginRate ?? ''}
                     onChange={(e) =>
-                      setPriceData({
-                        ...priceData,
-                        sellingPrice: e.target.value ? Number(e.target.value) : undefined,
-                      })
+                      setPriceData({ ...priceData, marginRate: e.target.value ? Number(e.target.value) : undefined })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="laborCost">시공비 (원)</Label>
+                  <Input
+                    id="laborCost"
+                    type="number"
+                    value={priceData.laborCost ?? ''}
+                    onChange={(e) =>
+                      setPriceData({ ...priceData, laborCost: e.target.value ? Number(e.target.value) : undefined })
                     }
                   />
                 </div>
@@ -233,25 +241,26 @@ export function ModelDetailPage() {
                   id="priceNote"
                   value={priceData.priceNote ?? ''}
                   onChange={(e) =>
-                    setPriceData({
-                      ...priceData,
-                      priceNote: e.target.value || undefined,
-                    })
+                    setPriceData({ ...priceData, priceNote: e.target.value || undefined })
                   }
                   placeholder="가격 관련 메모"
                 />
               </div>
 
-              {priceData.costPrice && priceData.sellingPrice && priceData.costPrice > 0 && (
-                <div className="p-4 bg-muted rounded-md">
-                  <p className="text-sm font-medium">마진율</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {(
-                      ((priceData.sellingPrice - priceData.costPrice) / priceData.costPrice) *
-                      100
-                    ).toFixed(2)}
-                    %
-                  </p>
+              {priceData.materialCost && priceData.materialCost > 0 && (
+                <div className="p-4 bg-muted rounded-md text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <span>자재 단가</span>
+                    <span>{Math.round((priceData.materialCost ?? 0) * (1 + (priceData.marginRate ?? 0) / 100)).toLocaleString()}원</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>시공비</span>
+                    <span>{(priceData.laborCost ?? 0).toLocaleString()}원</span>
+                  </div>
+                  <div className="flex justify-between font-semibold text-primary border-t pt-1">
+                    <span>견적 단가</span>
+                    <span>{(Math.round((priceData.materialCost ?? 0) * (1 + (priceData.marginRate ?? 0) / 100)) + (priceData.laborCost ?? 0)).toLocaleString()}원</span>
+                  </div>
                 </div>
               )}
 
@@ -269,23 +278,29 @@ export function ModelDetailPage() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-4 gap-6">
               <div>
-                <p className="text-sm text-muted-foreground">원가</p>
+                <p className="text-sm text-muted-foreground">자재가</p>
                 <p className="text-2xl font-bold">
-                  {model.costPrice ? `${model.costPrice.toLocaleString()}원` : '-'}
+                  {model.materialCost ? `${model.materialCost.toLocaleString()}원` : '-'}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">판매가</p>
-                <p className="text-2xl font-bold">
-                  {model.sellingPrice ? `${model.sellingPrice.toLocaleString()}원` : '-'}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">마진율</p>
+                <p className="text-sm text-muted-foreground">자재 마진율</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {model.marginRate !== null ? `${model.marginRate.toFixed(2)}%` : '-'}
+                  {model.marginRate !== null ? `${model.marginRate.toFixed(1)}%` : '-'}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">시공비</p>
+                <p className="text-2xl font-bold">
+                  {model.laborCost != null ? `${model.laborCost.toLocaleString()}원` : '-'}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">견적 단가</p>
+                <p className="text-2xl font-bold text-primary">
+                  {model.derivedUnitPrice != null ? `${model.derivedUnitPrice.toLocaleString()}원` : '-'}
                 </p>
               </div>
               {model.priceNote && (

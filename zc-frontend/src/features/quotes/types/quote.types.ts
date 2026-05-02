@@ -6,7 +6,9 @@ export interface QuoteItem {
   productModelId?: string;
   productName: string;
   quantity: number;
-  unitPrice: number;
+  materialPrice: number;  // 자재 단가
+  laborPrice: number;     // 시공비 단가
+  unitPrice: number;      // = materialPrice + laborPrice
   totalPrice: number;
   note?: string;
   sortOrder: number;
@@ -20,6 +22,8 @@ export interface Quote {
   customerPhone?: string;
   memo?: string;
   totalAmount: number;
+  materialSubtotal?: number;  // derived
+  laborSubtotal?: number;     // derived
   status: QuoteStatus;
   validUntil?: string;
   items: QuoteItem[];
@@ -68,7 +72,9 @@ export interface CreateQuoteItemDto {
   productModelId?: string;
   productName: string;
   quantity: number;
-  unitPrice: number;
+  materialPrice?: number;  // 미입력 시 모델에서 자동 계산
+  laborPrice?: number;     // 미입력 시 모델에서 자동 채움
+  unitPrice?: number;      // materialPrice/laborPrice 없을 때 폴백
   note?: string;
   sortOrder?: number;
 }
@@ -77,6 +83,8 @@ export interface CreateQuoteItemDto {
 export interface UpdateQuoteItemDto {
   productName?: string;
   quantity?: number;
+  materialPrice?: number;
+  laborPrice?: number;
   unitPrice?: number;
   note?: string;
   sortOrder?: number;

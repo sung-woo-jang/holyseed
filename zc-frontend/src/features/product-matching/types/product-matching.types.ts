@@ -21,20 +21,36 @@ export interface ProductModelLink {
   id: string;
   listingId: string;
   modelId: string;
-  confidence: number;
-  createdAt: string;
-  updatedAt: string;
+  matchType: 'auto_matched' | 'manual_matched';
+  matchConfidence: number | null;
+  linkedAt: string;
+  linkedBy: string | null;
+  createdAt?: string;
+  updatedAt?: string;
   listing?: {
     id: string;
     productName: string;
     currentPrice: number;
     currentDiscountPrice?: number;
-    brand?: {
-      id: string;
-      name: string;
-    };
+    site?: { id: string; name: string; code: string };
+    brand?: { id: string; name: string };
   };
   model?: ProductModel;
+}
+
+export interface ModelLinkSearchParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  matchType?: 'auto_matched' | 'manual_matched' | '';
+}
+
+export interface ModelLinkSearchResponse {
+  data: ProductModelLink[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 // 미매칭 제품 (ProductListing without link)

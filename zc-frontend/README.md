@@ -7,7 +7,7 @@
 ## 기술 스택
 
 - **프레임워크**: Vite + React 19 + TypeScript
-- **라우팅**: React Router DOM v6
+- **라우팅**: React Router DOM v7
 - **상태 관리**: TanStack Query
 - **데이터 테이블**: TanStack React Table
 - **차트**: Recharts

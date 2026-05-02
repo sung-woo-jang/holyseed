@@ -1,7 +1,9 @@
+import { Public } from '@common/decorators';
 import { Controller, Get, Post, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { ProductMatchingService } from './product-matching.service';
 
+@Public()
 @Controller('zc/product-matching')
 @ApiTags('ZC 제품 자동 매칭')
 export class ProductMatchingController {

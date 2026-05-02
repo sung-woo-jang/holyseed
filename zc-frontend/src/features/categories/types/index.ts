@@ -1,1 +1,7 @@
-export type { Category, CategoryTreeItem } from './category.types';
+export type {
+  Category,
+  CategoryTreeItem,
+  UnifiedCategory,
+  CreateUnifiedCategoryDto,
+  UpdateUnifiedCategoryDto,
+} from './category.types';

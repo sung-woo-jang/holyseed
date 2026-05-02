@@ -25,7 +25,13 @@ export class QuoteItem {
   @Column({ type: 'int', comment: '수량' })
   quantity: number;
 
-  @Column({ type: 'int', comment: '단가' })
+  @Column({ type: 'int', default: 0, comment: '자재 단가 (자재가 × (1 + 마진율))' })
+  materialPrice: number;
+
+  @Column({ type: 'int', default: 0, comment: '시공비 단가' })
+  laborPrice: number;
+
+  @Column({ type: 'int', comment: '단가 (= materialPrice + laborPrice)' })
   unitPrice: number;
 
   @Column({ type: 'int', comment: '총 가격 (수량 × 단가)' })

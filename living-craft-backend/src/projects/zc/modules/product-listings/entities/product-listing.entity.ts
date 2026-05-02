@@ -74,6 +74,12 @@ export class ProductListing {
   @Column({ type: 'timestamp', nullable: true, comment: '마지막 크롤링 시각' })
   lastCrawledAt: Date;
 
+  @Column({ type: 'boolean', default: false, comment: '수동 입력 여부 (true면 크롤러가 덮어쓰지 않음)' })
+  isManual: boolean;
+
+  @Column({ type: 'text', nullable: true, comment: '수동 입력 가격 출처 메모' })
+  manualPriceNote: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

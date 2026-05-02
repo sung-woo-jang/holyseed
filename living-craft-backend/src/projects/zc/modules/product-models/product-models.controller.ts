@@ -1,3 +1,4 @@
+import { Public } from '@common/decorators';
 import { Controller, Get, Param, Post, Body, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ProductModelsService } from './product-models.service';
@@ -6,6 +7,7 @@ import { CreateModelDto } from './dto/request/create-model.dto';
 import { LinkProductDto } from './dto/request/link-product.dto';
 import { SearchModelsDto } from './dto/request/search-models.dto';
 
+@Public()
 @Controller('zc/product-models')
 @ApiTags('제품 모델 (사용자 정의 마스터)')
 export class ProductModelsController {
@@ -38,12 +40,25 @@ export class ProductModelsController {
   }
 
   @Post(':id/calculate-cost')
-  @ApiOperation({ summary: '원가 자동 계산 (연결된 제품의 최저가 기준)' })
-  @ApiResponse({ status: 200, description: '원가 계산 성공' })
+  @ApiOperation({ summary: '자재가 자동 계산 (연결된 제품의 최저가 기준) - /calculate-material-cost 와 동일' })
+  async calculateCostPrice(@Param('id') id: string) {
+    return await this.productModelsService.calculateAndUpdateMaterialCost(id);
+  }
+
+  @Post(':id/calculate-material-cost')
+  @ApiOperation({ summary: '자재가 자동 계산 (연결된 제품의 최저가 기준)' })
+  @ApiResponse({ status: 200, description: '자재가 계산 성공' })
   @ApiResponse({ status: 404, description: '제품 모델을 찾을 수 없음' })
   @ApiResponse({ status: 400, description: '연결된 제품이 없음' })
-  async calculateCostPrice(@Param('id') id: string) {
-    return await this.productModelsService.calculateAndUpdateCostPrice(id);
+  async calculateMaterialCost(@Param('id') id: string) {
+    return await this.productModelsService.calculateAndUpdateMaterialCost(id);
+  }
+
+  @Get(':id/compare')
+  @ApiOperation({ summary: '사이트별 가격 비교 (연결된 listing + 90일 가격 이력)' })
+  @ApiResponse({ status: 200, description: '비교 데이터 조회 성공' })
+  async getModelCompare(@Param('id') id: string) {
+    return await this.productModelsService.getModelCompare(id);
   }
 
   @Post()
@@ -71,7 +86,7 @@ export class ProductModelsController {
 
     // 제품 연결 후 원가 자동 재계산
     try {
-      await this.productModelsService.calculateAndUpdateCostPrice(id);
+      await this.productModelsService.calculateAndUpdateMaterialCost(id);
     } catch (error) {
       // 원가 계산 실패는 무시 (연결은 성공)
     }
@@ -88,7 +103,7 @@ export class ProductModelsController {
 
     // 제품 연결 해제 후 원가 자동 재계산
     try {
-      await this.productModelsService.calculateAndUpdateCostPrice(id);
+      await this.productModelsService.calculateAndUpdateMaterialCost(id);
     } catch (error) {
       // 원가 계산 실패는 무시 (남은 제품이 없을 수 있음)
     }

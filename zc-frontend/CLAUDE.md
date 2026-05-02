@@ -7,8 +7,8 @@
 **ZC Frontend**는 Dasis 위생 도기 제품 크롤링 데이터를 관리하는 관리자 대시보드입니다.
 
 ### 기술 스택
-- **프레임워크**: Vite + React 18 + TypeScript
-- **라우팅**: TanStack Router
+- **프레임워크**: Vite + React 19 + TypeScript
+- **라우팅**: react-router-dom v7
 - **상태 관리**: TanStack Query (React Query)
 - **UI**: Shadcn UI + Tailwind CSS
 - **테이블**: TanStack Table

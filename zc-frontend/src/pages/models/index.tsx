@@ -97,18 +97,18 @@ export function ModelsPage() {
 
                     <div className="text-right space-y-1">
                       <div className="text-sm">
-                        <span className="text-muted-foreground">원가:</span>{' '}
-                        <span className="font-medium">{formatPrice(model.costPrice)}</span>
+                        <span className="text-muted-foreground">자재가:</span>{' '}
+                        <span className="font-medium">{formatPrice(model.materialCost)}</span>
                       </div>
                       <div className="text-sm">
-                        <span className="text-muted-foreground">판매가:</span>{' '}
-                        <span className="font-medium">{formatPrice(model.sellingPrice)}</span>
-                      </div>
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">마진율:</span>{' '}
+                        <span className="text-muted-foreground">마진:</span>{' '}
                         <span className="font-medium text-green-600">
                           {formatMargin(model.marginRate)}
                         </span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">견적단가:</span>{' '}
+                        <span className="font-medium text-primary">{formatPrice(model.derivedUnitPrice)}</span>
                       </div>
                     </div>
                   </div>

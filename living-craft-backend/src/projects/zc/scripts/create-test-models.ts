@@ -39,8 +39,7 @@ async function main() {
       displayName: 'VIVANT XA600 샤워기',
       description: 'VIVANT XA600 모델 샤워기',
       isActive: true,
-      costPrice: 280000,
-      sellingPrice: 350000,
+      materialCost: 280000,
       marginRate: 25,
     },
     {
@@ -49,8 +48,7 @@ async function main() {
       displayName: '아메리칸 스탠다드 샤워줄',
       description: '아메리칸 스탠다드 표준 샤워줄',
       isActive: true,
-      costPrice: 15000,
-      sellingPrice: 25000,
+      materialCost: 15000,
       marginRate: 66.7,
     },
     {
@@ -59,8 +57,7 @@ async function main() {
       displayName: '그로헤 샤워 수전',
       description: '그로헤 샤워 수전 시리즈',
       isActive: true,
-      costPrice: 300000,
-      sellingPrice: 450000,
+      materialCost: 300000,
       marginRate: 50,
     },
   ]

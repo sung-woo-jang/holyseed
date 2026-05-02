@@ -45,6 +45,41 @@ export class ProductModelLinksService {
     return await this.productModelLinkRepository.save(link);
   }
 
+  async search(dto: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    matchType?: string;
+  }): Promise<{ data: ProductModelLink[]; total: number; page: number; limit: number; totalPages: number }> {
+    const page = dto.page ?? 1;
+    const limit = dto.limit ?? 30;
+
+    const qb = this.productModelLinkRepository
+      .createQueryBuilder('link')
+      .leftJoinAndSelect('link.listing', 'listing')
+      .leftJoinAndSelect('listing.site', 'site')
+      .leftJoinAndSelect('listing.brand', 'listingBrand')
+      .leftJoinAndSelect('link.model', 'model')
+      .leftJoinAndSelect('model.brand', 'modelBrand')
+      .orderBy('link.linkedAt', 'DESC');
+
+    if (dto.search) {
+      qb.andWhere(
+        '(listing.productName ILIKE :search OR model.modelName ILIKE :search OR model.displayName ILIKE :search)',
+        { search: `%${dto.search}%` },
+      );
+    }
+
+    if (dto.matchType) {
+      qb.andWhere('link.matchType = :matchType', { matchType: dto.matchType });
+    }
+
+    const total = await qb.getCount();
+    const data = await qb.skip((page - 1) * limit).take(limit).getMany();
+
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
   async delete(id: string): Promise<void> {
     await this.productModelLinkRepository.delete(id);
   }

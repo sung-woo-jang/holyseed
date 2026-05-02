@@ -15,8 +15,9 @@ export function ModelCreatePage() {
     displayName: '',
     brandId: undefined,
     description: undefined,
-    costPrice: undefined,
-    sellingPrice: undefined,
+    materialCost: undefined,
+    laborCost: undefined,
+    marginRate: undefined,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -128,51 +129,56 @@ export function ModelCreatePage() {
           </div>
 
           {/* 가격 정보 */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="costPrice">원가 (원)</Label>
+              <Label htmlFor="materialCost">자재가 (원)</Label>
               <Input
-                id="costPrice"
+                id="materialCost"
                 type="number"
-                value={formData.costPrice ?? ''}
+                value={formData.materialCost ?? ''}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    costPrice: e.target.value ? Number(e.target.value) : undefined,
-                  })
+                  setFormData({ ...formData, materialCost: e.target.value ? Number(e.target.value) : undefined })
                 }
                 placeholder="0"
               />
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="sellingPrice">판매가 (원)</Label>
+              <Label htmlFor="marginRate">자재 마진율 (%)</Label>
               <Input
-                id="sellingPrice"
+                id="marginRate"
                 type="number"
-                value={formData.sellingPrice ?? ''}
+                value={formData.marginRate ?? ''}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    sellingPrice: e.target.value ? Number(e.target.value) : undefined,
-                  })
+                  setFormData({ ...formData, marginRate: e.target.value ? Number(e.target.value) : undefined })
+                }
+                placeholder="0"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="laborCost">시공비 (원)</Label>
+              <Input
+                id="laborCost"
+                type="number"
+                value={formData.laborCost ?? ''}
+                onChange={(e) =>
+                  setFormData({ ...formData, laborCost: e.target.value ? Number(e.target.value) : undefined })
                 }
                 placeholder="0"
               />
             </div>
           </div>
 
-          {/* 마진율 계산 표시 */}
-          {formData.costPrice && formData.sellingPrice && formData.costPrice > 0 && (
-            <div className="p-4 bg-muted rounded-md">
-              <p className="text-sm font-medium">예상 마진율</p>
-              <p className="text-2xl font-bold text-green-600">
-                {(
-                  ((formData.sellingPrice - formData.costPrice) / formData.costPrice) *
-                  100
-                ).toFixed(2)}
-                %
-              </p>
+          {/* 견적 단가 계산 표시 */}
+          {formData.materialCost && formData.materialCost > 0 && (
+            <div className="p-4 bg-muted rounded-md text-sm space-y-1">
+              <div className="flex justify-between text-muted-foreground">
+                <span>자재 단가 (자재가 × (1 + 마진율%))</span>
+                <span>{Math.round((formData.materialCost ?? 0) * (1 + (formData.marginRate ?? 0) / 100)).toLocaleString()}원</span>
+              </div>
+              <div className="flex justify-between font-semibold text-primary">
+                <span>견적 단가 (= 자재 단가 + 시공비)</span>
+                <span>{(Math.round((formData.materialCost ?? 0) * (1 + (formData.marginRate ?? 0) / 100)) + (formData.laborCost ?? 0)).toLocaleString()}원</span>
+              </div>
             </div>
           )}
 

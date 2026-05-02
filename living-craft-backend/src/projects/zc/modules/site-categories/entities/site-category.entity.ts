@@ -9,6 +9,7 @@ import {
   Index,
 } from 'typeorm';
 import { Site } from '../../sites/entities/site.entity';
+import { Category } from '../../categories/entities/category.entity';
 
 @Entity({ schema: 'zc', name: 'site_categories' })
 @Index(['siteId', 'siteCategoryCode'], { unique: true })
@@ -34,6 +35,9 @@ export class SiteCategory {
   @Column({ type: 'text', nullable: true, comment: '카테고리 URL' })
   url: string;
 
+  @Column({ type: 'uuid', nullable: true, comment: 'FK to zc.categories (통합 카테고리 매핑)' })
+  unifiedCategoryId: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
@@ -43,4 +47,8 @@ export class SiteCategory {
   @ManyToOne(() => Site)
   @JoinColumn({ name: 'siteId' })
   site: Site;
+
+  @ManyToOne(() => Category, { nullable: true })
+  @JoinColumn({ name: 'unifiedCategoryId' })
+  unifiedCategory: Category;
 }

@@ -11,9 +11,10 @@ export function useFetchUnmatchedProducts(params: ProductListingQueryParams = {}
         ZC_API.PRODUCT_LISTINGS.UNMATCHED,
         {
           page: params.page || 1,
-          limit: params.limit || 20,
+          limit: params.limit || 30,
           search: params.search,
           brandId: params.brandId,
+          siteCode: params.siteCode,
         }
       );
       return response.data;

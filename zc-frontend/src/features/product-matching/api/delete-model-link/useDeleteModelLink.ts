@@ -14,7 +14,8 @@ export function useDeleteModelLink() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['product-model-links'] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['unmatched-products'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
     },
   });
 }

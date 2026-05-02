@@ -11,6 +11,7 @@ import { CategoriesPage } from '@/pages/categories';
 import { BrandsPage } from '@/pages/brands';
 import { QuotesPage, QuoteCreatePage, QuoteDetailPage } from '@/pages/quotes';
 import { SiteProductsPage } from '@/pages/sites';
+import { CompareModelPage } from '@/pages/compare/compare-model-page';
 
 export const router = createBrowserRouter([
   {
@@ -48,6 +49,10 @@ export const router = createBrowserRouter([
       {
         path: 'models/:id',
         element: <ModelDetailPage />,
+      },
+      {
+        path: 'compare/:modelId',
+        element: <CompareModelPage />,
       },
       {
         path: 'categories',

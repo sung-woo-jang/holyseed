@@ -1,9 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
+import { randomUUID } from 'crypto';
 import { ProductListing } from './entities/product-listing.entity';
 import { ProductModelLink } from '../product-model-links/entities/product-model-link.entity';
 import { ProductQueryDto, ProductListResponseDto } from './dto';
+import { CreateManualListingDto } from './dto/request/create-manual-listing.dto';
+import { UpdateManualListingDto } from './dto/request/update-manual-listing.dto';
 
 @Injectable()
 export class ProductListingsService {
@@ -151,6 +154,11 @@ export class ProductListingsService {
             sortOrder: img.sortOrder,
           }))
         : [],
+      site: listing.site
+        ? { id: listing.site.id, code: listing.site.code, name: listing.site.name }
+        : undefined,
+      isManual: listing.isManual,
+      manualPriceNote: listing.manualPriceNote,
       lastCrawledAt: listing.lastCrawledAt,
       createdAt: listing.createdAt,
       updatedAt: listing.updatedAt,
@@ -173,6 +181,35 @@ export class ProductListingsService {
     }
 
     return result.site_id;
+  }
+
+  // === 수동 Listing CRUD ===
+
+  async createManualListing(dto: CreateManualListingDto): Promise<ProductListing> {
+    const siteProductId = `manual-${randomUUID()}`;
+    const listing = this.productListingRepository.create({
+      ...dto,
+      siteProductId,
+      isManual: true,
+      isAvailable: true,
+    });
+    return await this.productListingRepository.save(listing);
+  }
+
+  async updateManualListing(id: string, dto: UpdateManualListingDto): Promise<ProductListing> {
+    const listing = await this.productListingRepository.findOne({ where: { id } });
+    if (!listing) throw new NotFoundException('제품을 찾을 수 없습니다.');
+    if (!listing.isManual) throw new BadRequestException('수동 입력 제품만 수정할 수 있습니다.');
+
+    Object.assign(listing, dto);
+    return await this.productListingRepository.save(listing);
+  }
+
+  async deleteManualListing(id: string): Promise<void> {
+    const listing = await this.productListingRepository.findOne({ where: { id } });
+    if (!listing) throw new NotFoundException('제품을 찾을 수 없습니다.');
+    if (!listing.isManual) throw new BadRequestException('수동 입력 제품만 삭제할 수 있습니다.');
+    await this.productListingRepository.remove(listing);
   }
 
   // === 레거시 메서드 (하위 호환성) ===
@@ -211,7 +248,7 @@ export class ProductListingsService {
    * 미매칭 제품 목록 조회 (ProductModel에 연결되지 않은 제품)
    */
   async findUnmatched(query: ProductQueryDto): Promise<ProductListResponseDto> {
-    const { page = 1, limit = 20, search, brandId } = query;
+    const { page = 1, limit = 20, search, brandId, siteCode } = query;
 
     // 연결된 제품 ID 목록 가져오기
     const linkedProductIds = await this.linkRepository
@@ -244,6 +281,11 @@ export class ProductListingsService {
     // 브랜드 필터
     if (brandId) {
       queryBuilder.andWhere('listing.brandId = :brandId', { brandId });
+    }
+
+    // 사이트 코드 필터
+    if (siteCode) {
+      queryBuilder.andWhere('site.code = :siteCode', { siteCode });
     }
 
     // 총 개수

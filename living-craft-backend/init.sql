@@ -9,5 +9,8 @@
 -- 타임존 설정
 SET timezone = 'Asia/Seoul';
 
+-- 스키마 생성
+CREATE SCHEMA IF NOT EXISTS ad;
+
 -- 초기 설정 완료 로그
 SELECT 'Database initialization completed' as status;

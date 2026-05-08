@@ -23,7 +23,8 @@
       "@/*": ["src/*"],
       "@common/*": ["src/common/*"],
       "@config/*": ["src/config/*"],
-"@zc/*": ["src/projects/zc/*"],
+      "@zc/*": ["src/projects/zc/*"],
+      "@ad/*": ["src/projects/ad/*"],
       "@shared/*": ["src/shared/*"]
     }
   }

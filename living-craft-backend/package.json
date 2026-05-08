@@ -44,7 +44,8 @@
     "crawler:save-db-v2": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/crawler/save-to-db-v2.ts",
     "crawler:test-category": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/crawler/test-crawl-category.ts",
     "zc:migrate": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/migrations/migrate-to-v2.ts",
-    "zc:reset-db": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/migrations/reset-db.ts"
+    "zc:reset-db": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/migrations/reset-db.ts",
+    "ad:seed": "ts-node -r tsconfig-paths/register src/projects/ad/scripts/seed/seed-ad.ts"
   },
   "dependencies": {
     "@living-craft/shared-types": "*",
@@ -129,11 +130,14 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
-    "moduleNameMapping": {
+    "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/$1",
       "^@common/(.*)$": "<rootDir>/common/$1",
       "^@modules/(.*)$": "<rootDir>/modules/$1",
-      "^@config/(.*)$": "<rootDir>/config/$1"
+      "^@config/(.*)$": "<rootDir>/config/$1",
+      "^@zc/(.*)$": "<rootDir>/projects/zc/$1",
+      "^@ad/(.*)$": "<rootDir>/projects/ad/$1",
+      "^@shared/(.*)$": "<rootDir>/shared/$1"
     }
   }
 }

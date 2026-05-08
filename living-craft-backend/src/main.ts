@@ -86,6 +86,52 @@ async function bootstrap() {
     console.log('💎 [ZC] Swagger UI: http://localhost:8000/zc/docs')
     console.log('💎 [ZC] Swagger JSON: http://localhost:8000/zc/docs/json')
     console.log(`📊 [ZC] API 개수: ${Object.keys(filteredZcDocument.paths).length}개`)
+
+    // ========================================
+    // AD (자산일기) API 문서
+    // ========================================
+    const adConfig = new DocumentBuilder()
+      .setTitle('AD (Asset Diary) API')
+      .setDescription('자산일기 - 가구 자산 스냅샷·거래·정기지출 관리 서비스')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addTag('AD 인증', '토스 appLogin 연동 인증')
+      .addTag('AD 사용자', '사용자 프로필 관리')
+      .addTag('AD 가구', '가구 워크스페이스 관리')
+      .addTag('AD 멤버십', '가구 멤버 역할 관리')
+      .addTag('AD 초대', '가구 초대 코드 관리')
+      .addTag('AD 카테고리', '거래 카테고리 관리')
+      .addTag('AD 자산', '자산 CRUD 및 아카이브')
+      .addTag('AD 자산 스냅샷', '자산 평가액 스냅샷')
+      .addTag('AD 거래', '거래 내역 관리')
+      .addTag('AD 정기지출', '정기 거래 템플릿 관리')
+      .addTag('AD 대시보드', '홈 대시보드 집계')
+      .addTag('AD 현금흐름', '기간별 현금흐름 분석')
+      .addTag('AD 연간 비교', '연도별 자산 비교')
+      .build()
+
+    const adDocument = SwaggerModule.createDocument(app, adConfig, {
+      include: [],
+    })
+
+    const filteredAdDocument = {
+      ...adDocument,
+      paths: Object.fromEntries(Object.entries(adDocument.paths).filter(([path]) => path.startsWith('/api/ad/'))),
+    }
+
+    SwaggerModule.setup('ad/docs', app, filteredAdDocument, {
+      swaggerOptions: {
+        persistAuthorization: true,
+        tagsSorter: 'alpha',
+        operationsSorter: 'alpha',
+      },
+      customSiteTitle: 'AD API - 자산일기',
+      jsonDocumentUrl: '/ad/docs/json',
+    })
+
+    console.log('💎 [AD] Swagger UI: http://localhost:8000/ad/docs')
+    console.log('💎 [AD] Swagger JSON: http://localhost:8000/ad/docs/json')
+    console.log(`📊 [AD] API 개수: ${Object.keys(filteredAdDocument.paths).length}개`)
   }
 
   await app.listen(port, '0.0.0.0')

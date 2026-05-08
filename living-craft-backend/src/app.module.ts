@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
+import { ScheduleModule } from '@nestjs/schedule';
 
 // Config
 import appConfig from './config/app.config';
@@ -19,6 +20,7 @@ import { JwtStrategy } from '@common/strategies/jwt.strategy';
 // Modules
 import { SharedModule } from '@/shared/shared.module';
 import { ZcModule } from '@/projects/zc/zc.module';
+import { AdModule } from '@/projects/ad/ad.module';
 
 @Module({
   imports: [
@@ -48,9 +50,13 @@ import { ZcModule } from '@/projects/zc/zc.module';
       inject: [ConfigService],
     }),
 
+    // Schedule (cron jobs)
+    ScheduleModule.forRoot(),
+
     // Feature modules
     SharedModule, // 공유 모듈 (files, health, address)
     ZcModule, // Zippt Crawler 프로젝트 통합 모듈 (/api/zc/* 경로)
+    AdModule, // Asset Diary 프로젝트 통합 모듈 (/api/ad/* 경로)
   ],
   providers: [
     JwtStrategy,

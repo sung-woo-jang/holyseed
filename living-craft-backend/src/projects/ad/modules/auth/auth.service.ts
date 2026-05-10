@@ -29,8 +29,8 @@ export class AuthService {
     this.sandboxHost = configService.get('AIT_AD_SANDBOX_HOST') || 'https://sandbox.apps-in-toss-api.toss.im';
     this.clientId = configService.get('AIT_AD_CLIENT_ID') || '';
     this.clientSecret = configService.get('AIT_AD_CLIENT_SECRET') || '';
-    this.decryptionKey = Buffer.from(configService.get('AIT_AD_DECRYPTION_KEY') || '', 'base64');
-    this.aad = Buffer.from(configService.get('AIT_AD_AAD') || 'TOSS', 'utf8');
+    this.decryptionKey = Buffer.from(configService.get<string>('AIT_AD_DECRYPTION_KEY', ''), 'base64');
+    this.aad = Buffer.from(configService.get<string>('AIT_AD_AAD', 'TOSS'), 'utf8');
   }
 
   async appLogin(dto: AppLoginDto) {

@@ -4,7 +4,7 @@ import { BaseEntity } from '@common/entities/base.entity';
 @Entity('users', { schema: 'ad' })
 export class AdUser extends BaseEntity {
   @Column({ name: 'toss_user_key', unique: true })
-  tossUserKey: number;
+  tossUserKey: string;
 
   @Column({ length: 100, default: '사용자' })
   name: string;

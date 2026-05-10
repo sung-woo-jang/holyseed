@@ -53,7 +53,7 @@ export class AuthService {
     }
   }
 
-  private async exchangeToken(authorizationCode: string, host: string): Promise<number> {
+  private async exchangeToken(authorizationCode: string, host: string): Promise<string> {
     const certPath = this.configService.get('AIT_AD_CERT_PATH');
     const keyPath = this.configService.get('AIT_AD_KEY_PATH');
 
@@ -68,23 +68,23 @@ export class AuthService {
         { authorizationCode, clientId: this.clientId, clientSecret: this.clientSecret },
         { httpsAgent, timeout: 10000 },
       );
-      return response.data.userKey as number;
+      return String(response.data.userKey);
     } catch (error: any) {
       if (process.env.NODE_ENV === 'development' && !this.clientId) {
         // 개발 환경에서 mTLS 미설정 시 authorizationCode를 userKey로 사용 (더미)
-        return Number(authorizationCode) || 999999;
+        return authorizationCode || 'dev-user-999999';
       }
       throw new UnauthorizedException('토스 토큰 교환에 실패했습니다.');
     }
   }
 
-  private async upsertUser(tossUserKey: number): Promise<AdUser> {
+  private async upsertUser(tossUserKey: string): Promise<AdUser> {
     let user = await this.userRepo.findOne({ where: { tossUserKey } });
 
     if (!user) {
       user = this.userRepo.create({
         tossUserKey,
-        name: `사용자${String(tossUserKey).slice(-4)}`,
+        name: `사용자${tossUserKey.slice(-4)}`,
         avatarColor: this.randomColor(),
         initial: '사',
       });

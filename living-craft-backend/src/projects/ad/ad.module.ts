@@ -5,6 +5,10 @@ import { HouseholdsModule } from './modules/households/households.module';
 import { MembershipsModule } from './modules/memberships/memberships.module';
 import { InvitationsModule } from './modules/invitations/invitations.module';
 import { AdCategoriesModule } from './modules/categories/categories.module';
+import { AssetsModule } from './modules/assets/assets.module';
+import { AssetSnapshotsModule } from './modules/asset-snapshots/asset-snapshots.module';
+import { TransactionsModule } from './modules/transactions/transactions.module';
+import { RecurringTransactionsModule } from './modules/recurring-transactions/recurring-transactions.module';
 
 @Module({
   imports: [
@@ -14,6 +18,10 @@ import { AdCategoriesModule } from './modules/categories/categories.module';
     MembershipsModule,
     InvitationsModule,
     AdCategoriesModule,
+    AssetsModule,
+    AssetSnapshotsModule,
+    TransactionsModule,
+    RecurringTransactionsModule,
   ],
 })
 export class AdModule {}

@@ -75,25 +75,27 @@
 
 ---
 
-## ⬜ M3 — 백엔드 분석
+## ✅ M3 — 백엔드 분석 (완료)
 
 > 완료 기준: `/dashboard` 200ms 이내, 워터폴/도넛/현금흐름 응답 정상
 
 ### 서비스/SQL
-- [ ] `modules/dashboard/` — `GET /households/:id/dashboard` (순자산 + 60mo 시계열 + 도넛 기여도 + 최근거래3)
-- [ ] `modules/dashboard/` — `POST /households/:id/dashboard/timeseries` ({range: 1Y/3Y/5Y/ALL})
-- [ ] `modules/cashflow/` — `POST /households/:id/cashflow` ({from, to})
-- [ ] `modules/comparison/` — `GET /households/:id/comparison/yearly` (5y 워터폴 + 자산군 기여)
+- [x] `modules/dashboard/` — `GET /households/:id/dashboard` (순자산 + 60mo 시계열 + 도넛 기여도 + 최근거래3)
+- [x] `modules/dashboard/` — `POST /households/:id/dashboard/timeseries` ({range: 1Y/3Y/5Y/ALL})
+- [x] `modules/cashflow/` — `POST /households/:id/cashflow` ({from, to})
+- [x] `modules/comparison/` — `GET /households/:id/comparison/yearly` (5y 워터폴 + 자산군 기여)
 
 ### 핵심 SQL
-- [ ] 시점 기준 자산 평가액: `DISTINCT ON (asset_id)` 쿼리
-- [ ] 60개월 시계열: 매월 말일 스냅샷 기준 집계
-- [ ] 자산군 기여도: 연말 valueKRW - 전년 연말 valueKRW
-- [ ] 월별 현금흐름: `date_trunc('month', date)` GROUP BY
+- [x] 시점 기준 자산 평가액: LATERAL JOIN + ORDER BY date DESC LIMIT 1
+- [x] 60개월 시계열: TypeScript에서 월말 기준 최신 스냅샷 집계
+- [x] 자산군 기여도: 연말 LATERAL JOIN → byCategory 배열 + changeRate
+- [x] 월별 현금흐름: `date_trunc('month', date)` GROUP BY type
 
 ### 검증
-- [ ] `/dashboard` 응답 200ms 이내 (`curl -w "%{time_total}"`)
-- [ ] 워터폴/도넛/현금흐름 응답 구조 확인
+- [x] `/dashboard` 응답 97ms (200ms 기준 통과)
+- [x] netWorth=757,942,078 / donut 6개 / timeseries 60mo / recentTx 3건
+- [x] cashflow 저축률 76% / 57.4% / 55.3% 정상 출력
+- [x] yearly: 2022→2026 연간 순자산 + changeRate 정상
 
 ---
 

@@ -9,6 +9,9 @@ import { AssetsModule } from './modules/assets/assets.module';
 import { AssetSnapshotsModule } from './modules/asset-snapshots/asset-snapshots.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { RecurringTransactionsModule } from './modules/recurring-transactions/recurring-transactions.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { CashflowModule } from './modules/cashflow/cashflow.module';
+import { ComparisonModule } from './modules/comparison/comparison.module';
 
 @Module({
   imports: [
@@ -22,6 +25,9 @@ import { RecurringTransactionsModule } from './modules/recurring-transactions/re
     AssetSnapshotsModule,
     TransactionsModule,
     RecurringTransactionsModule,
+    DashboardModule,
+    CashflowModule,
+    ComparisonModule,
   ],
 })
 export class AdModule {}

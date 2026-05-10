@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as https from 'https';
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 import axios from 'axios';
 import { AdUser } from '../users/entities/ad-user.entity';
@@ -15,6 +16,8 @@ export class AuthService {
   private readonly sandboxHost: string;
   private readonly clientId: string;
   private readonly clientSecret: string;
+  private readonly decryptionKey: Buffer;
+  private readonly aad: Buffer;
 
   constructor(
     private readonly configService: ConfigService,
@@ -26,6 +29,8 @@ export class AuthService {
     this.sandboxHost = configService.get('AIT_AD_SANDBOX_HOST') || 'https://sandbox.apps-in-toss-api.toss.im';
     this.clientId = configService.get('AIT_AD_CLIENT_ID') || '';
     this.clientSecret = configService.get('AIT_AD_CLIENT_SECRET') || '';
+    this.decryptionKey = Buffer.from(configService.get('AIT_AD_DECRYPTION_KEY') || '', 'base64');
+    this.aad = Buffer.from(configService.get('AIT_AD_AAD') || 'TOSS', 'utf8');
   }
 
   async appLogin(dto: AppLoginDto) {
@@ -68,7 +73,7 @@ export class AuthService {
         { authorizationCode, clientId: this.clientId, clientSecret: this.clientSecret },
         { httpsAgent, timeout: 10000 },
       );
-      return String(response.data.userKey);
+      return this.decryptUserKey(response.data.userKey);
     } catch (error: any) {
       if (process.env.NODE_ENV === 'development' && !this.clientId) {
         // 개발 환경에서 mTLS 미설정 시 authorizationCode를 userKey로 사용 (더미)
@@ -76,6 +81,20 @@ export class AuthService {
       }
       throw new UnauthorizedException('토스 토큰 교환에 실패했습니다.');
     }
+  }
+
+  // AES-256-GCM 복호화: Toss가 반환하는 암호화된 userKey 복호화
+  private decryptUserKey(encrypted: string): string {
+    const buf = Buffer.from(encrypted, 'base64');
+    const iv = buf.subarray(0, 12);
+    const tag = buf.subarray(buf.length - 16);
+    const ciphertext = buf.subarray(12, buf.length - 16);
+
+    const decipher = crypto.createDecipheriv('aes-256-gcm', this.decryptionKey, iv);
+    decipher.setAuthTag(tag);
+    decipher.setAAD(this.aad);
+
+    return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
   }
 
   private async upsertUser(tossUserKey: string): Promise<AdUser> {

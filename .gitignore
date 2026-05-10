@@ -29,5 +29,6 @@ yarn-error.log*
 # Root node_modules
 node_modules
 # 민감 파일
+docs/*
 docs/mTLS_*/
 docs/securityMail.html

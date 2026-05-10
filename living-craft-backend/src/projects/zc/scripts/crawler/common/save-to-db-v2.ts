@@ -4,6 +4,7 @@ import * as fs from 'fs/promises'
 import 'reflect-metadata'
 import { DataSource, Between } from 'typeorm'
 import { Brand } from '../../../modules/brands/entities/brand.entity'
+import { Category } from '../../../modules/categories/entities/category.entity'
 import { PriceHistory } from '../../../modules/price-history/entities/price-history.entity'
 import { ProductImage } from '../../../modules/product-images/entities/product-image.entity'
 import { ProductListing } from '../../../modules/product-listings/entities/product-listing.entity'
@@ -30,7 +31,7 @@ export class DatabaseSaverV2 {
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || 'password123',
       database: process.env.DB_DATABASE || 'living_craft',
-      entities: [Site, SiteCategory, Brand, ProductListing, ProductModel, ProductModelLink, PriceHistory, ProductImage],
+      entities: [Site, SiteCategory, Brand, Category, ProductListing, ProductModel, ProductModelLink, PriceHistory, ProductImage],
       // synchronize: 항상 true (개발/프로덕션 모두)
       synchronize: true,
       logging: false,

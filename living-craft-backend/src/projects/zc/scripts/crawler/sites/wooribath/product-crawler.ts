@@ -54,11 +54,16 @@ export class ProductCrawler {
 
           const goodsNo = idMatch[1]
 
-          // 가격 파싱
-          const priceText = $el.find('.product_price').text().trim()
-          // "판매가 : 1,595,000원" 형태에서 숫자만 추출
-          const priceMatch = priceText.match(/[\d,]+/)
-          const price = priceMatch ? parseInt(priceMatch[0].replace(/,/g, ''), 10) : 0
+          // data-price 속성에서 직접 가격 추출 (JS 렌더링 시 할인율 뱃지가 텍스트에 추가되어 regex 오파싱 방지)
+          const dataPrice = $el.attr('data-price')
+          let price = dataPrice ? parseInt(dataPrice, 10) : 0
+
+          // data-price 없거나 0이면 텍스트 파싱 폴백 - "원" 앞의 숫자만 추출
+          if (!price) {
+            const priceText = $el.find('.product_price').text().trim()
+            const priceMatch = priceText.match(/([\d,]+)원/)
+            price = priceMatch ? parseInt(priceMatch[1].replace(/,/g, ''), 10) : 0
+          }
 
           // 이미지
           let thumbnailUrl = $el.find('img').first().attr('src') || ''

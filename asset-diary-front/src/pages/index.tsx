@@ -1,8 +1,14 @@
 import { createRoute } from '@granite-js/react-native';
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import TabBar, { type TabKey } from '../components/TabBar';
+import AssetsScreen from '../screens/AssetsScreen';
+import BookScreen from '../screens/BookScreen';
+import HomeScreen from '../screens/HomeScreen';
+import MoreScreen from '../screens/MoreScreen';
 import { useAuthStore } from '../stores/auth.store';
+import type { Asset } from '../types/api';
 
 export const Route = createRoute('/', {
   component: Page,
@@ -19,60 +25,22 @@ function Page() {
     }
   }, [isReady, currentHousehold]);
 
+  function handleAssetPress(asset: Asset) {
+    navigation.navigate('/assets/detail', { assetId: asset.id });
+  }
+
+  function handleCategoriesPress() {
+    navigation.navigate('/more/categories');
+  }
+
   return (
     <SafeAreaView style={styles.root}>
-      <View style={styles.content}>{renderTab(activeTab)}</View>
+      {activeTab === 'home' && <HomeScreen />}
+      {activeTab === 'assets' && <AssetsScreen onAssetPress={handleAssetPress} />}
+      {activeTab === 'book' && <BookScreen />}
+      {activeTab === 'more' && <MoreScreen onCategoriesPress={handleCategoriesPress} />}
       <TabBar activeTab={activeTab} onTabPress={setActiveTab} />
     </SafeAreaView>
-  );
-}
-
-function renderTab(tab: TabKey) {
-  switch (tab) {
-    case 'home':
-      return <HomeScreen />;
-    case 'assets':
-      return <AssetsScreen />;
-    case 'book':
-      return <BookScreen />;
-    case 'more':
-      return <MoreScreen />;
-  }
-}
-
-function HomeScreen() {
-  return (
-    <View style={styles.screen}>
-      <Text style={styles.title}>자산일기</Text>
-      <Text style={styles.sub}>순자산 대시보드</Text>
-    </View>
-  );
-}
-
-function AssetsScreen() {
-  return (
-    <View style={styles.screen}>
-      <Text style={styles.title}>자산</Text>
-      <Text style={styles.sub}>자산 목록</Text>
-    </View>
-  );
-}
-
-function BookScreen() {
-  return (
-    <View style={styles.screen}>
-      <Text style={styles.title}>거래장</Text>
-      <Text style={styles.sub}>거래 내역</Text>
-    </View>
-  );
-}
-
-function MoreScreen() {
-  return (
-    <View style={styles.screen}>
-      <Text style={styles.title}>더보기</Text>
-      <Text style={styles.sub}>설정 및 관리</Text>
-    </View>
   );
 }
 
@@ -80,23 +48,5 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  content: {
-    flex: 1,
-  },
-  screen: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#191F28',
-  },
-  sub: {
-    fontSize: 14,
-    color: '#8B95A1',
   },
 });

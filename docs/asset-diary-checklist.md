@@ -3,6 +3,12 @@
 > 파일 경로: `/Users/jangseong-u/Desktop/Project/living-craft/`
 > 백엔드: `living-craft-backend/src/projects/ad/` | 프론트: `living-craft/asset-diary-front/` (workspaces 미편입)
 > Swagger: `http://localhost:8000/ad/docs`
+>
+> **실행 명령어 (루트 기준)**
+> - 백엔드: `yarn dev:ad:back`
+> - 프론트: `yarn dev:ad`
+> - 빌드: `yarn build:ad`
+> - 타입체크: `yarn typecheck:ad`
 
 ---
 
@@ -99,45 +105,50 @@
 
 ---
 
-## ⬜ M4 — 프론트 부트
+## 🔄 M4 — 프론트 부트 (구현 완료, 시뮬레이터 검증 대기)
 
 > 완료 기준: 토스 시뮬레이터에서 appLogin → 4탭 진입, JoinSheet 딥링크 통과
 
 ### 사전 준비 (수기)
 - [ ] 토스 개발자센터 앱 등록 (샌드박스)
-- [ ] mTLS 인증서 + AAD + DECRYPTION_KEY 발급 → `living-craft-backend/cert/` + `.env`
-- [ ] 토스 시뮬레이터 설치
+- [x] mTLS 인증서 + AAD + DECRYPTION_KEY 발급 → `living-craft-backend/cert/` + `.env`
+- [ ] 토스 시뮬레이터 설치 및 샌드박스 앱 실행
 
-### 스캐폴딩 (작업 디렉토리: `~/Desktop/Project/living-craft/`)
-- [ ] `yarn create granite-app` → 프로젝트명 `asset-diary-front`, 도구 선택
-- [ ] `yarn add @apps-in-toss/framework @toss/tds-react-native`
-- [ ] `yarn add @tanstack/react-query zustand axios react-hook-form @react-native-async-storage/async-storage react-native-svg date-fns`
-- [ ] `npx ait init` → appName `asset-diary`, scheme `intoss`
-- [ ] `granite.config.ts` — displayName `자산일기`, primaryColor `#3182F6`, 푸시 알림 권한
-- [ ] `.env` — `SERVER_BASE_URL=http://localhost:8000/api/ad`
-- [ ] `yarn dev` → 빈 홈 화면 노출 확인
+### 스캐폴딩
+- [x] `yarn create granite-app` → 프로젝트명 `asset-diary-front` (prettier+eslint)
+- [x] `yarn add @apps-in-toss/framework @toss/tds-react-native`
+- [x] `yarn add @tanstack/react-query zustand axios react-hook-form @react-native-async-storage/async-storage react-native-svg date-fns`
+- [x] `granite.config.ts` — appName `asset-diary`, scheme `intoss`, displayName `자산일기`, primaryColor `#3182F6`
+- [x] `.env` — `SERVER_BASE_URL=http://localhost:8000/api/ad`
 
-### TDS 컴포넌트 매트릭스 검증 (M4 D1)
-- [ ] `mcp__apps-in-toss__search_tds_rn_docs` — SegmentedControl/BottomSheet/Switch/Avatar 존재 여부
-- [ ] 미존재 컴포넌트 자체 구현 폴백 목록 확정
+### TDS 컴포넌트 매트릭스 검증
+- [x] Tab ✅ / Switch ✅ / SegmentedControl ✅ 존재
+- [x] BottomSheet ❌ → 자체 구현 폴백 결정
+- [x] Avatar ❌ → 이니셜+색상 자체 구현 폴백 결정
 
 ### 인증/온보딩
-- [ ] `src/_app.tsx` — QueryClientProvider + TDSProvider + AuthBootstrap
-- [ ] `AuthBootstrap` — AsyncStorage JWT 조회 → appLogin() → POST /auth/app-login → zustand 저장
-- [ ] axios interceptor — Bearer 헤더 + 401 refresh 자동 갱신
-- [ ] `pages/auth/onboarding.tsx` — 가구 0건 진입 시 생성/합류 분기
-- [ ] `pages/auth/join/[code].tsx` — 딥링크 합류
+- [x] `src/_app.tsx` — `AppsInToss.registerApp` + `QueryClientProvider` + `AuthBootstrap`
+- [x] `AuthBootstrap` — AsyncStorage JWT 조회 → `appLogin()` → `POST /auth/app-login` → zustand 저장
+- [x] axios interceptor — Bearer 헤더 + 401 자동 refresh (`src/lib/api.ts`)
+- [x] `src/stores/auth.store.ts` — zustand (user, tokens, households, currentHousehold)
+- [x] `src/lib/storage.ts` — AsyncStorage 토큰 저장/조회/삭제
+- [x] `pages/auth/onboarding.tsx` — 가구 0건 진입 시 가구 생성
+- [x] `pages/auth/join.tsx` — 초대 코드 딥링크 합류
 
 ### 탭 셸
-- [ ] `pages/_layout.tsx` — BottomTabBar 4탭 (홈/자산/거래장/더보기)
-- [ ] `pages/index.tsx` — HomeScreen stub
-- [ ] `pages/assets/index.tsx` — AssetsScreen stub
-- [ ] `pages/book/index.tsx` — BookScreen stub
-- [ ] `pages/more/index.tsx` — MoreScreen stub
+- [x] 4탭 BottomTabBar 자체 구현 (`src/components/TabBar.tsx`)
+- [x] `pages/index.tsx` — state 기반 4탭 레이아웃 (HomeScreen / AssetsScreen / BookScreen / MoreScreen 스텁 포함)
+- [x] 가구 없음 → `/auth/onboarding` 자동 분기
 
-### 검증
-- [ ] 토스 시뮬레이터 4탭 진입
-- [ ] JoinSheet 딥링크 (`intoss://asset-diary/auth/join/CODE`) 통과
+### 검증 (시뮬레이터 필요)
+- [ ] `yarn dev` → Metro 번들러 정상 기동 확인
+- [ ] 토스 샌드박스 앱에서 `intoss://asset-diary` 진입
+- [ ] appLogin() 트리거 → `/api/ad/auth/app-login` 호출 → JWT 저장
+- [ ] 가구 없음 → 온보딩 화면 자동 진입 확인
+- [ ] 온보딩: 가구명 입력 → 생성 → 4탭 메인 화면 진입
+- [ ] 4탭 전환 (홈/자산/거래장/더보기) 확인
+- [ ] 딥링크 `intoss://asset-diary/auth/join?code=XXX` → 초대 합류 확인
+- [ ] `yarn typecheck:ad` 통과 ✅ (2026-05-11 확인)
 
 ---
 
@@ -146,34 +157,35 @@
 > 완료 기준: 모든 입력 시트 mock+실 API 동작, VIEWER 권한 회귀
 
 ### API 레이어
-- [ ] `src/api/` — axios 인스턴스 + 도메인별 함수 (auth/households/assets/snapshots/transactions/recurring/categories/invitations)
-- [ ] `src/stores/auth.store.ts` — zustand (user, tokens, households)
-- [ ] `src/stores/household.store.ts` — currentHousehold, role
+- [ ] `src/api/` — 도메인별 API 함수 (assets/snapshots/transactions/recurring/categories/invitations/households)
 - [ ] `src/hooks/` — useRole/useIsViewer/useIsOwner/useCanEdit/useHousehold
 - [ ] `src/queries/keys.ts` — query key factory
 - [ ] OpenAPI 타입 생성: `ad/docs/json` → `openapi-typescript` → `src/types/`
 
-### 컴포넌트
-- [ ] `components/common/` — ScreenHeader, FormRow, Segmented, AutoBadge, RoleBadge, EmptyState
-- [ ] `lib/format.ts` — KRW/KRW_SHORT/PCT (`asset-log/data.jsx:3-23` 이식)
+### 공통 컴포넌트
+- [ ] `src/components/common/ScreenHeader.tsx`
+- [ ] `src/components/common/EmptyState.tsx`
+- [ ] `src/components/common/RoleBadge.tsx`
+- [ ] `src/lib/format.ts` — KRW/KRW_SHORT/PCT
 
 ### 화면/시트
-- [ ] `pages/assets/index.tsx` — AssetsScreen (목록 + 검색 + 일괄 스냅샷 버튼)
-- [ ] `pages/assets/[id].tsx` — AssetDetailScreen + 스냅샷 히스토리
-- [ ] `components/sheets/SnapshotSheet.tsx` — 단건/일괄 스냅샷 입력
-- [ ] `components/sheets/AddTxSheet.tsx` — 거래 입력 (수입/지출/이체)
-- [ ] `components/sheets/AddRecurringSheet.tsx` — 정기지출 등록
-- [ ] `pages/book/index.tsx` — BookScreen (거래/정기 2탭)
-- [ ] `pages/more/categories.tsx` — CategoriesScreen + AddCategorySheet
-- [ ] `components/sheets/PickerSheet.tsx` — 날짜/자산/카테고리 선택
+- [ ] `pages/index.tsx` → HomeScreen (순자산 카드 + 최근거래 3건)
+- [ ] `pages/assets/` → AssetsScreen (목록 + 검색 + 일괄 스냅샷 버튼)
+- [ ] `pages/assets/detail.tsx` → AssetDetailScreen + 스냅샷 히스토리
+- [ ] `src/components/sheets/SnapshotSheet.tsx` — 단건/일괄 스냅샷 입력
+- [ ] `src/components/sheets/AddTxSheet.tsx` — 거래 입력 (수입/지출/이체)
+- [ ] `src/components/sheets/AddRecurringSheet.tsx` — 정기지출 등록
+- [ ] `pages/book/` → BookScreen (거래/정기 2탭)
+- [ ] `pages/more/categories.tsx` → CategoriesScreen + AddCategorySheet
+- [ ] `src/components/sheets/PickerSheet.tsx` — 날짜/자산/카테고리 선택
 
 ### 권한 분기
-- [ ] VIEWER: 모든 FAB/추가/수정 버튼 숨김 확인
-- [ ] OWNER만: Members 초대 버튼
+- [ ] VIEWER: FAB/추가/수정 버튼 숨김
+- [ ] OWNER만: Members 초대 버튼 노출
 
 ### 검증
-- [ ] mock → 실 API 전환 (baseURL 토글) 회귀
-- [ ] VIEWER roleOverride → 편집 UI 전부 사라짐
+- [ ] 실 API 연동 후 회귀 테스트
+- [ ] VIEWER roleOverride → 편집 UI 전부 사라짐 확인
 
 ---
 
@@ -181,11 +193,11 @@
 
 > 완료 기준: PRD §9 검증 3항목 즉답 (전년 대비 %, 자산군 기여, 저축률)
 
-### 차트 컴포넌트 (react-native-svg, `asset-log/charts.jsx` 알고리즘 이식)
-- [ ] `components/charts/LineChart.tsx`
-- [ ] `components/charts/DonutChart.tsx`
-- [ ] `components/charts/WaterfallChart.tsx`
-- [ ] `components/charts/HBar.tsx`
+### 차트 컴포넌트 (react-native-svg)
+- [ ] `src/components/charts/LineChart.tsx`
+- [ ] `src/components/charts/DonutChart.tsx`
+- [ ] `src/components/charts/WaterfallChart.tsx`
+- [ ] `src/components/charts/HBar.tsx`
 
 ### 화면
 - [ ] `pages/index.tsx` — HomeScreen (순자산 카드 + 시계열 LineChart + 도넛)
@@ -216,7 +228,7 @@
 ## 아키텍처 요약
 
 ```
-asset-diary-front (Granite RN + TDS, 독립 프로젝트)
+asset-diary-front (Granite 1.0 + @apps-in-toss/framework 2.5, 독립 프로젝트)
    │  appLogin() → {authorizationCode, referrer}
    ▼
 living-craft-backend (NestJS, /api/ad/*)
@@ -235,12 +247,12 @@ PostgreSQL schema "ad" + @nestjs/schedule cron (정기지출)
 | `ad.memberships` | ✅ | householdId, userId, role(OWNER/EDITOR/VIEWER) |
 | `ad.invitations` | ✅ | householdId, role, code(unique), expiresAt(7d) |
 | `ad.categories` | ✅ | householdId(nullable=빌트인), type, name, icon, isBuiltin |
-| `ad.assets` | ⬜ | householdId, name, category, currency, isLiability, archivedAt |
-| `ad.asset_snapshots` | ⬜ | assetId, date, value, fxRateToKRW, valueKRW, INDEX(assetId,date) |
-| `ad.transactions` | ⬜ | householdId, date, type, amount, categoryId, tags, attachments, autoGenerated |
-| `ad.recurring_transactions` | ⬜ | frequency(MONTHLY/YEARLY), dayOfMonth, startDate, endDate, active, lastRunDate |
+| `ad.assets` | ✅ | householdId, name, category, currency, isLiability, archivedAt |
+| `ad.asset_snapshots` | ✅ | assetId, date, value, fxRateToKRW, valueKRW, INDEX(assetId,date) |
+| `ad.transactions` | ✅ | householdId, date, type, amount, categoryId, tags, attachments, autoGenerated |
+| `ad.recurring_transactions` | ✅ | frequency(MONTHLY/YEARLY), dayOfMonth, startDate, endDate, active, lastRunDate |
 
-## API 현황 (18/전체)
+## API 현황
 
 | 화면 | 엔드포인트 | 상태 |
 |---|---|---|
@@ -249,20 +261,20 @@ PostgreSQL schema "ad" + @nestjs/schedule cron (정기지출)
 | 가구 | GET/POST /households, GET/POST /households/:id/* | ✅ |
 | 초대 | POST/GET /households/:id/invitations, POST /invitations/:code/* | ✅ |
 | 카테고리 | GET/POST /households/:id/categories, POST /categories/:id/* | ✅ |
-| 자산 | GET/POST /households/:id/assets/*, POST /assets/:id/* | ⬜ |
-| 스냅샷 | POST /assets/:id/snapshots, POST /households/:id/snapshots/batch | ⬜ |
-| 거래 | GET/POST /households/:id/transactions/*, POST /transactions/:id/* | ⬜ |
-| 정기지출 | GET/POST /households/:id/recurring, POST /recurring/:id/* | ⬜ |
-| 대시보드 | GET /households/:id/dashboard, POST /dashboard/timeseries | ⬜ |
-| 현금흐름 | POST /households/:id/cashflow | ⬜ |
-| 연간 비교 | GET /households/:id/comparison/yearly | ⬜ |
+| 자산 | GET/POST /households/:id/assets/*, POST /assets/:id/* | ✅ |
+| 스냅샷 | POST /assets/:id/snapshots, POST /households/:id/snapshots/batch | ✅ |
+| 거래 | GET/POST /households/:id/transactions/*, POST /transactions/:id/* | ✅ |
+| 정기지출 | GET/POST /households/:id/recurring, POST /recurring/:id/* | ✅ |
+| 대시보드 | GET /households/:id/dashboard, POST /dashboard/timeseries | ✅ |
+| 현금흐름 | POST /households/:id/cashflow | ✅ |
+| 연간 비교 | GET /households/:id/comparison/yearly | ✅ |
 
 ## 리스크
 
 | # | 리스크 | 완화 | 시점 |
 |---|---|---|---|
-| R4 | mTLS 인증서 발급 지연 | 미수령 시 개발 더미 fallback 유지, M4에서 교체 | M1 D0 |
-| R2 | Cron 멱등성 | `lastRunDate` + try-catch (부분 unique 인덱스 init.sql) | M2 |
-| R5 | TDS RN 컴포넌트 부재 | M4 D1 MCP 검증 후 자체 구현 폴백 | M4 D1 |
+| R4 | mTLS 인증서 발급 지연 | 개발 더미 fallback 유지 (AIT_AD_CLIENT_ID 미설정 시 authorizationCode → userKey) | 완료 |
+| R2 | Cron 멱등성 | `lastRunDate` + try-catch | 완료 |
+| R5 | TDS RN BottomSheet/Avatar 미지원 | 자체 구현 확정 | 완료 |
 | R11 | 프론트 타입 동기화 | `openapi-typescript` from `/ad/docs/json` | M5 D1 |
-| R12 | appLogin 시뮬레이터 | 샌드박스 referrer 분기 | M4 |
+| R12 | appLogin 시뮬레이터 | 샌드박스 referrer 분기 구현됨 | 완료 |

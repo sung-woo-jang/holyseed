@@ -110,7 +110,7 @@
 > 완료 기준: 토스 시뮬레이터에서 appLogin → 4탭 진입, JoinSheet 딥링크 통과
 
 ### 사전 준비 (수기)
-- [ ] 토스 개발자센터 앱 등록 (샌드박스)
+- [x] 토스 개발자센터 앱 등록 (샌드박스)
 - [x] mTLS 인증서 + AAD + DECRYPTION_KEY 발급 → `living-craft-backend/cert/` + `.env`
 - [ ] 토스 시뮬레이터 설치 및 샌드박스 앱 실행
 

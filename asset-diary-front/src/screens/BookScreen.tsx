@@ -1,58 +1,228 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  FlatList,
+  ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { recurringApi, txApi } from '../api';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useDataSource, useMockRole } from '../lib/data-source';
+import { useTheme } from '../lib/theme';
+import { krwShort, monthDayWeek } from '../lib/format';
+import { getCategoryDef } from '../lib/category-meta';
+import { TE } from '../lib/toss-emoji';
+import TossEmoji from '../components/common/TossEmoji';
+import AutoBadge from '../components/common/AutoBadge';
+import { Icon } from '../components/common/Icon';
 import AddTxSheet from '../components/sheets/AddTxSheet';
-import EmptyState from '../components/common/EmptyState';
-import ScreenHeader, { HeaderButton } from '../components/common/ScreenHeader';
-import { useCanEdit, useHousehold } from '../hooks';
-import { qk } from '../queries/keys';
-import { TX_TYPE_LABEL, dateStr, krwShort } from '../lib/format';
 
-type BookTab = 'tx' | 'recurring';
+type BookTab = 'tx' | 'rec';
 
 export default function BookScreen() {
-  const { household } = useHousehold();
-  const canEdit = useCanEdit();
-  const [activeTab, setActiveTab] = useState<BookTab>('tx');
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  const role = useMockRole();
+  const data = useDataSource();
+  const [tab, setTab] = useState<BookTab>('tx');
   const [addTxVisible, setAddTxVisible] = useState(false);
+  const isViewer = role === 'VIEWER';
+
+  const months = useMemo(() => {
+    const set = new Set(data.transactions.map(t => t.date.slice(0, 7)));
+    return [...set].sort().reverse();
+  }, [data.transactions]);
+
+  const [month, setMonth] = useState(months[0] ?? '2026-04');
+  const monthIdx = months.indexOf(month);
+  const canPrev = monthIdx < months.length - 1;
+  const canNext = monthIdx > 0;
+
+  const monthTx = useMemo(
+    () => data.transactions.filter(t => t.date.startsWith(month)),
+    [data.transactions, month]
+  );
+
+  const grouped: Record<string, typeof monthTx> = {};
+  monthTx.forEach(t => {
+    if (!grouped[t.date]) grouped[t.date] = [];
+    grouped[t.date]!.push(t);
+  });
+  const dates = Object.keys(grouped).sort().reverse();
+
+  const monthIncome = monthTx.filter(t => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
+  const monthExpense = monthTx.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
+  const savingsRate = monthIncome > 0 ? Math.round(((monthIncome - monthExpense) / monthIncome) * 100) : 0;
+  const monthLabel = `${parseInt(month.slice(5))}월 (${month.slice(0, 4)})`;
+
+  const recurring = data.recurring;
+  const activeRec = recurring.filter(r => r.active);
+  const inactiveRec = recurring.filter(r => !r.active);
+  const totalRec = activeRec.reduce((s, r) => s + r.amount, 0);
 
   return (
-    <View style={styles.container}>
-      <ScreenHeader
-        title="거래장"
-        right={
-          canEdit && activeTab === 'tx' ? (
-            <HeaderButton label="+ 추가" onPress={() => setAddTxVisible(true)} />
-          ) : undefined
-        }
-      />
-
-      <View style={styles.tabRow}>
-        {(['tx', 'recurring'] as BookTab[]).map((t) => (
+    <View style={{ flex: 1, backgroundColor: theme.bg }}>
+      {/* Tab selector */}
+      <View style={[styles.tabRow, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        {([['tx', '거래'], ['rec', '정기지출']] as [BookTab, string][]).map(([k, l]) => (
           <TouchableOpacity
-            key={t}
-            style={[styles.tabBtn, activeTab === t && styles.tabBtnActive]}
-            onPress={() => setActiveTab(t)}
+            key={k}
+            style={[styles.tabBtn, tab === k && { backgroundColor: theme.brand }]}
+            onPress={() => setTab(k)}
           >
-            <Text style={[styles.tabText, activeTab === t && styles.tabTextActive]}>
-              {t === 'tx' ? '거래' : '정기'}
-            </Text>
+            <Text style={[styles.tabText, { color: tab === k ? '#fff' : theme.textMuted }]}>{l}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {activeTab === 'tx' ? (
-        <TxList householdId={household?.id ?? 0} canEdit={canEdit} />
-      ) : (
-        <RecurringList householdId={household?.id ?? 0} canEdit={canEdit} />
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
+        {tab === 'tx' && (
+          <>
+            {/* Month navigation */}
+            <View style={styles.monthNav}>
+              <TouchableOpacity
+                style={[styles.monthBtn, { backgroundColor: theme.card, borderColor: theme.border, opacity: canPrev ? 1 : 0.4 }]}
+                onPress={() => canPrev && setMonth(months[monthIdx + 1]!)}
+                disabled={!canPrev}
+              >
+                <Text style={[styles.monthArrow, { color: theme.text }]}>‹</Text>
+              </TouchableOpacity>
+              <Text style={[styles.monthLabel, { color: theme.text }]}>{monthLabel}</Text>
+              <TouchableOpacity
+                style={[styles.monthBtn, { backgroundColor: theme.card, borderColor: theme.border, opacity: canNext ? 1 : 0.4 }]}
+                onPress={() => canNext && setMonth(months[monthIdx - 1]!)}
+                disabled={!canNext}
+              >
+                <Text style={[styles.monthArrow, { color: theme.text }]}>›</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Cashflow summary */}
+            <View style={styles.cfRow}>
+              <View>
+                <Text style={[styles.cfLabel, { color: theme.textMuted }]}>수입</Text>
+                <Text style={[styles.cfValue, { color: theme.brand }]}>+{krwShort(monthIncome)}원</Text>
+              </View>
+              <View>
+                <Text style={[styles.cfLabel, { color: theme.textMuted }]}>지출</Text>
+                <Text style={[styles.cfValue, { color: theme.danger }]}>-{krwShort(monthExpense)}원</Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={[styles.cfLabel, { color: theme.textMuted }]}>저축률</Text>
+                <Text style={[styles.cfValue, { color: theme.text }]}>{savingsRate}%</Text>
+              </View>
+            </View>
+
+            {dates.length === 0 ? (
+              <View style={styles.empty}>
+                <Text style={[styles.emptyText, { color: theme.textMuted }]}>이 달엔 거래가 없어요</Text>
+              </View>
+            ) : (
+              dates.map(d => {
+                const items = grouped[d] ?? [];
+                const dayExp = items.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
+                return (
+                  <View key={d} style={styles.dayBlock}>
+                    <View style={styles.dayHeader}>
+                      <Text style={[styles.dayTitle, { color: theme.textMuted }]}>{monthDayWeek(d)}</Text>
+                      <Text style={[styles.dayExp, { color: theme.textMuted }]}>-{krwShort(dayExp)}원</Text>
+                    </View>
+                    <View style={[styles.dayCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                      {items.map((t, i) => {
+                        const catDef = getCategoryDef(t.category);
+                        const fromAsset = data.assets.find(a => a.id === t.from);
+                        return (
+                          <View
+                            key={t.id}
+                            style={[styles.txRow, i < items.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.border }]}
+                          >
+                            <View style={[styles.txIcon, { backgroundColor: theme.bg }]}>
+                              <TossEmoji code={catDef.iconCode} size={18} />
+                            </View>
+                            <View style={styles.txInfo}>
+                              <View style={styles.txTitleRow}>
+                                <Text style={[styles.txTitle, { color: theme.text }]} numberOfLines={1}>{t.title}</Text>
+                                {t.auto && <AutoBadge />}
+                              </View>
+                              <Text style={[styles.txMeta, { color: theme.textMuted }]} numberOfLines={1}>
+                                {t.category}{fromAsset ? ` · ${fromAsset.name}` : ''}{t.memo ? ` · ${t.memo}` : ''}
+                              </Text>
+                            </View>
+                            <Text style={[styles.txAmount, { color: t.type === 'INCOME' ? theme.brand : t.type === 'TRANSFER' ? theme.textMuted : theme.text }]}>
+                              {t.type === 'INCOME' ? '+' : t.type === 'EXPENSE' ? '-' : ''}{krwShort(t.amount)}원
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  </View>
+                );
+              })
+            )}
+          </>
+        )}
+
+        {tab === 'rec' && (
+          <>
+            {/* Summary card */}
+            <View style={styles.sectionPad}>
+              <View style={[styles.recSummary, { backgroundColor: theme.brandSoft }]}>
+                <Text style={[styles.recSummaryLabel, { color: theme.textMuted }]}>매월 고정으로 나가는 돈</Text>
+                <Text style={[styles.recSummaryValue, { color: theme.brand }]}>-{krwShort(totalRec)}원</Text>
+                <Text style={[styles.recSummaryMeta, { color: theme.textMuted }]}>활성 {activeRec.length}건 · 일시중지 {inactiveRec.length}건</Text>
+              </View>
+            </View>
+
+            {/* Simulation button */}
+            {!isViewer && (
+              <View style={styles.sectionPad}>
+                <TouchableOpacity style={[styles.simBtn, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                  <TossEmoji code={TE.lightning} size={16} />
+                  <Text style={[styles.simBtnText, { color: theme.text }]}>자동 생성 시뮬레이션 (오늘이 17일이라면?)</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Recurring items */}
+            <View style={styles.sectionPad}>
+              <View style={[styles.dayCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                {recurring.map((r, i) => {
+                  const catDef = getCategoryDef(r.category);
+                  return (
+                    <View
+                      key={r.id}
+                      style={[styles.recRow, i < recurring.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.border }]}
+                    >
+                      <View style={[styles.recIcon, { backgroundColor: theme.bg }]}>
+                        <TossEmoji code={catDef.iconCode} size={22} />
+                      </View>
+                      <View style={styles.txInfo}>
+                        <Text style={[styles.txTitle, { color: theme.text }]}>{r.title}</Text>
+                        <Text style={[styles.txMeta, { color: theme.textMuted }]}>매월 {r.dayOfMonth}일 · 다음: {r.nextDate}</Text>
+                      </View>
+                      <View style={styles.recRight}>
+                        <Text style={[styles.recAmount, { color: theme.text }]}>-{krwShort(r.amount)}원</Text>
+                        <View style={[styles.toggleChip, { backgroundColor: r.active ? theme.brand : theme.bg }]}>
+                          <Text style={[styles.toggleText, { color: r.active ? '#fff' : theme.textMuted }]}>{r.active ? '활성' : '중지'}</Text>
+                        </View>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          </>
+        )}
+      </ScrollView>
+
+      {/* FAB */}
+      {!isViewer && (
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: theme.brand, bottom: insets.bottom + 16 }]}
+          onPress={() => tab === 'tx' && setAddTxVisible(true)}
+        >
+          {Icon.plus('#fff')}
+        </TouchableOpacity>
       )}
 
       <AddTxSheet visible={addTxVisible} onClose={() => setAddTxVisible(false)} />
@@ -60,136 +230,43 @@ export default function BookScreen() {
   );
 }
 
-function TxList({ householdId, canEdit }: { householdId: number; canEdit: boolean }) {
-  const qc = useQueryClient();
-  const { data, isLoading } = useQuery({
-    queryKey: qk.transactions(householdId),
-    queryFn: () => txApi.search(householdId, { limit: 50 }),
-    enabled: !!householdId,
-  });
-  const txList = data?.data ?? [];
-
-  const { mutate: deleteTx } = useMutation({
-    mutationFn: (id: number) => txApi.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.transactions(householdId) }),
-  });
-
-  if (isLoading) return null;
-  if (txList.length === 0)
-    return <EmptyState icon="📒" title="거래 내역이 없어요" desc="거래를 추가해보세요." />;
-
-  return (
-    <FlatList
-      data={txList}
-      keyExtractor={(item) => String(item.id)}
-      contentContainerStyle={styles.list}
-      renderItem={({ item }) => (
-        <View style={styles.txRow}>
-          <View style={styles.txLeft}>
-            <Text style={styles.txDate}>{dateStr(item.date)}</Text>
-            <Text style={styles.txMemo}>{item.memo ?? TX_TYPE_LABEL[item.type]}</Text>
-          </View>
-          <View style={styles.txRight}>
-            <Text style={[
-              styles.txAmount,
-              item.type === 'INCOME' && styles.income,
-              item.type === 'EXPENSE' && styles.expense,
-            ]}>
-              {item.type === 'EXPENSE' ? '-' : '+'}{krwShort(item.amount)}
-            </Text>
-            {canEdit && (
-              <TouchableOpacity onPress={() => deleteTx(item.id)}>
-                <Text style={styles.deleteText}>삭제</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-      )}
-    />
-  );
-}
-
-function RecurringList({ householdId, canEdit }: { householdId: number; canEdit: boolean }) {
-  const qc = useQueryClient();
-  const { data: list = [], isLoading } = useQuery({
-    queryKey: qk.recurring(householdId),
-    queryFn: () => recurringApi.list(householdId),
-    enabled: !!householdId,
-  });
-
-  const { mutate: toggle } = useMutation({
-    mutationFn: (id: number) => recurringApi.toggle(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.recurring(householdId) }),
-  });
-
-  if (isLoading) return null;
-  if (list.length === 0)
-    return <EmptyState icon="🔄" title="정기 거래가 없어요" desc="매월 반복되는 거래를 등록해보세요." />;
-
-  return (
-    <FlatList
-      data={list}
-      keyExtractor={(item) => String(item.id)}
-      contentContainerStyle={styles.list}
-      renderItem={({ item }) => (
-        <View style={styles.txRow}>
-          <View style={styles.txLeft}>
-            <Text style={styles.txMemo}>{item.name}</Text>
-            <Text style={styles.txDate}>
-              매월 {item.dayOfMonth}일 · {TX_TYPE_LABEL[item.type]}
-            </Text>
-          </View>
-          <View style={styles.txRight}>
-            <Text style={[
-              styles.txAmount,
-              item.type === 'INCOME' && styles.income,
-              item.type === 'EXPENSE' && styles.expense,
-            ]}>
-              {krwShort(item.amount)}
-            </Text>
-            {canEdit && (
-              <Switch
-                value={item.active}
-                onValueChange={() => toggle(item.id)}
-                trackColor={{ true: '#3182F6' }}
-              />
-            )}
-          </View>
-        </View>
-      )}
-    />
-  );
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  tabRow: {
-    flexDirection: 'row',
-    marginHorizontal: 20,
-    marginBottom: 8,
-    backgroundColor: '#F2F4F6',
-    borderRadius: 10,
-    padding: 3,
-  },
-  tabBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
-  tabBtnActive: { backgroundColor: '#fff' },
-  tabText: { fontSize: 14, fontWeight: '600', color: '#8B95A1' },
-  tabTextActive: { color: '#191F28' },
-  list: { paddingHorizontal: 20, gap: 2 },
-  txRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F2F4F6',
-  },
-  txLeft: { flex: 1 },
-  txDate: { fontSize: 12, color: '#8B95A1', marginBottom: 2 },
-  txMemo: { fontSize: 15, fontWeight: '500', color: '#191F28' },
-  txRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  txAmount: { fontSize: 15, fontWeight: '600', color: '#191F28' },
-  income: { color: '#3182F6' },
-  expense: { color: '#FF3B30' },
-  deleteText: { fontSize: 12, color: '#FF3B30' },
+  tabRow: { flexDirection: 'row', gap: 4, padding: 4, marginHorizontal: 20, marginTop: 8, borderRadius: 12, borderWidth: 1 },
+  tabBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center' },
+  tabText: { fontSize: 13, fontWeight: '700' },
+  monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 14 },
+  monthBtn: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  monthArrow: { fontSize: 16, lineHeight: 20 },
+  monthLabel: { fontSize: 14, fontWeight: '700' },
+  cfRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 12 },
+  cfLabel: { fontSize: 11, marginBottom: 4 },
+  cfValue: { fontSize: 17, fontWeight: '700' },
+  empty: { padding: 40, alignItems: 'center' },
+  emptyText: { fontSize: 13 },
+  dayBlock: { paddingHorizontal: 20, paddingBottom: 12 },
+  dayHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4, paddingBottom: 6 },
+  dayTitle: { fontSize: 12, fontWeight: '600' },
+  dayExp: { fontSize: 11 },
+  dayCard: { borderRadius: 12, borderWidth: 1 },
+  txRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 12 },
+  txIcon: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  txInfo: { flex: 1, minWidth: 0 },
+  txTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  txTitle: { fontSize: 13, fontWeight: '600', flex: 1 },
+  txMeta: { fontSize: 11, marginTop: 2 },
+  txAmount: { fontSize: 14, fontWeight: '700' },
+  sectionPad: { paddingHorizontal: 20, paddingBottom: 12 },
+  recSummary: { padding: 16, borderRadius: 14 },
+  recSummaryLabel: { fontSize: 12, marginBottom: 4 },
+  recSummaryValue: { fontSize: 20, fontWeight: '700', marginBottom: 4 },
+  recSummaryMeta: { fontSize: 12 },
+  simBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14, borderRadius: 12, borderWidth: 1 },
+  simBtnText: { fontSize: 13, fontWeight: '600' },
+  recRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12 },
+  recIcon: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  recRight: { alignItems: 'flex-end', gap: 4 },
+  recAmount: { fontSize: 14, fontWeight: '700' },
+  toggleChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  toggleText: { fontSize: 11, fontWeight: '600' },
+  fab: { position: 'absolute', right: 20, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', shadowColor: '#3182F6', shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
 });

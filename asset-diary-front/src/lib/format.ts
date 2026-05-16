@@ -38,3 +38,18 @@ export const TX_TYPE_LABEL: Record<string, string> = {
   EXPENSE: '지출',
   TRANSFER: '이체',
 };
+
+const DAY_KO = ['일', '월', '화', '수', '목', '금', '토'];
+
+export function monthDayWeek(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const wd = DAY_KO[d.getDay()];
+  return `${m}월 ${day}일 · ${wd}`;
+}
+
+export function ymStr(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}

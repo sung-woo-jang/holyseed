@@ -8,7 +8,7 @@ import BookScreen from '../screens/BookScreen';
 import HomeScreen from '../screens/HomeScreen';
 import MoreScreen from '../screens/MoreScreen';
 import { useAuthStore } from '../stores/auth.store';
-import type { Asset } from '../types/api';
+import type { MockAsset } from '../lib/mock-data';
 
 export const Route = createRoute('/', {
   component: Page,
@@ -25,20 +25,16 @@ function Page() {
     }
   }, [isReady, currentHousehold]);
 
-  function handleAssetPress(asset: Asset) {
-    navigation.navigate('/assets/detail', { assetId: asset.id });
-  }
-
-  function handleCategoriesPress() {
-    navigation.navigate('/more/categories');
+  function handleAssetPress(asset: MockAsset) {
+    navigation.navigate('/assets/detail', { id: asset.id });
   }
 
   return (
-    <SafeAreaView style={styles.root}>
+    <SafeAreaView style={styles.root} edges={['bottom']}>
       {activeTab === 'home' && <HomeScreen />}
       {activeTab === 'assets' && <AssetsScreen onAssetPress={handleAssetPress} />}
       {activeTab === 'book' && <BookScreen />}
-      {activeTab === 'more' && <MoreScreen onCategoriesPress={handleCategoriesPress} />}
+      {activeTab === 'more' && <MoreScreen navigation={navigation} />}
       <TabBar activeTab={activeTab} onTabPress={setActiveTab} />
     </SafeAreaView>
   );

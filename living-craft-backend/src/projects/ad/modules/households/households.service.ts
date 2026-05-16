@@ -23,11 +23,13 @@ export class HouseholdsService {
     private readonly userRepo: Repository<AdUser>,
   ) {}
 
-  async findAllByUser(userId: number): Promise<Household[]> {
+  async findAllByUser(userId: number) {
     const memberships = await this.membershipRepo.find({ where: { userId } });
+    if (!memberships.length) return [];
     const ids = memberships.map((m) => m.householdId);
-    if (!ids.length) return [];
-    return this.householdRepo.findByIds(ids);
+    const roleMap = new Map(memberships.map((m) => [m.householdId, m.role]));
+    const households = await this.householdRepo.findByIds(ids);
+    return households.map((h) => ({ ...h, role: roleMap.get(h.id) ?? MemberRole.VIEWER }));
   }
 
   async findOne(id: number): Promise<Household> {

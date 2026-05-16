@@ -49,5 +49,8 @@
     "hermes-compiler": {
       "unplugged": true
     }
+  },
+  "resolutions": {
+    "react-native-svg": "15.15.4"
   }
 }

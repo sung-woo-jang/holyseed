@@ -1,5 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../../lib/theme';
+import { Icon } from './Icon';
 
 interface ScreenHeaderProps {
   title: string;
@@ -8,17 +10,18 @@ interface ScreenHeaderProps {
 }
 
 export default function ScreenHeader({ title, onBack, right }: ScreenHeaderProps) {
+  const theme = useTheme();
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.card }]}>
       {onBack ? (
-        <TouchableOpacity onPress={onBack} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.backBtn}>
-          <Text style={styles.backText}>‹</Text>
+        <TouchableOpacity onPress={onBack} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.side}>
+          {Icon.back(theme.text)}
         </TouchableOpacity>
       ) : (
-        <View style={styles.backBtn} />
+        <View style={styles.side} />
       )}
-      <Text style={styles.title}>{title}</Text>
-      {right ? <View style={styles.right}>{right}</View> : <View style={styles.backBtn} />}
+      <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
+      {right ? <View style={styles.rightSlot}>{right}</View> : <View style={styles.side} />}
     </View>
   );
 }
@@ -29,9 +32,10 @@ interface HeaderButtonProps {
 }
 
 export function HeaderButton({ label, onPress }: HeaderButtonProps) {
+  const theme = useTheme();
   return (
     <TouchableOpacity onPress={onPress} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-      <Text style={styles.btnText}>{label}</Text>
+      <Text style={[styles.btnText, { color: theme.brand }]}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -42,11 +46,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 14,
-    backgroundColor: '#fff',
   },
-  backBtn: { width: 32 },
-  backText: { fontSize: 24, color: '#191F28', lineHeight: 28 },
-  title: { flex: 1, fontSize: 18, fontWeight: '700', color: '#191F28', textAlign: 'center' },
-  right: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end', width: 'auto' },
-  btnText: { fontSize: 14, color: '#3182F6', fontWeight: '600' },
+  side: { width: 32 },
+  title: { flex: 1, fontSize: 18, fontWeight: '700', textAlign: 'center' },
+  rightSlot: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end', minWidth: 32 },
+  btnText: { fontSize: 14, fontWeight: '600' },
 });

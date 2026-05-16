@@ -1,171 +1,196 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createRoute } from '@granite-js/react-native';
 import React, { useState } from 'react';
-import {
-  FlatList,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { assetsApi, snapshotsApi } from '../../api';
-import ScreenHeader, { HeaderButton } from '../../components/common/ScreenHeader';
-import SnapshotSheet from '../../components/sheets/SnapshotSheet';
-import { useCanEdit } from '../../hooks';
-import { qk } from '../../queries/keys';
-import { ASSET_CATEGORY_LABEL, dateStr, krw, krwShort } from '../../lib/format';
-import type { Asset } from '../../types/api';
+import { createRoute } from '@granite-js/react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import ScreenHeader from '../../components/common/ScreenHeader';
+import { useTheme } from '../../lib/theme';
+import { useDataSource, useMockRole } from '../../lib/data-source';
+import TossEmoji from '../../components/common/TossEmoji';
+import Segmented from '../../components/common/Segmented';
+import LineChart from '../../components/charts/LineChart';
+import { ASSET_CATEGORY_META } from '../../lib/category-meta';
+import { krw, krwShort, pct } from '../../lib/format';
+import { Icon } from '../../components/common/Icon';
+import type { AssetCategory } from '../../types/api';
 
-export const Route = createRoute('/assets/detail', {
-  component: AssetDetailPage,
-});
+function AssetDetailScreen({ navigation, params }: { navigation: any; params: { id: string } }) {
+  const theme = useTheme();
+  const data = useDataSource();
+  const role = useMockRole();
+  const [unit, setUnit] = useState<'KRW' | 'USD'>('KRW');
 
-function AssetDetailPage() {
-  const navigation = Route.useNavigation();
-  const params = Route.useParams();
-  const assetId = Number((params as Record<string, unknown>)['assetId'] ?? 0);
-  const qc = useQueryClient();
-  const canEdit = useCanEdit();
-  const [snapshotVisible, setSnapshotVisible] = useState(false);
+  const asset = data.assets.find((a) => a.id === params.id) ?? data.assets[0]!;
+  const snapshots = (data.snapshots[asset?.id ?? ''] ?? []).slice().reverse();
+  const meta = ASSET_CATEGORY_META[(asset?.category ?? 'CASH') as AssetCategory];
+  const isFx = (asset?.currency ?? 'KRW') !== 'KRW';
 
-  const { data: asset, isLoading } = useQuery({
-    queryKey: qk.asset(assetId),
-    queryFn: () => assetsApi.get(assetId),
-    enabled: !!assetId,
-  });
-
-  const { data: snapshots = [] } = useQuery({
-    queryKey: qk.assetSnapshots(assetId),
-    queryFn: () => snapshotsApi.list(assetId),
-    enabled: !!assetId,
-  });
-
-  const { mutate: archiveAsset } = useMutation({
-    mutationFn: () => assetsApi.archive(assetId),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.assets(asset?.householdId ?? 0) });
-      navigation.goBack();
-    },
-  });
-
-  if (isLoading || !asset) {
-    return (
-      <View style={styles.container}>
-        <ScreenHeader title="자산 상세" onBack={() => navigation.goBack()} />
-      </View>
-    );
+  if (!asset) {
+    return <View style={[styles.root, { backgroundColor: theme.bg }]}><ScreenHeader title="자산 상세" onBack={() => navigation?.goBack?.()} /></View>;
   }
 
-  const currentValue = asset.latestSnapshot?.valueKRW ?? 0;
+  const chartData = snapshots.map((s) => ({
+    date: s.date,
+    value: unit === 'USD' ? s.value : s.valueKRW,
+  }));
+
+  const relatedTxs = data.transactions
+    .filter((t) => t.from === asset.id || t.to === asset.id)
+    .slice(0, 4);
 
   return (
-    <View style={styles.container}>
-      <ScreenHeader
-        title={asset.name}
-        onBack={() => navigation.goBack()}
-        right={
-          canEdit ? (
-            <HeaderButton label="입력" onPress={() => setSnapshotVisible(true)} />
-          ) : undefined
-        }
-      />
-
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.summaryCard}>
-          <Text style={styles.categoryLabel}>{ASSET_CATEGORY_LABEL[asset.category]}</Text>
-          <Text style={[styles.valueText, asset.isLiability && styles.negative]}>
-            {krw(currentValue)}
-          </Text>
-          {asset.latestSnapshot && (
-            <Text style={styles.dateLabel}>{dateStr(asset.latestSnapshot.date)} 기준</Text>
+    <View style={[styles.root, { backgroundColor: theme.bg }]}>
+      <ScreenHeader title="자산 상세" onBack={() => navigation?.goBack?.()} />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* 자산 요약 */}
+        <View style={[styles.summaryCard, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+          <View style={styles.summaryTop}>
+            <TossEmoji code={meta.iconCode} size={48} bg={meta.color + '22'} />
+            <View style={styles.summaryTopText}>
+              <Text style={[styles.catLabel, { color: theme.textMuted }]}>{meta.label}</Text>
+              <Text style={[styles.assetName, { color: theme.text }]}>{asset.name}</Text>
+            </View>
+          </View>
+          {isFx ? (
+            <View style={styles.fxBlock}>
+              <Text style={[styles.fxMain, { color: theme.text }]}>
+                ${asset.currencyValue?.toLocaleString() ?? 0}
+              </Text>
+              <Text style={[styles.fxSub, { color: theme.textMuted }]}>
+                ≈ {krw(asset.value)} · 1 USD = {asset.fxRate?.toLocaleString()}원
+              </Text>
+            </View>
+          ) : (
+            <Text style={[styles.valueText, { color: asset.isLiability ? theme.danger : theme.text }]}>
+              {krw(asset.value)}
+            </Text>
           )}
-          {asset.isLiability && (
-            <View style={styles.liabilityBadge}>
-              <Text style={styles.liabilityText}>부채</Text>
+          <View style={styles.deltaBadge}>
+            <View style={[styles.deltaChip, { backgroundColor: asset.delta >= 0 ? theme.brandSoft : '#FEE2E2' }]}>
+              <View style={{ marginRight: 4 }}>{Icon.arrowUp(asset.delta >= 0 ? theme.brand : theme.danger, 12)}</View>
+              <Text style={[styles.deltaText, { color: asset.delta >= 0 ? theme.brand : theme.danger }]}>
+                {krwShort(Math.abs(asset.delta))} ({pct(asset.deltaPct)})
+              </Text>
+            </View>
+          </View>
+          {role !== 'VIEWER' && (
+            <TouchableOpacity style={[styles.snapshotBtn, { backgroundColor: theme.brandSoft }]} activeOpacity={0.7}>
+              <Text style={[styles.snapshotBtnText, { color: theme.brand }]}>이 자산만 스냅샷 입력</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* 평가액 추이 */}
+        <View style={[styles.section, { backgroundColor: theme.card, marginTop: 8 }]}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>평가액 추이</Text>
+            {isFx && (
+              <Segmented options={['KRW', 'USD']} value={unit} onChange={(v) => setUnit(v as 'KRW' | 'USD')} small />
+            )}
+          </View>
+          {chartData.length > 1 ? (
+            <LineChart
+              data={chartData}
+              width={327}
+              height={150}
+              color={meta.color}
+              dark={theme.dark}
+              interactive
+            />
+          ) : (
+            <View style={styles.emptyChart}>
+              <Text style={{ color: theme.textMuted, fontSize: 13 }}>스냅샷이 2개 이상이면 그래프가 나타나요</Text>
             </View>
           )}
         </View>
 
-        <Text style={styles.sectionTitle}>스냅샷 히스토리</Text>
-        {snapshots.length === 0 ? (
-          <Text style={styles.emptyText}>아직 평가액 기록이 없어요.</Text>
-        ) : (
-          <FlatList
-            data={[...snapshots].sort((a, b) => b.date.localeCompare(a.date))}
-            keyExtractor={(item) => String(item.id)}
-            scrollEnabled={false}
-            renderItem={({ item }) => (
-              <View style={styles.snapshotRow}>
-                <Text style={styles.snapshotDate}>{dateStr(item.date)}</Text>
-                <Text style={[styles.snapshotValue, asset.isLiability && styles.negative]}>
-                  {krwShort(item.valueKRW)}
-                </Text>
+        {/* 스냅샷 히스토리 */}
+        <View style={[styles.section, { backgroundColor: theme.card, marginTop: 8 }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>스냅샷 히스토리</Text>
+          {snapshots.length === 0 ? (
+            <View style={styles.emptyRow}>
+              <Text style={[styles.emptyText, { color: theme.textMuted }]}>스냅샷이 없어요</Text>
+            </View>
+          ) : (
+            snapshots.map((s, idx) => (
+              <View key={s.date} style={[styles.snapRow, { borderBottomColor: theme.border, borderBottomWidth: idx < snapshots.length - 1 ? 1 : 0 }]}>
+                <Text style={[styles.snapDate, { color: theme.textMuted }]}>{s.date}</Text>
+                {isFx ? (
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={[styles.snapValue, { color: theme.text }]}>${s.value.toLocaleString()}</Text>
+                    <Text style={[styles.snapSub, { color: theme.textMuted }]}>
+                      ≈ {krwShort(s.valueKRW)} · {s.fxRate.toLocaleString()}원
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={[styles.snapValue, { color: theme.text }]}>{krw(s.valueKRW || s.value)}</Text>
+                )}
               </View>
-            )}
-          />
-        )}
+            ))
+          )}
+        </View>
 
-        {canEdit && (
-          <TouchableOpacity
-            style={styles.archiveBtn}
-            onPress={() => archiveAsset()}
-          >
-            <Text style={styles.archiveBtnText}>자산 보관</Text>
-          </TouchableOpacity>
+        {/* 관련 거래 */}
+        {relatedTxs.length > 0 && (
+          <View style={[styles.section, { backgroundColor: theme.card, marginTop: 8, marginBottom: 32 }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>관련 거래</Text>
+            {relatedTxs.map((tx, idx) => {
+              const amtColor = tx.type === 'INCOME' ? theme.brand : tx.type === 'EXPENSE' ? theme.danger : theme.textMuted;
+              const sign = tx.type === 'INCOME' ? '+' : tx.type === 'EXPENSE' ? '-' : '';
+              return (
+                <View key={tx.id} style={[styles.txRow, { borderBottomColor: theme.border, borderBottomWidth: idx < relatedTxs.length - 1 ? 1 : 0 }]}>
+                  <View style={[styles.txIcon, { backgroundColor: theme.bg }]}>
+                    <Text style={{ fontSize: 16 }}>{tx.category.slice(0, 1)}</Text>
+                  </View>
+                  <View style={styles.txInfo}>
+                    <Text style={[styles.txTitle, { color: theme.text }]}>{tx.title}</Text>
+                    <Text style={[styles.txMeta, { color: theme.textMuted }]}>{tx.date}</Text>
+                  </View>
+                  <Text style={[styles.txAmount, { color: amtColor }]}>
+                    {sign}{krwShort(tx.amount)}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
         )}
       </ScrollView>
-
-      <SnapshotSheet
-        visible={snapshotVisible}
-        asset={asset as Asset}
-        onClose={() => setSnapshotVisible(false)}
-      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  content: { padding: 20, paddingBottom: 40 },
-  summaryCard: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 28,
-  },
-  categoryLabel: { fontSize: 12, color: '#8B95A1', marginBottom: 8 },
-  valueText: { fontSize: 28, fontWeight: '800', color: '#191F28', marginBottom: 4 },
-  dateLabel: { fontSize: 12, color: '#8B95A1' },
-  negative: { color: '#FF3B30' },
-  liabilityBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#FFEEEE',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    marginTop: 8,
-  },
-  liabilityText: { fontSize: 11, color: '#FF3B30', fontWeight: '600' },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#191F28', marginBottom: 12 },
-  emptyText: { fontSize: 14, color: '#8B95A1', textAlign: 'center', paddingVertical: 24 },
-  snapshotRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F2F4F6',
-  },
-  snapshotDate: { fontSize: 14, color: '#4E5968' },
-  snapshotValue: { fontSize: 14, fontWeight: '600', color: '#191F28' },
-  archiveBtn: {
-    marginTop: 32,
-    padding: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#E5E8EB',
-    alignItems: 'center',
-  },
-  archiveBtnText: { fontSize: 14, color: '#8B95A1' },
+  root: { flex: 1 },
+  summaryCard: { paddingHorizontal: 20, paddingVertical: 20, borderBottomWidth: 1 },
+  summaryTop: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
+  summaryTopText: { flex: 1 },
+  catLabel: { fontSize: 12, marginBottom: 2 },
+  assetName: { fontSize: 22, fontWeight: '800' },
+  fxBlock: { marginBottom: 8 },
+  fxMain: { fontSize: 28, fontWeight: '800' },
+  fxSub: { fontSize: 13, marginTop: 2 },
+  valueText: { fontSize: 28, fontWeight: '800', marginBottom: 8 },
+  deltaBadge: { flexDirection: 'row', marginBottom: 14 },
+  deltaChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+  deltaText: { fontSize: 13, fontWeight: '600' },
+  snapshotBtn: { borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
+  snapshotBtnText: { fontSize: 14, fontWeight: '700' },
+  section: { paddingHorizontal: 20, paddingVertical: 16 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  sectionTitle: { fontSize: 15, fontWeight: '700' },
+  emptyChart: { height: 80, alignItems: 'center', justifyContent: 'center' },
+  emptyRow: { paddingVertical: 20, alignItems: 'center' },
+  emptyText: { fontSize: 13 },
+  snapRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12 },
+  snapDate: { fontSize: 14 },
+  snapValue: { fontSize: 15, fontWeight: '700' },
+  snapSub: { fontSize: 11, marginTop: 2 },
+  txRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  txIcon: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  txInfo: { flex: 1 },
+  txTitle: { fontSize: 14, fontWeight: '600' },
+  txMeta: { fontSize: 11, marginTop: 2 },
+  txAmount: { fontSize: 14, fontWeight: '700' },
+});
+
+export const Route = createRoute('/assets/detail', {
+  component: AssetDetailScreen,
 });

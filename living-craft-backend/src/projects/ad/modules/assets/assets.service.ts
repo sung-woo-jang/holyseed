@@ -12,10 +12,29 @@ export class AssetsService {
     private readonly assetRepo: Repository<Asset>,
   ) {}
 
-  async findByHousehold(householdId: number): Promise<Asset[]> {
-    return this.assetRepo.find({
+  async findByHousehold(householdId: number) {
+    const assets = await this.assetRepo.find({
       where: { householdId, archivedAt: IsNull() },
       order: { sortOrder: 'ASC', createdAt: 'ASC' },
+    });
+    if (!assets.length) return [];
+    const ids = assets.map((a) => a.id);
+    const rows: any[] = await this.assetRepo.manager.query(
+      `SELECT DISTINCT ON (s.asset_id) s.asset_id, s.value, s.fx_rate_to_krw, s.value_krw, s.date
+       FROM ad.asset_snapshots s
+       WHERE s.asset_id = ANY($1)
+       ORDER BY s.asset_id, s.date DESC`,
+      [ids],
+    );
+    const snapMap = new Map(rows.map((r) => [r.asset_id, r]));
+    return assets.map((a) => {
+      const s = snapMap.get(a.id);
+      return {
+        ...a,
+        latestSnapshot: s
+          ? { value: Number(s.value), fxRateToKRW: Number(s.fx_rate_to_krw), valueKRW: Number(s.value_krw), date: s.date }
+          : undefined,
+      };
     });
   }
 

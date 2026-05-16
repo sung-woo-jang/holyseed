@@ -1,25 +1,24 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createRoute } from '@granite-js/react-native';
 import React, { useState } from 'react';
+import { createRoute } from '@granite-js/react-native';
 import {
-  FlatList,
+  Modal,
+  Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { categoriesApi } from '../../api';
-import ScreenHeader, { HeaderButton } from '../../components/common/ScreenHeader';
-import EmptyState from '../../components/common/EmptyState';
-import BottomSheet from '../../components/sheets/BottomSheet';
-import { useCanEdit, useHousehold } from '../../hooks';
-import { qk } from '../../queries/keys';
+import ScreenHeader from '../../components/common/ScreenHeader';
+import TossEmoji from '../../components/common/TossEmoji';
+import Segmented from '../../components/common/Segmented';
+import { useTheme } from '../../lib/theme';
+import { useMockRole } from '../../lib/data-source';
+import { getCategoryDef } from '../../lib/category-meta';
+import { CATEGORY_ICON_CHOICES } from '../../lib/toss-emoji';
+import { Icon } from '../../components/common/Icon';
 import type { CategoryType } from '../../types/api';
-
-export const Route = createRoute('/more/categories', {
-  component: CategoriesPage,
-});
 
 const TYPE_LABELS: Record<CategoryType, string> = {
   INCOME: '수입',
@@ -27,167 +26,235 @@ const TYPE_LABELS: Record<CategoryType, string> = {
   TRANSFER: '이체',
 };
 
-function CategoriesPage() {
-  const navigation = Route.useNavigation();
-  const { household } = useHousehold();
-  const canEdit = useCanEdit();
-  const qc = useQueryClient();
-  const [addVisible, setAddVisible] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newIcon, setNewIcon] = useState('');
-  const [newType, setNewType] = useState<CategoryType>('EXPENSE');
+const COLORS = ['#3182F6', '#0AB39C', '#F59E0B', '#EF4444', '#A78BFA', '#EC4899', '#06B6D4', '#8B5CF6'];
 
-  const { data: categories = [], isLoading } = useQuery({
-    queryKey: qk.categories(household?.id ?? 0),
-    queryFn: () => categoriesApi.list(household!.id),
-    enabled: !!household,
-  });
+interface CustomCategory {
+  id: string;
+  type: CategoryType;
+  name: string;
+  iconCode: string;
+  color: string;
+}
 
-  const { mutate: createCategory, isPending } = useMutation({
-    mutationFn: () =>
-      categoriesApi.create(household!.id, { type: newType, name: newName, icon: newIcon || '📁' }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.categories(household!.id) });
-      setNewName('');
-      setNewIcon('');
-      setAddVisible(false);
-    },
-  });
+function AddCategorySheet({
+  visible,
+  onClose,
+  onAdd,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onAdd: (cat: CustomCategory) => void;
+}) {
+  const theme = useTheme();
+  const [name, setName] = useState('');
+  const [type, setType] = useState<CategoryType>('EXPENSE');
+  const [iconCode, setIconCode] = useState(CATEGORY_ICON_CHOICES[0]?.code ?? '1F381');
+  const [color, setColor] = useState(COLORS[0] ?? '#3182F6');
 
-  const { mutate: deleteCategory } = useMutation({
-    mutationFn: (id: number) => categoriesApi.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.categories(household!.id) }),
-  });
-
-  const custom = categories.filter((c) => !c.isBuiltin);
-  const builtin = categories.filter((c) => c.isBuiltin);
+  function handleAdd() {
+    if (!name.trim()) return;
+    onAdd({ id: Date.now().toString(), type, name: name.trim(), iconCode, color });
+    setName('');
+    setType('EXPENSE');
+    setIconCode(CATEGORY_ICON_CHOICES[0]?.code ?? '1F381');
+    setColor(COLORS[0] ?? '#3182F6');
+    onClose();
+  }
 
   return (
-    <View style={styles.container}>
-      <ScreenHeader
-        title="카테고리 관리"
-        onBack={() => navigation.goBack()}
-        right={
-          canEdit ? (
-            <HeaderButton label="+ 추가" onPress={() => setAddVisible(true)} />
-          ) : undefined
-        }
-      />
-
-      {isLoading ? null : categories.length === 0 ? (
-        <EmptyState icon="🗂️" title="카테고리가 없어요" desc="카테고리를 추가해보세요." />
-      ) : (
-        <FlatList
-          data={[...custom, ...builtin]}
-          keyExtractor={(item) => String(item.id)}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <View style={styles.categoryRow}>
-              <Text style={styles.categoryIcon}>{item.icon}</Text>
-              <View style={styles.categoryInfo}>
-                <Text style={styles.categoryName}>{item.name}</Text>
-                <Text style={styles.categoryType}>{TYPE_LABELS[item.type]}</Text>
-              </View>
-              {item.isBuiltin ? (
-                <Text style={styles.builtinBadge}>기본</Text>
-              ) : (
-                canEdit && (
-                  <TouchableOpacity onPress={() => deleteCategory(item.id)}>
-                    <Text style={styles.deleteText}>삭제</Text>
-                  </TouchableOpacity>
-                )
-              )}
-            </View>
-          )}
-        />
-      )}
-
-      <BottomSheet visible={addVisible} onClose={() => setAddVisible(false)} title="카테고리 추가">
-        <View style={styles.form}>
-          <Text style={styles.label}>유형</Text>
-          <View style={styles.typeRow}>
-            {(['INCOME', 'EXPENSE', 'TRANSFER'] as CategoryType[]).map((t) => (
-              <TouchableOpacity
-                key={t}
-                style={[styles.typeBtn, newType === t && styles.typeBtnActive]}
-                onPress={() => setNewType(t)}
-              >
-                <Text style={[styles.typeText, newType === t && styles.typeTextActive]}>
-                  {TYPE_LABELS[t]}
-                </Text>
-              </TouchableOpacity>
-            ))}
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.overlay} onPress={onClose}>
+        <Pressable style={[styles.sheet, { backgroundColor: theme.card }]} onPress={() => {}}>
+          <View style={[styles.sheetHandle, { backgroundColor: theme.border }]} />
+          <View style={[styles.sheetHeader, { borderBottomColor: theme.border }]}>
+            <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              {Icon.close(theme.textMuted, 20)}
+            </TouchableOpacity>
+            <Text style={[styles.sheetTitle, { color: theme.text }]}>카테고리 추가</Text>
+            <View style={{ width: 20 }} />
           </View>
+          <ScrollView contentContainerStyle={styles.sheetBody}>
+            {/* 이름 */}
+            <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>이름</Text>
+            <TextInput
+              style={[styles.nameInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.bg }]}
+              placeholder="카테고리 이름"
+              placeholderTextColor={theme.textMuted}
+              value={name}
+              onChangeText={setName}
+            />
 
-          <Text style={styles.label}>이름</Text>
-          <TextInput
-            style={styles.input}
-            value={newName}
-            onChangeText={setNewName}
-            placeholder="카테고리 이름"
-          />
+            {/* 타입 */}
+            <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>유형</Text>
+            <Segmented
+              options={['수입', '지출', '이체']}
+              value={TYPE_LABELS[type]}
+              onChange={(v) => {
+                const t = Object.entries(TYPE_LABELS).find(([, label]) => label === v)?.[0] as CategoryType;
+                if (t) setType(t);
+              }}
+            />
 
-          <Text style={styles.label}>아이콘 (이모지)</Text>
-          <TextInput
-            style={styles.input}
-            value={newIcon}
-            onChangeText={setNewIcon}
-            placeholder="📁"
-          />
+            {/* 아이콘 그리드 4x3 */}
+            <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>아이콘</Text>
+            <View style={styles.iconGrid}>
+              {CATEGORY_ICON_CHOICES.map((c) => (
+                <TouchableOpacity
+                  key={c.id}
+                  style={[styles.iconCell, { backgroundColor: iconCode === c.code ? theme.brandSoft : theme.bg, borderColor: iconCode === c.code ? theme.brand : theme.border }]}
+                  onPress={() => setIconCode(c.code)}
+                >
+                  <TossEmoji code={c.code} size={32} />
+                </TouchableOpacity>
+              ))}
+            </View>
 
-          <TouchableOpacity
-            style={[styles.submitBtn, (!newName || isPending) && styles.submitBtnDisabled]}
-            onPress={() => createCategory()}
-            disabled={!newName || isPending}
-          >
-            <Text style={styles.submitText}>추가</Text>
-          </TouchableOpacity>
+            {/* 컬러 피커 8개 */}
+            <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>색상</Text>
+            <View style={styles.colorRow}>
+              {COLORS.map((c) => (
+                <TouchableOpacity
+                  key={c}
+                  style={[styles.colorCircle, { backgroundColor: c, borderWidth: color === c ? 3 : 0, borderColor: theme.text }]}
+                  onPress={() => setColor(c)}
+                />
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={[styles.addBtn, { backgroundColor: name.trim() ? theme.brand : theme.border }]}
+              onPress={handleAdd}
+              disabled={!name.trim()}
+            >
+              <Text style={[styles.addBtnText, { color: name.trim() ? '#fff' : theme.textMuted }]}>추가하기</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+function CategoriesPage({ navigation }: { navigation: any }) {
+  const theme = useTheme();
+  const role = useMockRole();
+  const canEdit = role !== 'VIEWER';
+  const [addVisible, setAddVisible] = useState(false);
+  const [customs, setCustoms] = useState<CustomCategory[]>([]);
+
+  const builtinByType: Record<CategoryType, string[]> = {
+    INCOME: ['급여', '투자수익', '사업소득', '기타수입'],
+    EXPENSE: ['주거', '식비', '교통', '의료', '쇼핑', '여가', '교육', '보험료', '구독', '기타'],
+    TRANSFER: ['이체'],
+  };
+
+  const typeOrder: CategoryType[] = ['INCOME', 'EXPENSE', 'TRANSFER'];
+
+  return (
+    <View style={[styles.root, { backgroundColor: theme.bg }]}>
+      <ScreenHeader title="카테고리 관리" onBack={() => navigation?.goBack?.()} />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 }}>
+          <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+            기본 카테고리에 더해, 우리집만의 카테고리를 만들 수 있어요.
+          </Text>
         </View>
-      </BottomSheet>
+
+        {typeOrder.map((t) => {
+          const builtins = builtinByType[t];
+          const customItems = customs.filter((c) => c.type === t);
+          const allItems = [...builtins.map((name) => ({ name, isBuiltin: true, iconCode: getCategoryDef(name).iconCode, color: getCategoryDef(name).color })), ...customItems.map((c) => ({ name: c.name, isBuiltin: false, iconCode: c.iconCode, color: c.color, id: c.id }))];
+
+          return (
+            <View key={t} style={[styles.typeCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <View style={[styles.typeCardHeader, { borderBottomColor: theme.border }]}>
+                <Text style={[styles.typeCardTitle, { color: theme.text }]}>
+                  {TYPE_LABELS[t]} ({allItems.length})
+                </Text>
+              </View>
+              {allItems.map((item, idx) => (
+                <View
+                  key={item.name}
+                  style={[styles.catRow, { borderBottomColor: theme.border, borderBottomWidth: idx < allItems.length - 1 ? 1 : 0 }]}
+                >
+                  <View style={[styles.catIconBox, { backgroundColor: item.color + '22' }]}>
+                    <TossEmoji code={item.iconCode} size={28} />
+                  </View>
+                  <View style={styles.catInfo}>
+                    <Text style={[styles.catName, { color: theme.text }]}>{item.name}</Text>
+                    <Text style={[styles.catSub, { color: theme.textMuted }]}>
+                      {item.isBuiltin ? '기본' : '커스텀'}
+                    </Text>
+                  </View>
+                  <View style={[styles.colorDot, { backgroundColor: item.color }]} />
+                  {!item.isBuiltin && canEdit && (
+                    <TouchableOpacity
+                      onPress={() => setCustoms((prev) => prev.filter((c) => c.id !== (item as any).id))}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      style={{ marginLeft: 8 }}
+                    >
+                      <Text style={[styles.deleteText, { color: theme.danger }]}>삭제</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))}
+            </View>
+          );
+        })}
+
+        {canEdit && (
+          <TouchableOpacity
+            style={[styles.addCatBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
+            onPress={() => setAddVisible(true)}
+          >
+            <Text style={[styles.addCatBtnText, { color: theme.brand }]}>+ 카테고리 추가</Text>
+          </TouchableOpacity>
+        )}
+
+        <View style={{ height: 32 }} />
+      </ScrollView>
+
+      <AddCategorySheet
+        visible={addVisible}
+        onClose={() => setAddVisible(false)}
+        onAdd={(cat) => setCustoms((prev) => [...prev, cat])}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  list: { paddingHorizontal: 20, gap: 2 },
-  categoryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F2F4F6',
-    gap: 12,
-  },
-  categoryIcon: { fontSize: 22 },
-  categoryInfo: { flex: 1 },
-  categoryName: { fontSize: 15, fontWeight: '500', color: '#191F28', marginBottom: 2 },
-  categoryType: { fontSize: 12, color: '#8B95A1' },
-  builtinBadge: { fontSize: 11, color: '#8B95A1', backgroundColor: '#F2F4F6', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
-  deleteText: { fontSize: 12, color: '#FF3B30' },
-  form: { paddingHorizontal: 20 },
-  label: { fontSize: 13, color: '#8B95A1', marginBottom: 6, marginTop: 12 },
-  typeRow: { flexDirection: 'row', gap: 8 },
-  typeBtn: { flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#E5E8EB', alignItems: 'center' },
-  typeBtnActive: { borderColor: '#3182F6', backgroundColor: '#EBF3FF' },
-  typeText: { fontSize: 13, color: '#8B95A1', fontWeight: '600' },
-  typeTextActive: { color: '#3182F6' },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E5E8EB',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-  },
-  submitBtn: {
-    backgroundColor: '#3182F6',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 8,
-  },
-  submitBtnDisabled: { backgroundColor: '#C9CEDD' },
-  submitText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  root: { flex: 1 },
+  subtitle: { fontSize: 13, lineHeight: 18, marginBottom: 14 },
+  typeCard: { marginHorizontal: 20, marginBottom: 10, borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
+  typeCardHeader: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
+  typeCardTitle: { fontSize: 14, fontWeight: '700' },
+  catRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
+  catIconBox: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  catInfo: { flex: 1 },
+  catName: { fontSize: 14, fontWeight: '600' },
+  catSub: { fontSize: 11, marginTop: 2 },
+  colorDot: { width: 12, height: 12, borderRadius: 6 },
+  deleteText: { fontSize: 13, fontWeight: '500' },
+  addCatBtn: { marginHorizontal: 20, borderRadius: 14, borderWidth: 1, paddingVertical: 16, alignItems: 'center', marginTop: 4 },
+  addCatBtnText: { fontSize: 15, fontWeight: '700' },
+  // AddCategorySheet styles
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  sheet: { maxHeight: '85%', borderTopLeftRadius: 20, borderTopRightRadius: 20 },
+  sheetHandle: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: 10, marginBottom: 4 },
+  sheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1 },
+  sheetTitle: { fontSize: 16, fontWeight: '700' },
+  sheetBody: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24 },
+  fieldLabel: { fontSize: 12, fontWeight: '600', marginBottom: 8, marginTop: 16 },
+  nameInput: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14 },
+  iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  iconCell: { width: 56, height: 56, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  colorRow: { flexDirection: 'row', gap: 12, marginTop: 4 },
+  colorCircle: { width: 32, height: 32, borderRadius: 16 },
+  addBtn: { marginTop: 24, borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
+  addBtnText: { fontSize: 16, fontWeight: '700' },
+});
+
+export const Route = createRoute('/more/categories', {
+  component: CategoriesPage,
 });

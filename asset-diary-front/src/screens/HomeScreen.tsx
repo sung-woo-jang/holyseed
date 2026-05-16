@@ -1,133 +1,240 @@
-import { useQuery } from '@tanstack/react-query';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { dashboardApi } from '../api';
-import AddTxSheet from '../components/sheets/AddTxSheet';
-import { useCanEdit, useHousehold } from '../hooks';
-import { qk } from '../queries/keys';
-import { TX_TYPE_LABEL, dateStr, krw, krwShort, pct } from '../lib/format';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useDataSource, useMockRole } from '../lib/data-source';
+import { useTheme } from '../lib/theme';
+import { krw, krwShort, pct } from '../lib/format';
+import { getCategoryDef } from '../lib/category-meta';
+import { TE } from '../lib/toss-emoji';
+import Segmented from '../components/common/Segmented';
+import AutoBadge from '../components/common/AutoBadge';
+import TossEmoji from '../components/common/TossEmoji';
+import { Icon } from '../components/common/Icon';
+import LineChart from '../components/charts/LineChart';
+import DonutChart from '../components/charts/DonutChart';
+import SnapshotSheet from '../components/sheets/SnapshotSheet';
 
 export default function HomeScreen() {
-  const { household } = useHousehold();
-  const canEdit = useCanEdit();
-  const [addTxVisible, setAddTxVisible] = useState(false);
+  const theme = useTheme();
+  const role = useMockRole();
+  const data = useDataSource();
+  const [chartRange, setChartRange] = useState('1년');
+  const [snapshotVisible, setSnapshotVisible] = useState(false);
 
-  const { data, isLoading } = useQuery({
-    queryKey: qk.dashboard(household?.id ?? 0),
-    queryFn: () => dashboardApi.get(household!.id),
-    enabled: !!household,
-  });
+  const nw = data.netWorth;
+  const change = nw.current - nw.lastYear;
+  const changePct = (change / nw.lastYear) * 100;
+  const isViewer = role === 'VIEWER';
 
-  const d = (data as any)?.data ?? data;
+  const all = nw.monthlyHistory;
+  const sliced = chartRange === '1년' ? all.slice(-12) : chartRange === '3년' ? all.slice(-36) : all;
+  const first = sliced[0]?.value ?? 0;
+  const last = sliced[sliced.length - 1]?.value ?? 0;
+  const delta = last - first;
+  const deltaPct = first ? (delta / first) * 100 : 0;
+
+  const recentTxs = data.transactions.slice(0, 3);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.householdName}>{household?.name ?? ''}</Text>
-        {canEdit && (
-          <TouchableOpacity style={styles.addBtn} onPress={() => setAddTxVisible(true)}>
-            <Text style={styles.addBtnText}>+ 거래</Text>
+    <ScrollView style={{ flex: 1, backgroundColor: theme.bg }} contentContainerStyle={styles.content}>
+      {/* Period label */}
+      <View style={styles.periodRow}>
+        <Text style={[styles.periodLeft, { color: theme.textMuted }]}>전년 동기 대비</Text>
+        <Text style={[styles.periodRight, { color: theme.textMuted }]}>{nw.snapshotDate} 기준</Text>
+      </View>
+
+      {/* Net worth hero */}
+      <View style={styles.heroBlock}>
+        <Text style={[styles.heroLabel, { color: theme.textMuted }]}>우리집 순자산</Text>
+        <Text style={[styles.heroValue, { color: theme.text }]}>{krw(nw.current)}</Text>
+        <View style={styles.changeRow}>
+          <View style={[styles.changePill, { backgroundColor: theme.brandSoft }]}>
+            {Icon.arrowUp(theme.brand)}
+            <Text style={[styles.changePillText, { color: theme.brand }]}>{pct(changePct)}</Text>
+          </View>
+          <Text style={[styles.changeAbs, { color: theme.text }]}>{krw(change)}</Text>
+        </View>
+      </View>
+
+      {/* Snapshot CTA */}
+      {!isViewer && (
+        <View style={styles.sectionPad}>
+          <TouchableOpacity
+            style={[styles.ctaBtn, { backgroundColor: theme.brand }]}
+            onPress={() => setSnapshotVisible(true)}
+          >
+            <View style={styles.ctaLeft}>
+              <TossEmoji code={TE.camera} size={20} />
+              <Text style={styles.ctaBtnText}>이번 달 자산 스냅샷 입력하기</Text>
+            </View>
+            {Icon.chevronRight('#fff')}
           </TouchableOpacity>
-        )}
+          <Text style={[styles.ctaCaption, { color: theme.textMuted }]}>마지막 입력 후 32일 지났어요</Text>
+        </View>
+      )}
+
+      {/* Chart card */}
+      <View style={styles.sectionPad}>
+        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <View style={styles.cardHeader}>
+            <Text style={[styles.cardTitle, { color: theme.text }]}>순자산 변화</Text>
+            <Segmented options={['1년', '3년', '5년']} value={chartRange} onChange={setChartRange} small />
+          </View>
+          <Text style={[styles.chartSubtitle, { color: theme.textMuted }]}>
+            {sliced[0]?.date} → {sliced[sliced.length - 1]?.date}
+            {'  '}
+            <Text style={{ color: delta >= 0 ? theme.brand : theme.danger, fontWeight: '700' }}>
+              {delta > 0 ? '+' : ''}{krwShort(delta)}원 ({pct(deltaPct)})
+            </Text>
+          </Text>
+          <LineChart data={sliced} width={295} height={180} color={theme.brand} dark={theme.dark} />
+          <Text style={[styles.chartHint, { color: theme.textMuted }]}>
+            그래프를 길게 누르거나 호버하면 그 시점의 금액을 볼 수 있어요
+          </Text>
+        </View>
       </View>
 
-      {/* 순자산 카드 */}
-      <View style={styles.netWorthCard}>
-        <Text style={styles.netWorthLabel}>순자산</Text>
-        {isLoading ? (
-          <Text style={styles.netWorthValue}>계산 중...</Text>
-        ) : (
-          <>
-            <Text style={styles.netWorthValue}>{krw(d?.netWorth ?? 0)}</Text>
-            {d?.netWorthChangeRate != null && (
-              <Text style={[styles.changeRate, d.netWorthChangeRate >= 0 ? styles.positive : styles.negative]}>
-                전년 대비 {pct(d.netWorthChangeRate)}
-              </Text>
-            )}
-          </>
-        )}
+      {/* YoY waterfall link */}
+      <View style={styles.sectionPad}>
+        <TouchableOpacity style={[styles.card, styles.yoyCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.yoyTitle, { color: theme.text }]}>작년이랑 얼마나 달라졌지?</Text>
+            <Text style={[styles.yoySub, { color: theme.textMuted }]}>자산군별 증감 워터폴 보기</Text>
+          </View>
+          {Icon.chevronRight(theme.textMuted)}
+        </TouchableOpacity>
       </View>
 
-      {/* 자산군 도넛 요약 */}
-      {d?.byCategory && d.byCategory.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>자산 구성</Text>
-          <View style={styles.donutSummary}>
-            {(d.byCategory as any[]).slice(0, 4).map((item: any) => (
-              <View key={item.category} style={styles.donutItem}>
-                <Text style={styles.donutValue}>{krwShort(item.totalKrw)}</Text>
-                <Text style={styles.donutLabel}>{item.category}</Text>
+      {/* Donut contribution card */}
+      <View style={styles.sectionPad}>
+        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>올해 자산군별 기여도</Text>
+          <Text style={[styles.cardSub, { color: theme.textMuted }]}>우리집 순자산이 얼마나 늘었는지 자산별로 쪼개봤어요</Text>
+          <View style={styles.donutRow}>
+            <View style={styles.donutWrap}>
+              <DonutChart data={data.contributions} size={140} thickness={18} dark={theme.dark} />
+              <View style={styles.donutCenter}>
+                <Text style={[styles.donutLabel, { color: theme.textMuted }]}>총 기여</Text>
+                <Text style={[styles.donutValue, { color: theme.text }]}>
+                  +{krwShort(data.contributions.reduce((s, c) => s + c.value, 0))}
+                </Text>
               </View>
-            ))}
+            </View>
+            <View style={styles.legend}>
+              {data.contributions.slice(0, 4).map((c, i) => (
+                <View key={i} style={styles.legendRow}>
+                  <View style={[styles.legendDot, { backgroundColor: c.color }]} />
+                  <Text style={[styles.legendCat, { color: theme.text }]}>{c.category}</Text>
+                  <Text style={[styles.legendVal, { color: c.value >= 0 ? theme.brand : theme.danger }]}>
+                    {c.value > 0 ? '+' : ''}{krwShort(c.value)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+          <View style={[styles.insightBox, { backgroundColor: theme.brandSoft }]}>
+            <Text style={[styles.insightText, { color: theme.text }]}>
+              {'💡 '}
+              <Text style={{ fontWeight: '700' }}>{data.contributions[0]?.category}</Text>
+              {`가 우리집 자산 성장의 가장 큰 원동력이에요.\n올해만 +${krwShort(data.contributions[0]?.value ?? 0)} 기여했어요.`}
+            </Text>
           </View>
         </View>
-      )}
+      </View>
 
-      {/* 최근 거래 */}
-      {d?.recentTransactions && d.recentTransactions.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>최근 거래</Text>
-          {(d.recentTransactions as any[]).map((tx: any) => (
-            <View key={tx.id} style={styles.txRow}>
-              <View>
-                <Text style={styles.txMemo}>{tx.memo ?? TX_TYPE_LABEL[tx.type]}</Text>
-                <Text style={styles.txDate}>{dateStr(tx.date)}</Text>
-              </View>
-              <Text style={[
-                styles.txAmount,
-                tx.type === 'INCOME' && styles.positive,
-                tx.type === 'EXPENSE' && styles.negative,
-              ]}>
-                {tx.type === 'EXPENSE' ? '-' : '+'}{krwShort(tx.amount)}
-              </Text>
-            </View>
-          ))}
+      {/* Recent transactions */}
+      <View style={styles.sectionPad}>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>최근 거래</Text>
+          <TouchableOpacity>
+            <Text style={[styles.seeAll, { color: theme.textMuted }]}>모두 보기</Text>
+          </TouchableOpacity>
         </View>
-      )}
+        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          {recentTxs.map((tx, i) => {
+            const catDef = getCategoryDef(tx.category);
+            return (
+              <View key={tx.id} style={[styles.txRow, i < recentTxs.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.border }]}>
+                <View style={[styles.txIcon, { backgroundColor: theme.bg }]}>
+                  <TossEmoji code={catDef.iconCode} size={22} />
+                </View>
+                <View style={styles.txInfo}>
+                  <View style={styles.txTitleRow}>
+                    <Text style={[styles.txTitle, { color: theme.text }]} numberOfLines={1}>{tx.title}</Text>
+                    {tx.auto && <AutoBadge />}
+                  </View>
+                  <Text style={[styles.txMeta, { color: theme.textMuted }]}>
+                    {tx.category} · {tx.date.slice(5).replace('-', '/')}
+                  </Text>
+                </View>
+                <Text style={[styles.txAmount, { color: tx.type === 'INCOME' ? theme.brand : tx.type === 'TRANSFER' ? theme.textMuted : theme.text }]}>
+                  {tx.type === 'INCOME' ? '+' : tx.type === 'EXPENSE' ? '-' : ''}
+                  {krwShort(tx.amount)}원
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      </View>
 
-      <AddTxSheet visible={addTxVisible} onClose={() => setAddTxVisible(false)} />
+      <SnapshotSheet
+        visible={snapshotVisible}
+        onClose={() => setSnapshotVisible(false)}
+      />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  content: { padding: 20, paddingBottom: 40 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  householdName: { fontSize: 18, fontWeight: '700', color: '#191F28' },
-  addBtn: { backgroundColor: '#EBF3FF', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7 },
-  addBtnText: { fontSize: 13, color: '#3182F6', fontWeight: '600' },
-  netWorthCard: {
-    backgroundColor: '#3182F6',
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 20,
-  },
-  netWorthLabel: { fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 6 },
-  netWorthValue: { fontSize: 28, fontWeight: '800', color: '#fff' },
-  changeRate: { fontSize: 13, marginTop: 6, fontWeight: '600' },
-  positive: { color: '#34C759' },
-  negative: { color: '#FF6D35' },
-  section: { marginBottom: 24 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#191F28', marginBottom: 12 },
-  donutSummary: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  donutItem: {
-    width: '45%',
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    padding: 12,
-  },
-  donutValue: { fontSize: 16, fontWeight: '700', color: '#191F28', marginBottom: 2 },
-  donutLabel: { fontSize: 12, color: '#8B95A1' },
-  txRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F2F4F6',
-  },
-  txMemo: { fontSize: 14, fontWeight: '500', color: '#191F28', marginBottom: 2 },
-  txDate: { fontSize: 12, color: '#8B95A1' },
-  txAmount: { fontSize: 15, fontWeight: '600', color: '#191F28' },
+  content: { paddingBottom: 120 },
+  periodRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 },
+  periodLeft: { fontSize: 14, fontWeight: '500' },
+  periodRight: { fontSize: 12 },
+  heroBlock: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 20 },
+  heroLabel: { fontSize: 14, fontWeight: '500', marginBottom: 6 },
+  heroValue: { fontSize: 34, fontWeight: '800', letterSpacing: -1, lineHeight: 40 },
+  changeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
+  changePill: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999 },
+  changePillText: { fontSize: 13, fontWeight: '700' },
+  changeAbs: { fontSize: 13, fontWeight: '600' },
+  sectionPad: { paddingHorizontal: 20, paddingBottom: 16 },
+  ctaBtn: { width: '100%', paddingVertical: 14, paddingHorizontal: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  ctaLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  ctaBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  ctaCaption: { fontSize: 12, textAlign: 'center', marginTop: 8 },
+  card: { borderRadius: 16, padding: 16, borderWidth: 1 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  cardTitle: { fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  cardSub: { fontSize: 12, marginBottom: 16 },
+  chartSubtitle: { fontSize: 12, marginBottom: 6 },
+  chartHint: { fontSize: 10, textAlign: 'center', marginTop: 4 },
+  yoyCard: { flexDirection: 'row', alignItems: 'center', padding: 16 },
+  yoyTitle: { fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  yoySub: { fontSize: 12 },
+  donutRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  donutWrap: { position: 'relative' },
+  donutCenter: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+  donutLabel: { fontSize: 10, fontWeight: '500' },
+  donutValue: { fontSize: 16, fontWeight: '800' },
+  legend: { flex: 1, gap: 8 },
+  legendRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDot: { width: 8, height: 8, borderRadius: 2 },
+  legendCat: { flex: 1, fontSize: 12, fontWeight: '500' },
+  legendVal: { fontSize: 12, fontWeight: '700' },
+  insightBox: { marginTop: 12, padding: 12, borderRadius: 10 },
+  insightText: { fontSize: 12, lineHeight: 18 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  seeAll: { fontSize: 12 },
+  txRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 },
+  txIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  txInfo: { flex: 1, minWidth: 0 },
+  txTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  txTitle: { fontSize: 14, fontWeight: '600', flex: 1 },
+  txMeta: { fontSize: 12, marginTop: 2 },
+  txAmount: { fontSize: 14, fontWeight: '700' },
 });

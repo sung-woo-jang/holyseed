@@ -5,7 +5,10 @@ import { Route as _AssetsDetailRoute } from '../pages/assets/detail';
 import { Route as _AuthJoinRoute } from '../pages/auth/join';
 import { Route as _AuthOnboardingRoute } from '../pages/auth/onboarding';
 import { Route as _IndexRoute } from '../pages/';
+import { Route as _MoreCashflowRoute } from '../pages/more/cashflow';
 import { Route as _MoreCategoriesRoute } from '../pages/more/categories';
+import { Route as _MoreCompareRoute } from '../pages/more/compare';
+import { Route as _MoreMembersRoute } from '../pages/more/members';
 
 declare module '@granite-js/react-native' {
   interface RegisterScreenInput {
@@ -14,7 +17,10 @@ declare module '@granite-js/react-native' {
     '/auth/join': (typeof _AuthJoinRoute)['_inputType'];
     '/auth/onboarding': (typeof _AuthOnboardingRoute)['_inputType'];
     '/': (typeof _IndexRoute)['_inputType'];
+    '/more/cashflow': (typeof _MoreCashflowRoute)['_inputType'];
     '/more/categories': (typeof _MoreCategoriesRoute)['_inputType'];
+    '/more/compare': (typeof _MoreCompareRoute)['_inputType'];
+    '/more/members': (typeof _MoreMembersRoute)['_inputType'];
   }
 
   interface RegisterScreen {
@@ -23,6 +29,9 @@ declare module '@granite-js/react-native' {
     '/auth/join': (typeof _AuthJoinRoute)['_outputType'];
     '/auth/onboarding': (typeof _AuthOnboardingRoute)['_outputType'];
     '/': (typeof _IndexRoute)['_outputType'];
+    '/more/cashflow': (typeof _MoreCashflowRoute)['_outputType'];
     '/more/categories': (typeof _MoreCategoriesRoute)['_outputType'];
+    '/more/compare': (typeof _MoreCompareRoute)['_outputType'];
+    '/more/members': (typeof _MoreMembersRoute)['_outputType'];
   }
 }

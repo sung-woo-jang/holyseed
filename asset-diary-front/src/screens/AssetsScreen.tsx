@@ -1,153 +1,134 @@
-import { useQuery } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import {
-  FlatList,
+  ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { assetsApi } from '../api';
-import EmptyState from '../components/common/EmptyState';
-import ScreenHeader, { HeaderButton } from '../components/common/ScreenHeader';
+import { useDataSource, useMockRole } from '../lib/data-source';
+import { useTheme } from '../lib/theme';
+import { krw, krwShort, pct } from '../lib/format';
+import { ASSET_CATEGORY_META } from '../lib/category-meta';
+import { TE } from '../lib/toss-emoji';
+import TossEmoji from '../components/common/TossEmoji';
+import { Icon } from '../components/common/Icon';
 import SnapshotSheet from '../components/sheets/SnapshotSheet';
-import { useCanEdit, useHousehold } from '../hooks';
-import { qk } from '../queries/keys';
-import type { Asset } from '../types/api';
-import { ASSET_CATEGORY_LABEL, krwShort } from '../lib/format';
+import type { AssetCategory } from '../types/api';
+import type { MockAsset } from '../lib/mock-data';
 
 interface AssetsScreenProps {
-  onAssetPress: (asset: Asset) => void;
+  onAssetPress?: (asset: MockAsset) => void;
 }
 
 export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
-  const { household } = useHousehold();
-  const canEdit = useCanEdit();
-  const [search, setSearch] = useState('');
-  const [snapshotAsset, setSnapshotAsset] = useState<Asset | null>(null);
+  const theme = useTheme();
+  const role = useMockRole();
+  const data = useDataSource();
+  const [snapshotAll, setSnapshotAll] = useState(false);
+  const isViewer = role === 'VIEWER';
 
-  const { data: assets = [], isLoading } = useQuery({
-    queryKey: qk.assets(household?.id ?? 0),
-    queryFn: () => assetsApi.list(household!.id),
-    enabled: !!household,
+  const grouped: Partial<Record<AssetCategory, MockAsset[]>> = {};
+  data.assets.forEach(a => {
+    if (!grouped[a.category]) grouped[a.category] = [];
+    grouped[a.category]!.push(a);
   });
 
-  const filtered = assets.filter(
-    (a) => !a.archivedAt && a.name.includes(search),
-  );
-
-  const totalKrw = filtered.reduce((sum, a) => {
-    const v = a.latestSnapshot?.valueKRW ?? 0;
-    return sum + (a.isLiability ? -v : v);
-  }, 0);
+  const total = data.assets.reduce((s, a) => s + (a.isLiability ? -a.value : a.value), 0);
 
   return (
-    <View style={styles.container}>
-      <ScreenHeader
-        title="자산"
-        right={
-          canEdit ? (
-            <HeaderButton label="일괄 스냅샷" onPress={() => setSnapshotAsset(filtered[0] ?? null)} />
-          ) : undefined
-        }
-      />
-
-      <View style={styles.searchBox}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="자산 검색"
-          value={search}
-          onChangeText={setSearch}
-        />
+    <ScrollView style={{ flex: 1, backgroundColor: theme.bg }} contentContainerStyle={{ paddingBottom: 120 }}>
+      {/* Total net worth */}
+      <View style={styles.header}>
+        <Text style={[styles.headerLabel, { color: theme.textMuted }]}>총 순자산</Text>
+        <Text style={[styles.headerValue, { color: theme.text }]}>{krw(total)}</Text>
       </View>
 
-      <View style={styles.summaryCard}>
-        <Text style={styles.summaryLabel}>순자산</Text>
-        <Text style={[styles.summaryValue, totalKrw < 0 && styles.negative]}>
-          {krwShort(totalKrw)}
-        </Text>
-      </View>
-
-      {isLoading ? null : filtered.length === 0 ? (
-        <EmptyState icon="💰" title="자산이 없어요" desc="자산을 추가해 순자산을 추적해보세요." />
-      ) : (
-        <FlatList
-          data={filtered}
-          keyExtractor={(item) => String(item.id)}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={styles.assetRow} onPress={() => onAssetPress(item)}>
-              <View style={styles.assetLeft}>
-                <Text style={styles.assetName}>{item.name}</Text>
-                <Text style={styles.assetCategory}>{ASSET_CATEGORY_LABEL[item.category]}</Text>
-              </View>
-              <View style={styles.assetRight}>
-                <Text style={[styles.assetValue, item.isLiability && styles.negative]}>
-                  {item.latestSnapshot ? krwShort(item.latestSnapshot.valueKRW) : '-'}
-                </Text>
-                {canEdit && (
-                  <TouchableOpacity
-                    style={styles.snapBtn}
-                    onPress={() => setSnapshotAsset(item)}
-                  >
-                    <Text style={styles.snapBtnText}>입력</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
+      {/* Action buttons */}
+      {!isViewer && (
+        <View style={styles.actionBlock}>
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.brand }]} onPress={() => setSnapshotAll(true)}>
+              <TossEmoji code={TE.camera} size={18} />
+              <Text style={styles.actionBtnPrimary}>일괄 스냅샷</Text>
             </TouchableOpacity>
-          )}
-        />
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.brandSoft }]}>
+              <TossEmoji code={TE.pencil} size={18} />
+              <Text style={[styles.actionBtnSoft, { color: theme.brand }]}>개별 입력</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.actionCaption, { color: theme.textMuted }]}>개별 입력은 자산을 탭한 후 "이 자산만 스냅샷 입력" 버튼으로도 가능해요</Text>
+        </View>
       )}
 
+      {/* Asset groups */}
+      {(Object.entries(grouped) as [AssetCategory, MockAsset[]][]).map(([cat, items]) => {
+        const meta = ASSET_CATEGORY_META[cat];
+        const sum = items.reduce((s, a) => s + (a.isLiability ? -a.value : a.value), 0);
+        return (
+          <View key={cat} style={styles.groupBlock}>
+            <View style={styles.groupHeader}>
+              <View style={styles.groupHeaderLeft}>
+                <TossEmoji code={meta.iconCode} size={18} />
+                <Text style={[styles.groupLabel, { color: theme.text }]}>{meta.label}</Text>
+                <Text style={[styles.groupCount, { color: theme.textMuted }]}>· {items.length}건</Text>
+              </View>
+              <Text style={[styles.groupSum, { color: theme.textMuted }]}>{krwShort(sum)}원</Text>
+            </View>
+            <View style={[styles.groupCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              {items.map((a, i) => (
+                <TouchableOpacity
+                  key={a.id}
+                  style={[styles.assetRow, i < items.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.border }]}
+                  onPress={() => onAssetPress?.(a)}
+                >
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={[styles.assetName, { color: theme.text }]} numberOfLines={1}>{a.name}</Text>
+                    <Text style={[styles.assetMeta, { color: theme.textMuted }]}>
+                      {a.currency !== 'KRW' && `$${a.currencyValue?.toLocaleString()} · 1${a.currency}=${a.fxRate}원 · `}
+                      <Text style={{ color: a.delta >= 0 ? theme.brand : theme.danger, fontWeight: '600' }}>
+                        {a.delta > 0 ? '+' : ''}{krwShort(a.delta)} ({pct(a.deltaPct)})
+                      </Text>
+                    </Text>
+                  </View>
+                  <Text style={[styles.assetValue, { color: a.isLiability ? theme.danger : theme.text }]}>
+                    {krw(a.value)}
+                  </Text>
+                  {Icon.chevronRight(theme.textMuted)}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        );
+      })}
+
       <SnapshotSheet
-        visible={!!snapshotAsset}
-        asset={snapshotAsset}
-        onClose={() => setSnapshotAsset(null)}
+        visible={snapshotAll}
+        onClose={() => setSnapshotAll(false)}
       />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  searchBox: { paddingHorizontal: 20, paddingBottom: 12 },
-  searchInput: {
-    backgroundColor: '#F2F4F6',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 14,
-  },
-  summaryCard: {
-    marginHorizontal: 20,
-    marginBottom: 12,
-    padding: 16,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 14,
-  },
-  summaryLabel: { fontSize: 12, color: '#8B95A1', marginBottom: 4 },
-  summaryValue: { fontSize: 22, fontWeight: '700', color: '#191F28' },
-  negative: { color: '#FF3B30' },
-  list: { paddingHorizontal: 20, gap: 2 },
-  assetRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F2F4F6',
-  },
-  assetLeft: { flex: 1 },
-  assetName: { fontSize: 15, fontWeight: '600', color: '#191F28', marginBottom: 2 },
-  assetCategory: { fontSize: 12, color: '#8B95A1' },
-  assetRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  assetValue: { fontSize: 15, fontWeight: '600', color: '#191F28' },
-  snapBtn: {
-    backgroundColor: '#EBF3FF',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  snapBtnText: { fontSize: 12, color: '#3182F6', fontWeight: '600' },
+  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16 },
+  headerLabel: { fontSize: 13, fontWeight: '500', marginBottom: 4 },
+  headerValue: { fontSize: 28, fontWeight: '800', letterSpacing: -0.8 },
+  actionBlock: { paddingHorizontal: 20, paddingBottom: 16 },
+  actionRow: { flexDirection: 'row', gap: 8 },
+  actionBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  actionBtnPrimary: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  actionBtnSoft: { fontSize: 13, fontWeight: '700' },
+  actionCaption: { fontSize: 11, textAlign: 'center', marginTop: 8 },
+  groupBlock: { paddingHorizontal: 20, paddingBottom: 14 },
+  groupHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, paddingHorizontal: 4 },
+  groupHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  groupLabel: { fontSize: 13, fontWeight: '700' },
+  groupCount: { fontSize: 11 },
+  groupSum: { fontSize: 12, fontWeight: '600' },
+  groupCard: { borderRadius: 14, borderWidth: 1 },
+  assetRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14 },
+  assetName: { fontSize: 14, fontWeight: '600', marginBottom: 3 },
+  assetMeta: { fontSize: 11 },
+  assetValue: { fontSize: 14, fontWeight: '700', textAlign: 'right' },
 });

@@ -23,10 +23,14 @@ interface AuthState {
   user: AdUser | null;
   households: Household[];
   currentHousehold: Household | null;
+  useMock: boolean;
+  roleOverride: 'OWNER' | 'EDITOR' | 'VIEWER' | null;
   setReady: () => void;
   setAuth: (tokens: { accessToken: string; refreshToken: string }, user: AdUser) => void;
   setHouseholds: (households: Household[], current?: Household) => void;
   setCurrentHousehold: (household: Household) => void;
+  setUseMock: (useMock: boolean) => void;
+  setRoleOverride: (role: 'OWNER' | 'EDITOR' | 'VIEWER' | null) => void;
   logout: () => void;
 }
 
@@ -38,8 +42,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   households: [],
   currentHousehold: null,
+  useMock: false,
+  roleOverride: null,
 
   setReady: () => set({ isReady: true }),
+  setUseMock: (useMock) => set({ useMock }),
+  setRoleOverride: (roleOverride) => set({ roleOverride }),
 
   setAuth: (tokens, user) =>
     set({

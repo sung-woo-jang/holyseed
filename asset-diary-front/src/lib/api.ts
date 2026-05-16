@@ -19,7 +19,13 @@ api.interceptors.request.use(async (config) => {
 });
 
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    // SuccessResponse<T> 언래핑: { success, message, data: T, timestamp } → T
+    if (res.data && typeof res.data === 'object' && 'success' in res.data && 'data' in res.data) {
+      res.data = res.data.data;
+    }
+    return res;
+  },
   async (error) => {
     const original = error.config;
     if (error.response?.status === 401 && !original._retry) {
@@ -28,13 +34,15 @@ api.interceptors.response.use(
         const { refreshToken } = await getTokens();
         if (!refreshToken) throw new Error('no refresh token');
 
-        const { data } = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken });
-        await saveTokens(data.accessToken, data.refreshToken);
+        const { data: raw } = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken });
+        // plain axios → SuccessResponse 수동 언래핑
+        const payload = raw?.data ?? raw;
+        await saveTokens(payload.accessToken, payload.refreshToken);
         useAuthStore.getState().setAuth(
-          { accessToken: data.accessToken, refreshToken: data.refreshToken },
+          { accessToken: payload.accessToken, refreshToken: payload.refreshToken },
           useAuthStore.getState().user!,
         );
-        original.headers['Authorization'] = `Bearer ${data.accessToken}`;
+        original.headers['Authorization'] = `Bearer ${payload.accessToken}`;
         return api(original);
       } catch {
         await clearTokens();

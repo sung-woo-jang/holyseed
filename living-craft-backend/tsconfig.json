@@ -25,6 +25,7 @@
       "@config/*": ["src/config/*"],
       "@zc/*": ["src/projects/zc/*"],
       "@ad/*": ["src/projects/ad/*"],
+      "@pc/*": ["src/projects/pc/*"],
       "@shared/*": ["src/shared/*"]
     }
   }

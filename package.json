@@ -3,9 +3,7 @@
   "private": true,
   "workspaces": {
     "packages": [
-      "living-craft-front",
       "living-craft-backend",
-      "living-craft-backoffice",
       "packages/*"
     ],
     "nohoist": [
@@ -21,22 +19,12 @@
     ]
   },
   "scripts": {
-    "dev": "turbo run dev",
-    "dev:front": "yarn workspace @living-craft/front run dev",
-    "dev:backend": "yarn workspace @living-craft/backend run dev",
-    "dev:backoffice": "yarn workspace @living-craft/backoffice run dev",
+    "dev:back": "yarn workspace @living-craft/backend run start:dev",
     "dev:ad": "yarn --cwd asset-diary-front dev",
-    "dev:ad:back": "yarn workspace @living-craft/backend run dev",
+    "dev:pc": "npm --prefix pc-front run dev",
     "build:ad": "yarn --cwd asset-diary-front build",
+    "build:pc": "npm --prefix pc-front run build",
     "typecheck:ad": "yarn --cwd asset-diary-front typecheck",
-    "build": "turbo run build",
-    "build:front": "turbo run build --filter=@living-craft/front",
-    "build:backend": "turbo run build --filter=@living-craft/backend",
-    "build:backoffice": "turbo run build --filter=@living-craft/backoffice",
-    "lint": "turbo run lint",
-    "lint:fix": "turbo run lint:fix",
-    "test": "turbo run test",
-    "typecheck": "turbo run typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\" --ignore-path .prettierignore",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\" --ignore-path .prettierignore",
     "clean": "rm -rf node_modules **/node_modules",

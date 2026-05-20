@@ -33,18 +33,9 @@
     "migration:run": "node -r tsconfig-paths/register node_modules/.bin/typeorm-ts-node-commonjs migration:run -d src/config/typeorm.config.ts",
     "migration:revert": "node -r tsconfig-paths/register node_modules/.bin/typeorm-ts-node-commonjs migration:revert -d src/config/typeorm.config.ts",
     "migration:show": "node -r tsconfig-paths/register node_modules/.bin/typeorm-ts-node-commonjs migration:show -d src/config/typeorm.config.ts",
-    "seed": "ts-node -r tsconfig-paths/register src/database/seeds/index.ts",
     "seed:icons": "ts-node -r tsconfig-paths/register scripts/seed-icons.ts",
     "typecheck": "tsc --noEmit",
     "fix:all": "yarn lint:fix && yarn format",
-    "crawler": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/crawler/index.ts",
-    "crawler:test": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/crawler/test-categories.ts",
-    "crawler:test-crawl": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/crawler/test-crawl.ts",
-    "crawler:save-db": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/crawler/save-to-db.ts",
-    "crawler:save-db-v2": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/crawler/save-to-db-v2.ts",
-    "crawler:test-category": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/crawler/test-crawl-category.ts",
-    "zc:migrate": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/migrations/migrate-to-v2.ts",
-    "zc:reset-db": "ts-node -r tsconfig-paths/register src/projects/zc/scripts/migrations/reset-db.ts",
     "ad:seed": "ts-node -r tsconfig-paths/register src/projects/ad/scripts/seed/seed-ad.ts"
   },
   "dependencies": {
@@ -135,8 +126,8 @@
       "^@common/(.*)$": "<rootDir>/common/$1",
       "^@modules/(.*)$": "<rootDir>/modules/$1",
       "^@config/(.*)$": "<rootDir>/config/$1",
-      "^@zc/(.*)$": "<rootDir>/projects/zc/$1",
       "^@ad/(.*)$": "<rootDir>/projects/ad/$1",
+      "^@pc/(.*)$": "<rootDir>/projects/pc/$1",
       "^@shared/(.*)$": "<rootDir>/shared/$1"
     }
   }

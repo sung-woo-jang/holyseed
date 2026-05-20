@@ -6,20 +6,12 @@
 
 **Living Craft Backend** - 멀티 프로젝트 아키텍처를 지원하는 NestJS 기반 백엔드 서버입니다.
 
-### 멀티 프로젝트 구조
+### AD (Asset Diary) 프로젝트
 
-이 백엔드는 여러 프로젝트를 하나의 서버에서 관리할 수 있도록 설계되었습니다:
-
-- **프로젝트 격리**: 각 프로젝트는 독립된 API 경로, 데이터베이스 스키마, 모듈을 가집니다
-- **공유 모듈**: 파일 업로드, 헬스 체크 등 공통 기능은 공유 모듈로 관리
-- **스키마 분리**: 각 프로젝트는 별도의 PostgreSQL 스키마를 사용하여 데이터 격리
-
-### ZC (Zippt Crawler) 프로젝트
-
-- **API Prefix**: `/api/zc/*`
-- **데이터베이스 스키마**: `zc`
-- **모듈 위치**: `src/projects/zc/`
-- **Swagger 문서**: `/zc/docs`
+- **API Prefix**: `/api/ad/*`
+- **데이터베이스 스키마**: `ad`
+- **모듈 위치**: `src/projects/ad/`
+- **Swagger 문서**: `/ad/docs`
 
 ### 공유 모듈
 
@@ -100,7 +92,7 @@ npm run format
 ```
 src/
 ├── projects/           # 프로젝트별 모듈
-│   └── zc/            # ZC (Zippt Crawler) 프로젝트
+│   └── ad/            # AD (Asset Diary) 프로젝트
 ├── shared/            # 공유 모듈
 │   ├── files/        # 파일 업로드
 │   ├── health/       # 헬스 체크
@@ -118,7 +110,7 @@ src/
 - `@common/` → `src/common/`
 - `@config/` → `src/config/`
 - `@database/` → `src/database/`
-- `@zc/` → `src/projects/zc/`
+- `@ad/` → `src/projects/ad/`
 - `@shared/` → `src/shared/`
 
 **글로벌 필터**:
@@ -131,7 +123,7 @@ src/
   - ⚠️ **중요**: 이 프로젝트는 1인 운영 프로젝트로 데이터 중요도가 낮고 편의성을 우선시합니다
   - 마이그레이션 파일 관리 없이 엔티티 변경 시 자동으로 DB 스키마 동기화
   - **절대 synchronize: false로 변경하지 마세요**
-- **프로젝트별 스키마 분리**: 각 프로젝트는 별도의 PostgreSQL 스키마 사용 (현재: ZC → `zc` 스키마)
+- **프로젝트별 스키마 분리**: 각 프로젝트는 별도의 PostgreSQL 스키마 사용 (현재: AD → `ad` 스키마)
 
 **멀티 프로젝트 패턴**:
 - 각 프로젝트는 `src/projects/{project-name}/` 디렉토리에 위치
@@ -157,7 +149,7 @@ src/
 
 ### 개발 환경 접속 포인트
 - API 서버: http://localhost:8000
-- ZC Swagger: http://localhost:8000/zc/docs
+- AD Swagger: http://localhost:8000/ad/docs
 - 헬스 체크: http://localhost:8000/health
 - pgAdmin: http://localhost:5050 (admin@livingcraft.com / admin123)
 
@@ -543,7 +535,7 @@ export class ProductController {
 // 좋은 예: 경로 별칭 사용
 import { BaseEntity } from '@common/entities/base.entity';
 import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
-import { Product } from '@zc/modules/products/entities/product.entity';
+import { Asset } from '@ad/modules/assets/entities/asset.entity';
 import { FileService } from '@shared/files/file.service';
 
 // 나쁜 예: 상대 경로 남용
@@ -659,7 +651,7 @@ app.setGlobalPrefix('api/{project-name}');
 ### 개발 환경 (Development)
 - 포트: 8000
 - 데이터베이스: living_craft_dev
-- 스키마: zc (ZC Crawler)
+- 스키마: ad (Asset Diary)
 - **synchronize: true** (자동 스키마 동기화)
 - 로깅: 활성화
 - Swagger UI: 활성화
@@ -667,7 +659,7 @@ app.setGlobalPrefix('api/{project-name}');
 ### 프로덕션 환경 (Production)
 - 포트: 환경변수로 설정
 - 데이터베이스: 프로덕션 DB
-- 스키마: zc
+- 스키마: ad
 - **synchronize: true** ⚠️ 1인 운영 프로젝트로 편의성 우선 (마이그레이션 미사용)
 - 로깅: 에러만
 - Swagger UI: 비활성화

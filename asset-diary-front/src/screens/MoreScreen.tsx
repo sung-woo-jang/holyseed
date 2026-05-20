@@ -1,7 +1,9 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../lib/theme';
 import { useDataSource, useMockRole } from '../lib/data-source';
+import { clearTokens } from '../lib/storage';
+import { useAuthStore } from '../stores/auth.store';
 import TossEmoji from '../components/common/TossEmoji';
 import { Icon } from '../components/common/Icon';
 import { TE } from '../lib/toss-emoji';
@@ -38,6 +40,21 @@ export default function MoreScreen({ navigation }: MoreScreenProps) {
   const theme = useTheme();
   const data = useDataSource();
   const role = useMockRole();
+  const logout = useAuthStore((s) => s.logout);
+
+  async function handleLogout() {
+    Alert.alert('로그아웃', '로그아웃 하시겠어요?', [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '로그아웃',
+        style: 'destructive',
+        onPress: async () => {
+          await clearTokens();
+          logout();
+        },
+      },
+    ]);
+  }
 
   const owner = data.members.find((m) => m.role === 'OWNER');
   const memberCount = data.members.length;
@@ -125,8 +142,11 @@ export default function MoreScreen({ navigation }: MoreScreenProps) {
         ))}
       </View>
 
-      {/* Footer */}
+      {/* Logout */}
       <View style={styles.footer}>
+        <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
+          <Text style={[styles.logoutText, { color: theme.danger }]}>로그아웃</Text>
+        </TouchableOpacity>
         <Text style={[styles.footerText, { color: theme.textMuted }]}>자산일기 v1.0 · Apps-in-Toss</Text>
       </View>
     </ScrollView>
@@ -181,6 +201,8 @@ const styles = StyleSheet.create({
   menuText: { flex: 1 },
   menuLabel: { fontSize: 15, fontWeight: '600' },
   menuDetail: { fontSize: 12, marginTop: 2 },
-  footer: { alignItems: 'center', paddingVertical: 32 },
+  footer: { alignItems: 'center', paddingVertical: 32, gap: 16 },
+  logoutBtn: { paddingVertical: 8, paddingHorizontal: 24 },
+  logoutText: { fontSize: 14, fontWeight: '600' },
   footerText: { fontSize: 12 },
 });

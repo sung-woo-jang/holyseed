@@ -94,6 +94,39 @@ async function bootstrap() {
     console.log('💎 [AD] Swagger UI: http://localhost:8000/ad/docs')
     console.log('💎 [AD] Swagger JSON: http://localhost:8000/ad/docs/json')
     console.log(`📊 [AD] API 개수: ${Object.keys(filteredAdDocument.paths).length}개`)
+
+    // ========================================
+    // PC (단가표 비교) API 문서
+    // ========================================
+    const pcConfig = new DocumentBuilder()
+      .setTitle('PC (Price Compare) API')
+      .setDescription('단가표 업체별 비교 - 공급업체별 제품 단가 관리')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addTag('PC 인증', '단가표 관리 로그인')
+      .addTag('PC 카테고리', '제품 카테고리 트리 관리')
+      .addTag('PC 업체', '공급업체 관리')
+      .addTag('PC 제품', '제품 CRUD, 비교, 임포트')
+      .addTag('PC 제품 이미지', '제품 이미지 업로드/삭제')
+      .addTag('PC 가격', '업체별 제품 단가 관리')
+      .build()
+
+    const pcDocument = SwaggerModule.createDocument(app, pcConfig, { include: [] })
+
+    const filteredPcDocument = {
+      ...pcDocument,
+      paths: Object.fromEntries(Object.entries(pcDocument.paths).filter(([path]) => path.startsWith('/api/pc/'))),
+    }
+
+    SwaggerModule.setup('pc/docs', app, filteredPcDocument, {
+      swaggerOptions: { persistAuthorization: true, tagsSorter: 'alpha', operationsSorter: 'alpha' },
+      customSiteTitle: 'PC API - 단가표 비교',
+      jsonDocumentUrl: '/pc/docs/json',
+    })
+
+    console.log('💎 [PC] Swagger UI: http://localhost:8000/pc/docs')
+    console.log('💎 [PC] Swagger JSON: http://localhost:8000/pc/docs/json')
+    console.log(`📊 [PC] API 개수: ${Object.keys(filteredPcDocument.paths).length}개`)
   }
 
   await app.listen(port, '0.0.0.0')

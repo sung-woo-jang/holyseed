@@ -92,12 +92,20 @@ export function ProductDetailPage() {
               <p className="text-xs text-blue-600 mt-1 bg-blue-50 inline-block px-2 py-0.5 rounded">{data.category.name}</p>
             )}
           </div>
-          <button
-            onClick={() => { if (confirm('제품을 삭제할까요? (이미지/가격 포함)')) deleteProduct.mutate() }}
-            className="text-sm text-red-500 hover:text-red-700"
-          >
-            삭제
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(`/products/${productId}/edit`)}
+              className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md"
+            >
+              수정
+            </button>
+            <button
+              onClick={() => { if (confirm('제품을 삭제할까요? (이미지/가격 포함)')) deleteProduct.mutate() }}
+              className="text-sm text-red-500 hover:text-red-700"
+            >
+              삭제
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4 text-sm">
@@ -105,6 +113,12 @@ export function ProductDetailPage() {
           {data.spec && <div><span className="text-gray-400">스펙</span><p className="font-medium">{data.spec}</p></div>}
           {data.unit && <div><span className="text-gray-400">단위</span><p className="font-medium">{data.unit}</p></div>}
           {data.note && <div className="col-span-3"><span className="text-gray-400">비고</span><p>{data.note}</p></div>}
+          {data.description && (
+            <div className="col-span-3 mt-2 p-3 bg-amber-50 rounded-lg border border-amber-100">
+              <span className="text-xs text-amber-600 font-medium">설명 (메모)</span>
+              <p className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{data.description}</p>
+            </div>
+          )}
         </div>
       </div>
 

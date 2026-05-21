@@ -29,6 +29,10 @@ export class Product extends BaseEntity {
   @Column({ length: 20, default: 'EA' })
   unit: string;
 
+  @ApiPropertyOptional({ description: '설명 (내부 메모용)' })
+  @Column({ type: 'text', nullable: true })
+  description: string;
+
   @ApiPropertyOptional({ description: '비고' })
   @Column({ type: 'text', nullable: true })
   note: string;

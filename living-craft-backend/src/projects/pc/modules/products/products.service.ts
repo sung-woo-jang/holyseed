@@ -241,6 +241,7 @@ export class ProductsService {
             spec: item.spec || existing.spec,
             unit: item.unit || existing.unit,
             note: item.note || existing.note,
+            description: item.description || existing.description,
             ...(categoryId ? { categoryId } : {}),
           });
           updated++;
@@ -282,6 +283,7 @@ export class ProductsService {
               spec: item.spec,
               unit: item.unit || 'EA',
               note: item.note,
+              description: item.description,
               isActive: true,
             }),
           );

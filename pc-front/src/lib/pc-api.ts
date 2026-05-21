@@ -46,6 +46,7 @@ export interface Product {
   brand?: string
   spec?: string
   unit: string
+  description?: string
   note?: string
   primaryImageUrl?: string
   isActive: boolean

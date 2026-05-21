@@ -53,6 +53,11 @@ export class ImportProductItemDto {
   @MaxLength(20)
   unit?: string;
 
+  @ApiPropertyOptional({ description: '설명 (내부 메모용)' })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
   @ApiPropertyOptional({ description: '비고' })
   @IsOptional()
   @IsString()

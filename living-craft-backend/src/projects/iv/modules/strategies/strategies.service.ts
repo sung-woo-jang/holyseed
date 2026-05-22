@@ -57,6 +57,25 @@ export class StrategiesService {
     return state
   }
 
+  async getPortfolioSummary() {
+    const strategies = await this.findAll()
+    const states = await Promise.all(
+      strategies.map((s) => this.stateRepo.findOne({ where: { strategyId: s.id } })),
+    )
+    let totalPrincipal = 0, totalCash = 0, totalStockValue = 0
+    for (let i = 0; i < strategies.length; i++) {
+      const st = states[i]
+      if (!st) continue
+      totalPrincipal += Number(strategies[i].principal)
+      totalCash += Number(st.cash)
+      totalStockValue += Number(st.quantity) * Number(st.lastClose ?? 0)
+    }
+    const totalEvaluation = totalCash + totalStockValue
+    const totalPnl = totalEvaluation - totalPrincipal
+    const totalPnlPct = totalPrincipal > 0 ? (totalPnl / totalPrincipal) * 100 : 0
+    return { totalPrincipal, totalCash, totalStockValue, totalEvaluation, totalPnl, totalPnlPct, count: strategies.length }
+  }
+
   async update(id: string, data: { principal?: number; division?: number }): Promise<IvStrategy> {
     await this.findOne(id)
     await this.strategyRepo.update(id, data)

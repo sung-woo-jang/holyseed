@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -55,6 +55,16 @@ export function StrategyDetailPage() {
   const sortedPrices = [...priceHistory].sort((a, b) => a.priceDate.localeCompare(b.priceDate))
   const closes = sortedPrices.map((p) => p.closePrice)
   const rsiValues = computeRSI(closes)
+
+  // T값 추이 차트 (체결 내역 기반)
+  const tChartData = useMemo(() => {
+    return [...execs]
+      .sort((a, b) => a.execDate.localeCompare(b.execDate))
+      .map((e) => ({
+        date: e.execDate.slice(5),
+        t: Number((e.stateAfter as Record<string, unknown>).tValue ?? 0),
+      }))
+  }, [execs])
 
   const chartData = sortedPrices.map((p, i) => {
     const prev = i > 0 ? sortedPrices[i - 1].closePrice : p.closePrice
@@ -220,6 +230,42 @@ export function StrategyDetailPage() {
                     ))}
                   </Bar>
                 </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* T값 추이 차트 */}
+          {tChartData.length > 0 && (
+            <div className="card" style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600, marginBottom: 8 }}>
+                T값 추이
+              </div>
+              <ResponsiveContainer width="100%" height={120}>
+                <LineChart data={tChartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f2f4f6" />
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                  <YAxis
+                    tick={{ fontSize: 10 }} width={30}
+                    domain={[0, strategy.division]}
+                    ticks={[0, Math.floor(strategy.division / 2), strategy.division - 1, strategy.division]}
+                  />
+                  <Tooltip
+                    formatter={(v: number) => [v.toFixed(2), 'T값']}
+                    contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                  />
+                  <ReferenceLine
+                    y={strategy.division / 2} stroke="#22c55e" strokeDasharray="4 2"
+                    label={{ value: '전→후', position: 'insideTopLeft', fontSize: 9, fill: '#22c55e' }}
+                  />
+                  <ReferenceLine
+                    y={strategy.division - 1} stroke="#f97316" strokeDasharray="4 2"
+                    label={{ value: '리버스', position: 'insideTopLeft', fontSize: 9, fill: '#f97316' }}
+                  />
+                  <Line
+                    type="stepAfter" dataKey="t" stroke="#3182f6" strokeWidth={2}
+                    dot={{ r: 3, fill: '#3182f6' }} isAnimationActive={false}
+                  />
+                </LineChart>
               </ResponsiveContainer>
             </div>
           )}

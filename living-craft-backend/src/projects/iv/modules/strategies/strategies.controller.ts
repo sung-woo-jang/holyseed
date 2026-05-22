@@ -26,6 +26,12 @@ export class StrategiesController {
     return ok(await this.svc.findAll())
   }
 
+  @Get('portfolio')
+  @ApiOperation({ summary: '포트폴리오 요약' })
+  async portfolio() {
+    return ok(await this.svc.getPortfolioSummary())
+  }
+
   @Post()
   @ApiOperation({ summary: '전략 생성' })
   async create(@Body() dto: CreateStrategyDto) {

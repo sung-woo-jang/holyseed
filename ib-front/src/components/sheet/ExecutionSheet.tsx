@@ -1,16 +1,17 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useCreateExecution } from '@/queries/iv.queries'
-import { fmtUSD, fmtT } from '@/lib/format'
+import { fmtUSD, fmtT, MODE_LABEL, MODE_COLOR } from '@/lib/format'
+import { computePreview } from '@/lib/calculator'
 import type { IvStrategy, IvState, DailyPlan, FillRowInput } from '@/lib/iv-api'
 
-const EXEC_TYPES: { value: string; label: string; side: 'buy' | 'sell' | 'none' }[] = [
-  { value: 'buy_full', label: '1회 매수', side: 'buy' },
-  { value: 'buy_half_star', label: '별LOC 매수 (1/2)', side: 'buy' },
-  { value: 'buy_half_avg', label: '평단LOC 매수 (1/2)', side: 'buy' },
-  { value: 'sell_quarter', label: '쿼터 매도', side: 'sell' },
-  { value: 'sell_fixed', label: '지정가 매도', side: 'sell' },
-  { value: 'sell_moc', label: 'MOC 매도', side: 'sell' },
-  { value: 'no_exec', label: '미체결', side: 'none' },
+const EXEC_TYPES: { value: string; label: string }[] = [
+  { value: 'buy_full', label: '1회 매수' },
+  { value: 'buy_half_star', label: '별LOC 매수 (1/2)' },
+  { value: 'buy_half_avg', label: '평단LOC 매수 (1/2)' },
+  { value: 'sell_quarter', label: '쿼터 매도' },
+  { value: 'sell_fixed', label: '지정가 매도' },
+  { value: 'sell_moc', label: 'MOC 매도' },
+  { value: 'no_exec', label: '미체결' },
 ]
 
 interface Row {
@@ -54,15 +55,31 @@ export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
     setRows((r) => r.map((row, idx) => (idx === i ? { ...row, [field]: value } : row)))
   }
 
-  async function handleSubmit() {
-    const fills: FillRowInput[] = rows
-      .filter((r) => r.execType !== 'no_exec' || true)
+  // 실시간 미리보기
+  const preview = useMemo(() => {
+    if (!state) return null
+    const fills = rows
+      .filter((r) => r.execType !== 'no_exec')
       .map((r) => ({
         execType: r.execType,
         price: parseFloat(r.price) || 0,
         qty: parseInt(r.qty) || 0,
-        note: r.note || undefined,
       }))
+      .filter((f) => f.price > 0 || f.execType === 'no_exec')
+    if (fills.length === 0) return null
+    return computePreview(
+      { ...state, division: strategy.division },
+      fills,
+    )
+  }, [rows, state, strategy.division])
+
+  async function handleSubmit() {
+    const fills: FillRowInput[] = rows.map((r) => ({
+      execType: r.execType,
+      price: parseFloat(r.price) || 0,
+      qty: parseInt(r.qty) || 0,
+      note: r.note || undefined,
+    }))
 
     try {
       const result = await mutation.mutateAsync({ execDate, rows: fills })
@@ -72,10 +89,11 @@ export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
     }
   }
 
-  // 자동완성: 플랜에서 첫 행 가격 채우기
   function autofill(rowIdx: number, execType: string) {
     if (!plan) return
-    const match = plan.buyRows.find((r) => r.execType === execType) ?? plan.sellRows.find((r) => r.execType === execType)
+    const match =
+      plan.buyRows.find((r) => r.execType === execType) ??
+      plan.sellRows.find((r) => r.execType === execType)
     if (!match) return
     setRows((r) =>
       r.map((row, idx) =>
@@ -88,101 +106,114 @@ export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
 
   return (
     <>
-      {/* 배경 오버레이 */}
-      <div
-        onClick={() => onClose()}
-        style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100,
-        }}
-      />
+      <div onClick={() => onClose()} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100 }} />
 
-      {/* 시트 */}
       <div
         style={{
           position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
           width: '100%', maxWidth: 480,
           background: '#fff', borderRadius: '20px 20px 0 0',
           padding: '20px 16px 32px',
-          zIndex: 101, maxHeight: '85vh', overflowY: 'auto',
+          zIndex: 101, maxHeight: '90vh', overflowY: 'auto',
         }}
       >
-        {/* 핸들 */}
         <div style={{ width: 36, height: 4, background: '#e5e7eb', borderRadius: 2, margin: '0 auto 16px' }} />
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h3 style={{ margin: 0, fontWeight: 700, fontSize: 17 }}>
-            {strategy.ticker} 체결 입력
-          </h3>
-          <button
-            onClick={() => onClose()}
-            style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--color-text-secondary)' }}
-          >
-            ✕
-          </button>
+          <h3 style={{ margin: 0, fontWeight: 700, fontSize: 17 }}>{strategy.ticker} 체결 입력</h3>
+          <button onClick={() => onClose()} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--color-text-secondary)' }}>✕</button>
         </div>
 
-        {/* 현재 상태 요약 */}
+        {/* 현재 → 예상 결과 비교 */}
         {state && (
           <div
             style={{
-              display: 'flex', gap: 16, padding: '10px 12px',
-              background: 'var(--color-bg)', borderRadius: 10, marginBottom: 16, fontSize: 13,
+              display: 'grid', gridTemplateColumns: '1fr auto 1fr',
+              gap: 8, padding: '12px', borderRadius: 12,
+              background: 'var(--color-bg)', marginBottom: 16, fontSize: 12,
+              alignItems: 'center',
             }}
           >
-            <div><span style={{ color: 'var(--color-text-secondary)' }}>T값 </span><strong>{fmtT(state.tValue)}</strong></div>
-            <div><span style={{ color: 'var(--color-text-secondary)' }}>평단 </span><strong>{fmtUSD(state.avgPrice)}</strong></div>
-            <div><span style={{ color: 'var(--color-text-secondary)' }}>보유 </span><strong>{state.quantity}주</strong></div>
+            {/* 현재 상태 */}
+            <div>
+              <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--color-text-secondary)', fontSize: 11 }}>현재</div>
+              {[
+                { label: 'T값', value: fmtT(state.tValue) },
+                { label: '평단', value: fmtUSD(state.avgPrice) },
+                { label: '보유', value: `${state.quantity}주` },
+                { label: '잔금', value: fmtUSD(state.cash) },
+              ].map(({ label, value }) => (
+                <div key={label} style={{ marginBottom: 3 }}>
+                  <span style={{ color: 'var(--color-text-secondary)' }}>{label} </span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
+            </div>
+
+            {/* 화살표 */}
+            <div style={{ fontSize: 16, color: 'var(--color-text-secondary)', textAlign: 'center' }}>→</div>
+
+            {/* 예상 결과 */}
+            <div>
+              <div style={{ fontWeight: 600, marginBottom: 6, color: preview ? 'var(--color-primary)' : 'var(--color-text-secondary)', fontSize: 11 }}>
+                {preview ? '예상' : '예상 (입력 후 표시)'}
+              </div>
+              {preview ? (
+                <>
+                  {[
+                    { label: 'T값', value: fmtT(preview.tValue), changed: preview.tValue !== state.tValue },
+                    { label: '평단', value: fmtUSD(preview.avgPrice), changed: Math.abs(preview.avgPrice - state.avgPrice) > 0.001 },
+                    { label: '보유', value: `${preview.quantity}주`, changed: preview.quantity !== state.quantity },
+                    { label: '잔금', value: fmtUSD(preview.cash), changed: Math.abs(preview.cash - state.cash) > 0.001 },
+                  ].map(({ label, value, changed }) => (
+                    <div key={label} style={{ marginBottom: 3 }}>
+                      <span style={{ color: 'var(--color-text-secondary)' }}>{label} </span>
+                      <strong style={{ color: changed ? 'var(--color-primary)' : 'inherit' }}>{value}</strong>
+                    </div>
+                  ))}
+                  <div style={{ marginTop: 4 }}>
+                    <span
+                      style={{
+                        fontSize: 10, padding: '2px 6px', borderRadius: 10,
+                        background: MODE_COLOR[preview.mode] + '22',
+                        color: MODE_COLOR[preview.mode], fontWeight: 700,
+                      }}
+                    >
+                      {MODE_LABEL[preview.mode] ?? preview.mode}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div style={{ color: 'var(--color-text-tertiary)', fontSize: 11 }}>—</div>
+              )}
+            </div>
           </div>
         )}
 
         {/* 날짜 */}
         <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 4 }}>
-            체결 날짜
-          </label>
+          <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 4 }}>체결 날짜</label>
           <input
-            type="date"
-            value={execDate}
+            type="date" value={execDate}
             onChange={(e) => setExecDate(e.target.value)}
-            style={{
-              width: '100%', padding: '10px', border: '1px solid var(--color-border)',
-              borderRadius: 10, fontSize: 14,
-            }}
+            style={{ width: '100%', padding: '10px', border: '1px solid var(--color-border)', borderRadius: 10, fontSize: 14 }}
           />
         </div>
 
         {/* 체결 행 */}
         {rows.map((row, i) => (
-          <div
-            key={i}
-            style={{
-              border: '1px solid var(--color-border)', borderRadius: 12,
-              padding: 12, marginBottom: 8,
-            }}
-          >
+          <div key={i} style={{ border: '1px solid var(--color-border)', borderRadius: 12, padding: 12, marginBottom: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <span style={{ fontSize: 12, fontWeight: 600 }}>체결 {i + 1}</span>
               {rows.length > 1 && (
-                <button
-                  onClick={() => removeRow(i)}
-                  style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 13 }}
-                >
-                  삭제
-                </button>
+                <button onClick={() => removeRow(i)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 13 }}>삭제</button>
               )}
             </div>
 
-            {/* 체결 유형 */}
             <select
               value={row.execType}
-              onChange={(e) => {
-                updateRow(i, 'execType', e.target.value)
-                autofill(i, e.target.value)
-              }}
-              style={{
-                width: '100%', padding: '8px', border: '1px solid var(--color-border)',
-                borderRadius: 8, fontSize: 13, marginBottom: 8, background: '#fff',
-              }}
+              onChange={(e) => { updateRow(i, 'execType', e.target.value); autofill(i, e.target.value) }}
+              style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 13, marginBottom: 8, background: '#fff' }}
             >
               {EXEC_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
@@ -194,29 +225,19 @@ export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
                 <div>
                   <label style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>체결가 ($)</label>
                   <input
-                    type="number"
-                    step="0.01"
-                    value={row.price}
+                    type="number" step="0.01" value={row.price}
                     onChange={(e) => updateRow(i, 'price', e.target.value)}
                     placeholder="0.00"
-                    style={{
-                      width: '100%', padding: '8px', border: '1px solid var(--color-border)',
-                      borderRadius: 8, fontSize: 13,
-                    }}
+                    style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 13 }}
                   />
                 </div>
                 <div>
                   <label style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>수량 (주)</label>
                   <input
-                    type="number"
-                    step="1"
-                    value={row.qty}
+                    type="number" step="1" value={row.qty}
                     onChange={(e) => updateRow(i, 'qty', e.target.value)}
                     placeholder="0"
-                    style={{
-                      width: '100%', padding: '8px', border: '1px solid var(--color-border)',
-                      borderRadius: 8, fontSize: 13,
-                    }}
+                    style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 13 }}
                   />
                 </div>
               </div>

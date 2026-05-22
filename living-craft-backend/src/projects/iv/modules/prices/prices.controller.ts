@@ -20,9 +20,9 @@ export class PricesController {
   }
 
   @Get(':ticker/history')
-  @ApiOperation({ summary: '종가 히스토리 (최근 60거래일)' })
+  @ApiOperation({ summary: '종가 히스토리 (최근 3년)' })
   async getHistory(@Param('ticker') ticker: string) {
-    return ok(await this.svc.getHistory(ticker, 60))
+    return ok(await this.svc.getHistory(ticker))
   }
 
   @Post(':ticker/refresh')

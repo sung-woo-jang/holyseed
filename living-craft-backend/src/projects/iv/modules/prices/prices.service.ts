@@ -67,10 +67,10 @@ export class PricesService {
     return saved!
   }
 
-  /** Yahoo chart API로 과거 90일 종가 bulk upsert */
+  /** Yahoo chart API로 과거 3년 종가 bulk upsert */
   private async seedHistory(ticker: string): Promise<void> {
     try {
-      const period1 = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+      const period1 = new Date(Date.now() - 3 * 365 * 24 * 60 * 60 * 1000)
       const chart = await yf.chart(ticker, { period1, interval: '1d' })
       const quotes = chart.quotes ?? []
 
@@ -96,7 +96,7 @@ export class PricesService {
     return this.priceRepo.findOne({ where: { ticker }, order: { priceDate: 'DESC' } })
   }
 
-  async getHistory(ticker: string, days = 30): Promise<IvPrice[]> {
+  async getHistory(ticker: string, days = 800): Promise<IvPrice[]> {
     return this.priceRepo.find({
       where: { ticker },
       order: { priceDate: 'DESC' },

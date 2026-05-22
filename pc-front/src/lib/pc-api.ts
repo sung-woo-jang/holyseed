@@ -72,6 +72,8 @@ export const categoriesApi = {
   update: (id: number, data: Partial<{ name: string; sortOrder: number; parentId: number }>) =>
     api.post(`/pc/categories/${id}/update`, data).then(wrap<CategoryNode>),
   delete: (id: number) => api.post(`/pc/categories/${id}/delete`),
+  reorder: (items: { id: number; sortOrder: number }[]) =>
+    api.post('/pc/categories/reorder', { items }),
 }
 
 export const vendorsApi = {

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AreaChart, Area, ResponsiveContainer } from 'recharts'
+import { AreaChart, Area, LineChart, Line, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { useStrategyState, useTodayPlan, usePriceHistory } from '@/queries/iv.queries'
 import { fmtUSD, fmtT, fmtPct, MODE_LABEL, MODE_COLOR } from '@/lib/format'
 import { computeRSI } from '@/lib/rsi'
@@ -45,28 +45,28 @@ export function StrategyCard({ strategy }: Props) {
   const starPrice = avg > 0 && sPct != null ? avg * (1 + sPct / 100) : null
   const once = onceAmount(cash, strategy.division, t)
 
-  // RSI 계산
-  const currentRsi = useMemo(() => {
+  // 차트 데이터 + RSI 통합 (최근 30일)
+  const { chartData, currentRsi, rsiColor } = useMemo(() => {
     const sorted = [...priceHistory].sort((a, b) => a.priceDate.localeCompare(b.priceDate))
     const closes = sorted.map((p) => p.closePrice)
-    if (closes.length < 15) return null
     const rsiArr = computeRSI(closes)
-    return rsiArr[rsiArr.length - 1]
-  }, [priceHistory])
+    const last30 = sorted.slice(-30)
+    const rsiOffset = rsiArr.length - last30.length
 
-  // 스파크라인 데이터 (최근 20일)
-  const sparkData = useMemo(() => {
-    return [...priceHistory]
-      .sort((a, b) => a.priceDate.localeCompare(b.priceDate))
-      .slice(-20)
-      .map((p) => ({ v: p.closePrice }))
-  }, [priceHistory])
+    const data = last30.map((p, i) => ({
+      v: p.closePrice,
+      rsi: Math.round((rsiArr[rsiOffset + i] ?? 50) * 10) / 10,
+    }))
 
-  const rsiColor =
-    currentRsi == null ? 'var(--color-text-secondary)'
-    : currentRsi >= 70 ? '#ef4444'
-    : currentRsi <= 30 ? '#3182f6'
-    : '#22c55e'
+    const latestRsi = rsiArr.length > 0 ? rsiArr[rsiArr.length - 1] : null
+    const color =
+      latestRsi == null ? 'var(--color-text-secondary)'
+      : latestRsi >= 70 ? '#ef4444'
+      : latestRsi <= 30 ? '#3182f6'
+      : '#22c55e'
+
+    return { chartData: data, currentRsi: latestRsi, rsiColor: color }
+  }, [priceHistory])
 
   return (
     <>
@@ -89,47 +89,65 @@ export function StrategyCard({ strategy }: Props) {
           </span>
         </div>
 
-        {/* ── 종가 + RSI pill + 스파크라인 ── */}
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-          <div style={{ flex: 1 }}>
-            {closePrice != null && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 22, fontWeight: 800 }}>{fmtUSD(closePrice)}</span>
-                {currentRsi != null && (
-                  <span
-                    style={{
-                      fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 20,
-                      background: rsiColor + '20', color: rsiColor,
-                    }}
-                  >
-                    RSI {currentRsi.toFixed(0)}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-          {/* 스파크라인 */}
-          {sparkData.length >= 5 && (
-            <div style={{ width: 80, height: 36 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={sparkData} margin={{ top: 2, right: 0, bottom: 2, left: 0 }}>
-                  <defs>
-                    <linearGradient id={`spark-${strategy.id}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={modeColor} stopOpacity={0.2} />
-                      <stop offset="95%" stopColor={modeColor} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Area
-                    type="monotone" dataKey="v"
-                    stroke={modeColor} strokeWidth={1.5}
-                    fill={`url(#spark-${strategy.id})`}
-                    dot={false} isAnimationActive={false}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+        {/* ── 종가 + RSI pill ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          {closePrice != null && (
+            <span style={{ fontSize: 22, fontWeight: 800 }}>{fmtUSD(closePrice)}</span>
+          )}
+          {currentRsi != null && (
+            <span
+              style={{
+                fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 20,
+                background: rsiColor + '20', color: rsiColor,
+              }}
+            >
+              RSI {currentRsi.toFixed(0)}
+            </span>
           )}
         </div>
+
+        {/* ── 전체 ChartPanel (가격 + RSI) ── */}
+        {chartData.length >= 5 && (
+          <div style={{ marginLeft: -16, marginRight: -16, marginBottom: 12 }}>
+            {/* 가격 차트 (96px) */}
+            <ResponsiveContainer width="100%" height={96}>
+              <AreaChart data={chartData} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
+                <defs>
+                  <linearGradient id={`price-${strategy.id}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={modeColor} stopOpacity={0.2} />
+                    <stop offset="95%" stopColor={modeColor} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                {avg > 0 && (
+                  <ReferenceLine y={avg} stroke="#06b6d4" strokeDasharray="4 2" strokeWidth={1.5} strokeOpacity={0.8} />
+                )}
+                {starPrice != null && (
+                  <ReferenceLine y={starPrice} stroke="#f59e0b" strokeDasharray="4 2" strokeWidth={1.5} strokeOpacity={0.8} />
+                )}
+                <Area
+                  type="monotone" dataKey="v"
+                  stroke={modeColor} strokeWidth={2}
+                  fill={`url(#price-${strategy.id})`}
+                  dot={false} isAnimationActive={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+            {/* 구분선 */}
+            <div style={{ height: 1, background: 'var(--color-border)', opacity: 0.5 }} />
+            {/* RSI 차트 (48px) */}
+            <ResponsiveContainer width="100%" height={48}>
+              <LineChart data={chartData} margin={{ top: 4, right: 0, bottom: 4, left: 0 }}>
+                <ReferenceLine y={70} stroke="#ef4444" strokeDasharray="3 2" strokeWidth={1} strokeOpacity={0.4} />
+                <ReferenceLine y={30} stroke="#3182f6" strokeDasharray="3 2" strokeWidth={1} strokeOpacity={0.4} />
+                <Line
+                  type="monotone" dataKey="rsi"
+                  stroke={rsiColor} strokeWidth={1.5}
+                  dot={false} isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
 
         {/* ── 리버스 모드 배너 ── */}
         {mode === 'reverse' && (
@@ -166,7 +184,7 @@ export function StrategyCard({ strategy }: Props) {
           }}
         >
           {[
-            { label: 'T값', value: fmtT(t) },
+            { label: 'T값', value: `${fmtT(t)} / ${strategy.division}` },
             { label: '평단', value: avg > 0 ? fmtUSD(avg) : '-' },
             { label: '보유수량', value: `${qty}주` },
             { label: '잔금', value: fmtUSD(cash) },
@@ -268,7 +286,7 @@ export function StrategyCard({ strategy }: Props) {
             onClick={() => setSheetOpen(true)}
             style={{
               flex: 1, padding: '10px', border: '1px solid var(--color-border)',
-              borderRadius: 10, background: '#fff', fontSize: 13, fontWeight: 600,
+              borderRadius: 10, background: 'var(--color-card)', fontSize: 13, fontWeight: 600,
               cursor: 'pointer', color: 'var(--color-text)',
             }}
           >

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, LineChart, Line, BarChart, Bar, Cell,
 } from 'recharts'
 import { useStrategy, useStrategyState, useTodayPlan, useExecutions, usePriceHistory } from '@/queries/iv.queries'
@@ -34,6 +34,11 @@ const MODE_STEP_DESC: Record<string, string> = {
   reverse: 'T > 분할-1, 무한매도 + 쿼터매수',
 }
 
+function starPctFn(ticker: string, division: number, t: number): number {
+  if (ticker === 'TQQQ') return 15 - (30 / division) * t
+  return 20 - (40 / division) * t
+}
+
 export function StrategyDetailPage() {
   const { id } = useParams<{ id: string }>()
   const nav = useNavigate()
@@ -51,12 +56,43 @@ export function StrategyDetailPage() {
 
   const mode = state.mode ?? 'cycle_start'
 
-  // 차트 데이터 (오래된 것부터 정렬)
-  const sortedPrices = [...priceHistory].sort((a, b) => a.priceDate.localeCompare(b.priceDate))
-  const closes = sortedPrices.map((p) => p.closePrice)
-  const rsiValues = computeRSI(closes)
+  // ─── 차트 데이터 (종가 + 평단 이중선 + RSI + 일변동) ───
+  const chartData = useMemo(() => {
+    const sorted = [...priceHistory].sort((a, b) => a.priceDate.localeCompare(b.priceDate))
+    const closes = sorted.map((p) => p.closePrice)
+    const rsiValues = computeRSI(closes)
 
-  // T값 추이 차트 (체결 내역 기반)
+    // 체결 기반 날짜별 평단 히스토리 (carry-forward)
+    const sortedExecs = [...execs].sort((a, b) => a.execDate.localeCompare(b.execDate))
+    const avgByDate: Record<string, number> = {}
+    for (const e of sortedExecs) {
+      const avg = (e.stateAfter as Record<string, unknown>).avgPrice as number
+      if (avg > 0) avgByDate[e.execDate] = avg
+    }
+
+    let carryAvg = 0
+    return sorted.map((p, i) => {
+      const prev = i > 0 ? sorted[i - 1].closePrice : p.closePrice
+      if (avgByDate[p.priceDate] !== undefined) carryAvg = avgByDate[p.priceDate]
+      return {
+        date: p.priceDate.slice(5),
+        close: p.closePrice,
+        avg: carryAvg > 0 ? carryAvg : undefined,
+        rsi: Math.round((rsiValues[i] ?? 50) * 10) / 10,
+        change: ((p.closePrice - prev) / prev) * 100,
+      }
+    })
+  }, [priceHistory, execs])
+
+  // 최신 RSI
+  const currentRsi = chartData.length > 0 ? chartData[chartData.length - 1].rsi : null
+  const rsiColor =
+    currentRsi == null ? 'var(--color-text-secondary)'
+    : currentRsi >= 70 ? '#ef4444'
+    : currentRsi <= 30 ? '#3182f6'
+    : '#22c55e'
+
+  // T값 추이
   const tChartData = useMemo(() => {
     return [...execs]
       .sort((a, b) => a.execDate.localeCompare(b.execDate))
@@ -66,16 +102,20 @@ export function StrategyDetailPage() {
       }))
   }, [execs])
 
-  const chartData = sortedPrices.map((p, i) => {
-    const prev = i > 0 ? sortedPrices[i - 1].closePrice : p.closePrice
-    return {
-      date: p.priceDate.slice(5),  // MM-DD
-      close: p.closePrice,
-      avg: state.avgPrice > 0 ? state.avgPrice : undefined,
-      rsi: Math.round((rsiValues[i] ?? 50) * 10) / 10,
-      change: ((p.closePrice - prev) / prev) * 100,
+  // 핵심 지표 계산
+  const sPct = state.avgPrice > 0 ? starPctFn(strategy.ticker, strategy.division, state.tValue) : null
+  const starPrice = sPct != null && state.avgPrice > 0 ? state.avgPrice * (1 + sPct / 100) : null
+
+  // 모드 전환 날짜 추출
+  const modeFirstDate = useMemo(() => {
+    const result: Record<string, string> = {}
+    const sorted = [...execs].sort((a, b) => a.execDate.localeCompare(b.execDate))
+    for (const e of sorted) {
+      const afterMode = (e.stateAfter as Record<string, unknown>).mode as string
+      if (afterMode && !result[afterMode]) result[afterMode] = e.execDate
     }
-  })
+    return result
+  }, [execs])
 
   return (
     <div style={{ paddingBottom: 80 }}>
@@ -83,13 +123,13 @@ export function StrategyDetailPage() {
       <div
         style={{
           display: 'flex', alignItems: 'center', gap: 12, padding: '16px 16px 12px',
-          background: '#fff', borderBottom: '1px solid var(--color-border)',
+          background: 'var(--color-card)', borderBottom: '1px solid var(--color-border)',
           position: 'sticky', top: 0, zIndex: 10,
         }}
       >
         <button
           onClick={() => nav(-1)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, padding: 0 }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, padding: 0, color: 'var(--color-text)' }}
         >
           ←
         </button>
@@ -113,7 +153,7 @@ export function StrategyDetailPage() {
       <div
         style={{
           display: 'flex', padding: '0 16px',
-          background: '#fff', borderBottom: '1px solid var(--color-border)',
+          background: 'var(--color-card)', borderBottom: '1px solid var(--color-border)',
         }}
       >
         {([['chart', '차트'], ['history', '히스토리'], ['mode', '모드 흐름']] as const).map(([key, label]) => (
@@ -137,12 +177,10 @@ export function StrategyDetailPage() {
         <div style={{ padding: 16 }}>
           {/* 현재 상태 KPI */}
           <div className="card" style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600, marginBottom: 10 }}>
-              현재 상태
-            </div>
+            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600, marginBottom: 10 }}>현재 상태</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
               {[
-                { label: 'T값', value: fmtT(state.tValue) },
+                { label: 'T값', value: `${fmtT(state.tValue)} / ${strategy.division}` },
                 { label: '평단', value: fmtUSD(state.avgPrice) },
                 { label: '보유수량', value: `${state.quantity}주` },
                 { label: '잔금', value: fmtUSD(state.cash) },
@@ -162,63 +200,91 @@ export function StrategyDetailPage() {
             </div>
           </div>
 
-          {/* 종가 차트 */}
+          {/* 종가 + 평단 이중선 차트 */}
           {chartData.length > 0 && (
             <div className="card" style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600, marginBottom: 8 }}>
-                종가 추이 (최근 {chartData.length}거래일)
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600 }}>
+                  종가 추이 (최근 {chartData.length}거래일)
+                </div>
+                {/* Legend */}
+                <div style={{ display: 'flex', gap: 10, fontSize: 11 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 12, height: 2, background: '#f59e0b', display: 'inline-block' }} />
+                    종가
+                  </span>
+                  {chartData.some((d) => d.avg != null) && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ width: 12, height: 2, background: '#06b6d4', borderTop: '2px dashed #06b6d4', display: 'inline-block' }} />
+                      평단
+                    </span>
+                  )}
+                </div>
               </div>
               <ResponsiveContainer width="100%" height={160}>
-                <AreaChart data={chartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
+                <ComposedChart data={chartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
                   <defs>
                     <linearGradient id="colorClose" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3182f6" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#3182f6" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f2f4f6" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={Math.floor(chartData.length / 5)} />
                   <YAxis tick={{ fontSize: 10 }} width={45} tickFormatter={(v) => `$${v}`} domain={['auto', 'auto']} />
                   <Tooltip
-                    formatter={(v: number) => [`$${v.toFixed(2)}`, '종가']}
+                    formatter={(v: number, name: string) => [`$${v.toFixed(2)}`, name === 'close' ? '종가' : '평단']}
                     labelStyle={{ fontSize: 11 }}
                     contentStyle={{ fontSize: 12, borderRadius: 8 }}
                   />
-                  {state.avgPrice > 0 && (
-                    <ReferenceLine y={state.avgPrice} stroke="#f59e0b" strokeDasharray="4 2" label={{ value: '평단', fill: '#f59e0b', fontSize: 10 }} />
-                  )}
-                  <Area type="monotone" dataKey="close" stroke="#3182f6" strokeWidth={2} fill="url(#colorClose)" dot={false} />
-                </AreaChart>
+                  <Area type="monotone" dataKey="close" stroke="#f59e0b" strokeWidth={2} fill="url(#colorClose)" dot={false} />
+                  <Line
+                    type="monotone" dataKey="avg" stroke="#06b6d4" strokeWidth={1.5}
+                    strokeDasharray="4 2" dot={false} connectNulls
+                  />
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
           )}
 
-          {/* RSI 차트 */}
-          {chartData.length > 0 && (
+          {/* RSI 패널 (개선) */}
+          {chartData.length > 0 && currentRsi != null && (
             <div className="card" style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600, marginBottom: 8 }}>
-                RSI14
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+                <div>
+                  <span style={{ fontSize: 26, fontWeight: 800, color: rsiColor }}>{currentRsi.toFixed(0)}</span>
+                  <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginLeft: 8 }}>RSI14</span>
+                </div>
+                <span
+                  style={{
+                    fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 12,
+                    background: rsiColor + '20', color: rsiColor,
+                  }}
+                >
+                  {currentRsi >= 70 ? '과매수' : currentRsi <= 30 ? '과매도' : '중립'}
+                </span>
               </div>
-              <ResponsiveContainer width="100%" height={100}>
+              <ResponsiveContainer width="100%" height={80}>
                 <LineChart data={chartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f2f4f6" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={Math.floor(chartData.length / 5)} />
                   <YAxis tick={{ fontSize: 10 }} width={30} domain={[0, 100]} ticks={[30, 50, 70]} />
                   <Tooltip formatter={(v: number) => [v.toFixed(1), 'RSI']} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
                   <ReferenceLine y={70} stroke="#f04452" strokeDasharray="3 3" />
                   <ReferenceLine y={30} stroke="#3182f6" strokeDasharray="3 3" />
-                  <Line type="monotone" dataKey="rsi" stroke="#8b5cf6" strokeWidth={1.5} dot={false} />
+                  <Line type="monotone" dataKey="rsi" stroke={rsiColor} strokeWidth={1.5} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
+              <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 6 }}>
+                RSI 70 이상 과매수 → 쿼터매도 주시 · RSI 30 이하 과매도 → 매수 적극 고려
+              </div>
             </div>
           )}
 
           {/* 일변동 차트 */}
           {chartData.length > 0 && (
             <div className="card" style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600, marginBottom: 8 }}>
-                일변동 (%)
-              </div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600, marginBottom: 8 }}>일변동 (%)</div>
               <ResponsiveContainer width="100%" height={80}>
                 <BarChart data={chartData.slice(-20)} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
                   <XAxis dataKey="date" tick={{ fontSize: 9 }} interval={4} />
@@ -234,25 +300,20 @@ export function StrategyDetailPage() {
             </div>
           )}
 
-          {/* T값 추이 차트 */}
+          {/* T값 추이 */}
           {tChartData.length > 0 && (
             <div className="card" style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600, marginBottom: 8 }}>
-                T값 추이
-              </div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600, marginBottom: 8 }}>T값 추이</div>
               <ResponsiveContainer width="100%" height={120}>
                 <LineChart data={tChartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f2f4f6" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
                   <YAxis
                     tick={{ fontSize: 10 }} width={30}
                     domain={[0, strategy.division]}
                     ticks={[0, Math.floor(strategy.division / 2), strategy.division - 1, strategy.division]}
                   />
-                  <Tooltip
-                    formatter={(v: number) => [v.toFixed(2), 'T값']}
-                    contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                  />
+                  <Tooltip formatter={(v: number) => [v.toFixed(2), 'T값']} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
                   <ReferenceLine
                     y={strategy.division / 2} stroke="#22c55e" strokeDasharray="4 2"
                     label={{ value: '전→후', position: 'insideTopLeft', fontSize: 9, fill: '#22c55e' }}
@@ -267,6 +328,34 @@ export function StrategyDetailPage() {
                   />
                 </LineChart>
               </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* KeyMetricsCard — 핵심 지표 */}
+          {(sPct != null || currentRsi != null) && (
+            <div className="card" style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600, marginBottom: 10 }}>
+                오늘 핵심 지표
+              </div>
+              {[
+                { label: '별%', value: sPct != null ? `${sPct.toFixed(3)}%` : '-', color: '#f59e0b' },
+                { label: '별지점', value: starPrice != null ? fmtUSD(starPrice) : '-', color: '#f59e0b' },
+                { label: 'LOC 매수', value: starPrice != null ? fmtUSD(starPrice - 0.01) : '-', color: undefined },
+                { label: 'LOC 매도', value: starPrice != null ? fmtUSD(starPrice) : '-', color: undefined },
+                { label: 'RSI14', value: currentRsi != null ? currentRsi.toFixed(0) : '-', color: rsiColor },
+              ].map(({ label, value, color }, i, arr) => (
+                <div
+                  key={label}
+                  style={{
+                    display: 'flex', justifyContent: 'space-between', padding: '8px 0',
+                    borderBottom: i < arr.length - 1 ? '1px solid var(--color-border)' : 'none',
+                    fontSize: 13,
+                  }}
+                >
+                  <span style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
+                  <span style={{ fontWeight: 700, color: color ?? 'var(--color-text)' }}>{value}</span>
+                </div>
+              ))}
             </div>
           )}
 
@@ -324,36 +413,30 @@ export function StrategyDetailPage() {
               체결 내역이 없습니다.
             </p>
           )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {execs.map((e) => {
-              const isBuy = e.execType.startsWith('buy')
-              const stateAfter = e.stateAfter as Record<string, unknown>
-              return (
-                <div
-                  key={e.id}
-                  className="card"
-                  style={{ padding: '12px 16px', marginBottom: 4 }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: 14 }}>{EXEC_LABEL[e.execType] ?? e.execType}</div>
-                      <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 2 }}>
-                        {fmtDate(e.execDate)} · {e.execQty}주 @ {fmtUSD(e.execPrice)}
-                      </div>
+          {execs.map((e) => {
+            const isBuy = e.execType.startsWith('buy')
+            const stateAfter = e.stateAfter as Record<string, unknown>
+            return (
+              <div key={e.id} className="card" style={{ padding: '12px 16px', marginBottom: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>{EXEC_LABEL[e.execType] ?? e.execType}</div>
+                    <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 2 }}>
+                      {fmtDate(e.execDate)} · {e.execQty}주 @ {fmtUSD(e.execPrice)}
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: 700, color: isBuy ? 'var(--color-rise)' : 'var(--color-fall)' }}>
-                        {isBuy ? '-' : '+'}{fmtUSD(e.execAmount)}
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 2 }}>
-                        T={fmtT(stateAfter?.tValue as number)} · {stateAfter?.quantity as number}주
-                      </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 700, color: isBuy ? 'var(--color-rise)' : 'var(--color-fall)' }}>
+                      {isBuy ? '-' : '+'}{fmtUSD(e.execAmount)}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 2 }}>
+                      T={fmtT(stateAfter?.tValue as number)} · {stateAfter?.quantity as number}주
                     </div>
                   </div>
                 </div>
-              )
-            })}
-          </div>
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -367,39 +450,44 @@ export function StrategyDetailPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
               {MODE_STEPS.map((step, i) => {
                 const isActive = step === mode
+                const isPast = MODE_STEPS.indexOf(step) < MODE_STEPS.indexOf(mode as typeof MODE_STEPS[number])
                 const color = MODE_COLOR[step]
+
+                // 날짜 결정
+                let dateLabel = ''
+                if (step === 'cycle_start') {
+                  const d = modeFirstDate['cycle_start'] ?? strategy.createdAt?.slice(0, 10)
+                  dateLabel = d ? d : ''
+                } else if (modeFirstDate[step]) {
+                  dateLabel = modeFirstDate[step]
+                } else if (!isPast && !isActive) {
+                  dateLabel = `예정: T ≥ ${step === 'first_half' ? 1 : step === 'second_half' ? strategy.division / 2 : strategy.division - 1}`
+                }
+
                 return (
                   <div key={step} style={{ display: 'flex', gap: 12, paddingBottom: i < MODE_STEPS.length - 1 ? 16 : 0 }}>
-                    {/* 타임라인 선 */}
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 20 }}>
                       <div
                         style={{
-                          width: 16, height: 16, borderRadius: 8,
-                          background: isActive ? color : 'var(--color-border)',
-                          border: `2px solid ${isActive ? color : 'var(--color-border)'}`,
-                          flexShrink: 0,
+                          width: 16, height: 16, borderRadius: 8, flexShrink: 0,
+                          background: (isActive || isPast) ? color : 'var(--color-border)',
+                          border: `2px solid ${(isActive || isPast) ? color : 'var(--color-border)'}`,
                         }}
                       />
                       {i < MODE_STEPS.length - 1 && (
                         <div style={{ width: 2, flex: 1, background: 'var(--color-border)', minHeight: 20 }} />
                       )}
                     </div>
-                    {/* 내용 */}
                     <div style={{ paddingBottom: 4 }}>
                       <div
                         style={{
                           fontWeight: isActive ? 700 : 500, fontSize: 14,
-                          color: isActive ? color : 'var(--color-text)',
+                          color: isActive ? color : isPast ? 'var(--color-text-secondary)' : 'var(--color-text)',
                         }}
                       >
                         {MODE_STEP_LABEL[step]}
                         {isActive && (
-                          <span
-                            style={{
-                              marginLeft: 8, fontSize: 10, padding: '2px 6px',
-                              background: color + '22', color: color, borderRadius: 10,
-                            }}
-                          >
+                          <span style={{ marginLeft: 8, fontSize: 10, padding: '2px 6px', background: color + '22', color, borderRadius: 10 }}>
                             현재
                           </span>
                         )}
@@ -407,6 +495,11 @@ export function StrategyDetailPage() {
                       <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 2 }}>
                         {MODE_STEP_DESC[step]}
                       </div>
+                      {dateLabel && (
+                        <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 2 }}>
+                          {dateLabel}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )
@@ -431,8 +524,7 @@ export function StrategyDetailPage() {
                 key={label}
                 style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '8px 0', borderBottom: '1px solid var(--color-border)',
-                  fontSize: 13,
+                  padding: '8px 0', borderBottom: '1px solid var(--color-border)', fontSize: 13,
                 }}
               >
                 <span style={{ color: 'var(--color-text-secondary)' }}>{label}</span>

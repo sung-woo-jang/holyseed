@@ -1,10 +1,40 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStrategies, useDeleteStrategy, useRefreshPrice } from '@/queries/iv.queries'
 import { fmtUSD } from '@/lib/format'
 import { CycleEditSheet } from '@/components/sheet/CycleEditSheet'
 import { executionsApi } from '@/lib/iv-api'
 import type { IvStrategy } from '@/lib/iv-api'
+
+const AUTO_REFRESH_KEY = 'iv-auto-refresh'
+const AUTO_REFRESH_INTERVAL = 5 * 60 * 1000
+
+function useAutoRefresh(tickers: string[]) {
+  const [enabled, setEnabled] = useState(() => {
+    try { return localStorage.getItem(AUTO_REFRESH_KEY) === '1' } catch { return false }
+  })
+  const refreshMutation = useRefreshPrice()
+  const tickersRef = useRef(tickers)
+  tickersRef.current = tickers
+
+  const toggle = useCallback(() => {
+    setEnabled((v) => {
+      const next = !v
+      try { localStorage.setItem(AUTO_REFRESH_KEY, next ? '1' : '0') } catch { /* noop */ }
+      return next
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!enabled) return
+    const id = setInterval(() => {
+      tickersRef.current.forEach((t) => refreshMutation.mutate(t))
+    }, AUTO_REFRESH_INTERVAL)
+    return () => clearInterval(id)
+  }, [enabled, refreshMutation])
+
+  return { enabled, toggle }
+}
 
 const EXEC_LABEL: Record<string, string> = {
   buy_full: '1회매수',
@@ -40,6 +70,7 @@ export function AccountPage() {
   const [csvLoading, setCsvLoading] = useState(false)
 
   const tickers = [...new Set(strategies.map((s) => s.ticker))]
+  const { enabled: autoRefresh, toggle: toggleAutoRefresh } = useAutoRefresh(tickers)
 
   // 운용 일수: 가장 오래된 전략 createdAt 기준
   const oldestDate = strategies.reduce<Date | null>((acc, s) => {
@@ -217,6 +248,37 @@ export function AccountPage() {
             <span
               style={{
                 position: 'absolute', top: 3, left: isDark ? 25 : 3,
+                width: 20, height: 20, borderRadius: 10, background: '#fff',
+                transition: 'left 0.2s', display: 'block',
+              }}
+            />
+          </button>
+        </div>
+
+        {/* 자동 새로고침 토글 */}
+        <div
+          style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            padding: '13px 0', borderBottom: '1px solid var(--color-border)',
+          }}
+        >
+          <div>
+            <span style={{ fontSize: 14 }}>자동 새로고침</span>
+            <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 2 }}>
+              5분마다 시세 자동 갱신
+            </div>
+          </div>
+          <button
+            onClick={toggleAutoRefresh}
+            style={{
+              width: 48, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
+              background: autoRefresh ? 'var(--color-primary)' : 'var(--color-border)',
+              position: 'relative', transition: 'background 0.2s',
+            }}
+          >
+            <span
+              style={{
+                position: 'absolute', top: 3, left: autoRefresh ? 25 : 3,
                 width: 20, height: 20, borderRadius: 10, background: '#fff',
                 transition: 'left 0.2s', display: 'block',
               }}

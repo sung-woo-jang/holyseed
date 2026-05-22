@@ -50,26 +50,17 @@ export function StrategyDetailPage() {
   const { data: execs = [] } = useExecutions(id!)
   const { data: priceHistory = [] } = usePriceHistory(strategy?.ticker ?? '')
 
-  if (!strategy || !state) {
-    return <div style={{ padding: 16 }}>로딩 중...</div>
-  }
-
-  const mode = state.mode ?? 'cycle_start'
-
-  // ─── 차트 데이터 (종가 + 평단 이중선 + RSI + 일변동) ───
+  // ─── 모든 useMemo는 early return 전에 선언 (Rules of Hooks) ───
   const chartData = useMemo(() => {
     const sorted = [...priceHistory].sort((a, b) => a.priceDate.localeCompare(b.priceDate))
     const closes = sorted.map((p) => p.closePrice)
     const rsiValues = computeRSI(closes)
-
-    // 체결 기반 날짜별 평단 히스토리 (carry-forward)
     const sortedExecs = [...execs].sort((a, b) => a.execDate.localeCompare(b.execDate))
     const avgByDate: Record<string, number> = {}
     for (const e of sortedExecs) {
       const avg = (e.stateAfter as Record<string, unknown>).avgPrice as number
       if (avg > 0) avgByDate[e.execDate] = avg
     }
-
     let carryAvg = 0
     return sorted.map((p, i) => {
       const prev = i > 0 ? sorted[i - 1].closePrice : p.closePrice
@@ -84,15 +75,6 @@ export function StrategyDetailPage() {
     })
   }, [priceHistory, execs])
 
-  // 최신 RSI
-  const currentRsi = chartData.length > 0 ? chartData[chartData.length - 1].rsi : null
-  const rsiColor =
-    currentRsi == null ? 'var(--color-text-secondary)'
-    : currentRsi >= 70 ? '#ef4444'
-    : currentRsi <= 30 ? '#3182f6'
-    : '#22c55e'
-
-  // T값 추이
   const tChartData = useMemo(() => {
     return [...execs]
       .sort((a, b) => a.execDate.localeCompare(b.execDate))
@@ -102,11 +84,6 @@ export function StrategyDetailPage() {
       }))
   }, [execs])
 
-  // 핵심 지표 계산
-  const sPct = state.avgPrice > 0 ? starPctFn(strategy.ticker, strategy.division, state.tValue) : null
-  const starPrice = sPct != null && state.avgPrice > 0 ? state.avgPrice * (1 + sPct / 100) : null
-
-  // 모드 전환 날짜 추출
   const modeFirstDate = useMemo(() => {
     const result: Record<string, string> = {}
     const sorted = [...execs].sort((a, b) => a.execDate.localeCompare(b.execDate))
@@ -116,6 +93,24 @@ export function StrategyDetailPage() {
     }
     return result
   }, [execs])
+
+  if (!strategy || !state) {
+    return <div style={{ padding: 16 }}>로딩 중...</div>
+  }
+
+  const mode = state.mode ?? 'cycle_start'
+
+  // 최신 RSI
+  const currentRsi = chartData.length > 0 ? chartData[chartData.length - 1].rsi : null
+  const rsiColor =
+    currentRsi == null ? 'var(--color-text-secondary)'
+    : currentRsi >= 70 ? '#ef4444'
+    : currentRsi <= 30 ? '#3182f6'
+    : '#22c55e'
+
+  // 핵심 지표 계산
+  const sPct = state.avgPrice > 0 ? starPctFn(strategy.ticker, strategy.division, state.tValue) : null
+  const starPrice = sPct != null && state.avgPrice > 0 ? state.avgPrice * (1 + sPct / 100) : null
 
   return (
     <div style={{ paddingBottom: 80 }}>

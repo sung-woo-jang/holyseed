@@ -14,6 +14,16 @@ const EXEC_TYPES: { value: string; label: string }[] = [
   { value: 'no_exec', label: '미체결' },
 ]
 
+const T_DELTA: Record<string, string> = {
+  buy_full: 'T +1.0',
+  buy_half_star: 'T +0.5',
+  buy_half_avg: 'T +0.5',
+  sell_quarter: 'T ×0.75',
+  sell_fixed: 'T ×0.25 (다음 매수 후 확정)',
+  sell_moc: 'T ×0.95',
+  no_exec: '변화 없음',
+}
+
 interface Row {
   execType: string
   price: string
@@ -242,6 +252,20 @@ export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
                 </div>
               </div>
             )}
+            {/* T 변화 + 체결금액 */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+              <span style={{
+                fontSize: 11, padding: '2px 8px', borderRadius: 8,
+                background: 'var(--color-bg)', color: 'var(--color-text-secondary)', fontWeight: 600,
+              }}>
+                {T_DELTA[row.execType] ?? ''}
+              </span>
+              {row.price && row.qty && row.execType !== 'no_exec' && (
+                <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>
+                  ≈ {fmtUSD(parseFloat(row.price) * parseInt(row.qty))}
+                </span>
+              )}
+            </div>
           </div>
         ))}
 

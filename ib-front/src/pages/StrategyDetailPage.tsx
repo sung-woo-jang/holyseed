@@ -43,6 +43,7 @@ export function StrategyDetailPage() {
   const { id } = useParams<{ id: string }>()
   const nav = useNavigate()
   const [tab, setTab] = useState<Tab>('chart')
+  const [period, setPeriod] = useState<5 | 10 | 20>(20)
 
   const { data: strategy } = useStrategy(id!)
   const { data: state } = useStrategyState(id!)
@@ -99,6 +100,7 @@ export function StrategyDetailPage() {
   }
 
   const mode = state.mode ?? 'cycle_start'
+  const visibleData = chartData.slice(-period)
 
   // 최신 RSI
   const currentRsi = chartData.length > 0 ? chartData[chartData.length - 1].rsi : null
@@ -195,29 +197,44 @@ export function StrategyDetailPage() {
             </div>
           </div>
 
-          {/* 종가 + 평단 이중선 차트 */}
+          {/* 기간 셀렉터 + 종가 + 평단 이중선 차트 */}
           {chartData.length > 0 && (
             <div className="card" style={{ marginBottom: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600 }}>
-                  종가 추이 (최근 {chartData.length}거래일)
-                </div>
-                {/* Legend */}
+              {/* 헤더: 레전드 + 기간 버튼 */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                 <div style={{ display: 'flex', gap: 10, fontSize: 11 }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ width: 12, height: 2, background: '#f59e0b', display: 'inline-block' }} />
                     종가
                   </span>
-                  {chartData.some((d) => d.avg != null) && (
+                  {visibleData.some((d) => d.avg != null) && (
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span style={{ width: 12, height: 2, background: '#06b6d4', borderTop: '2px dashed #06b6d4', display: 'inline-block' }} />
+                      <span style={{ width: 12, height: 2, background: '#06b6d4', display: 'inline-block', borderTop: '2px dashed #06b6d4' }} />
                       평단
                     </span>
                   )}
                 </div>
+                {/* 기간 버튼 */}
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {([5, 10, 20] as const).map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setPeriod(p)}
+                      style={{
+                        padding: '3px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                        border: `1px solid ${period === p ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                        background: period === p ? 'var(--color-primary)' : 'var(--color-card)',
+                        color: period === p ? '#fff' : 'var(--color-text-secondary)',
+                      }}
+                    >
+                      {p === 5 ? '1주' : p === 10 ? '2주' : '4주'}
+                    </button>
+                  ))}
+                </div>
               </div>
+
               <ResponsiveContainer width="100%" height={160}>
-                <ComposedChart data={chartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
+                <ComposedChart data={visibleData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
                   <defs>
                     <linearGradient id="colorClose" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15} />
@@ -225,7 +242,7 @@ export function StrategyDetailPage() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={Math.floor(chartData.length / 5)} />
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={Math.floor(visibleData.length / 4)} />
                   <YAxis tick={{ fontSize: 10 }} width={45} tickFormatter={(v) => `$${v}`} domain={['auto', 'auto']} />
                   <Tooltip
                     formatter={(v: number, name: string) => [`$${v.toFixed(2)}`, name === 'close' ? '종가' : '평단']}
@@ -242,7 +259,7 @@ export function StrategyDetailPage() {
             </div>
           )}
 
-          {/* RSI 패널 (개선) */}
+          {/* RSI 패널 */}
           {chartData.length > 0 && currentRsi != null && (
             <div className="card" style={{ marginBottom: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
@@ -260,9 +277,9 @@ export function StrategyDetailPage() {
                 </span>
               </div>
               <ResponsiveContainer width="100%" height={80}>
-                <LineChart data={chartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
+                <LineChart data={visibleData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={Math.floor(chartData.length / 5)} />
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={Math.floor(visibleData.length / 4)} />
                   <YAxis tick={{ fontSize: 10 }} width={30} domain={[0, 100]} ticks={[30, 50, 70]} />
                   <Tooltip formatter={(v: number) => [v.toFixed(1), 'RSI']} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
                   <ReferenceLine y={70} stroke="#f04452" strokeDasharray="3 3" />
@@ -281,12 +298,12 @@ export function StrategyDetailPage() {
             <div className="card" style={{ marginBottom: 12 }}>
               <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600, marginBottom: 8 }}>일변동 (%)</div>
               <ResponsiveContainer width="100%" height={80}>
-                <BarChart data={chartData.slice(-20)} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
-                  <XAxis dataKey="date" tick={{ fontSize: 9 }} interval={4} />
+                <BarChart data={visibleData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
+                  <XAxis dataKey="date" tick={{ fontSize: 9 }} interval={Math.floor(visibleData.length / 4)} />
                   <YAxis tick={{ fontSize: 10 }} width={30} tickFormatter={(v) => `${v.toFixed(0)}%`} />
                   <Tooltip formatter={(v: number) => [`${v.toFixed(2)}%`, '변동']} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
                   <Bar dataKey="change" radius={[2, 2, 0, 0]}>
-                    {chartData.slice(-20).map((entry, i) => (
+                    {visibleData.map((entry, i) => (
                       <Cell key={i} fill={entry.change >= 0 ? '#f04452' : '#2563eb'} />
                     ))}
                   </Bar>

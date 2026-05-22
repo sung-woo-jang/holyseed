@@ -37,3 +37,18 @@
   --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   --card-padding: 16px;
 }
+
+/* 다크 모드 */
+.dark {
+  --color-bg: #0e1117;
+  --color-card: #1a2030;
+  --color-border: #2c3345;
+  --color-divider: #2c3345;
+  --color-text: #e5e9f0;
+  --color-text-secondary: #8b95a1;
+  --color-text-tertiary: #4e5968;
+  --color-star-bg: #2a2210;
+  --color-avg-bg: #0f1f38;
+  --color-sell-bg: #2a0f12;
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}

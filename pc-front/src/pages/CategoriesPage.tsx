@@ -1,42 +1,113 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+} from '@dnd-kit/core'
+import type { DragEndEvent } from '@dnd-kit/core'
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { categoriesApi } from '@/lib/pc-api'
 import type { CategoryNode } from '@/lib/pc-api'
 import { qk } from '@/queries/keys'
 
-function CategoryRow({
+function DragHandle(props: React.HTMLAttributes<HTMLSpanElement>) {
+  return (
+    <span
+      {...props}
+      className="inline-flex items-center justify-center w-5 h-5 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing mr-2 select-none"
+      title="드래그하여 순서 변경"
+    >
+      ⠿
+    </span>
+  )
+}
+
+function SortableRow({
   node,
-  allNodes,
+  level,
   onEdit,
   onDelete,
-  level = 0,
 }: {
   node: CategoryNode
-  allNodes: CategoryNode[]
+  level: number
   onEdit: (node: CategoryNode) => void
   onDelete: (id: number) => void
-  level?: number
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: node.id,
+  })
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    background: isDragging ? '#f0f9ff' : undefined,
+  }
+
+  return (
+    <tr ref={setNodeRef} style={style} className="border-b border-gray-100 hover:bg-gray-50">
+      <td className="px-4 py-2.5 text-sm text-gray-900" style={{ paddingLeft: `${16 + level * 20}px` }}>
+        <DragHandle {...listeners} {...attributes} />
+        {level > 0 && <span className="text-gray-300 mr-2">└</span>}
+        {node.name}
+      </td>
+      <td className="px-4 py-2.5 text-sm text-gray-500">{level === 0 ? '최상위' : ''}</td>
+      <td className="px-4 py-2.5 text-sm text-gray-500">{node.sortOrder}</td>
+      <td className="px-4 py-2.5 text-right">
+        <button onClick={() => onEdit(node)} className="text-blue-600 hover:text-blue-800 mr-3 text-xs">수정</button>
+        {node.children.length === 0 && (
+          <button
+            onClick={() => { if (confirm('카테고리를 삭제할까요?')) onDelete(node.id) }}
+            className="text-red-400 hover:text-red-600 text-xs"
+          >
+            삭제
+          </button>
+        )}
+      </td>
+    </tr>
+  )
+}
+
+function SortableGroup({
+  nodes,
+  level,
+  containerId,
+  onEdit,
+  onDelete,
+}: {
+  nodes: CategoryNode[]
+  level: number
+  containerId: string
+  onEdit: (node: CategoryNode) => void
+  onDelete: (id: number) => void
 }) {
   return (
-    <>
-      <tr className="border-b border-gray-100 hover:bg-gray-50">
-        <td className="px-4 py-2.5 text-sm text-gray-900" style={{ paddingLeft: `${16 + level * 20}px` }}>
-          {level > 0 && <span className="text-gray-300 mr-2">└</span>}
-          {node.name}
-        </td>
-        <td className="px-4 py-2.5 text-sm text-gray-500">{level === 0 ? '최상위' : ''}</td>
-        <td className="px-4 py-2.5 text-sm text-gray-500">{node.sortOrder}</td>
-        <td className="px-4 py-2.5 text-right">
-          <button onClick={() => onEdit(node)} className="text-blue-600 hover:text-blue-800 mr-3 text-xs">수정</button>
-          {node.children.length === 0 && (
-            <button onClick={() => { if (confirm('카테고리를 삭제할까요?')) onDelete(node.id) }} className="text-red-400 hover:text-red-600 text-xs">삭제</button>
+    <SortableContext id={containerId} items={nodes.map((n) => n.id)} strategy={verticalListSortingStrategy}>
+      {nodes.map((node) => (
+        <>
+          <SortableRow key={node.id} node={node} level={level} onEdit={onEdit} onDelete={onDelete} />
+          {node.children.length > 0 && (
+            <SortableGroup
+              key={`children-${node.id}`}
+              nodes={node.children}
+              level={level + 1}
+              containerId={`parent-${node.id}`}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
           )}
-        </td>
-      </tr>
-      {node.children.map((child) => (
-        <CategoryRow key={child.id} node={child} allNodes={allNodes} onEdit={onEdit} onDelete={onDelete} level={level + 1} />
+        </>
       ))}
-    </>
+    </SortableContext>
   )
 }
 
@@ -46,9 +117,17 @@ export function CategoriesPage() {
   const [editId, setEditId] = useState<number | null>(null)
   const [form, setForm] = useState({ name: '', parentId: '', sortOrder: '0' })
   const [error, setError] = useState('')
+  const [localTree, setLocalTree] = useState<CategoryNode[] | null>(null)
 
-  const { data: tree } = useQuery({ queryKey: qk.categoryTree(), queryFn: categoriesApi.tree })
+  const { data: tree } = useQuery({
+    queryKey: qk.categoryTree(),
+    queryFn: categoriesApi.tree,
+    select: (data) => data,
+  })
+
   const { data: all } = useQuery({ queryKey: qk.categoriesAll(), queryFn: categoriesApi.all })
+
+  const displayTree = localTree ?? tree ?? []
 
   const save = useMutation({
     mutationFn: () =>
@@ -58,6 +137,7 @@ export function CategoriesPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.categoryTree() })
       qc.invalidateQueries({ queryKey: qk.categoriesAll() })
+      setLocalTree(null)
       setShowForm(false); setEditId(null); setForm({ name: '', parentId: '', sortOrder: '0' }); setError('')
     },
     onError: (err: any) => setError(err.response?.data?.message || '저장 실패'),
@@ -65,13 +145,84 @@ export function CategoriesPage() {
 
   const del = useMutation({
     mutationFn: (id: number) => categoriesApi.delete(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: qk.categoryTree() }); qc.invalidateQueries({ queryKey: qk.categoriesAll() }) },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.categoryTree() })
+      qc.invalidateQueries({ queryKey: qk.categoriesAll() })
+      setLocalTree(null)
+    },
     onError: (err: any) => alert(err.response?.data?.message || '삭제 실패'),
+  })
+
+  const reorder = useMutation({
+    mutationFn: (items: { id: number; sortOrder: number }[]) => categoriesApi.reorder(items),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.categoryTree() })
+      qc.invalidateQueries({ queryKey: qk.categoriesAll() })
+    },
+    onError: () => setLocalTree(null),
   })
 
   const startEdit = (node: CategoryNode) => {
     setForm({ name: node.name, parentId: node.parentId ? String(node.parentId) : '', sortOrder: String(node.sortOrder) })
     setEditId(node.id); setShowForm(true)
+  }
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+
+  const findGroupByContainerId = (
+    nodes: CategoryNode[],
+    containerId: string,
+  ): CategoryNode[] | null => {
+    if (containerId === 'root') return nodes
+    const match = containerId.match(/^parent-(\d+)$/)
+    if (!match) return null
+    const parentId = parseInt(match[1])
+    for (const node of nodes) {
+      if (node.id === parentId) return node.children
+      const found = findGroupByContainerId(node.children, containerId)
+      if (found) return found
+    }
+    return null
+  }
+
+  const updateGroupInTree = (
+    nodes: CategoryNode[],
+    containerId: string,
+    newGroup: CategoryNode[],
+  ): CategoryNode[] => {
+    if (containerId === 'root') return newGroup
+    const match = containerId.match(/^parent-(\d+)$/)
+    if (!match) return nodes
+    const parentId = parseInt(match[1])
+    return nodes.map((node) => {
+      if (node.id === parentId) return { ...node, children: newGroup }
+      return { ...node, children: updateGroupInTree(node.children, containerId, newGroup) }
+    })
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const sourceContainerId = active.data.current?.sortable?.containerId as string | undefined
+    const destContainerId = over.data.current?.sortable?.containerId as string | undefined
+
+    if (!sourceContainerId || sourceContainerId !== destContainerId) return
+
+    const currentTree = displayTree
+    const group = findGroupByContainerId(currentTree, sourceContainerId)
+    if (!group) return
+
+    const oldIndex = group.findIndex((n) => n.id === active.id)
+    const newIndex = group.findIndex((n) => n.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const reordered = arrayMove(group, oldIndex, newIndex)
+    const withNewOrder = reordered.map((n, i) => ({ ...n, sortOrder: i }))
+    const newTree = updateGroupInTree(currentTree, sourceContainerId, withNewOrder)
+    setLocalTree(newTree)
+
+    reorder.mutate(withNewOrder.map(({ id, sortOrder }) => ({ id, sortOrder })))
   }
 
   const flatAll = (all as any[]) || []
@@ -131,15 +282,25 @@ export function CategoriesPage() {
             </tr>
           </thead>
           <tbody>
-            {tree?.map((node) => (
-              <CategoryRow key={node.id} node={node} allNodes={flatAll} onEdit={startEdit} onDelete={(id) => del.mutate(id)} />
-            ))}
-            {(!tree || tree.length === 0) && (
-              <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-400">카테고리가 없습니다.</td></tr>
-            )}
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              {displayTree.length > 0 ? (
+                <SortableGroup
+                  nodes={displayTree}
+                  level={0}
+                  containerId="root"
+                  onEdit={startEdit}
+                  onDelete={(id) => del.mutate(id)}
+                />
+              ) : (
+                <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-400">카테고리가 없습니다.</td></tr>
+              )}
+            </DndContext>
           </tbody>
         </table>
       </div>
+      {reorder.isPending && (
+        <p className="text-xs text-gray-400 mt-2 text-right">순서 저장 중...</p>
+      )}
     </div>
   )
 }

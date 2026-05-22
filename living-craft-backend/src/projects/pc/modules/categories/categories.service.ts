@@ -69,6 +69,10 @@ export class CategoriesService {
     await this.repo.delete(id);
   }
 
+  async reorder(items: { id: number; sortOrder: number }[]): Promise<void> {
+    await Promise.all(items.map(({ id, sortOrder }) => this.repo.update(id, { sortOrder })));
+  }
+
   async collectDescendantIds(rootId: number): Promise<number[]> {
     const all = await this.findAll();
     const ids: number[] = [rootId];

@@ -124,7 +124,7 @@ export function MainPage() {
               <span className="ml-auto text-sm text-gray-500">{products.length}개 제품</span>
             </div>
 
-            {vendors.length === 0 ? (
+            {products.length === 0 ? (
               <p className="text-gray-400 text-sm">이 카테고리에 제품이 없습니다.</p>
             ) : (
               <div className="overflow-x-auto">

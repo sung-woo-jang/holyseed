@@ -3,6 +3,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/request/create-category.dto';
 import { UpdateCategoryDto } from './dto/request/update-category.dto';
+import { ReorderCategoriesDto } from './dto/request/reorder-categories.dto';
 
 @ApiTags('PC 카테고리')
 @Controller('pc/categories')
@@ -28,6 +29,13 @@ export class CategoriesController {
   async create(@Body() dto: CreateCategoryDto) {
     const data = await this.categoriesService.create(dto);
     return { success: true, message: '카테고리 생성 성공', data, timestamp: new Date().toISOString() };
+  }
+
+  @Post('reorder')
+  @ApiOperation({ summary: '카테고리 순서 변경' })
+  async reorder(@Body() dto: ReorderCategoriesDto) {
+    await this.categoriesService.reorder(dto.items);
+    return { success: true, message: '카테고리 순서 변경 성공', data: null, timestamp: new Date().toISOString() };
   }
 
   @Post(':id/update')

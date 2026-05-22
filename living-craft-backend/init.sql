@@ -12,6 +12,7 @@ SET timezone = 'Asia/Seoul';
 -- 스키마 생성
 CREATE SCHEMA IF NOT EXISTS ad;
 CREATE SCHEMA IF NOT EXISTS pc;
+CREATE SCHEMA IF NOT EXISTS iv;
 
 -- 초기 설정 완료 로그
 SELECT 'Database initialization completed' as status;

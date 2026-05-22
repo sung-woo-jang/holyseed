@@ -21,6 +21,7 @@ import { JwtStrategy } from '@common/strategies/jwt.strategy';
 import { SharedModule } from '@/shared/shared.module';
 import { AdModule } from '@/projects/ad/ad.module';
 import { PcModule } from '@/projects/pc/pc.module';
+import { IvModule } from '@/projects/iv/iv.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { PcModule } from '@/projects/pc/pc.module';
     SharedModule, // 공유 모듈 (files, health, address)
     AdModule, // Asset Diary 프로젝트 통합 모듈 (/api/ad/* 경로)
     PcModule, // Price Compare 프로젝트 통합 모듈 (/api/pc/* 경로)
+    IvModule, // Infinite+VR 자동매매 (/api/iv/* 경로)
   ],
   providers: [
     JwtStrategy,

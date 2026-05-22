@@ -1,0 +1,39 @@
+/* 토스증권 스타일 라이트 토큰 (handoff v2) */
+:root {
+  /* Brand */
+  --color-primary: #3182f6;
+  --color-primary-hover: #1b64da;
+
+  /* 주식 컬러 (한국 관례: 상승 = 빨강, 하락 = 파랑) */
+  --color-rise: #f04452;
+  --color-fall: #2563eb;
+
+  /* 강조 */
+  --color-star: #f59e0b;
+  --color-star-bg: #fffbeb;
+  --color-avg-bg: #eff6ff;
+  --color-sell-bg: #fff1f2;
+  --color-warning: #ff7733;
+
+  /* 표면 */
+  --color-bg: #f9fafb;
+  --color-card: #ffffff;
+  --color-border: #f2f4f6;
+  --color-divider: #e5e8eb;
+
+  /* 텍스트 */
+  --color-text: #191f28;
+  --color-text-secondary: #6b7684;
+  --color-text-tertiary: #b0b8c1;
+
+  /* 모드 배지 */
+  --color-mode-start: #3b82f6;
+  --color-mode-first: #22c55e;
+  --color-mode-second: #f97316;
+  --color-mode-reverse: #ef4444;
+
+  /* 카드 */
+  --card-radius: 16px;
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --card-padding: 16px;
+}

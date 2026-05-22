@@ -75,7 +75,8 @@
     "typeorm": "^0.3.28",
     "typeorm-extension": "^3.7.2",
     "typeorm-naming-strategies": "^4.1.0",
-    "winston": "^3.19.0"
+    "winston": "^3.19.0",
+    "yahoo-finance2": "^3.14.1"
   },
   "devDependencies": {
     "@faker-js/faker": "^10.1.0",

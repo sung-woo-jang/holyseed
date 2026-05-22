@@ -127,6 +127,36 @@ async function bootstrap() {
     console.log('💎 [PC] Swagger UI: http://localhost:8000/pc/docs')
     console.log('💎 [PC] Swagger JSON: http://localhost:8000/pc/docs/json')
     console.log(`📊 [PC] API 개수: ${Object.keys(filteredPcDocument.paths).length}개`)
+
+    // ========================================
+    // IV (Infinite+VR 자동매매) API 문서
+    // ========================================
+    const ivConfig = new DocumentBuilder()
+      .setTitle('IV (Infinite+VR) API')
+      .setDescription('라오어 무한매수법 V4.0 + 밸류리밸런싱 VR5.0 자동매매 관리')
+      .setVersion('1.0')
+      .addTag('IV 전략', '전략 생성/조회/삭제')
+      .addTag('IV 계획', '일별 LOC 매수매도 계획')
+      .addTag('IV 체결', '체결 내역 입력 및 상태 갱신')
+      .addTag('IV 사이클', '사이클 종료 및 새 사이클 시작')
+      .addTag('IV 시세', 'Yahoo Finance 종가 fetch')
+      .build()
+
+    const ivDocument = SwaggerModule.createDocument(app, ivConfig, { include: [] })
+
+    const filteredIvDocument = {
+      ...ivDocument,
+      paths: Object.fromEntries(Object.entries(ivDocument.paths).filter(([path]) => path.startsWith('/api/iv/'))),
+    }
+
+    SwaggerModule.setup('iv/docs', app, filteredIvDocument, {
+      swaggerOptions: { persistAuthorization: true, tagsSorter: 'alpha', operationsSorter: 'alpha' },
+      customSiteTitle: 'IV API - 자동매매',
+      jsonDocumentUrl: '/iv/docs/json',
+    })
+
+    console.log('💎 [IV] Swagger UI: http://localhost:8000/iv/docs')
+    console.log(`📊 [IV] API 개수: ${Object.keys(filteredIvDocument.paths).length}개`)
   }
 
   await app.listen(port, '0.0.0.0')

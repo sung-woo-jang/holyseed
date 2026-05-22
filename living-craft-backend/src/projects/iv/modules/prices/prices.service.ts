@@ -67,10 +67,10 @@ export class PricesService {
     return saved!
   }
 
-  /** Yahoo chart API로 과거 3년 종가 bulk upsert */
+  /** Yahoo chart API로 전체 상장 이후 종가 bulk upsert */
   private async seedHistory(ticker: string): Promise<void> {
     try {
-      const period1 = new Date(Date.now() - 3 * 365 * 24 * 60 * 60 * 1000)
+      const period1 = new Date('2010-01-01')
       const chart = await yf.chart(ticker, { period1, interval: '1d' })
       const quotes = chart.quotes ?? []
 

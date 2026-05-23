@@ -61,4 +61,25 @@ export class CatalogService {
       order: { sortOrder: 'ASC' },
     });
   }
+
+  async updateCategoryImage(code: string, imageUrl: string) {
+    const cat = await this.catRepo.findOne({ where: { code } });
+    if (!cat) throw new NotFoundException(`카테고리 '${code}'를 찾을 수 없어요.`);
+    cat.imageUrl = imageUrl;
+    return this.catRepo.save(cat);
+  }
+
+  async updateItemImage(code: string, imageUrl: string) {
+    const item = await this.itemRepo.findOne({ where: { code } });
+    if (!item) throw new NotFoundException(`서비스 항목 '${code}'를 찾을 수 없어요.`);
+    item.imageUrl = imageUrl;
+    return this.itemRepo.save(item);
+  }
+
+  async updateProductImage(code: string, imageUrl: string) {
+    const product = await this.productRepo.findOne({ where: { code } });
+    if (!product) throw new NotFoundException(`제품 '${code}'를 찾을 수 없어요.`);
+    product.imageUrl = imageUrl;
+    return this.productRepo.save(product);
+  }
 }

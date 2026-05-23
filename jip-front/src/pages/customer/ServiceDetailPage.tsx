@@ -77,7 +77,7 @@ export default function ServiceDetailPage() {
         {/* 인트로 */}
         <div className="svc-intro">
           <div className="svc-intro-illust">
-            <ItemIllust code={item.code} />
+            <ItemIllust code={item.code} imageUrl={item.imageUrl} />
           </div>
           <div className="svc-intro-body">
             {cat && <span className="tag orange">{cat.name}</span>}
@@ -135,7 +135,7 @@ export default function ServiceDetailPage() {
                   onClick={() => navigate(`/product/${prod.code}`)}
                 >
                   <div className="product-illust">
-                    <ItemIllust code={prod.illustKind} />
+                    <ItemIllust code={prod.illustKind} imageUrl={prod.imageUrl} />
                   </div>
                   <div className="product-body">
                     <div className="product-brand">{prod.brand}</div>
@@ -176,8 +176,8 @@ export default function ServiceDetailPage() {
             <div className="svc-grid">
               {related.map((rel) => (
                 <div key={rel.id} className="svc-card" onClick={() => navigate(`/service/${rel.code}`)}>
-                  <div style={{ height: 120 }}>
-                    <ItemIllust code={rel.code} />
+                  <div style={{ overflow: 'hidden' }}>
+                    <ItemIllust code={rel.code} imageUrl={rel.imageUrl} />
                   </div>
                   <div className="svc-card-body">
                     <div className="svc-card-title">{rel.name}</div>

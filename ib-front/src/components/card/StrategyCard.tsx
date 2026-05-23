@@ -43,6 +43,7 @@ export function StrategyCard({ strategy }: Props) {
   const [cycleEnd, setCycleEnd] = useState<{ profit: number; profitPct: number } | null>(null)
   const [showLadder, setShowLadder] = useState(false)
   const [showAllExecs, setShowAllExecs] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
 
   const mode = state?.mode ?? 'cycle_start'
   const modeLabel = MODE_LABEL[mode] ?? mode
@@ -61,6 +62,23 @@ export function StrategyCard({ strategy }: Props) {
   const EXECS_PREVIEW = 3
   const visibleExecs = showAllExecs ? recentExecs : recentExecs.slice(0, EXECS_PREVIEW)
   const hasMoreExecs = recentExecs.length > EXECS_PREVIEW
+
+  function handleJsonExport() {
+    const data = {
+      exportedAt: new Date().toISOString(),
+      strategy,
+      state: state ?? null,
+      todayPlan: plan ?? null,
+      executions: recentExecs,
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${strategy.ticker}_cycle${strategy.cycleNo}_${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   // 차트 데이터 + RSI 통합 (최근 30일)
   const { chartData, currentRsi, rsiColor } = useMemo(() => {
@@ -93,21 +111,62 @@ export function StrategyCard({ strategy }: Props) {
     <>
       <div className="card" style={{ marginBottom: 12 }}>
         {/* ── 헤더 ── */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8, position: 'relative' }}>
           <div>
             <span style={{ fontWeight: 800, fontSize: 20 }}>{strategy.ticker}</span>
             <span style={{ marginLeft: 8, fontSize: 13, color: 'var(--color-text-secondary)' }}>
               사이클 {strategy.cycleNo} · {strategy.division}분할
             </span>
           </div>
-          <span
-            style={{
-              fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 20,
-              background: modeColor + '22', color: modeColor, whiteSpace: 'nowrap',
-            }}
-          >
-            {modeLabel}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span
+              style={{
+                fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 20,
+                background: modeColor + '22', color: modeColor, whiteSpace: 'nowrap',
+              }}
+            >
+              {modeLabel}
+            </span>
+            <button
+              onClick={() => setShowMenu((v) => !v)}
+              style={{
+                background: 'none', border: 'none', padding: '2px 4px',
+                cursor: 'pointer', fontSize: 18, color: 'var(--color-text-secondary)',
+                lineHeight: 1, letterSpacing: 1,
+              }}
+            >
+              ···
+            </button>
+            {showMenu && (
+              <>
+                <div
+                  onClick={() => setShowMenu(false)}
+                  style={{ position: 'fixed', inset: 0, zIndex: 10 }}
+                />
+                <div
+                  style={{
+                    position: 'absolute', top: '100%', right: 0, zIndex: 11, marginTop: 4,
+                    background: 'var(--color-card)', border: '1px solid var(--color-border)',
+                    borderRadius: 12, boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+                    minWidth: 160, overflow: 'hidden',
+                  }}
+                >
+                  <button
+                    onClick={() => { handleJsonExport(); setShowMenu(false) }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      width: '100%', padding: '13px 16px',
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      fontSize: 14, color: 'var(--color-text)', textAlign: 'left',
+                    }}
+                  >
+                    <span style={{ fontSize: 16 }}>↓</span>
+                    <span>JSON 내보내기</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* ── 종가 + RSI pill ── */}
@@ -172,7 +231,7 @@ export function StrategyCard({ strategy }: Props) {
           <div
             style={{
               padding: '8px 12px', marginBottom: 8,
-              background: '#fef2f2', border: '1px solid #fca5a5',
+              background: 'var(--color-sell-bg)', border: '1px solid #fca5a5',
               borderRadius: 10, fontSize: 12, fontWeight: 600, color: '#ef4444',
             }}
           >
@@ -185,7 +244,7 @@ export function StrategyCard({ strategy }: Props) {
           <div
             style={{
               padding: '8px 12px', marginBottom: 8,
-              background: '#fffbeb', border: '1px solid #fbbf24',
+              background: 'var(--color-star-bg)', border: '1px solid #fbbf24',
               borderRadius: 10, fontSize: 12, fontWeight: 600, color: '#d97706',
             }}
           >
@@ -250,146 +309,167 @@ export function StrategyCard({ strategy }: Props) {
           </div>
         )}
 
-        {/* ── 매수점 테이블 (핵심행 + 분할 사다리 토글) ── */}
+        {/* ── 매수점 (네이티브 리스트 셀) ── */}
         {plan && plan.buyRows.length > 0 && (
           <div style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 6 }}>매수점</div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-              <thead>
-                <tr style={{ color: 'var(--color-text-secondary)', fontSize: 11 }}>
-                  <th style={{ textAlign: 'left', paddingBottom: 4 }}>구분</th>
-                  <th style={{ textAlign: 'right', paddingBottom: 4 }}>가격</th>
-                  <th style={{ textAlign: 'right', paddingBottom: 4 }}>수량</th>
-                </tr>
-              </thead>
-              <tbody>
-                {coreRows.map((row, i) => {
-                  const isStar = row.label.includes('★') || row.label.includes('별') || row.label.includes('큰수')
-                  return (
-                    <tr key={i} style={{ background: isStar ? 'var(--color-star-bg)' : 'transparent' }}>
-                      <td style={{ padding: '4px 0', fontWeight: isStar ? 700 : 400 }}>{row.label}</td>
-                      <td style={{ textAlign: 'right', color: 'var(--color-rise)', fontWeight: 600 }}>{fmtUSD(row.price)}</td>
-                      <td style={{ textAlign: 'right' }}>{row.qty != null ? `${row.qty}주` : '-'}</td>
-                    </tr>
-                  )
-                })}
-                {showLadder && ladderRows.map((row, i) => (
-                  <tr key={`ladder-${i}`}>
-                    <td style={{ padding: '4px 0' }}>{row.label}</td>
-                    <td style={{ textAlign: 'right', color: 'var(--color-rise)', fontWeight: 600 }}>{fmtUSD(row.price)}</td>
-                    <td style={{ textAlign: 'right' }}>{row.qty != null ? `${row.qty}주` : '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>매수점</div>
+            <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+              {coreRows.map((row, i) => {
+                const isStar = row.label.includes('★') || row.label.includes('별') || row.label.includes('큰수')
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '11px 14px',
+                      background: isStar ? 'var(--color-star-bg)' : 'var(--color-card)',
+                      borderBottom: i < coreRows.length - 1 || (showLadder && ladderRows.length > 0) ? '1px solid var(--color-border)' : 'none',
+                    }}
+                  >
+                    <span style={{ fontSize: 13, fontWeight: isStar ? 700 : 400 }}>{row.label}</span>
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                      <span style={{ fontSize: 13, color: 'var(--color-rise)', fontWeight: 700 }}>{fmtUSD(row.price)}</span>
+                      <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 28, textAlign: 'right' }}>
+                        {row.qty != null ? `${row.qty}주` : '-'}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+              {showLadder && ladderRows.map((row, i) => (
+                <div
+                  key={`ladder-${i}`}
+                  style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '11px 14px',
+                    background: 'var(--color-card)',
+                    borderBottom: i < ladderRows.length - 1 ? '1px solid var(--color-border)' : 'none',
+                  }}
+                >
+                  <span style={{ fontSize: 13 }}>{row.label}</span>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <span style={{ fontSize: 13, color: 'var(--color-rise)', fontWeight: 700 }}>{fmtUSD(row.price)}</span>
+                    <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 28, textAlign: 'right' }}>
+                      {row.qty != null ? `${row.qty}주` : '-'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
             {ladderRows.length > 0 && (
               <button
                 onClick={() => setShowLadder((v) => !v)}
                 style={{
-                  width: '100%', marginTop: 6,
-                  padding: '7px 10px',
+                  width: '100%', marginTop: 8,
+                  padding: '11px 14px',
                   border: '1px solid var(--color-border)',
-                  borderRadius: 8,
-                  background: showLadder ? 'var(--color-bg)' : 'var(--color-bg)',
-                  fontSize: 12, fontWeight: 600,
+                  borderRadius: 12,
+                  background: 'var(--color-bg)',
+                  fontSize: 13, fontWeight: 600,
                   color: 'var(--color-text-secondary)',
                   cursor: 'pointer',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 }}
               >
-                <span>분할 사다리 ({ladderRows.length}개)</span>
-                <span style={{ fontSize: 10 }}>{showLadder ? '▲ 접기' : '▼ 펼치기'}</span>
+                <span>분할 사다리 {ladderRows.length}개</span>
+                <span>{showLadder ? '▲ 접기' : '▼ 펼치기'}</span>
               </button>
             )}
           </div>
         )}
 
-        {/* ── 매도점 테이블 ── */}
+        {/* ── 매도점 (네이티브 리스트 셀) ── */}
         {plan && plan.sellRows.filter((r) => (r.qty ?? 0) > 0).length > 0 && (
           <div style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 6 }}>매도점</div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-              <thead>
-                <tr style={{ color: 'var(--color-text-secondary)', fontSize: 11 }}>
-                  <th style={{ textAlign: 'left', paddingBottom: 4 }}>구분</th>
-                  <th style={{ textAlign: 'right', paddingBottom: 4 }}>가격</th>
-                  <th style={{ textAlign: 'right', paddingBottom: 4 }}>수량</th>
-                </tr>
-              </thead>
-              <tbody>
-                {plan.sellRows.filter((r) => (r.qty ?? 0) > 0).map((row, i) => (
-                  <tr key={i}>
-                    <td style={{ padding: '4px 0' }}>{row.label}</td>
-                    <td style={{ textAlign: 'right', color: 'var(--color-fall)', fontWeight: 600 }}>{fmtUSD(row.price)}</td>
-                    <td style={{ textAlign: 'right' }}>{row.qty != null ? `${row.qty}주` : '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>매도점</div>
+            <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+              {plan.sellRows.filter((r) => (r.qty ?? 0) > 0).map((row, i, arr) => (
+                <div
+                  key={i}
+                  style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '11px 14px',
+                    background: 'var(--color-card)',
+                    borderBottom: i < arr.length - 1 ? '1px solid var(--color-border)' : 'none',
+                  }}
+                >
+                  <span style={{ fontSize: 13 }}>{row.label}</span>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <span style={{ fontSize: 13, color: 'var(--color-fall)', fontWeight: 700 }}>{fmtUSD(row.price)}</span>
+                    <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 28, textAlign: 'right' }}>
+                      {row.qty != null ? `${row.qty}주` : '-'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {/* ── 체결 내역 섹션 ── */}
         {recentExecs.length > 0 && (
           <div style={{ marginBottom: 12, marginTop: 4 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)' }}>체결 내역</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <span style={{ fontSize: 13, fontWeight: 700 }}>체결 내역</span>
               <button
                 onClick={() => nav('/history')}
-                style={{ background: 'none', border: 'none', padding: 0, fontSize: 11, color: 'var(--color-primary)', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', padding: 0, fontSize: 13, color: 'var(--color-primary)', cursor: 'pointer', fontWeight: 600 }}
               >
-                전체 히스토리 →
+                전체 →
               </button>
             </div>
-            {visibleExecs.map((e) => (
-              <div
-                key={e.id}
-                style={{
-                  display: 'flex', gap: 6, fontSize: 11,
-                  padding: '5px 0', borderBottom: '1px solid var(--color-border)',
-                  color: 'var(--color-text)',
-                }}
-              >
-                <span style={{ color: 'var(--color-text-secondary)', minWidth: 30 }}>
-                  {e.execDate.slice(5).replace('-', '/')}
-                </span>
-                <span style={{ flex: 1, fontWeight: 600 }}>{EXEC_LABEL[e.execType] ?? e.execType}</span>
-                {e.execType !== 'no_exec' && (
-                  <span style={{ color: 'var(--color-text-secondary)' }}>
-                    {e.execQty}주 @ {fmtUSD(e.execPrice)}
+            <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+              {visibleExecs.map((e, i) => (
+                <div
+                  key={e.id}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '11px 14px',
+                    background: 'var(--color-card)',
+                    borderBottom: i < visibleExecs.length - 1 ? '1px solid var(--color-border)' : 'none',
+                  }}
+                >
+                  <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 32 }}>
+                    {e.execDate.slice(5).replace('-', '/')}
                   </span>
-                )}
-              </div>
-            ))}
+                  <span style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{EXEC_LABEL[e.execType] ?? e.execType}</span>
+                  {e.execType !== 'no_exec' && (
+                    <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
+                      {e.execQty}주 @ {fmtUSD(e.execPrice)}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
             {hasMoreExecs && (
               <button
                 onClick={() => setShowAllExecs((v) => !v)}
                 style={{
-                  width: '100%', marginTop: 6,
-                  padding: '7px 10px',
+                  width: '100%', marginTop: 8,
+                  padding: '11px 14px',
                   border: '1px solid var(--color-border)',
-                  borderRadius: 8,
+                  borderRadius: 12,
                   background: 'var(--color-bg)',
-                  fontSize: 12, fontWeight: 600,
+                  fontSize: 13, fontWeight: 600,
                   color: 'var(--color-text-secondary)',
                   cursor: 'pointer',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 }}
               >
                 <span>{showAllExecs ? '접기' : `전체 보기 (${recentExecs.length}개)`}</span>
-                <span style={{ fontSize: 10 }}>{showAllExecs ? '▲' : '▼'}</span>
+                <span>{showAllExecs ? '▲' : '▼'}</span>
               </button>
             )}
           </div>
         )}
 
         {/* ── CTA 버튼 ── */}
-        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
           <button
             onClick={() => setSheetOpen(true)}
             style={{
-              flex: 1, padding: '10px', border: '1px solid var(--color-border)',
-              borderRadius: 10, background: 'var(--color-card)', fontSize: 13, fontWeight: 600,
+              flex: 1, padding: '14px 0', border: '1px solid var(--color-border)',
+              borderRadius: 14, background: 'var(--color-bg)', fontSize: 15, fontWeight: 600,
               cursor: 'pointer', color: 'var(--color-text)',
             }}
           >
@@ -398,9 +478,9 @@ export function StrategyCard({ strategy }: Props) {
           <button
             onClick={() => nav(`/strategy/${strategy.id}`)}
             style={{
-              flex: 1, padding: '10px', border: 'none',
-              borderRadius: 10, background: 'var(--color-primary)', color: '#fff',
-              fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              flex: 1, padding: '14px 0', border: 'none',
+              borderRadius: 14, background: 'var(--color-primary)', color: '#fff',
+              fontSize: 15, fontWeight: 600, cursor: 'pointer',
             }}
           >
             상세

@@ -1,6 +1,17 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useCase } from '@/queries/cases'
-import Illustration from '@/components/common/Illustration'
+
+const PHOTO = {
+  bath:    'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548942946_cc0gbn.webp',
+  film:    'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943309_yggm25.webp',
+  kitchen: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943517_khkjrn.webp',
+} as const
+
+function casePhoto(color: string) {
+  if (color === 'warm') return PHOTO.kitchen
+  if (color === 'cool') return PHOTO.bath
+  return PHOTO.film
+}
 
 export default function CaseDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -21,7 +32,7 @@ export default function CaseDetailPage() {
     )
   }
 
-  const kind = c.color === 'warm' ? 'kitchen' : c.color === 'cool' ? 'bath' : 'film'
+  const photo = c.photos?.find((p) => p.role === 'cover')?.fileUrl ?? casePhoto(c.color)
 
   return (
     <section className="section">
@@ -34,7 +45,7 @@ export default function CaseDetailPage() {
 
         {/* 커버 */}
         <div style={{ height: 320, borderRadius: 'var(--radius-lg)', overflow: 'hidden', marginBottom: 32 }}>
-          <Illustration kind={kind} style={{ width: '100%', height: '100%' }} />
+          <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
@@ -58,9 +69,7 @@ export default function CaseDetailPage() {
                 <div key={p.id}>
                   <div className="tag mb-8">Before</div>
                   <div style={{ height: 200, borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
-                    {p.fileUrl
-                      ? <img src={p.fileUrl} alt={p.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : <Illustration kind={kind} />}
+                    <img src={p.fileUrl || photo} alt={p.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   {p.label && <div className="muted mt-8" style={{ fontSize: 13 }}>{p.label}</div>}
                 </div>
@@ -69,9 +78,7 @@ export default function CaseDetailPage() {
                 <div key={p.id}>
                   <div className="tag green mb-8">After</div>
                   <div style={{ height: 200, borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
-                    {p.fileUrl
-                      ? <img src={p.fileUrl} alt={p.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : <Illustration kind={kind} />}
+                    <img src={p.fileUrl || photo} alt={p.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   {p.label && <div className="muted mt-8" style={{ fontSize: 13 }}>{p.label}</div>}
                 </div>
@@ -81,13 +88,16 @@ export default function CaseDetailPage() {
         )}
 
         {/* 비슷한 시공 받기 CTA */}
-        <div className="about-cta mt-48" style={{ padding: '40px', background: 'var(--gray)', borderRadius: 'var(--radius-xl)' }}>
+        <div className="about-cta mt-48">
           <div>
             <h2 className="h2">비슷한 시공, 받아보실래요?</h2>
             <p className="lead mt-12">사진과 메모 하나로 견적을 요청해보세요.</p>
             <button className="btn primary lg mt-24" onClick={() => navigate('/cart')}>
               견적 요청하기 →
             </button>
+          </div>
+          <div className="about-art">
+            <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
         </div>
       </div>

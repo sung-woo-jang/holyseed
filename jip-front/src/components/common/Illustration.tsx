@@ -5,7 +5,6 @@ const ILLUST: Record<string, { emoji: string; bg: string }> = {
   kitchen:   { emoji: '🍳',   bg: '#FFF1EB' },
   bath:      { emoji: '🚿',   bg: '#E0EAFE' },
   film:      { emoji: '🎨',   bg: '#F5F3FF' },
-  floor:     { emoji: '🪵',   bg: '#FEF3C7' },
   faucet:    { emoji: '🚰',   bg: '#FFF1EB' },
   sink:      { emoji: '🪣',   bg: '#FFF1EB' },
   counter:   { emoji: '🧱',   bg: '#FFF1EB' },
@@ -29,19 +28,28 @@ const ITEM_ILLUST: Record<string, string> = {
   k1: 'counter', k2: 'sanding', k3: 'sink', k4: 'faucet', k5: 'door', k6: 'hinge',
   b1: 'faucet', b2: 'sink', b3: 'toilet', b4: 'bidet', b5: 'accessory', b6: 'shower', b7: 'cabinet',
   f1: 'door', f2: 'wall', f3: 'molding',
-  fl1: 'patch', fl2: 'floor', fl3: 'wax',
 }
 
 const CAT_ILLUST: Record<string, string> = {
-  kitchen: 'kitchen', bath: 'bath', film: 'film', floor: 'floor',
+  kitchen: 'kitchen', bath: 'bath', film: 'film',
 }
 
 interface IllustrationProps {
   kind?: string
+  imageUrl?: string | null
   style?: CSSProperties
 }
 
-export default function Illustration({ kind = 'default', style }: IllustrationProps) {
+export default function Illustration({ kind = 'default', imageUrl, style }: IllustrationProps) {
+  if (imageUrl) {
+    return (
+      <img
+        src={imageUrl}
+        alt=""
+        style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', ...style }}
+      />
+    )
+  }
   const meta = ILLUST[kind] ?? ILLUST.default
   return (
     <svg
@@ -63,10 +71,28 @@ export default function Illustration({ kind = 'default', style }: IllustrationPr
   )
 }
 
-export function ItemIllust({ code, style }: { code: string; style?: CSSProperties }) {
+export function ItemIllust({ code, imageUrl, style }: { code: string; imageUrl?: string | null; style?: CSSProperties }) {
+  if (imageUrl) {
+    return (
+      <img
+        src={imageUrl}
+        alt=""
+        style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', ...style }}
+      />
+    )
+  }
   return <Illustration kind={ITEM_ILLUST[code] ?? 'default'} style={style} />
 }
 
-export function CatIllust({ code, style }: { code: string; style?: CSSProperties }) {
+export function CatIllust({ code, imageUrl, style }: { code: string; imageUrl?: string | null; style?: CSSProperties }) {
+  if (imageUrl) {
+    return (
+      <img
+        src={imageUrl}
+        alt=""
+        style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', ...style }}
+      />
+    )
+  }
   return <Illustration kind={CAT_ILLUST[code] ?? 'default'} style={style} />
 }

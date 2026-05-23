@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Post,
   UploadedFile,
@@ -9,11 +10,15 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FilesService } from '@shared/files/files.service';
 import { Public } from '@common/decorators';
+import { CatalogService } from '../catalog/catalog.service';
 
 @ApiTags('JIP 파일 업로드')
 @Controller('jip/uploads')
 export class UploadsController {
-  constructor(private readonly filesService: FilesService) {}
+  constructor(
+    private readonly filesService: FilesService,
+    private readonly catalogService: CatalogService,
+  ) {}
 
   private async uploadPhoto(file: Express.Multer.File, subfolder: string) {
     if (!file) throw new BadRequestException('파일을 선택해주세요.');
@@ -47,5 +52,47 @@ export class UploadsController {
   async uploadCasePhoto(@UploadedFile() file: Express.Multer.File) {
     const data = await this.uploadPhoto(file, 'jip/cases');
     return { success: true, message: '사진 업로드 성공', data, timestamp: new Date().toISOString() };
+  }
+
+  @Post('catalog-item-photo')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: '[관리자] 카탈로그 서비스 아이템 사진 등록' })
+  async uploadCatalogItemPhoto(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('itemCode') itemCode: string,
+  ) {
+    if (!itemCode) throw new BadRequestException('itemCode를 입력해주세요.');
+    const data = await this.uploadPhoto(file, 'jip/catalog/items');
+    await this.catalogService.updateItemImage(itemCode, data.url);
+    return { success: true, message: '이미지가 등록됐어요', data: { url: data.url }, timestamp: new Date().toISOString() };
+  }
+
+  @Post('catalog-product-photo')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: '[관리자] 카탈로그 제품 사진 등록' })
+  async uploadCatalogProductPhoto(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('productCode') productCode: string,
+  ) {
+    if (!productCode) throw new BadRequestException('productCode를 입력해주세요.');
+    const data = await this.uploadPhoto(file, 'jip/catalog/products');
+    await this.catalogService.updateProductImage(productCode, data.url);
+    return { success: true, message: '이미지가 등록됐어요', data: { url: data.url }, timestamp: new Date().toISOString() };
+  }
+
+  @Post('catalog-category-photo')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: '[관리자] 카탈로그 카테고리 사진 등록' })
+  async uploadCatalogCategoryPhoto(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('categoryCode') categoryCode: string,
+  ) {
+    if (!categoryCode) throw new BadRequestException('categoryCode를 입력해주세요.');
+    const data = await this.uploadPhoto(file, 'jip/catalog/categories');
+    await this.catalogService.updateCategoryImage(categoryCode, data.url);
+    return { success: true, message: '이미지가 등록됐어요', data: { url: data.url }, timestamp: new Date().toISOString() };
   }
 }

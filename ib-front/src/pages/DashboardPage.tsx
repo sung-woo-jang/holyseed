@@ -113,7 +113,7 @@ export function DashboardPage() {
         <div
           style={{
             marginBottom: 12, padding: '12px 14px',
-            background: '#f0f6ff', border: '1px solid var(--color-primary)',
+            background: 'var(--color-avg-bg)', border: '1px solid var(--color-primary)',
             borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           }}
         >
@@ -140,7 +140,7 @@ export function DashboardPage() {
       {/* 포트폴리오 요약 */}
       <PortfolioSummaryCard />
 
-      <div style={{ marginBottom: 12, fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600 }}>
+      <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--color-text)', fontWeight: 700 }}>
         오늘 운용 · {strategies.length}개 전략
       </div>
 

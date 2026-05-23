@@ -16,7 +16,7 @@ export default function Footer() {
               <span>집수리</span>
             </Link>
             <p style={{ color: 'var(--ink-3)', fontSize: 14, lineHeight: 1.7, margin: '0 0 16px', maxWidth: 320 }}>
-              주방·화장실·필름·마루까지.<br />
+              주방·화장실·필름까지.<br />
               한 사람이 처음부터 끝까지 책임지는 동네 시공.
             </p>
             <div style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 600 }}>{TECH_PHONE}</div>
@@ -27,7 +27,6 @@ export default function Footer() {
               <li><Link to="/services?cat=kitchen">주방</Link></li>
               <li><Link to="/services?cat=bath">화장실</Link></li>
               <li><Link to="/services?cat=film">인테리어 필름</Link></li>
-              <li><Link to="/services?cat=floor">마루 복원</Link></li>
             </ul>
           </div>
           <div>

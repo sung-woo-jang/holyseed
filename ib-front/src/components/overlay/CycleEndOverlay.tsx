@@ -32,7 +32,7 @@ export function CycleEndOverlay({ strategy, profit, profitPct, onClose }: Props)
     <div
       style={{
         position: 'fixed', inset: 0, zIndex: 200,
-        background: '#fff', display: 'flex', flexDirection: 'column',
+        background: 'var(--color-bg)', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', padding: 32,
       }}
     >
@@ -61,7 +61,7 @@ export function CycleEndOverlay({ strategy, profit, profitPct, onClose }: Props)
               style={{
                 flex: 1, padding: '14px',
                 border: `2px solid ${mode === m ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                borderRadius: 14, background: mode === m ? '#f0f6ff' : '#fff',
+                borderRadius: 14, background: mode === m ? 'var(--color-avg-bg)' : 'var(--color-card)',
                 fontSize: 14, fontWeight: 700, cursor: 'pointer',
                 color: 'var(--color-text)',
               }}

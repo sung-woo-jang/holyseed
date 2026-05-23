@@ -1,5 +1,9 @@
 import { useNavigate } from 'react-router-dom'
-import Illustration from '@/components/common/Illustration'
+
+const PHOTO = {
+  bath:    'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548942946_cc0gbn.webp',
+  kitchen: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943517_khkjrn.webp',
+} as const
 
 const TECH_INFO = {
   name: '김장인',
@@ -8,7 +12,7 @@ const TECH_INFO = {
   jobs: 348,
   rating: 4.9,
   area: '서울 전 지역 · 경기 일부',
-  intro: '주방·화장실·필름·마루까지, 12년 경력의 1인 시공자입니다. 견적은 무료, 시공은 정직하게.',
+  intro: '주방·화장실·필름까지, 12년 경력의 1인 시공자입니다. 견적은 무료, 시공은 정직하게.',
   phone: '010-1234-5678',
   hours: '평일 9시–19시',
 }
@@ -37,14 +41,14 @@ export default function AboutPage() {
               <div className="stat"><div className="num">{TECH_INFO.jobs}+</div><div className="lbl">시공 건수</div></div>
               <div className="stat"><div className="num">★ {TECH_INFO.rating}</div><div className="lbl">평점</div></div>
             </div>
-            <div className="mt-24" style={{ fontSize: 14, color: 'var(--ink-3)' }}>
+            <div className="mt-24" style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)' }}>
               <div>📍 {TECH_INFO.area}</div>
               <div className="mt-8">⏰ {TECH_INFO.hours}</div>
               <div className="mt-8">📞 {TECH_INFO.phone}</div>
             </div>
           </div>
           <div className="about-art">
-            <Illustration kind="person" style={{ width: '100%', height: '100%' }} />
+            <img src={PHOTO.bath} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
         </div>
 
@@ -63,8 +67,20 @@ export default function AboutPage() {
           </div>
         </div>
 
+        {/* 시공 사진 */}
+        <div className="mt-64">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
+            <div style={{ aspectRatio: '4/3', overflow: 'hidden' }}>
+              <img src={PHOTO.bath} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+            <div style={{ aspectRatio: '4/3', overflow: 'hidden' }}>
+              <img src={PHOTO.kitchen} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+          </div>
+        </div>
+
         {/* CTA */}
-        <div className="mt-80 center">
+        <div className="mt-64 center">
           <h2 className="h2">지금 견적 문의해보세요</h2>
           <p className="lead mt-12">사진 한 장, 메모 한 줄로 충분해요.</p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginTop: 32, flexWrap: 'wrap' }}>

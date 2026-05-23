@@ -29,6 +29,7 @@ import AdminRequests from '@/pages/admin/AdminRequests'
 import AdminRequestDetail from '@/pages/admin/AdminRequestDetail'
 import AdminSchedule from '@/pages/admin/AdminSchedule'
 import AdminCases from '@/pages/admin/AdminCases'
+import AdminCaseForm from '@/pages/admin/AdminCaseForm'
 import AdminJobsList from '@/pages/admin/AdminJobsList'
 import AdminJobForm from '@/pages/admin/AdminJobForm'
 import AdminJobDetail from '@/pages/admin/AdminJobDetail'
@@ -74,6 +75,8 @@ export default function App() {
             <Route path="requests/:code" element={<AdminRequestDetail />} />
             <Route path="schedule" element={<AdminSchedule />} />
             <Route path="cases" element={<AdminCases />} />
+            <Route path="cases/new" element={<AdminCaseForm />} />
+            <Route path="cases/:id" element={<AdminCaseForm />} />
             <Route path="jobs" element={<AdminJobsList />} />
             <Route path="jobs/new" element={<AdminJobForm />} />
             <Route path="jobs/:id" element={<AdminJobDetail />} />

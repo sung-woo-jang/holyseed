@@ -1,8 +1,19 @@
 import { useNavigate } from 'react-router-dom'
 import { useCartStore } from '@/stores/cart'
-import { ItemIllust } from '@/components/common/Illustration'
 
 function fmtKRW(n: number) { return n.toLocaleString('ko-KR') + '원' }
+
+const PHOTOS: Record<string, string> = {
+  bath:    'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548942946_cc0gbn.webp',
+  film:    'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943309_yggm25.webp',
+  kitchen: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943517_khkjrn.webp',
+}
+
+function itemPhoto(code: string) {
+  if (code.startsWith('b')) return PHOTOS.bath
+  if (code.startsWith('k')) return PHOTOS.kitchen
+  return PHOTOS.film
+}
 
 const VISIT_FEE = 20000
 
@@ -58,7 +69,7 @@ export default function CartPage() {
             {items.map((item, i) => (
               <div key={i} className="cart-line">
                 <div style={{ width: 88, height: 88, borderRadius: 10, overflow: 'hidden', flexShrink: 0 }}>
-                  <ItemIllust code={item.serviceItemCode} style={{ width: '100%', height: '100%' }} />
+                  <img src={itemPhoto(item.serviceItemCode)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div>
                   <div className="cart-line-title">{item.serviceItemName}</div>

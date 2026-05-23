@@ -71,7 +71,7 @@ export function RegisterPage() {
             {error && (
               <div style={{
                 padding: '10px 12px', marginBottom: 16,
-                background: '#fef2f2', border: '1px solid #fca5a5',
+                background: 'var(--color-sell-bg)', border: '1px solid #fca5a5',
                 borderRadius: 10, fontSize: 13, color: '#ef4444',
               }}>
                 {error}

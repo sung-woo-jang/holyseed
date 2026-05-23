@@ -83,6 +83,21 @@ export interface IvPrice {
 // API calls
 // ─────────────────────────────────────────
 
+export interface IvUserInfo {
+  id: string
+  email: string
+  name: string
+  createdAt: string
+}
+
+export const authApi = {
+  register: (data: { email: string; password: string; name: string }) =>
+    api.post('/iv/auth/register', data).then((r) => r.data.data as { token: string; user: IvUserInfo }),
+  login: (data: { email: string; password: string }) =>
+    api.post('/iv/auth/login', data).then((r) => r.data.data as { token: string; user: IvUserInfo }),
+  me: () => api.get('/iv/auth/me').then(unwrap<IvUserInfo>),
+}
+
 export const strategiesApi = {
   getAll: () => api.get('/iv/strategies').then(unwrap<IvStrategy[]>),
   create: (data: { strategyType: string; ticker: string; principal: number; division?: number }) =>

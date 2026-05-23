@@ -4,6 +4,7 @@ import { useStrategies, useDeleteStrategy, useRefreshPrice } from '@/queries/iv.
 import { fmtUSD } from '@/lib/format'
 import { CycleEditSheet } from '@/components/sheet/CycleEditSheet'
 import { executionsApi } from '@/lib/iv-api'
+import { TOKEN_KEY } from '@/lib/api'
 import type { IvStrategy } from '@/lib/iv-api'
 
 const AUTO_REFRESH_KEY = 'iv-auto-refresh'
@@ -351,6 +352,24 @@ export function AccountPage() {
           </div>
         ))}
       </div>
+
+      {/* 로그아웃 */}
+      <button
+        onClick={() => {
+          if (confirm('로그아웃 하시겠습니까?')) {
+            localStorage.removeItem(TOKEN_KEY)
+            window.location.href = '/login'
+          }
+        }}
+        style={{
+          display: 'block', width: '100%', padding: '14px',
+          background: 'none', border: '1px solid #fca5a5',
+          borderRadius: 12, fontSize: 14, fontWeight: 600,
+          color: '#ef4444', cursor: 'pointer', marginBottom: 16,
+        }}
+      >
+        로그아웃
+      </button>
 
       {/* 버전 푸터 */}
       <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--color-text-tertiary)', marginTop: 8 }}>

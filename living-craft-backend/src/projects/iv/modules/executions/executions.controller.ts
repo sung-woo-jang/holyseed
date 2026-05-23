@@ -1,6 +1,5 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
-import { Public } from '@common/decorators'
 import { ExecutionsService } from './executions.service'
 import { CreateExecutionsDto } from './dto/request/create-executions.dto'
 
@@ -10,7 +9,6 @@ const ok = (data: unknown, message = '성공') => ({
 
 @ApiTags('IV 체결')
 @Controller('iv/strategies')
-@Public()
 export class ExecutionsController {
   constructor(private readonly svc: ExecutionsService) {}
 

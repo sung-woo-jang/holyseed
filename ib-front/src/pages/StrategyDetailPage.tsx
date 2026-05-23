@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, ReferenceLine, LineChart, Line, BarChart, Bar, Cell,
+  ResponsiveContainer, ReferenceLine, LineChart, Line,
 } from 'recharts'
 import { useStrategy, useStrategyState, useTodayPlan, useExecutions, usePriceHistory } from '@/queries/iv.queries'
 import { fmtUSD, fmtT, fmtDate, MODE_LABEL, MODE_FULL, MODE_COLOR } from '@/lib/format'
@@ -43,7 +43,7 @@ export function StrategyDetailPage() {
   const { id } = useParams<{ id: string }>()
   const nav = useNavigate()
   const [tab, setTab] = useState<Tab>('chart')
-  const [period, setPeriod] = useState<5 | 10 | 20>(20)
+  const [period, setPeriod] = useState<5 | 65 | 252 | 756 | 1260>(65)
 
   const { data: strategy } = useStrategy(id!)
   const { data: state } = useStrategyState(id!)
@@ -216,18 +216,18 @@ export function StrategyDetailPage() {
                 </div>
                 {/* 기간 버튼 */}
                 <div style={{ display: 'flex', gap: 4 }}>
-                  {([5, 10, 20] as const).map((p) => (
+                  {([5, 65, 252, 756, 1260] as const).map((p) => (
                     <button
                       key={p}
                       onClick={() => setPeriod(p)}
                       style={{
-                        padding: '3px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                        padding: '3px 8px', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer',
                         border: `1px solid ${period === p ? 'var(--color-primary)' : 'var(--color-border)'}`,
                         background: period === p ? 'var(--color-primary)' : 'var(--color-card)',
                         color: period === p ? '#fff' : 'var(--color-text-secondary)',
                       }}
                     >
-                      {p === 5 ? '1주' : p === 10 ? '2주' : '4주'}
+                      {p === 5 ? '1주' : p === 65 ? '3달' : p === 252 ? '1년' : p === 756 ? '3년' : '5년'}
                     </button>
                   ))}
                 </div>
@@ -293,24 +293,45 @@ export function StrategyDetailPage() {
             </div>
           )}
 
-          {/* 일변동 차트 */}
-          {chartData.length > 0 && (
-            <div className="card" style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600, marginBottom: 8 }}>일변동 (%)</div>
-              <ResponsiveContainer width="100%" height={80}>
-                <BarChart data={visibleData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
-                  <XAxis dataKey="date" tick={{ fontSize: 9 }} interval={Math.floor(visibleData.length / 4)} />
-                  <YAxis tick={{ fontSize: 10 }} width={30} tickFormatter={(v) => `${v.toFixed(0)}%`} />
-                  <Tooltip formatter={(v: number) => [`${v.toFixed(2)}%`, '변동']} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                  <Bar dataKey="change" radius={[2, 2, 0, 0]}>
-                    {visibleData.map((entry, i) => (
-                      <Cell key={i} fill={entry.change >= 0 ? '#f04452' : '#2563eb'} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+          {/* 일변동 — 최근 2주(10거래일) 소형 카드 */}
+          {chartData.length > 0 && (() => {
+            const twoWeeks = chartData.slice(-10)
+            return (
+              <div className="card" style={{ marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600 }}>일변동 (최근 2주)</div>
+                  <div style={{ display: 'flex', gap: 12, fontSize: 11, color: 'var(--color-text-secondary)' }}>
+                    <span style={{ color: '#f04452' }}>▲ 상승</span>
+                    <span style={{ color: '#2563eb' }}>▼ 하락</span>
+                  </div>
+                </div>
+                {/* 날짜별 변동 행 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  {twoWeeks.map((d, i) => {
+                    const isUp = d.change >= 0
+                    const barWidth = Math.min(Math.abs(d.change) * 8, 60)
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                        <span style={{ width: 34, color: 'var(--color-text-secondary)', flexShrink: 0 }}>{d.date}</span>
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <div
+                            style={{
+                              width: barWidth, height: 6, borderRadius: 3,
+                              background: isUp ? '#f04452' : '#2563eb',
+                              flexShrink: 0,
+                            }}
+                          />
+                        </div>
+                        <span style={{ width: 52, textAlign: 'right', fontWeight: 600, color: isUp ? '#f04452' : '#2563eb', flexShrink: 0 }}>
+                          {isUp ? '+' : ''}{d.change.toFixed(2)}%
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
 
           {/* T값 추이 */}
           {tChartData.length > 0 && (

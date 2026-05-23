@@ -69,7 +69,19 @@ export class StrategiesService {
   }
 
   async update(id: string, userId: string, data: { principal?: number; division?: number }): Promise<IvStrategy> {
-    await this.findOne(id, userId)
+    const strategy = await this.findOne(id, userId)
+
+    // 원금이 바뀌면 잔금에 차액을 반영
+    if (data.principal != null && data.principal !== Number(strategy.principal)) {
+      const diff = data.principal - Number(strategy.principal)
+      await this.stateRepo
+        .createQueryBuilder()
+        .update()
+        .set({ cash: () => `cash + ${diff}` })
+        .where('strategy_id = :id', { id })
+        .execute()
+    }
+
     await this.strategyRepo.update(id, data)
     return this.findOne(id, userId)
   }

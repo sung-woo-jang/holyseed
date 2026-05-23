@@ -1,4 +1,5 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { OnboardingPage } from '@/pages/OnboardingPage'
@@ -15,6 +16,12 @@ const queryClient = new QueryClient({
     queries: { retry: 1, staleTime: 1000 * 30 },
   },
 })
+
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
+}
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem(TOKEN_KEY)
@@ -39,6 +46,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           {/* 인증 불필요 */}
           <Route path="/login" element={<LoginPage />} />

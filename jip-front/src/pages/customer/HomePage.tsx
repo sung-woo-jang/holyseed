@@ -1,20 +1,33 @@
 import { useNavigate } from 'react-router-dom'
 import { useCategories, useFeaturedItems } from '@/queries/catalog'
 import { useRecentCases } from '@/queries/cases'
-import Illustration, { ItemIllust, CatIllust } from '@/components/common/Illustration'
+import { ItemIllust, CatIllust } from '@/components/common/Illustration'
 import type { Case } from '@/types'
 
 function fmtKRW(n: number) {
   return n.toLocaleString('ko-KR') + '원'
 }
 
+// 카테고리/케이스 color 기반 사진 매핑 (메인사진 + 카탈로그 아이템 사진)
+const PHOTO = {
+  bath:    'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548942946_cc0gbn.webp',
+  film:    'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943309_yggm25.webp',
+  kitchen: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943517_khkjrn.webp',
+} as const
+
+function casePhoto(color: string) {
+  if (color === 'warm') return PHOTO.kitchen
+  if (color === 'cool') return PHOTO.bath
+  return PHOTO.film
+}
+
 function CaseCard({ c }: { c: Case }) {
   const navigate = useNavigate()
-  const kind = c.color === 'warm' ? 'kitchen' : c.color === 'cool' ? 'bath' : 'film'
+  const photo = c.photos?.find((p) => p.role === 'cover')?.fileUrl ?? casePhoto(c.color)
   return (
     <div className="case-card" onClick={() => navigate(`/case/${c.id}`)}>
-      <div style={{ height: 180, overflow: 'hidden' }}>
-        <Illustration kind={kind} style={{ width: '100%', height: '100%' }} />
+      <div style={{ overflow: 'hidden' }}>
+        <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
       <div className="case-card-body">
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
@@ -47,7 +60,7 @@ export default function HomePage() {
               그날 안에 끝냅니다.
             </h1>
             <p className="lead mt-24">
-              수전 하나, 마루 한 칸도 같은 마음으로.<br />
+              수전 하나, 싱크대 하나도 같은 마음으로.<br />
               사진과 메모만 보내면 김장인이 직접 견적을 드려요.
             </p>
             <div className="hero-cta">
@@ -64,8 +77,8 @@ export default function HomePage() {
               <div className="stat"><div className="num">★ 4.9</div><div className="lbl">평점</div></div>
             </div>
           </div>
-          <div className="hero-art">
-            <Illustration kind="hero" style={{ width: '100%', height: '100%' }} />
+          <div className="hero-art" style={{ overflow: 'hidden', borderRadius: 'var(--radius-xl)' }}>
+            <img src={PHOTO.bath} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             <div className="hero-art-badge">오늘 견적 가능</div>
           </div>
         </div>
@@ -84,8 +97,8 @@ export default function HomePage() {
           <div className="cat-grid">
             {categories?.map((c) => (
               <div key={c.id} className="cat-card" onClick={() => navigate(`/services?cat=${c.code}`)}>
-                <div style={{ height: 140 }}>
-                  <CatIllust code={c.code} />
+                <div style={{ overflow: 'hidden' }}>
+                  <CatIllust code={c.code} imageUrl={c.imageUrl ?? PHOTO[c.code as keyof typeof PHOTO]} />
                 </div>
                 <div className="cat-card-body">
                   <div className="cat-card-title">{c.name}</div>
@@ -112,7 +125,7 @@ export default function HomePage() {
                 <div key={item.id} className="popular-item" onClick={() => navigate(`/service/${item.code}`)}>
                   <div className="popular-rank">{i + 1}</div>
                   <div className="popular-illust">
-                    <ItemIllust code={item.code} />
+                    <ItemIllust code={item.code} imageUrl={item.imageUrl} />
                   </div>
                   <div className="popular-body">
                     <div className="popular-title">{item.name}</div>
@@ -189,8 +202,8 @@ export default function HomePage() {
                 </button>
               </div>
             </div>
-            <div className="about-art">
-              <Illustration kind="person" style={{ width: '100%', height: '100%' }} />
+            <div className="about-art" style={{ overflow: 'hidden', borderRadius: 'var(--radius-xl)' }}>
+              <img src={PHOTO.kitchen} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
           </div>
         </div>

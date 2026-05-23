@@ -16,7 +16,7 @@ export function TabBar() {
         transform: 'translateX(-50%)',
         width: '100%',
         maxWidth: 480,
-        background: '#fff',
+        background: 'var(--color-card)',
         borderTop: '1px solid var(--color-border)',
         display: 'flex',
         paddingBottom: 'env(safe-area-inset-bottom)',

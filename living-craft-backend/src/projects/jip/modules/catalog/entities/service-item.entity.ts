@@ -29,6 +29,9 @@ export class ServiceItem extends BaseEntity {
   @Column({ name: 'illust_kind', length: 50, default: 'default' })
   illustKind: string;
 
+  @Column({ name: 'image_url', type: 'varchar', length: 500, nullable: true })
+  imageUrl: string | null;
+
   @Column({ name: 'sort_order', default: 0 })
   sortOrder: number;
 

@@ -41,3 +41,15 @@ body {
 .with-tabs {
   padding-bottom: calc(60px + env(safe-area-inset-bottom));
 }
+
+/* 입력 필드 다크모드 */
+input, select, textarea {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: var(--date-icon-filter, none);
+}
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+}

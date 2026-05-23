@@ -823,3 +823,120 @@ hr.hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
 
 /* ── 제품 상세 — thumb 선택 상태 ── */
 .product-thumb.on { box-shadow: 0 0 0 2px var(--orange); }
+
+/* ──────────────────────────────────────────────
+   모바일 레이아웃 다듬기
+   ────────────────────────────────────────────── */
+
+/* hero CTA 버튼: 480px 이하에서 세로 스택 */
+@media (max-width: 480px) {
+  .hero-cta { flex-direction: column; }
+  .hero-cta .btn { width: 100%; justify-content: center; }
+  .hero-meta { gap: 24px; }
+}
+
+/* about-art: 모바일에서 4/5 비율이 너무 길어짐 → 16/9로 */
+@media (max-width: 880px) {
+  .about-art { aspect-ratio: 16/9; max-width: 100%; }
+}
+
+/* svc-intro body: 모바일 패딩 */
+@media (max-width: 880px) {
+  .svc-intro-body { padding: 28px 24px; }
+}
+@media (max-width: 480px) {
+  .svc-intro-body { padding: 20px 16px; }
+  .svc-intro-meta { gap: 12px; font-size: 13px; }
+  .svc-intro-meta .lbl { font-size: 11px; }
+}
+
+/* svc-intro: 모바일에서 일러스트가 위로 */
+@media (max-width: 880px) {
+  .svc-intro { grid-template-areas: 'illust' 'body'; }
+  .svc-intro-illust { grid-area: illust; }
+  .svc-intro-body { grid-area: body; }
+}
+
+/* product-section-grid: 480px 이하에서 1열 */
+@media (max-width: 480px) {
+  .product-section-grid { grid-template-columns: 1fr; }
+}
+
+/* sticky-cta-bar: 모바일 탭바(72px) 위에 떠야 함 */
+@media (max-width: 880px) {
+  .sticky-cta-bar { bottom: 72px; }
+  .sticky-cta-inner { flex-wrap: wrap; gap: 12px; }
+  .sticky-cta-actions {
+    width: 100%;
+    display: flex; gap: 8px;
+  }
+  .sticky-cta-actions .btn { flex: 1; justify-content: center; min-width: 0; }
+  .sticky-cta-info { width: 100%; min-width: unset; }
+  .sticky-cta-price { font-size: 18px; }
+}
+
+/* sticky-cta 안전영역 */
+@media (max-width: 880px) {
+  .sticky-cta-bar { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* summary: 모바일에서 sticky 해제, 깔끔하게 */
+@media (max-width: 880px) {
+  .summary { position: static; }
+}
+
+/* cart-line: 소형 화면에서 이미지 축소 */
+@media (max-width: 480px) {
+  .cart-line { grid-template-columns: 64px 1fr auto; gap: 12px; }
+}
+
+/* svc-card/case-card/cat-card: 모바일에서 설명 텍스트 클램프 유지 */
+@media (max-width: 520px) {
+  .svc-card-body { padding: 16px 18px; }
+  .cat-card-body { padding: 16px 18px; }
+  .case-card-body { padding: 16px 18px; }
+}
+
+/* popular-item: 480px 이하에서 가격 숨김 */
+@media (max-width: 480px) {
+  .popular-price-col { display: none; }
+  .popular-item { grid-template-columns: 24px 52px 1fr; }
+}
+
+/* store-spec-row: 480px 이하 폰트 */
+@media (max-width: 480px) {
+  .store-spec-row { font-size: 14px; padding: 14px 16px; }
+  .store-spec-row.total { font-size: 15px; }
+}
+
+/* store-h2: 모바일 여백 */
+@media (max-width: 720px) {
+  .store-h2 { margin-bottom: 20px; }
+}
+
+/* store-bigimg-art: 모바일에서 비율 조정 */
+@media (max-width: 720px) {
+  .store-bigimg-art { aspect-ratio: 4/3; }
+}
+
+/* faq-q: 모바일에서 버튼 텍스트 wrap 허용 */
+.faq-q { width: 100%; background: none; border: none; padding: 0; font: inherit; text-align: left; gap: 12px; }
+.faq-q span:first-child { flex: 1; }
+
+/* how-grid: 모바일 패딩 */
+@media (max-width: 880px) {
+  .how-card { min-height: unset; padding: 24px 20px; }
+}
+
+/* about-cta: 모바일 패딩 이미 있음, about-art 이미지 overflow */
+.about-art { overflow: hidden; }
+
+/* footer: 모바일 패딩 */
+@media (max-width: 520px) {
+  .footer { padding: 48px 0 24px; margin-top: 48px; }
+}
+
+/* tag: 줄바꿈 방지 해제 (long tags) */
+@media (max-width: 480px) {
+  .tag { white-space: normal; }
+}

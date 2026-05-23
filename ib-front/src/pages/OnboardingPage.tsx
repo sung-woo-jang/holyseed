@@ -21,7 +21,7 @@ export function OnboardingPage() {
   }
 
   return (
-    <div style={{ padding: 16, minHeight: '100vh', background: '#fff' }}>
+    <div style={{ padding: 16, minHeight: '100vh', background: 'var(--color-bg)' }}>
       {/* 상단 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
         <button
@@ -62,7 +62,7 @@ export function OnboardingPage() {
               style={{
                 display: 'block', width: '100%', marginBottom: 12, padding: '16px',
                 border: `2px solid ${ticker === t ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                borderRadius: 14, background: ticker === t ? '#f0f6ff' : '#fff',
+                borderRadius: 14, background: ticker === t ? 'var(--color-avg-bg)' : 'var(--color-card)',
                 fontSize: 18, fontWeight: 700, cursor: 'pointer', textAlign: 'left',
                 color: 'var(--color-text)',
               }}
@@ -90,7 +90,7 @@ export function OnboardingPage() {
               style={{
                 display: 'block', width: '100%', marginBottom: 12, padding: '16px',
                 border: `2px solid ${division === d ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                borderRadius: 14, background: division === d ? '#f0f6ff' : '#fff',
+                borderRadius: 14, background: division === d ? 'var(--color-avg-bg)' : 'var(--color-card)',
                 fontSize: 18, fontWeight: 700, cursor: 'pointer', textAlign: 'left',
                 color: 'var(--color-text)',
               }}
@@ -120,6 +120,7 @@ export function OnboardingPage() {
               width: '100%', padding: '14px', fontSize: 20, fontWeight: 700,
               border: '2px solid var(--color-border)', borderRadius: 14,
               outline: 'none', marginBottom: 16,
+              background: 'var(--color-card)', color: 'var(--color-text)',
             }}
           />
           <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
@@ -130,7 +131,7 @@ export function OnboardingPage() {
                 style={{
                   flex: 1, padding: '10px 0', borderRadius: 10,
                   border: '1px solid var(--color-border)',
-                  background: '#fff', color: 'var(--color-text)',
+                  background: 'var(--color-card)', color: 'var(--color-text)',
                   cursor: 'pointer', fontWeight: 600, fontSize: 14,
                 }}
               >

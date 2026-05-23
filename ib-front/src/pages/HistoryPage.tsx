@@ -71,54 +71,54 @@ export function ExecCard({ exec, strategyId }: { exec: IvExecution; strategyId: 
   }
 
   const badge = isBuy
-    ? { label: '매수', bg: '#eff6ff', color: '#2563eb' }
+    ? { label: '매수', bg: 'var(--color-avg-bg)', color: 'var(--color-fall)' }
     : isSell
-      ? { label: '매도', bg: '#fff1f2', color: '#dc2626' }
-      : { label: '미체결', bg: '#f3f4f6', color: '#6b7280' }
+      ? { label: '매도', bg: 'var(--color-sell-bg)', color: '#dc2626' }
+      : { label: '미체결', bg: 'var(--color-bg)', color: 'var(--color-text-secondary)' }
 
   return (
-    <div className="card" style={{ padding: '12px 14px', marginBottom: 8 }}>
+    <div className="card" style={{ padding: '14px 16px', marginBottom: 10 }}>
       {/* 상단 행: 뱃지 + execType + 날짜 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span
             style={{
-              fontSize: 11, padding: '2px 7px', borderRadius: 8, fontWeight: 700,
+              fontSize: 12, padding: '3px 9px', borderRadius: 10, fontWeight: 700,
               background: badge.bg, color: badge.color,
             }}
           >
             {badge.label}
           </span>
-          <span style={{ fontWeight: 600, fontSize: 14 }}>{EXEC_LABEL[exec.execType] ?? exec.execType}</span>
+          <span style={{ fontWeight: 700, fontSize: 15 }}>{EXEC_LABEL[exec.execType] ?? exec.execType}</span>
         </div>
-        <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{fmtDate(exec.execDate)}</span>
+        <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>{fmtDate(exec.execDate)}</span>
       </div>
 
       {/* 가격·수량 행 */}
       {exec.execType !== 'no_exec' && (
         editing ? (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
             <div>
-              <label style={{ fontSize: 11, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 2 }}>체결가 ($)</label>
+              <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 4 }}>체결가 ($)</label>
               <input
                 type="number" step="0.01" value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                style={{ width: '100%', padding: '7px', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 13 }}
+                style={{ width: '100%', padding: '10px', border: '1px solid var(--color-border)', borderRadius: 10, fontSize: 14, boxSizing: 'border-box', background: 'var(--color-bg)', color: 'var(--color-text)' }}
               />
             </div>
             <div>
-              <label style={{ fontSize: 11, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 2 }}>수량 (주)</label>
+              <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 4 }}>수량 (주)</label>
               <input
                 type="number" step="0.000001" value={qty}
                 onChange={(e) => setQty(e.target.value)}
-                style={{ width: '100%', padding: '7px', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 13 }}
+                style={{ width: '100%', padding: '10px', border: '1px solid var(--color-border)', borderRadius: 10, fontSize: 14, boxSizing: 'border-box', background: 'var(--color-bg)', color: 'var(--color-text)' }}
               />
             </div>
           </div>
         ) : (
-          <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+          <div style={{ fontSize: 14, color: 'var(--color-text-secondary)', marginBottom: 6 }}>
             {exec.execQty}주 @ {fmtUSD(exec.execPrice)}
-            <span style={{ marginLeft: 8, fontWeight: 600, color: 'var(--color-text)' }}>
+            <span style={{ marginLeft: 8, fontWeight: 700, color: 'var(--color-text)' }}>
               = {fmtUSD(exec.execAmount)}
             </span>
           </div>
@@ -127,7 +127,7 @@ export function ExecCard({ exec, strategyId }: { exec: IvExecution; strategyId: 
 
       {/* T 변화 + 보유 행 */}
       {tBefore !== undefined && tAfter !== undefined && (
-        <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 6 }}>
+        <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 6 }}>
           T {fmtT(tBefore)} → <strong style={{ color: 'var(--color-text)' }}>{fmtT(tAfter)}</strong>
           {qtyAfter !== undefined && (
             <span style={{ marginLeft: 8 }}>· {qtyAfter}주 보유</span>
@@ -136,20 +136,20 @@ export function ExecCard({ exec, strategyId }: { exec: IvExecution; strategyId: 
       )}
 
       {exec.note && (
-        <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', fontStyle: 'italic', marginBottom: 6 }}>
+        <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontStyle: 'italic', marginBottom: 6 }}>
           {exec.note}
         </div>
       )}
 
       {/* 액션 버튼 */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 4 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
         {editing ? (
           <>
             <button
               onClick={() => { setEditing(false); setPrice(String(exec.execPrice ?? '')); setQty(String(exec.execQty ?? '')) }}
               style={{
-                padding: '6px 14px', borderRadius: 8, border: '1px solid var(--color-border)',
-                background: '#fff', fontSize: 12, cursor: 'pointer', color: 'var(--color-text-secondary)',
+                padding: '9px 18px', borderRadius: 10, border: '1px solid var(--color-border)',
+                background: 'var(--color-bg)', fontSize: 13, cursor: 'pointer', color: 'var(--color-text-secondary)', fontWeight: 600,
               }}
             >
               취소
@@ -158,9 +158,9 @@ export function ExecCard({ exec, strategyId }: { exec: IvExecution; strategyId: 
               onClick={handleSave}
               disabled={updateMut.isPending}
               style={{
-                padding: '6px 14px', borderRadius: 8, border: 'none',
+                padding: '9px 18px', borderRadius: 10, border: 'none',
                 background: 'var(--color-primary)', color: '#fff',
-                fontSize: 12, cursor: 'pointer', fontWeight: 600,
+                fontSize: 13, cursor: 'pointer', fontWeight: 700,
               }}
             >
               {updateMut.isPending ? '저장 중...' : '저장'}
@@ -172,8 +172,8 @@ export function ExecCard({ exec, strategyId }: { exec: IvExecution; strategyId: 
               <button
                 onClick={() => setEditing(true)}
                 style={{
-                  padding: '5px 12px', borderRadius: 8, border: '1px solid var(--color-border)',
-                  background: '#fff', fontSize: 12, cursor: 'pointer', color: 'var(--color-text)',
+                  padding: '9px 18px', borderRadius: 10, border: '1px solid var(--color-border)',
+                  background: 'var(--color-bg)', fontSize: 13, cursor: 'pointer', color: 'var(--color-text)', fontWeight: 600,
                 }}
               >
                 수정
@@ -183,8 +183,8 @@ export function ExecCard({ exec, strategyId }: { exec: IvExecution; strategyId: 
               onClick={handleDelete}
               disabled={deleteMut.isPending}
               style={{
-                padding: '5px 12px', borderRadius: 8, border: '1px solid #fecaca',
-                background: '#fff', fontSize: 12, cursor: 'pointer', color: '#dc2626',
+                padding: '9px 18px', borderRadius: 10, border: '1px solid #fecaca',
+                background: 'var(--color-bg)', fontSize: 13, cursor: 'pointer', color: '#dc2626', fontWeight: 600,
               }}
             >
               {deleteMut.isPending ? '삭제 중...' : '삭제'}
@@ -220,8 +220,8 @@ function ExecutionList({ id }: { id: string }) {
         <div key={month}>
           <div
             style={{
-              fontSize: 12, fontWeight: 600, color: 'var(--color-text-secondary)',
-              padding: '8px 0 4px',
+              fontSize: 13, fontWeight: 700, color: 'var(--color-text)',
+              padding: '12px 0 6px',
             }}
           >
             {month}
@@ -251,9 +251,9 @@ export function HistoryPage() {
               key={s.id}
               onClick={() => setSelectedId(s.id)}
               style={{
-                padding: '6px 14px', borderRadius: 20, whiteSpace: 'nowrap',
+                padding: '8px 18px', borderRadius: 20, whiteSpace: 'nowrap',
                 border: '1px solid var(--color-border)',
-                background: activeId === s.id ? 'var(--color-primary)' : '#fff',
+                background: activeId === s.id ? 'var(--color-primary)' : 'var(--color-bg)',
                 color: activeId === s.id ? '#fff' : 'var(--color-text)',
                 cursor: 'pointer', fontWeight: 600, fontSize: 13,
               }}

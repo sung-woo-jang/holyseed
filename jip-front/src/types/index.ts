@@ -6,6 +6,7 @@ export interface Category {
   name: string
   intro: string
   color: string
+  imageUrl?: string | null
   sortOrder: number
   isActive: boolean
 }
@@ -30,6 +31,7 @@ export interface Product {
   spec: string
   price: number
   illustKind: string
+  imageUrl?: string | null
   description: string
   sortOrder: number
   isActive: boolean
@@ -55,6 +57,7 @@ export interface ServiceItem {
   unit: string
   duration: string
   illustKind: string
+  imageUrl?: string | null
   sortOrder: number
   isFeatured: boolean
   isActive: boolean

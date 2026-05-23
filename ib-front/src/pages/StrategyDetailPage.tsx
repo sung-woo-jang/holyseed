@@ -167,7 +167,7 @@ export function StrategyDetailPage() {
         <div style={{ padding: 16 }}>
           {/* 현재 상태 KPI */}
           <div className="card" style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600, marginBottom: 10 }}>현재 상태</div>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}>현재 상태</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
               {[
                 { label: 'T값', value: `${fmtT(state.tValue)} / ${strategy.division}` },
@@ -183,8 +183,8 @@ export function StrategyDetailPage() {
                 },
               ].map(({ label, value }) => (
                 <div key={label}>
-                  <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 2 }}>{label}</div>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>{value}</div>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontWeight: 700, fontSize: 15 }}>{value}</div>
                 </div>
               ))}
             </div>
@@ -240,7 +240,7 @@ export function StrategyDetailPage() {
                   <Tooltip
                     formatter={(v: number, name: string) => [`$${v.toFixed(2)}`, name === 'close' ? '종가' : '평단']}
                     labelStyle={{ fontSize: 11 }}
-                    contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                    contentStyle={{ fontSize: 12, borderRadius: 8, background: 'var(--color-card)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}
                   />
                   <Area type="monotone" dataKey="close" stroke="#f59e0b" strokeWidth={2} fill="url(#colorClose)" dot={false} />
                   <Line
@@ -274,7 +274,7 @@ export function StrategyDetailPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={Math.floor(visibleData.length / 4)} />
                   <YAxis tick={{ fontSize: 10 }} width={30} domain={[0, 100]} ticks={[30, 50, 70]} />
-                  <Tooltip formatter={(v: number) => [v.toFixed(1), 'RSI']} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                  <Tooltip formatter={(v: number) => [v.toFixed(1), 'RSI']} contentStyle={{ fontSize: 12, borderRadius: 8, background: 'var(--color-card)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }} />
                   <ReferenceLine y={70} stroke="#f04452" strokeDasharray="3 3" />
                   <ReferenceLine y={30} stroke="#3182f6" strokeDasharray="3 3" />
                   <Line type="monotone" dataKey="rsi" stroke={rsiColor} strokeWidth={1.5} dot={false} />
@@ -330,7 +330,7 @@ export function StrategyDetailPage() {
           {/* T값 추이 */}
           {tChartData.length > 0 && (
             <div className="card" style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600, marginBottom: 8 }}>T값 추이</div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>T값 추이</div>
               <ResponsiveContainer width="100%" height={120}>
                 <LineChart data={tChartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -340,7 +340,7 @@ export function StrategyDetailPage() {
                     domain={[0, strategy.division]}
                     ticks={[0, Math.floor(strategy.division / 2), strategy.division - 1, strategy.division]}
                   />
-                  <Tooltip formatter={(v: number) => [v.toFixed(2), 'T값']} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                  <Tooltip formatter={(v: number) => [v.toFixed(2), 'T값']} contentStyle={{ fontSize: 12, borderRadius: 8, background: 'var(--color-card)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }} />
                   <ReferenceLine
                     y={strategy.division / 2} stroke="#22c55e" strokeDasharray="4 2"
                     label={{ value: '전→후', position: 'insideTopLeft', fontSize: 9, fill: '#22c55e' }}
@@ -361,7 +361,7 @@ export function StrategyDetailPage() {
           {/* KeyMetricsCard — 핵심 지표 */}
           {(sPct != null || currentRsi != null) && (
             <div className="card" style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600, marginBottom: 10 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>
                 오늘 핵심 지표
               </div>
               {[
@@ -389,44 +389,67 @@ export function StrategyDetailPage() {
           {/* 오늘 계획 */}
           {plan && (
             <div className="card">
-              <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600, marginBottom: 10 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}>
                 오늘 계획 · {plan.planDate}
               </div>
               {plan.buyRows.length > 0 && (
-                <>
-                  <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 6 }}>매수점</div>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, marginBottom: 12 }}>
-                    <tbody>
-                      {plan.buyRows.map((row, i) => {
-                        const isStar = row.label.includes('★') || row.label.includes('별') || row.label.includes('큰수')
-                        return (
-                          <tr key={i} style={{ background: isStar ? 'var(--color-star-bg)' : 'transparent' }}>
-                            <td style={{ padding: '4px 0', fontWeight: isStar ? 700 : 400 }}>{row.label}</td>
-                            <td style={{ textAlign: 'right', color: 'var(--color-rise)', fontWeight: 600 }}>{fmtUSD(row.price)}</td>
-                            <td style={{ textAlign: 'right' }}>{row.qty != null ? `${row.qty}주` : '-'}</td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </>
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 6 }}>매수점</div>
+                  <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+                    {plan.buyRows.map((row, i) => {
+                      const isStar = row.label.includes('★') || row.label.includes('별') || row.label.includes('큰수')
+                      return (
+                        <div
+                          key={i}
+                          style={{
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            padding: '11px 14px',
+                            background: isStar ? 'var(--color-star-bg)' : 'var(--color-card)',
+                            borderBottom: i < plan.buyRows.length - 1 ? '1px solid var(--color-border)' : 'none',
+                          }}
+                        >
+                          <span style={{ fontSize: 13, fontWeight: isStar ? 700 : 400 }}>{row.label}</span>
+                          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                            <span style={{ fontSize: 13, color: 'var(--color-rise)', fontWeight: 700 }}>{fmtUSD(row.price)}</span>
+                            <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 28, textAlign: 'right' }}>
+                              {row.qty != null ? `${row.qty}주` : '-'}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
               )}
-              {plan.sellRows.filter((r) => (r.qty ?? 0) > 0).length > 0 && (
-                <>
-                  <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 6 }}>매도점</div>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-                    <tbody>
-                      {plan.sellRows.filter((r) => (r.qty ?? 0) > 0).map((row, i) => (
-                        <tr key={i}>
-                          <td style={{ padding: '4px 0' }}>{row.label}</td>
-                          <td style={{ textAlign: 'right', color: 'var(--color-fall)', fontWeight: 600 }}>{fmtUSD(row.price)}</td>
-                          <td style={{ textAlign: 'right' }}>{row.qty != null ? `${row.qty}주` : '-'}</td>
-                        </tr>
+              {plan.sellRows.filter((r) => (r.qty ?? 0) > 0).length > 0 && (() => {
+                const sellRows = plan.sellRows.filter((r) => (r.qty ?? 0) > 0)
+                return (
+                  <div>
+                    <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 6 }}>매도점</div>
+                    <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+                      {sellRows.map((row, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            padding: '11px 14px',
+                            background: 'var(--color-card)',
+                            borderBottom: i < sellRows.length - 1 ? '1px solid var(--color-border)' : 'none',
+                          }}
+                        >
+                          <span style={{ fontSize: 13 }}>{row.label}</span>
+                          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                            <span style={{ fontSize: 13, color: 'var(--color-fall)', fontWeight: 700 }}>{fmtUSD(row.price)}</span>
+                            <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 28, textAlign: 'right' }}>
+                              {row.qty != null ? `${row.qty}주` : '-'}
+                            </span>
+                          </div>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
-                </>
-              )}
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
           )}
         </div>
@@ -450,7 +473,7 @@ export function StrategyDetailPage() {
       {tab === 'mode' && (
         <div style={{ padding: 16 }}>
           <div className="card" style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600, marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>
               현재 모드: {MODE_FULL[mode] ?? mode}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -515,7 +538,7 @@ export function StrategyDetailPage() {
 
           {/* T값 전환 조건 */}
           <div className="card">
-            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600, marginBottom: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}>
               T값 전환 조건 ({strategy.division}분할)
             </div>
             {[
@@ -530,7 +553,7 @@ export function StrategyDetailPage() {
                 key={label}
                 style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '8px 0', borderBottom: '1px solid var(--color-border)', fontSize: 13,
+                  padding: '11px 0', borderBottom: '1px solid var(--color-border)', fontSize: 13,
                 }}
               >
                 <span style={{ color: 'var(--color-text-secondary)' }}>{label}</span>

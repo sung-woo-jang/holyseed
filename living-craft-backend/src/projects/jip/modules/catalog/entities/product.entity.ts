@@ -27,6 +27,9 @@ export class Product extends BaseEntity {
   @Column({ name: 'illust_kind', length: 50, default: 'default' })
   illustKind: string;
 
+  @Column({ name: 'image_url', type: 'varchar', length: 500, nullable: true })
+  imageUrl: string | null;
+
   @Column({ type: 'text', nullable: true })
   description: string;
 

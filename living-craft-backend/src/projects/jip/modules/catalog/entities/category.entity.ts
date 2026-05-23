@@ -19,6 +19,9 @@ export class Category extends BaseEntity {
   @Column({ name: 'sort_order', default: 0 })
   sortOrder: number;
 
+  @Column({ name: 'image_url', type: 'varchar', length: 500, nullable: true })
+  imageUrl: string | null;
+
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
 

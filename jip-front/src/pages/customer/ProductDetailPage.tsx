@@ -134,7 +134,7 @@ export default function ProductDetailPage() {
           {/* 갤러리 */}
           <div className="product-gallery">
             <div className="product-hero">
-              <Illustration kind={product.illustKind} style={{ width: '100%', height: '100%' }} />
+              <Illustration kind={product.illustKind} imageUrl={product.imageUrl} style={{ width: '100%', height: '100%' }} />
               <div className="product-photo-label">{photos[activePhoto].label}</div>
             </div>
             <div className="product-thumbs">
@@ -145,7 +145,7 @@ export default function ProductDetailPage() {
                   className={`product-thumb${i === activePhoto ? ' on' : ''}`}
                   onClick={() => setActivePhoto(i)}
                 >
-                  <Illustration kind={product.illustKind} style={{ width: '100%', height: '100%' }} />
+                  <Illustration kind={product.illustKind} imageUrl={product.imageUrl} style={{ width: '100%', height: '100%' }} />
                 </button>
               ))}
             </div>
@@ -226,7 +226,7 @@ export default function ProductDetailPage() {
           {/* 2) 대표 이미지 */}
           <section className="store-block store-bigimg">
             <div className="store-bigimg-art">
-              <Illustration kind={product.illustKind} style={{ width: '100%', height: '100%' }} />
+              <Illustration kind={product.illustKind} imageUrl={product.imageUrl} style={{ width: '100%', height: '100%' }} />
             </div>
             <div className="store-bigimg-caption">
               <span className="mono">01</span>
@@ -268,7 +268,7 @@ export default function ProductDetailPage() {
               ].map((d, i) => (
                 <div key={i} className="store-detail-card">
                   <div className="store-detail-art">
-                    <Illustration kind={product.illustKind} style={{ width: '100%', height: '100%' }} />
+                    <Illustration kind={product.illustKind} imageUrl={product.imageUrl} style={{ width: '100%', height: '100%' }} />
                     <div className="store-detail-tag">{d.tag}</div>
                   </div>
                   <div className="store-detail-label">{d.label}</div>
@@ -293,7 +293,7 @@ export default function ProductDetailPage() {
               <div className="store-compare-side after">
                 <div className="store-compare-tag">AFTER</div>
                 <div className="store-compare-art">
-                  <Illustration kind={product.illustKind} style={{ width: '100%', height: '100%' }} />
+                  <Illustration kind={product.illustKind} imageUrl={product.imageUrl} style={{ width: '100%', height: '100%' }} />
                 </div>
                 <div className="store-compare-caption">{product.brand} {product.name}으로 깔끔하게 교체</div>
               </div>
@@ -446,7 +446,7 @@ export default function ProductDetailPage() {
                   onClick={() => navigate(`/product/${p.code}`)}
                 >
                   <div className="product-illust">
-                    <ItemIllust code={p.illustKind} />
+                    <ItemIllust code={p.illustKind} imageUrl={p.imageUrl} />
                   </div>
                   <div className="product-body">
                     <div className="product-brand">{p.brand}</div>

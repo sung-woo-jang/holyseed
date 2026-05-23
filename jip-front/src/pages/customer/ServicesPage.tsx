@@ -45,8 +45,8 @@ export default function ServicesPage() {
         <div className="svc-grid">
           {items?.map((item) => (
             <div key={item.id} className="svc-card" onClick={() => navigate(`/service/${item.code}`)}>
-              <div style={{ height: 120 }}>
-                <ItemIllust code={item.code} />
+              <div style={{ overflow: 'hidden' }}>
+                <ItemIllust code={item.code} imageUrl={item.imageUrl} />
               </div>
               <div className="svc-card-body">
                 <div className="svc-card-title">{item.name}</div>

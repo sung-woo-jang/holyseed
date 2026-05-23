@@ -4,23 +4,31 @@ import { useForm } from 'react-hook-form'
 import { api } from '@/lib/api'
 import { useCartStore } from '@/stores/cart'
 import { useToastStore } from '@/stores/toast'
+import SchedulePicker, { type SchedValue } from '@/components/common/SchedulePicker'
 
 function fmtKRW(n: number) { return n.toLocaleString('ko-KR') + '원' }
 
 const VISIT_FEE = 20000
-const TIME_SLOTS = [
-  { id: 'am', label: '오전 9–12시' },
-  { id: 'noon', label: '낮 1–3시' },
-  { id: 'pm', label: '오후 3–6시' },
-  { id: 'eve', label: '저녁 6시 이후' },
-]
+
+const STEPS = ['서비스 선택', '견적함', '요청 보내기']
+function Steps({ current }: { current: number }) {
+  return (
+    <div className="steps mb-24">
+      {STEPS.map((it, i) => (
+        <span key={i} style={{ display: 'contents' }}>
+          {i > 0 && <span className="sep">·</span>}
+          {i === current ? <b>0{i + 1} {it}</b> : <span>0{i + 1} {it}</span>}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 
 interface FormValues {
   contactName: string
   contactPhone: string
   contactAddress: string
-  prefDate: string
-  prefTimeSlot: string
   memo: string
 }
 
@@ -31,6 +39,12 @@ export default function RequestPage() {
   const [submitting, setSubmitting] = useState(false)
   const [photoUrls, setPhotoUrls] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
+  const [pref, setPref] = useState<SchedValue>({ date: '', time: null })
+
+  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>()
+
+  const itemsTotal = items.reduce((s, i) => s + i.serviceItemPrice + i.productPrice, 0)
+  const total = itemsTotal + VISIT_FEE
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? [])
@@ -58,14 +72,6 @@ export default function RequestPage() {
 
   const removePhoto = (idx: number) => setPhotoUrls((prev) => prev.filter((_, i) => i !== idx))
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormValues>({
-    defaultValues: { prefTimeSlot: 'am' },
-  })
-
-  const serviceTotal = items.reduce((s, i) => s + i.serviceItemPrice, 0)
-  const productTotal = items.reduce((s, i) => s + i.productPrice, 0)
-  const total = serviceTotal + productTotal + VISIT_FEE
-
   if (items.length === 0) {
     return (
       <section className="section">
@@ -84,6 +90,8 @@ export default function RequestPage() {
     try {
       const payload = {
         ...form,
+        prefDate: pref.date || null,
+        prefTimeSlot: pref.time != null ? `${pref.time}시 이후` : null,
         items: items.map((i) => ({
           itemCode: i.serviceItemCode,
           nameSnapshot: i.serviceItemName,
@@ -95,7 +103,7 @@ export default function RequestPage() {
           } : null,
         })),
         visitFee: VISIT_FEE,
-        itemsTotal: serviceTotal + productTotal,
+        itemsTotal,
         photoUrls,
       }
       const res = await api.post('/requests', payload)
@@ -111,110 +119,140 @@ export default function RequestPage() {
   return (
     <section className="section">
       <div className="container">
+        <Steps current={2} />
         <h1 className="h2">견적 요청</h1>
-        <p className="lead mt-12">연락처와 희망 일정을 알려주세요.</p>
+        <p className="lead mt-16">전화번호와 주소만 남겨주세요. 회원가입은 없습니다.</p>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="request-form mt-40">
-          <div className="request-form-main">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="cart-grid mt-40">
 
-            {/* 연락처 */}
-            <div className="form-card">
-              <h3 className="h3 mb-24">연락처</h3>
-              <div className="form-row">
-                <label>이름 *</label>
-                <input {...register('contactName', { required: true })} placeholder="홍길동" />
-                {errors.contactName && <span className="form-error">이름을 입력해주세요</span>}
-              </div>
-              <div className="form-row mt-16">
-                <label>전화번호 *</label>
-                <input {...register('contactPhone', { required: true })} placeholder="010-0000-0000" />
-                {errors.contactPhone && <span className="form-error">전화번호를 입력해주세요</span>}
-              </div>
-              <div className="form-row mt-16">
-                <label>주소 *</label>
-                <input {...register('contactAddress', { required: true })} placeholder="서울 강남구 역삼동..." />
-                {errors.contactAddress && <span className="form-error">주소를 입력해주세요</span>}
-              </div>
-            </div>
+            {/* 왼쪽 — 폼 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-            {/* 희망 일정 */}
-            <div className="form-card mt-24">
-              <h3 className="h3 mb-24">희망 일정</h3>
-              <div className="form-row">
-                <label>희망 날짜</label>
-                <input type="date" {...register('prefDate')} min={new Date().toISOString().slice(0, 10)} />
-              </div>
-              <div className="form-row mt-16">
-                <label>희망 시간대</label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {TIME_SLOTS.map((s) => (
-                    <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                      <input type="radio" value={s.id} {...register('prefTimeSlot')} />
-                      {s.label}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* 메모 */}
-            <div className="form-card mt-24">
-              <h3 className="h3 mb-16">메모 (선택)</h3>
-              <textarea {...register('memo')} placeholder="추가로 알려주실 내용이 있으면 적어주세요." rows={4} style={{ width: '100%', padding: 12, borderRadius: 8, border: '1px solid var(--border)', fontSize: 14 }} />
-            </div>
-
-            {/* 사진 첨부 */}
-            <div className="form-card mt-24">
-              <h3 className="h3 mb-8">사진 첨부 (선택)</h3>
-              <p className="muted" style={{ fontSize: 13, marginBottom: 16 }}>현재 상태 사진을 최대 4장 보내주시면 더 정확한 견적을 드릴 수 있어요.</p>
-              {photoUrls.length > 0 && (
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
-                  {photoUrls.map((url, i) => (
-                    <div key={i} style={{ position: 'relative' }}>
-                      <img src={url} alt="" style={{ width: 100, height: 80, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border)' }} />
-                      <button type="button" onClick={() => removePhoto(i)} style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: '#EF4444', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+              {/* 연락처 */}
+              <div className="card card-pad">
+                <h3 className="h3 mb-20">연락처</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                    <div className="field">
+                      <label className="field-label">이름 *</label>
+                      <input className="input" placeholder="홍길동" {...register('contactName', { required: true })} />
+                      {errors.contactName && <span className="form-error">이름을 입력해주세요</span>}
                     </div>
-                  ))}
+                    <div className="field">
+                      <label className="field-label">전화번호 *</label>
+                      <input className="input" placeholder="010-0000-0000" {...register('contactPhone', { required: true })} />
+                      {errors.contactPhone && <span className="form-error">전화번호를 입력해주세요</span>}
+                    </div>
+                  </div>
+                  <div className="field">
+                    <label className="field-label">시공 주소 *</label>
+                    <input className="input" placeholder="서울 ○○구 ○○로 00, 동·호수" {...register('contactAddress', { required: true })} />
+                    <span className="field-hint">정확한 동·호수까지 적어주세요. 방문 일정 잡을 때 필요합니다.</span>
+                    {errors.contactAddress && <span className="form-error">주소를 입력해주세요</span>}
+                  </div>
                 </div>
-              )}
-              {photoUrls.length < 4 && (
-                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 8, border: '1px dashed var(--border)', cursor: uploading ? 'wait' : 'pointer', fontSize: 14, color: 'var(--ink-muted)' }}>
-                  <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handlePhotoSelect} disabled={uploading} />
-                  {uploading ? '업로드 중...' : '+ 사진 추가'}
-                </label>
-              )}
-            </div>
-
-          </div>
-
-          {/* 요약 사이드 */}
-          <div className="cart-summary">
-            <h3 className="h3 mb-24">요청 요약</h3>
-            {items.map((item, i) => (
-              <div key={i} className="summary-row" style={{ flexDirection: 'column', alignItems: 'flex-start', marginBottom: 8 }}>
-                <div style={{ fontWeight: 600, fontSize: 14 }}>{item.serviceItemName}</div>
-                {item.productName && <div className="muted" style={{ fontSize: 13 }}>{item.productBrand} {item.productName}</div>}
-                <div className="muted" style={{ fontSize: 13 }}>{fmtKRW(item.serviceItemPrice + item.productPrice)}</div>
               </div>
-            ))}
-            <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px solid var(--border)' }} />
-            <div className="summary-row">
-              <span>시공비</span><span>{fmtKRW(serviceTotal)}</span>
+
+              {/* 희망 일정 */}
+              <div className="card card-pad">
+                <div className="spread mb-20" style={{ flexWrap: 'wrap', gap: 8 }}>
+                  <h3 className="h3">희망 일정</h3>
+                  {pref.date && pref.time != null ? (
+                    <span className="tag orange">
+                      {new Date(pref.date + 'T00:00:00').toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })} · {pref.time}시 이후
+                    </span>
+                  ) : (
+                    <span className="muted" style={{ fontSize: 13 }}>날짜를 골라주세요 (선택)</span>
+                  )}
+                </div>
+                <SchedulePicker value={pref} onChange={setPref} />
+                <p className="field-hint mt-16">
+                  김장인 일정 캘린더와 연동돼 있어요. 가능한 시간만 선택할 수 있고, 확정은 통화 후 결정됩니다.
+                </p>
+              </div>
+
+              {/* 사진 + 메모 */}
+              <div className="card card-pad">
+                <h3 className="h3 mb-20">
+                  사진 · 메모
+                  <span className="muted" style={{ fontSize: 13, fontWeight: 400, marginLeft: 8 }}>(선택)</span>
+                </h3>
+
+                <div className="field">
+                  <label className="field-label">시공 부위 사진</label>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 4 }}>
+                    {photoUrls.map((url, i) => (
+                      <div key={i} style={{ position: 'relative' }}>
+                        <img src={url} alt="" style={{ width: 88, height: 88, objectFit: 'cover', borderRadius: 10, border: '1px solid var(--line)' }} />
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(i)}
+                          style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: '#EF4444', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >✕</button>
+                      </div>
+                    ))}
+                    {photoUrls.length < 4 && (
+                      <label style={{ width: 88, height: 88, borderRadius: 10, background: 'var(--bg-deep)', border: '1px dashed var(--line)', cursor: uploading ? 'wait' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, color: 'var(--ink-4)', fontSize: 12 }}>
+                        <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handlePhotoSelect} disabled={uploading} />
+                        <span style={{ fontSize: 22, lineHeight: 1 }}>+</span>
+                        <span>{uploading ? '...' : '사진 추가'}</span>
+                      </label>
+                    )}
+                  </div>
+                  <span className="field-hint">최대 4장. 정확한 견적에 도움이 됩니다.</span>
+                </div>
+
+                <div className="field" style={{ marginTop: 16 }}>
+                  <label className="field-label">메모</label>
+                  <textarea
+                    className="textarea"
+                    rows={4}
+                    placeholder="어떤 증상이 있는지, 원하는 자재가 있는지 자유롭게 적어주세요."
+                    {...register('memo')}
+                  />
+                </div>
+              </div>
             </div>
-            {productTotal > 0 && (
+
+            {/* 오른쪽 — 요청 요약 */}
+            <aside className="summary">
+              <h3 className="h3 mb-16">요청 내용</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                {items.map((item, i) => (
+                  <div key={i} style={{ fontSize: 14 }}>
+                    <div className="spread">
+                      <span style={{ fontWeight: 600 }}>{item.serviceItemName}</span>
+                      <span>{fmtKRW(item.serviceItemPrice + item.productPrice)}</span>
+                    </div>
+                    {item.productName && (
+                      <div style={{ fontSize: 12, color: 'var(--ink-4)', marginTop: 2 }}>
+                        {item.productBrand} {item.productName} · 자재 {fmtKRW(item.productPrice)}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
               <div className="summary-row">
-                <span>자재비</span><span>{fmtKRW(productTotal)}</span>
+                <span className="label">방문비</span>
+                <span>{fmtKRW(VISIT_FEE)}</span>
               </div>
-            )}
-            <div className="summary-row">
-              <span>방문비</span><span>{fmtKRW(VISIT_FEE)}</span>
-            </div>
-            <div className="summary-total">
-              <span>예상 총액</span><span>{fmtKRW(total)}</span>
-            </div>
-            <button type="submit" className="btn primary xl mt-24 w-full" disabled={submitting}>
-              {submitting ? '전송 중...' : '견적 요청 보내기 →'}
-            </button>
+              <div className="summary-row big">
+                <span>예상 총액</span>
+                <span className="num">{fmtKRW(total)}</span>
+              </div>
+              <p className="muted" style={{ fontSize: 12, marginTop: 12 }}>
+                실제 금액은 현장 확인 후 확정됩니다. 시공 완료 후 결제.
+              </p>
+              <button type="submit" className="btn primary block lg mt-24" disabled={submitting}>
+                {submitting ? '전송 중...' : '견적 요청 보내기'}
+              </button>
+              {!pref.date && (
+                <p className="muted" style={{ fontSize: 12, marginTop: 8, textAlign: 'center' }}>
+                  일정은 선택 사항이에요
+                </p>
+              )}
+            </aside>
           </div>
         </form>
       </div>

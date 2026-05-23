@@ -1,84 +1,87 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api'
 
+function fmtKRW(n: number | undefined) {
+  if (n == null) return '—'
+  return n.toLocaleString('ko-KR') + '원'
+}
+
 const STATUS_TABS = [
-  { key: '', label: '전체' },
-  { key: 'pending', label: '검토 대기' },
-  { key: 'accepted', label: '수락됨' },
-  { key: 'in_progress', label: '진행 중' },
-  { key: 'done', label: '완료' },
-  { key: 'cancelled', label: '취소됨' },
-]
+  { k: '', label: '전체' },
+  { k: 'pending', label: '검토 중' },
+  { k: 'accepted', label: '일정 확정' },
+  { k: 'in_progress', label: '시공 중' },
+  { k: 'done', label: '완료' },
+  { k: 'cancelled', label: '취소' },
+] as const
 
 const STATUS_LABEL: Record<string, string> = {
   pending: '검토 대기', accepted: '수락됨', in_progress: '진행 중', done: '완료', cancelled: '취소됨',
 }
 
 interface RequestRow {
-  id: number; code: string; status: string;
-  contactName: string; contactPhone: string; createdAt: string;
+  id: number; code: string; status: string; contactName: string; contactPhone: string
+  createdAt: string; prefDate?: string; itemsTotal?: number; visitFee?: number
   items: { nameSnapshot: string }[]
 }
 
 export default function AdminRequests() {
   const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const [status, setStatus] = useState(searchParams.get('status') || '')
+  const [filter, setFilter] = useState('')
   const [rows, setRows] = useState<RequestRow[]>([])
 
   useEffect(() => {
-    api.post('/requests/admin/list', { status: status || undefined })
-      .then((r) => setRows(r.data.data))
-  }, [status])
-
-  const handleTab = (key: string) => {
-    setStatus(key)
-    if (key) setSearchParams({ status: key })
-    else setSearchParams({})
-  }
+    api.post('/requests/admin/list', { status: filter || undefined }).then((r) => setRows(r.data.data))
+  }, [filter])
 
   return (
-    <section className="section admin-page">
-      <div className="container">
-        <h1 className="h2">견적 요청</h1>
+    <>
+      <div className="eyebrow">REQUESTS</div>
+      <h1 className="h2 mt-8 mb-24">견적 요청</h1>
 
-        <div className="filter-row mt-24">
-          {STATUS_TABS.map((t) => (
-            <button key={t.key} className={`pill${status === t.key ? ' on' : ''}`} onClick={() => handleTab(t.key)}>
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ overflowX: 'auto', marginTop: 24 }}>
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>요청번호</th>
-                <th>고객명</th>
-                <th>전화번호</th>
-                <th>서비스</th>
-                <th>상태</th>
-                <th>일시</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} onClick={() => navigate(`/admin/requests/${r.code}`)} style={{ cursor: 'pointer' }}>
-                  <td style={{ fontWeight: 700 }}>{r.code}</td>
-                  <td>{r.contactName}</td>
-                  <td>{r.contactPhone}</td>
-                  <td>{r.items?.[0]?.nameSnapshot ?? '—'}{r.items?.length > 1 ? ` 외 ${r.items.length - 1}` : ''}</td>
-                  <td><span className={`tag${r.status === 'done' ? ' green' : r.status === 'pending' ? ' orange' : ''}`}>{STATUS_LABEL[r.status]}</span></td>
-                  <td className="muted" style={{ fontSize: 13 }}>{new Date(r.createdAt).toLocaleDateString('ko-KR')}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {rows.length === 0 && <div className="empty mt-32">요청이 없어요.</div>}
-        </div>
+      <div className="filter-row mb-24">
+        {STATUS_TABS.map((t) => (
+          <button key={t.k} className={`pill${filter === t.k ? ' on' : ''}`} onClick={() => setFilter(t.k)}>
+            {t.label}
+          </button>
+        ))}
       </div>
-    </section>
+
+      <div style={{ overflowX: 'auto' }}>
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th>요청번호</th>
+              <th>고객</th>
+              <th>시공 내역</th>
+              <th>희망일</th>
+              <th>금액</th>
+              <th>상태</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.id}>
+                <td className="mono">{r.code}</td>
+                <td>
+                  {r.contactName}
+                  <div className="mono muted" style={{ fontSize: 11 }}>{r.contactPhone}</div>
+                </td>
+                <td>{r.items?.map((i) => i.nameSnapshot).join(', ') ?? '—'}</td>
+                <td>{r.prefDate ?? '—'}</td>
+                <td className="mono">{fmtKRW((r.itemsTotal ?? 0) + (r.visitFee ?? 0))}</td>
+                <td><span className="tag">{STATUS_LABEL[r.status] ?? r.status}</span></td>
+                <td><button className="btn sm" onClick={() => navigate(`/admin/requests/${r.code}`)}>상세</button></td>
+              </tr>
+            ))}
+            {rows.length === 0 && (
+              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--ink-3)' }}>요청이 없어요.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </>
   )
 }

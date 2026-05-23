@@ -1,95 +1,126 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api'
-import type { Job, JobStatus } from '@/types'
+import { JIcon, JPhoto, JStatusPill } from '@/components/common/JobsShared'
+import type { Job } from '@/types'
 
-const STATUS_TABS: { key: JobStatus | ''; label: string }[] = [
-  { key: '', label: '전체' },
-  { key: '문의접수', label: '문의접수' },
-  { key: '시공대기', label: '시공대기' },
-  { key: '시공완료', label: '시공완료' },
-]
-
-const STATUS_COLOR: Record<string, string> = {
-  '문의접수': '#3B82F6', '시공대기': '#F59E0B', '시공완료': '#10B981',
+function fmtDate(s?: string) {
+  if (!s) return ''
+  return s.slice(5, 10).replace('-', '/')
 }
+
+function fmtMoney(n?: number | null) {
+  if (n == null) return ''
+  return n.toLocaleString('ko-KR') + '원'
+}
+
+const STATUS_TABS = [
+  { k: '', label: '전체' },
+  { k: '문의접수', label: '문의접수' },
+  { k: '시공대기', label: '시공대기' },
+  { k: '시공완료', label: '시공완료' },
+] as const
 
 export default function AdminJobsList() {
   const navigate = useNavigate()
-  const [status, setStatus] = useState<JobStatus | ''>('')
-  const [search, setSearch] = useState('')
+  const [tab, setTab] = useState('')
+  const [q, setQ] = useState('')
   const [jobs, setJobs] = useState<Job[]>([])
 
   useEffect(() => {
     api.post('/jobs/admin/list', {
-      status: status || undefined,
-      search: search || undefined,
+      status: tab || undefined,
+      search: q || undefined,
     }).then((r) => setJobs(r.data.data))
-  }, [status, search])
+  }, [tab, q])
+
+  const now = new Date()
+  const monthSum = jobs
+    .filter((j) => j.paid && j.paidDate && new Date(j.paidDate).getMonth() === now.getMonth() && new Date(j.paidDate).getFullYear() === now.getFullYear())
+    .reduce((s, j) => s + (Number(j.sellingPrice) || 0), 0)
+
+  const counts = {
+    '': jobs.length,
+    '문의접수': jobs.filter((j) => j.status === '문의접수').length,
+    '시공대기': jobs.filter((j) => j.status === '시공대기').length,
+    '시공완료': jobs.filter((j) => j.status === '시공완료').length,
+  }
 
   return (
-    <section className="section admin-page">
-      <div className="container">
-        <div className="spread mb-24">
-          <h1 className="h2">시공 일지</h1>
-          <button className="btn primary" onClick={() => navigate('/admin/jobs/new')}>+ 새 일지</button>
+    <>
+      <div className="jobs-list-head">
+        <div>
+          <div className="eyebrow">JOB JOURNAL</div>
+          <h1 className="h2 mt-8">시공 일지</h1>
+          <div className="jobs-month-sum">
+            이번달 입금 합계 <b>{fmtMoney(monthSum) || '0원'}</b>
+            <span style={{ marginLeft: 8, color: 'var(--ink-4)' }}>· 전체 {jobs.length}건</span>
+          </div>
         </div>
+        <button className="btn primary" style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => navigate('/admin/jobs/new')}>
+          <JIcon.Plus s={16} /> 새 일지
+        </button>
+      </div>
 
-        {/* 검색 */}
+      <div className="jobs-search">
+        <span className="ico"><JIcon.Search /></span>
         <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="고객명, 주소, 제품, 브랜드 검색..."
-          style={{ width: '100%', maxWidth: 400, padding: '10px 16px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 14, marginBottom: 16 }}
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="고객명·주소·제품 검색"
         />
+      </div>
 
-        {/* 상태 탭 */}
-        <div className="filter-row mb-24">
-          {STATUS_TABS.map((t) => (
-            <button key={t.key} className={`pill${status === t.key ? ' on' : ''}`} onClick={() => setStatus(t.key)}>
-              {t.label}
-            </button>
-          ))}
-        </div>
+      <div className="jobs-tabs">
+        {STATUS_TABS.map((t) => (
+          <button key={t.k} className={tab === t.k ? 'on' : ''} onClick={() => setTab(t.k)}>
+            {t.label} <span className="cnt">{counts[t.k]}</span>
+          </button>
+        ))}
+      </div>
 
-        {/* 카드 목록 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {jobs.map((j) => (
-            <div
-              key={j.id}
-              className="card"
-              onClick={() => navigate(`/admin/jobs/${j.id}`)}
-              style={{ cursor: 'pointer', padding: 24 }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                <div>
-                  <div style={{ fontWeight: 700 }}>{j.customerName ?? '—'}</div>
-                  <div className="muted" style={{ fontSize: 13, marginTop: 2 }}>
-                    {j.addressShort} · {j.productName}
-                    {j.brand ? ` (${j.brand})` : ''}
+      <div className="jobs-list">
+        {jobs.length === 0 && <div className="empty">조건에 맞는 일지가 없어요.</div>}
+        {jobs.map((j) => {
+          const thumb = j.afterPhotos?.[0] ?? j.beforePhotos?.[0]
+          const thumbRole: 'before' | 'after' = j.afterPhotos?.[0] ? 'after' : 'before'
+          return (
+            <div key={j.id} className="jobs-card" onClick={() => navigate(`/admin/jobs/${j.id}`)}>
+              <div className="thumb">
+                <JPhoto fileUrl={thumb?.fileUrl} role={thumbRole} label={thumb?.label ?? undefined} />
+              </div>
+              <div className="body">
+                <div className="row1">
+                  <div className="ttl">
+                    {j.productName || '(제품명 미입력)'}
+                    {j.brand && <span style={{ color: 'var(--ink-3)', fontWeight: 500 }}> · {j.brand}</span>}
                   </div>
+                  <JStatusPill status={j.status} />
+                  {!j.isPublished && <span className="jobs-pill draft">비공개</span>}
                 </div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  {!j.isPublished && <span className="tag" style={{ fontSize: 11 }}>비공개</span>}
-                  {j.status && (
-                    <span style={{
-                      padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700,
-                      background: (STATUS_COLOR[j.status] ?? '#999') + '20',
-                      color: STATUS_COLOR[j.status] ?? '#999',
-                    }}>
-                      {j.status}
-                    </span>
-                  )}
+                <div className="meta">
+                  <span>{j.customerName}</span>
+                  <span className="sep">·</span>
+                  <span>{j.addressShort}</span>
+                  <span className="sep">·</span>
+                  <span>{j.workDate ? `시공 ${fmtDate(j.workDate)}` : j.inquiryDate ? `문의 ${fmtDate(j.inquiryDate)}` : ''}</span>
+                </div>
+                <div className="row3">
+                  {j.sellingPrice ? (
+                    <>
+                      <span className="money">{fmtMoney(j.sellingPrice)}</span>
+                      <span className="sep">·</span>
+                      {j.paid ? <span className="paid">입금</span> : <span className="unpaid">미입금</span>}
+                      <span className="sep">·</span>
+                    </>
+                  ) : null}
+                  <span>{j.updatedAt ? new Date(j.updatedAt).toLocaleDateString('ko-KR') + ' 수정' : ''}</span>
                 </div>
               </div>
-              {j.workDate && (
-                <div className="muted mt-8" style={{ fontSize: 13 }}>시공일: {j.workDate}</div>
-              )}
             </div>
-          ))}
-          {jobs.length === 0 && <div className="empty">일지가 없어요.</div>}
-        </div>
+          )
+        })}
       </div>
-    </section>
+    </>
   )
 }

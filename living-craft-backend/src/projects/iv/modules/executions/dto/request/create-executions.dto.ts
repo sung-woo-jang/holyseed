@@ -16,7 +16,7 @@ export class FillRowDto {
 
   @ApiProperty({ description: '체결 수량', example: 4 })
   @IsNumber()
-  @Transform(({ value }) => parseInt(value, 10))
+  @Transform(({ value }) => parseFloat(value))
   qty: number
 
   @ApiPropertyOptional({ description: '메모' })

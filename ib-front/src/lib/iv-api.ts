@@ -85,17 +85,19 @@ export interface IvPrice {
 
 export interface IvUserInfo {
   id: string
-  email: string
-  name: string
+  username: string
+  nickname: string | null
   createdAt: string
 }
 
 export const authApi = {
-  register: (data: { email: string; password: string; name: string }) =>
+  register: (data: { username: string; password: string }) =>
     api.post('/iv/auth/register', data).then((r) => r.data.data as { token: string; user: IvUserInfo }),
-  login: (data: { email: string; password: string }) =>
+  login: (data: { username: string; password: string }) =>
     api.post('/iv/auth/login', data).then((r) => r.data.data as { token: string; user: IvUserInfo }),
   me: () => api.get('/iv/auth/me').then(unwrap<IvUserInfo>),
+  updateNickname: (nickname: string) =>
+    api.post('/iv/auth/nickname', { nickname }).then(unwrap<IvUserInfo>),
 }
 
 export const strategiesApi = {
@@ -119,6 +121,10 @@ export const executionsApi = {
   getAll: (id: string) => api.get(`/iv/strategies/${id}/executions`).then(unwrap<IvExecution[]>),
   create: (id: string, data: { execDate: string; rows: FillRowInput[] }) =>
     api.post(`/iv/strategies/${id}/executions`, data).then(unwrap<{ newState: IvState; cycleEnded: boolean; profit?: number; profitPct?: number }>),
+  deleteOne: (strategyId: string, execId: string) =>
+    api.post(`/iv/strategies/${strategyId}/executions/${execId}/delete`),
+  updateOne: (strategyId: string, execId: string, data: { price: number; qty: number }) =>
+    api.post(`/iv/strategies/${strategyId}/executions/${execId}/update`, data),
 }
 
 export const cyclesApi = {

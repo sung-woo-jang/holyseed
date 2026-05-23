@@ -27,42 +27,21 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'var(--bg)',
-      padding: '24px 16px',
-    }}>
-      <div style={{ width: '100%', maxWidth: 400 }}>
-        {/* 브랜드 */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 52,
-            height: 52,
-            background: 'var(--ink)',
-            borderRadius: 16,
-            color: '#fff',
-            fontSize: 22,
-            fontFamily: 'var(--serif)',
-            fontWeight: 700,
-            marginBottom: 14,
-          }}>집</div>
-          <div style={{ fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 22, letterSpacing: '-0.02em' }}>집슐랭</div>
-          <div style={{ fontSize: 13, color: 'var(--ink-4)', marginTop: 4 }}>관리자 로그인</div>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '24px 16px' }}>
+      <div style={{ width: '100%', maxWidth: 380 }}>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, background: 'var(--ink)', borderRadius: 14, color: '#fff', fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 20, marginBottom: 12 }}>집</div>
+          <div className="eyebrow" style={{ display: 'block', marginBottom: 4 }}>ADMIN</div>
+          <h1 style={{ fontFamily: 'var(--serif)', fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}>집슐랭 관리자</h1>
         </div>
 
-        {/* 폼 카드 */}
-        <div className="form-card">
+        <div className="card card-pad">
           <form onSubmit={login}>
-            <div className="form-row">
-              <label htmlFor="username">아이디</label>
+            <div className="field">
+              <label className="field-label" htmlFor="username">아이디</label>
               <input
                 id="username"
+                className="input"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="admin"
@@ -70,10 +49,11 @@ export default function AdminLoginPage() {
                 autoComplete="username"
               />
             </div>
-            <div className="form-row" style={{ marginTop: 16 }}>
-              <label htmlFor="password">비밀번호</label>
+            <div className="field" style={{ marginTop: 16 }}>
+              <label className="field-label" htmlFor="password">비밀번호</label>
               <input
                 id="password"
+                className="input"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -81,20 +61,13 @@ export default function AdminLoginPage() {
                 autoComplete="current-password"
               />
             </div>
-            <button
-              type="submit"
-              className="btn primary xl w-full"
-              style={{ marginTop: 28 }}
-              disabled={loading}
-            >
+            <button type="submit" className="btn primary xl w-full" style={{ marginTop: 24 }} disabled={loading}>
               {loading ? '로그인 중...' : '로그인'}
             </button>
           </form>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: 'var(--ink-5)' }}>
-          김장인 시공 관리 시스템
-        </div>
+        <div className="center muted" style={{ marginTop: 20, fontSize: 12 }}>김장인 시공 관리 시스템</div>
       </div>
     </div>
   )

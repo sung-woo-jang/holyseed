@@ -50,6 +50,7 @@ export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
   const [rows, setRows] = useState<Row[]>([
     { execType: 'buy_full', price: '', qty: '', note: '' },
   ])
+  const [openDropdown, setOpenDropdown] = useState<number | null>(null)
 
   const mutation = useCreateExecution(strategy.id)
 
@@ -220,15 +221,63 @@ export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
               )}
             </div>
 
-            <select
-              value={row.execType}
-              onChange={(e) => { updateRow(i, 'execType', e.target.value); autofill(i, e.target.value) }}
-              style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 13, marginBottom: 8, background: '#fff' }}
-            >
-              {EXEC_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
-            </select>
+            <div style={{ marginBottom: 8 }}>
+              <button
+                onClick={() => setOpenDropdown(openDropdown === i ? null : i)}
+                style={{
+                  width: '100%', padding: '10px 12px', border: '1px solid var(--color-border)',
+                  borderRadius: 8, fontSize: 16, background: '#fff', textAlign: 'left',
+                  cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  color: 'var(--color-text)',
+                }}
+              >
+                <span>{EXEC_TYPES.find((t) => t.value === row.execType)?.label}</span>
+                <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>▼</span>
+              </button>
+              {openDropdown === i && (
+                <>
+                  <div
+                    style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.4)' }}
+                    onClick={() => setOpenDropdown(null)}
+                  />
+                  <div style={{
+                    position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+                    width: '100%', maxWidth: 480, zIndex: 301,
+                    background: '#fff', borderRadius: '16px 16px 0 0',
+                    paddingBottom: 'env(safe-area-inset-bottom)',
+                  }}>
+                    <div style={{
+                      padding: '16px 20px', borderBottom: '1px solid var(--color-border)',
+                      fontWeight: 700, fontSize: 15, textAlign: 'center',
+                    }}>
+                      체결 유형 선택
+                    </div>
+                    {EXEC_TYPES.map((t, optIdx) => (
+                      <button
+                        key={t.value}
+                        onClick={() => {
+                          updateRow(i, 'execType', t.value)
+                          autofill(i, t.value)
+                          setOpenDropdown(null)
+                        }}
+                        style={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                          width: '100%', padding: '16px 20px',
+                          background: 'none', border: 'none',
+                          borderBottom: optIdx < EXEC_TYPES.length - 1 ? '1px solid var(--color-border)' : 'none',
+                          textAlign: 'left', fontSize: 17,
+                          color: row.execType === t.value ? 'var(--color-primary)' : 'var(--color-text)',
+                          cursor: 'pointer', fontWeight: row.execType === t.value ? 700 : 400,
+                        }}
+                      >
+                        <span>{t.label}</span>
+                        {row.execType === t.value && <span style={{ fontSize: 18 }}>✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
 
             {row.execType !== 'no_exec' && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>

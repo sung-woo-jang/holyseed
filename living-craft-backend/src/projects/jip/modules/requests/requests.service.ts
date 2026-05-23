@@ -108,4 +108,12 @@ export class RequestsService {
   async cancel(code: string) {
     return this.updateStatus(code, 'cancelled');
   }
+
+  async updateSchedule(code: string, prefDate: string | null, prefTimeSlot: string | null) {
+    const req = await this.reqRepo.findOne({ where: { code } });
+    if (!req) throw new NotFoundException('요청을 찾을 수 없어요.');
+    req.prefDate = prefDate;
+    req.prefTimeSlot = prefTimeSlot;
+    return this.reqRepo.save(req);
+  }
 }

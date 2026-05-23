@@ -20,7 +20,7 @@ export class IvExecution {
   @Column({ name: 'exec_price', type: 'numeric', precision: 14, scale: 4, nullable: true, transformer: numTransformer })
   execPrice: number
 
-  @Column({ name: 'exec_qty', type: 'int', nullable: true })
+  @Column({ name: 'exec_qty', type: 'numeric', precision: 14, scale: 6, nullable: true, transformer: numTransformer })
   execQty: number
 
   @Column({ name: 'exec_amount', type: 'numeric', precision: 14, scale: 2, nullable: true, transformer: numTransformer })

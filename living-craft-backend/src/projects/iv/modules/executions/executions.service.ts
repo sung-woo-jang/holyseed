@@ -27,6 +27,74 @@ export class ExecutionsService {
     })
   }
 
+  private async rebuildState(strategyId: string): Promise<void> {
+    const strategy = await this.strategyRepo.findOne({ where: { id: strategyId } })
+    if (!strategy) throw new NotFoundException('전략을 찾을 수 없습니다.')
+
+    const executions = await this.execRepo.find({
+      where: { strategyId },
+      order: { execDate: 'ASC', createdAt: 'ASC' },
+    })
+
+    let current: InfiniteState = {
+      ticker: strategy.ticker as Ticker,
+      division: strategy.division as Division,
+      principal: strategy.principal,
+      cycleNo: strategy.cycleNo,
+      quantity: 0,
+      cash: strategy.principal,
+      avgPrice: 0,
+      tValue: 0,
+      mode: 'cycle_start',
+      recentCloses: [],
+      lastClose: 0,
+    }
+
+    for (const exec of executions) {
+      const stateBefore = { ...current }
+      if (exec.execType !== 'no_exec') {
+        const fill: FillInput = {
+          execType: exec.execType as ExecType,
+          price: exec.execPrice ?? 0,
+          qty: exec.execQty ?? 0,
+        }
+        const result = calculator.applyFills(current, [fill])
+        current = result.newState
+      }
+      await this.execRepo.update(exec.id, {
+        stateBefore: stateBefore as unknown as Record<string, unknown>,
+        stateAfter: current as unknown as Record<string, unknown>,
+      })
+    }
+
+    await this.stateRepo.update(strategyId, {
+      quantity: current.quantity,
+      cash: current.cash,
+      avgPrice: current.avgPrice,
+      tValue: current.tValue,
+      mode: current.mode,
+      recentCloses: current.recentCloses,
+    })
+  }
+
+  async deleteOne(strategyId: string, execId: string): Promise<void> {
+    const exec = await this.execRepo.findOne({ where: { id: execId, strategyId } })
+    if (!exec) throw new NotFoundException('체결 내역을 찾을 수 없습니다.')
+    await this.execRepo.delete(execId)
+    await this.rebuildState(strategyId)
+  }
+
+  async updateOne(strategyId: string, execId: string, data: { price: number; qty: number }): Promise<void> {
+    const exec = await this.execRepo.findOne({ where: { id: execId, strategyId } })
+    if (!exec) throw new NotFoundException('체결 내역을 찾을 수 없습니다.')
+    await this.execRepo.update(execId, {
+      execPrice: data.price,
+      execQty: data.qty,
+      execAmount: data.price * data.qty,
+    })
+    await this.rebuildState(strategyId)
+  }
+
   async create(strategyId: string, dto: CreateExecutionsDto) {
     const [strategy, state] = await Promise.all([
       this.strategyRepo.findOne({ where: { id: strategyId } }),

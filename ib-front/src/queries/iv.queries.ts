@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
+  authApi,
   strategiesApi,
   plansApi,
   executionsApi,
@@ -11,6 +12,7 @@ import {
 // Keys
 // ─────────────────────────────────────────
 export const keys = {
+  me: ['iv', 'me'] as const,
   strategies: ['strategies'] as const,
   strategy: (id: string) => ['strategies', id] as const,
   state: (id: string) => ['strategies', id, 'state'] as const,
@@ -22,6 +24,9 @@ export const keys = {
 // ─────────────────────────────────────────
 // Queries
 // ─────────────────────────────────────────
+export const useMe = () =>
+  useQuery({ queryKey: keys.me, queryFn: authApi.me, staleTime: 1000 * 60 * 5 })
+
 export const useStrategies = () =>
   useQuery({ queryKey: keys.strategies, queryFn: strategiesApi.getAll, staleTime: 1000 * 60 })
 
@@ -80,6 +85,31 @@ export const useCreateExecution = (strategyId: string) => {
   })
 }
 
+export const useDeleteExecution = (strategyId: string) => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (execId: string) => executionsApi.deleteOne(strategyId, execId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.state(strategyId) })
+      qc.invalidateQueries({ queryKey: keys.plan(strategyId) })
+      qc.invalidateQueries({ queryKey: keys.executions(strategyId) })
+    },
+  })
+}
+
+export const useUpdateExecution = (strategyId: string) => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ execId, price, qty }: { execId: string; price: number; qty: number }) =>
+      executionsApi.updateOne(strategyId, execId, { price, qty }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.state(strategyId) })
+      qc.invalidateQueries({ queryKey: keys.plan(strategyId) })
+      qc.invalidateQueries({ queryKey: keys.executions(strategyId) })
+    },
+  })
+}
+
 export const useRefreshPrice = () => {
   const qc = useQueryClient()
   return useMutation({
@@ -88,5 +118,13 @@ export const useRefreshPrice = () => {
       qc.invalidateQueries({ queryKey: keys.price(ticker) })
       qc.invalidateQueries({ queryKey: keys.strategies })
     },
+  })
+}
+
+export const useUpdateNickname = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (nickname: string) => authApi.updateNickname(nickname),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.me }),
   })
 }

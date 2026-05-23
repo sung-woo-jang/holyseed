@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { useCreateStrategy } from '@/queries/iv.queries'
 
 const STEPS = ['종목', '분할수', '원금', '확인']
-const PRESETS_PRINCIPAL = [2400, 4800, 8000, 12000]
+const INCREMENTS = [50, 100, 500, 1000]
 
 export function OnboardingPage() {
   const nav = useNavigate()
   const [step, setStep] = useState(0)
   const [ticker, setTicker] = useState<'TQQQ' | 'SOXL'>('TQQQ')
   const [division, setDivision] = useState<20 | 40>(40)
-  const [principal, setPrincipal] = useState(4800)
+  const [principal, setPrincipal] = useState(0)
   const createMutation = useCreateStrategy()
 
   const onceAmount = principal / division
@@ -122,20 +122,19 @@ export function OnboardingPage() {
               outline: 'none', marginBottom: 16,
             }}
           />
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-            {PRESETS_PRINCIPAL.map((p) => (
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+            {INCREMENTS.map((n) => (
               <button
-                key={p}
-                onClick={() => setPrincipal(p)}
+                key={n}
+                onClick={() => setPrincipal((v) => v + n)}
                 style={{
-                  padding: '8px 16px', borderRadius: 20,
+                  flex: 1, padding: '10px 0', borderRadius: 10,
                   border: '1px solid var(--color-border)',
-                  background: principal === p ? 'var(--color-primary)' : '#fff',
-                  color: principal === p ? '#fff' : 'var(--color-text)',
-                  cursor: 'pointer', fontWeight: 600,
+                  background: '#fff', color: 'var(--color-text)',
+                  cursor: 'pointer', fontWeight: 600, fontSize: 14,
                 }}
               >
-                ${p.toLocaleString()}
+                +{n}
               </button>
             ))}
           </div>
@@ -174,18 +173,26 @@ export function OnboardingPage() {
 
       {/* 하단 버튼 */}
       <div style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 32px)', maxWidth: 448 }}>
-        <button
-          onClick={step < STEPS.length - 1 ? () => setStep(step + 1) : handleSubmit}
-          disabled={createMutation.isPending}
-          style={{
-            width: '100%', padding: '16px',
-            background: 'var(--color-primary)', color: '#fff',
-            border: 'none', borderRadius: 14,
-            fontSize: 17, fontWeight: 600, cursor: 'pointer',
-          }}
-        >
-          {step < STEPS.length - 1 ? '다음' : createMutation.isPending ? '생성 중...' : '시작하기'}
-        </button>
+        {(() => {
+          const needsPrincipal = step >= 2 && principal <= 0
+          const isDisabled = createMutation.isPending || needsPrincipal
+          return (
+            <button
+              onClick={step < STEPS.length - 1 ? () => setStep(step + 1) : handleSubmit}
+              disabled={isDisabled}
+              style={{
+                width: '100%', padding: '16px',
+                background: isDisabled ? 'var(--color-border)' : 'var(--color-primary)',
+                color: isDisabled ? 'var(--color-text-secondary)' : '#fff',
+                border: 'none', borderRadius: 14,
+                fontSize: 17, fontWeight: 600,
+                cursor: isDisabled ? 'default' : 'pointer',
+              }}
+            >
+              {step < STEPS.length - 1 ? '다음' : createMutation.isPending ? '생성 중...' : '시작하기'}
+            </button>
+          )
+        })()}
       </div>
     </div>
   )

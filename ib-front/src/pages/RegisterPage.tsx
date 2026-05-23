@@ -5,8 +5,7 @@ import { TOKEN_KEY } from '@/lib/api'
 
 export function RegisterPage() {
   const nav = useNavigate()
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
@@ -15,11 +14,12 @@ export function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    if (username.length < 3) { setError('아이디는 3자 이상이어야 합니다.'); return }
     if (password !== confirm) { setError('비밀번호가 일치하지 않습니다.'); return }
     if (password.length < 6) { setError('비밀번호는 6자 이상이어야 합니다.'); return }
     setLoading(true)
     try {
-      const { token } = await authApi.register({ email, password, name })
+      const { token } = await authApi.register({ username, password })
       localStorage.setItem(TOKEN_KEY, token)
       nav('/', { replace: true })
     } catch (err: unknown) {
@@ -54,8 +54,7 @@ export function RegisterPage() {
 
           <form onSubmit={handleSubmit}>
             {[
-              { label: '이름', value: name, set: setName, type: 'text', placeholder: '이름 입력' },
-              { label: '이메일', value: email, set: setEmail, type: 'email', placeholder: 'email@example.com' },
+              { label: '아이디 (3자 이상)', value: username, set: setUsername, type: 'text', placeholder: '아이디 입력' },
               { label: '비밀번호 (6자 이상)', value: password, set: setPassword, type: 'password', placeholder: '비밀번호 입력' },
               { label: '비밀번호 확인', value: confirm, set: setConfirm, type: 'password', placeholder: '비밀번호 재입력' },
             ].map(({ label, value, set, type, placeholder }) => (

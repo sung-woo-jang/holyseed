@@ -1,9 +1,10 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
 import Header from '@/components/layout/Header'
 import MobileAppBar from '@/components/layout/MobileAppBar'
 import MobileTabBar from '@/components/layout/MobileTabBar'
 import Footer from '@/components/layout/Footer'
+import AdminLayout from '@/components/layout/AdminLayout'
 import Toast from '@/components/common/Toast'
 
 // 고객 페이지
@@ -39,11 +40,14 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const location = useLocation()
+  const isAdmin = location.pathname.startsWith('/admin')
+
   return (
     <div className="app-root">
-      <Header />
-      <MobileAppBar />
-      <main className="page-content">
+      {!isAdmin && <Header />}
+      {!isAdmin && <MobileAppBar />}
+      <main className={isAdmin ? undefined : 'page-content'}>
         <Routes>
           {/* 고객 */}
           <Route path="/" element={<HomePage />} />
@@ -60,21 +64,25 @@ export default function App() {
           <Route path="/booking/:code" element={<BookingDetailPage />} />
           <Route path="/jobs/:id" element={<JobPublicPage />} />
 
-          {/* 관리자 */}
+          {/* 관리자 — 로그인 */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
-          <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
-          <Route path="/admin/requests" element={<AdminGuard><AdminRequests /></AdminGuard>} />
-          <Route path="/admin/requests/:code" element={<AdminGuard><AdminRequestDetail /></AdminGuard>} />
-          <Route path="/admin/schedule" element={<AdminGuard><AdminSchedule /></AdminGuard>} />
-          <Route path="/admin/cases" element={<AdminGuard><AdminCases /></AdminGuard>} />
-          <Route path="/admin/jobs" element={<AdminGuard><AdminJobsList /></AdminGuard>} />
-          <Route path="/admin/jobs/new" element={<AdminGuard><AdminJobForm /></AdminGuard>} />
-          <Route path="/admin/jobs/:id" element={<AdminGuard><AdminJobDetail /></AdminGuard>} />
-          <Route path="/admin/jobs/:id/edit" element={<AdminGuard><AdminJobForm /></AdminGuard>} />
+
+          {/* 관리자 — 사이드바 레이아웃 */}
+          <Route path="/admin" element={<AdminGuard><AdminLayout /></AdminGuard>}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="requests" element={<AdminRequests />} />
+            <Route path="requests/:code" element={<AdminRequestDetail />} />
+            <Route path="schedule" element={<AdminSchedule />} />
+            <Route path="cases" element={<AdminCases />} />
+            <Route path="jobs" element={<AdminJobsList />} />
+            <Route path="jobs/new" element={<AdminJobForm />} />
+            <Route path="jobs/:id" element={<AdminJobDetail />} />
+            <Route path="jobs/:id/edit" element={<AdminJobForm />} />
+          </Route>
         </Routes>
       </main>
-      <Footer />
-      <MobileTabBar />
+      {!isAdmin && <Footer />}
+      {!isAdmin && <MobileTabBar />}
       <Toast />
     </div>
   )

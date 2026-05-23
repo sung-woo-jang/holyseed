@@ -22,6 +22,19 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function TabLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <RequireAuth>
+      <div className="with-tabs">{children}</div>
+      <TabBar />
+    </RequireAuth>
+  )
+}
+
+function FullLayout({ children }: { children: React.ReactNode }) {
+  return <RequireAuth>{children}</RequireAuth>
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -31,26 +44,17 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {/* 인증 필요 */}
-          <Route
-            path="/*"
-            element={
-              <RequireAuth>
-                <div className="with-tabs">
-                  <Routes>
-                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                    <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/strategy/new" element={<OnboardingPage />} />
-                    <Route path="/strategy/:id" element={<StrategyDetailPage />} />
-                    <Route path="/history" element={<HistoryPage />} />
-                    <Route path="/account" element={<AccountPage />} />
-                    <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                  </Routes>
-                </div>
-                <TabBar />
-              </RequireAuth>
-            }
-          />
+          {/* 탭바 있는 메인 탭 */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<TabLayout><DashboardPage /></TabLayout>} />
+          <Route path="/history" element={<TabLayout><HistoryPage /></TabLayout>} />
+          <Route path="/account" element={<TabLayout><AccountPage /></TabLayout>} />
+
+          {/* 탭바 없는 풀스크린 */}
+          <Route path="/strategy/new" element={<FullLayout><OnboardingPage /></FullLayout>} />
+          <Route path="/strategy/:id" element={<FullLayout><StrategyDetailPage /></FullLayout>} />
+
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

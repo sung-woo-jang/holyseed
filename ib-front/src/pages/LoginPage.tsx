@@ -5,7 +5,7 @@ import { TOKEN_KEY } from '@/lib/api'
 
 export function LoginPage() {
   const nav = useNavigate()
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -15,7 +15,7 @@ export function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      const { token } = await authApi.login({ email, password })
+      const { token } = await authApi.login({ username, password })
       localStorage.setItem(TOKEN_KEY, token)
       nav('/', { replace: true })
     } catch (err: unknown) {
@@ -44,10 +44,10 @@ export function LoginPage() {
 
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 6 }}>이메일</label>
+              <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 6 }}>아이디</label>
               <input
-                type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                placeholder="email@example.com" required
+                type="text" value={username} onChange={(e) => setUsername(e.target.value)}
+                placeholder="아이디 입력" required
                 style={{
                   width: '100%', padding: '12px', border: '1px solid var(--color-border)',
                   borderRadius: 12, fontSize: 15, background: 'var(--color-bg)',

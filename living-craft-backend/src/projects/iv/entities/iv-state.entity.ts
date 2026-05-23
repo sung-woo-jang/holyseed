@@ -7,7 +7,7 @@ export class IvState {
   @PrimaryColumn({ name: 'strategy_id', type: 'uuid' })
   strategyId: string
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: 'numeric', precision: 14, scale: 6, default: 0, transformer: numTransformer })
   quantity: number
 
   @Column({ type: 'numeric', precision: 14, scale: 2, transformer: numTransformer })

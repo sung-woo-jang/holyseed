@@ -1,12 +1,22 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AreaChart, Area, LineChart, Line, ResponsiveContainer, ReferenceLine } from 'recharts'
-import { useStrategyState, useTodayPlan, usePriceHistory } from '@/queries/iv.queries'
+import { useStrategyState, useTodayPlan, usePriceHistory, useExecutions } from '@/queries/iv.queries'
 import { fmtUSD, fmtT, fmtPct, MODE_LABEL, MODE_COLOR } from '@/lib/format'
 import { computeRSI } from '@/lib/rsi'
 import type { IvStrategy } from '@/lib/iv-api'
 import { ExecutionSheet } from '@/components/sheet/ExecutionSheet'
 import { CycleEndOverlay } from '@/components/overlay/CycleEndOverlay'
+
+const EXEC_LABEL: Record<string, string> = {
+  buy_full: '1회 매수',
+  buy_half_star: '별LOC 매수',
+  buy_half_avg: '평단LOC 매수',
+  sell_quarter: '쿼터 매도',
+  sell_fixed: '지정가 매도',
+  sell_moc: 'MOC 매도',
+  no_exec: '미체결',
+}
 
 function starPct(ticker: string, division: number, t: number): number {
   if (ticker === 'TQQQ') return 15 - (30 / division) * t
@@ -28,8 +38,11 @@ export function StrategyCard({ strategy }: Props) {
   const { data: state } = useStrategyState(strategy.id)
   const { data: plan } = useTodayPlan(strategy.id)
   const { data: priceHistory = [] } = usePriceHistory(strategy.ticker)
+  const { data: recentExecs = [] } = useExecutions(strategy.id)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [cycleEnd, setCycleEnd] = useState<{ profit: number; profitPct: number } | null>(null)
+  const [showLadder, setShowLadder] = useState(false)
+  const [showAllExecs, setShowAllExecs] = useState(false)
 
   const mode = state?.mode ?? 'cycle_start'
   const modeLabel = MODE_LABEL[mode] ?? mode
@@ -44,6 +57,10 @@ export function StrategyCard({ strategy }: Props) {
   const sPct = avg > 0 ? starPct(strategy.ticker, strategy.division, t) : null
   const starPrice = avg > 0 && sPct != null ? avg * (1 + sPct / 100) : null
   const once = onceAmount(cash, strategy.division, t)
+
+  const EXECS_PREVIEW = 3
+  const visibleExecs = showAllExecs ? recentExecs : recentExecs.slice(0, EXECS_PREVIEW)
+  const hasMoreExecs = recentExecs.length > EXECS_PREVIEW
 
   // 차트 데이터 + RSI 통합 (최근 30일)
   const { chartData, currentRsi, rsiColor } = useMemo(() => {
@@ -67,6 +84,10 @@ export function StrategyCard({ strategy }: Props) {
 
     return { chartData: data, currentRsi: latestRsi, rsiColor: color }
   }, [priceHistory])
+
+  // 매수점: 핵심행(★, 별, 큰수, 평단) vs 분할 사다리
+  const coreRows = plan?.buyRows.filter((r) => !r.label.includes('분할')) ?? []
+  const ladderRows = plan?.buyRows.filter((r) => r.label.includes('분할')) ?? []
 
   return (
     <>
@@ -109,7 +130,6 @@ export function StrategyCard({ strategy }: Props) {
         {/* ── 전체 ChartPanel (가격 + RSI) ── */}
         {chartData.length >= 5 && (
           <div style={{ marginLeft: -16, marginRight: -16, marginBottom: 12 }}>
-            {/* 가격 차트 (96px) */}
             <ResponsiveContainer width="100%" height={96}>
               <AreaChart data={chartData} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
                 <defs>
@@ -132,9 +152,7 @@ export function StrategyCard({ strategy }: Props) {
                 />
               </AreaChart>
             </ResponsiveContainer>
-            {/* 구분선 */}
             <div style={{ height: 1, background: 'var(--color-border)', opacity: 0.5 }} />
-            {/* RSI 차트 (48px) */}
             <ResponsiveContainer width="100%" height={48}>
               <LineChart data={chartData} margin={{ top: 4, right: 0, bottom: 4, left: 0 }}>
                 <ReferenceLine y={70} stroke="#ef4444" strokeDasharray="3 2" strokeWidth={1} strokeOpacity={0.4} />
@@ -175,7 +193,7 @@ export function StrategyCard({ strategy }: Props) {
           </div>
         )}
 
-        {/* ── 현재 상태 KPI ── */}
+        {/* ── 현재 상태 KPI (별% 제거 → 5개) ── */}
         <div
           style={{
             display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8,
@@ -189,7 +207,6 @@ export function StrategyCard({ strategy }: Props) {
             { label: '보유수량', value: `${qty}주` },
             { label: '잔금', value: fmtUSD(cash) },
             { label: '1회매수액', value: fmtUSD(once) },
-            { label: '별%', value: sPct != null ? fmtPct(sPct) : '-' },
           ].map(({ label, value }) => (
             <div key={label}>
               <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 2 }}>{label}</div>
@@ -198,28 +215,34 @@ export function StrategyCard({ strategy }: Props) {
           ))}
         </div>
 
-        {/* ── 별지점 / LOC ── */}
+        {/* ── 별지점 / LOC (별% 통합) ── */}
         {starPrice != null && (
           <div
             style={{
-              display: 'flex', gap: 16, marginBottom: 12,
+              display: 'flex', gap: 14, marginBottom: 12, flexWrap: 'wrap',
               padding: '8px 10px', background: 'var(--color-star-bg)', borderRadius: 10,
             }}
           >
+            {sPct != null && (
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>별%</div>
+                <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-star)' }}>{fmtPct(sPct)}</div>
+              </div>
+            )}
             <div>
               <div style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>별지점</div>
-              <div style={{ fontWeight: 700, color: 'var(--color-star)', fontSize: 14 }}>{fmtUSD(starPrice)}</div>
+              <div style={{ fontWeight: 700, color: 'var(--color-star)', fontSize: 13 }}>{fmtUSD(starPrice)}</div>
             </div>
             <div>
               <div style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>LOC 매수가</div>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>{fmtUSD(starPrice - 0.01)}</div>
+              <div style={{ fontWeight: 700, fontSize: 13 }}>{fmtUSD(starPrice - 0.01)}</div>
             </div>
             {avg > 0 && (
               <div>
                 <div style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>
                   {strategy.ticker === 'TQQQ' ? '15%' : '20%'} 지정가
                 </div>
-                <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--color-fall)' }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-fall)' }}>
                   {fmtUSD(avg * (strategy.ticker === 'TQQQ' ? 1.15 : 1.20))}
                 </div>
               </div>
@@ -227,7 +250,7 @@ export function StrategyCard({ strategy }: Props) {
           </div>
         )}
 
-        {/* ── 매수점 테이블 ── */}
+        {/* ── 매수점 테이블 (핵심행 + 분할 사다리 토글) ── */}
         {plan && plan.buyRows.length > 0 && (
           <div style={{ marginBottom: 10 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 6 }}>매수점</div>
@@ -240,7 +263,7 @@ export function StrategyCard({ strategy }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {plan.buyRows.map((row, i) => {
+                {coreRows.map((row, i) => {
                   const isStar = row.label.includes('★') || row.label.includes('별') || row.label.includes('큰수')
                   return (
                     <tr key={i} style={{ background: isStar ? 'var(--color-star-bg)' : 'transparent' }}>
@@ -250,8 +273,34 @@ export function StrategyCard({ strategy }: Props) {
                     </tr>
                   )
                 })}
+                {showLadder && ladderRows.map((row, i) => (
+                  <tr key={`ladder-${i}`}>
+                    <td style={{ padding: '4px 0' }}>{row.label}</td>
+                    <td style={{ textAlign: 'right', color: 'var(--color-rise)', fontWeight: 600 }}>{fmtUSD(row.price)}</td>
+                    <td style={{ textAlign: 'right' }}>{row.qty != null ? `${row.qty}주` : '-'}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
+            {ladderRows.length > 0 && (
+              <button
+                onClick={() => setShowLadder((v) => !v)}
+                style={{
+                  width: '100%', marginTop: 6,
+                  padding: '7px 10px',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 8,
+                  background: showLadder ? 'var(--color-bg)' : 'var(--color-bg)',
+                  fontSize: 12, fontWeight: 600,
+                  color: 'var(--color-text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                }}
+              >
+                <span>분할 사다리 ({ladderRows.length}개)</span>
+                <span style={{ fontSize: 10 }}>{showLadder ? '▲ 접기' : '▼ 펼치기'}</span>
+              </button>
+            )}
           </div>
         )}
 
@@ -277,6 +326,60 @@ export function StrategyCard({ strategy }: Props) {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* ── 체결 내역 섹션 ── */}
+        {recentExecs.length > 0 && (
+          <div style={{ marginBottom: 12, marginTop: 4 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)' }}>체결 내역</span>
+              <button
+                onClick={() => nav('/history')}
+                style={{ background: 'none', border: 'none', padding: 0, fontSize: 11, color: 'var(--color-primary)', cursor: 'pointer' }}
+              >
+                전체 히스토리 →
+              </button>
+            </div>
+            {visibleExecs.map((e) => (
+              <div
+                key={e.id}
+                style={{
+                  display: 'flex', gap: 6, fontSize: 11,
+                  padding: '5px 0', borderBottom: '1px solid var(--color-border)',
+                  color: 'var(--color-text)',
+                }}
+              >
+                <span style={{ color: 'var(--color-text-secondary)', minWidth: 30 }}>
+                  {e.execDate.slice(5).replace('-', '/')}
+                </span>
+                <span style={{ flex: 1, fontWeight: 600 }}>{EXEC_LABEL[e.execType] ?? e.execType}</span>
+                {e.execType !== 'no_exec' && (
+                  <span style={{ color: 'var(--color-text-secondary)' }}>
+                    {e.execQty}주 @ {fmtUSD(e.execPrice)}
+                  </span>
+                )}
+              </div>
+            ))}
+            {hasMoreExecs && (
+              <button
+                onClick={() => setShowAllExecs((v) => !v)}
+                style={{
+                  width: '100%', marginTop: 6,
+                  padding: '7px 10px',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 8,
+                  background: 'var(--color-bg)',
+                  fontSize: 12, fontWeight: 600,
+                  color: 'var(--color-text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                }}
+              >
+                <span>{showAllExecs ? '접기' : `전체 보기 (${recentExecs.length}개)`}</span>
+                <span style={{ fontSize: 10 }}>{showAllExecs ? '▲' : '▼'}</span>
+              </button>
+            )}
           </div>
         )}
 

@@ -1,13 +1,14 @@
 import { useState } from 'react'
-import { useStrategies, useExecutions, useStrategyState } from '@/queries/iv.queries'
+import { useStrategies, useExecutions, useStrategyState, useDeleteExecution, useUpdateExecution } from '@/queries/iv.queries'
 import { fmtUSD, fmtDate, fmtT, MODE_LABEL, MODE_COLOR } from '@/lib/format'
+import type { IvExecution } from '@/lib/iv-api'
 
 const EXEC_LABEL: Record<string, string> = {
   buy_full: '1회 매수',
   buy_half_star: '별LOC 매수',
   buy_half_avg: '평단LOC 매수',
-  sell_quarter: '쿼터매도',
-  sell_fixed: '지정가매도',
+  sell_quarter: '쿼터 매도',
+  sell_fixed: '지정가 매도',
   sell_moc: 'MOC 매도',
   no_exec: '미체결',
 }
@@ -19,31 +20,177 @@ function StrategySummary({ id }: { id: string }) {
   return (
     <div
       style={{
-        display: 'flex', gap: 12, padding: '10px 14px',
-        background: 'var(--color-bg)', borderRadius: 10, marginBottom: 12, fontSize: 12,
+        display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+        padding: '10px 14px', background: 'var(--color-bg)', borderRadius: 10,
+        marginBottom: 12, fontSize: 12,
       }}
     >
-      <div>
-        <span style={{ color: 'var(--color-text-secondary)' }}>T값 </span>
-        <strong>{fmtT(state.tValue)}</strong>
+      <div><span style={{ color: 'var(--color-text-secondary)' }}>T값 </span><strong>{fmtT(state.tValue)}</strong></div>
+      <div><span style={{ color: 'var(--color-text-secondary)' }}>평단 </span><strong>{fmtUSD(state.avgPrice)}</strong></div>
+      <div><span style={{ color: 'var(--color-text-secondary)' }}>보유 </span><strong>{state.quantity}주</strong></div>
+      <div><span style={{ color: 'var(--color-text-secondary)' }}>잔금 </span><strong>{fmtUSD(state.cash)}</strong></div>
+      <span
+        style={{
+          fontSize: 10, padding: '2px 6px', borderRadius: 10,
+          background: MODE_COLOR[mode] + '22', color: MODE_COLOR[mode], fontWeight: 700,
+        }}
+      >
+        {MODE_LABEL[mode]}
+      </span>
+    </div>
+  )
+}
+
+export function ExecCard({ exec, strategyId }: { exec: IvExecution; strategyId: string }) {
+  const [editing, setEditing] = useState(false)
+  const [price, setPrice] = useState(String(exec.execPrice ?? ''))
+  const [qty, setQty] = useState(String(exec.execQty ?? ''))
+
+  const deleteMut = useDeleteExecution(strategyId)
+  const updateMut = useUpdateExecution(strategyId)
+
+  const isBuy = exec.execType.startsWith('buy')
+  const isSell = exec.execType.startsWith('sell')
+  const stateBefore = exec.stateBefore as Record<string, unknown>
+  const stateAfter = exec.stateAfter as Record<string, unknown>
+  const tBefore = stateBefore?.tValue as number | undefined
+  const tAfter = stateAfter?.tValue as number | undefined
+  const qtyAfter = stateAfter?.quantity as number | undefined
+
+  async function handleDelete() {
+    if (!confirm(`이 체결을 삭제하시겠습니까?\n${EXEC_LABEL[exec.execType]} · ${fmtDate(exec.execDate)}`)) return
+    await deleteMut.mutateAsync(exec.id)
+  }
+
+  async function handleSave() {
+    const p = parseFloat(price)
+    const q = parseFloat(qty)
+    if (!p || !q) return
+    await updateMut.mutateAsync({ execId: exec.id, price: p, qty: q })
+    setEditing(false)
+  }
+
+  const badge = isBuy
+    ? { label: '매수', bg: '#eff6ff', color: '#2563eb' }
+    : isSell
+      ? { label: '매도', bg: '#fff1f2', color: '#dc2626' }
+      : { label: '미체결', bg: '#f3f4f6', color: '#6b7280' }
+
+  return (
+    <div className="card" style={{ padding: '12px 14px', marginBottom: 8 }}>
+      {/* 상단 행: 뱃지 + execType + 날짜 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span
+            style={{
+              fontSize: 11, padding: '2px 7px', borderRadius: 8, fontWeight: 700,
+              background: badge.bg, color: badge.color,
+            }}
+          >
+            {badge.label}
+          </span>
+          <span style={{ fontWeight: 600, fontSize: 14 }}>{EXEC_LABEL[exec.execType] ?? exec.execType}</span>
+        </div>
+        <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{fmtDate(exec.execDate)}</span>
       </div>
-      <div>
-        <span style={{ color: 'var(--color-text-secondary)' }}>평단 </span>
-        <strong>{fmtUSD(state.avgPrice)}</strong>
-      </div>
-      <div>
-        <span style={{ color: 'var(--color-text-secondary)' }}>보유 </span>
-        <strong>{state.quantity}주</strong>
-      </div>
-      <div>
-        <span
-          style={{
-            fontSize: 10, padding: '2px 6px', borderRadius: 10,
-            background: MODE_COLOR[mode] + '22', color: MODE_COLOR[mode], fontWeight: 700,
-          }}
-        >
-          {MODE_LABEL[mode]}
-        </span>
+
+      {/* 가격·수량 행 */}
+      {exec.execType !== 'no_exec' && (
+        editing ? (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+            <div>
+              <label style={{ fontSize: 11, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 2 }}>체결가 ($)</label>
+              <input
+                type="number" step="0.01" value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                style={{ width: '100%', padding: '7px', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 13 }}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 2 }}>수량 (주)</label>
+              <input
+                type="number" step="0.000001" value={qty}
+                onChange={(e) => setQty(e.target.value)}
+                style={{ width: '100%', padding: '7px', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 13 }}
+              />
+            </div>
+          </div>
+        ) : (
+          <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+            {exec.execQty}주 @ {fmtUSD(exec.execPrice)}
+            <span style={{ marginLeft: 8, fontWeight: 600, color: 'var(--color-text)' }}>
+              = {fmtUSD(exec.execAmount)}
+            </span>
+          </div>
+        )
+      )}
+
+      {/* T 변화 + 보유 행 */}
+      {tBefore !== undefined && tAfter !== undefined && (
+        <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 6 }}>
+          T {fmtT(tBefore)} → <strong style={{ color: 'var(--color-text)' }}>{fmtT(tAfter)}</strong>
+          {qtyAfter !== undefined && (
+            <span style={{ marginLeft: 8 }}>· {qtyAfter}주 보유</span>
+          )}
+        </div>
+      )}
+
+      {exec.note && (
+        <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', fontStyle: 'italic', marginBottom: 6 }}>
+          {exec.note}
+        </div>
+      )}
+
+      {/* 액션 버튼 */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 4 }}>
+        {editing ? (
+          <>
+            <button
+              onClick={() => { setEditing(false); setPrice(String(exec.execPrice ?? '')); setQty(String(exec.execQty ?? '')) }}
+              style={{
+                padding: '6px 14px', borderRadius: 8, border: '1px solid var(--color-border)',
+                background: '#fff', fontSize: 12, cursor: 'pointer', color: 'var(--color-text-secondary)',
+              }}
+            >
+              취소
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={updateMut.isPending}
+              style={{
+                padding: '6px 14px', borderRadius: 8, border: 'none',
+                background: 'var(--color-primary)', color: '#fff',
+                fontSize: 12, cursor: 'pointer', fontWeight: 600,
+              }}
+            >
+              {updateMut.isPending ? '저장 중...' : '저장'}
+            </button>
+          </>
+        ) : (
+          <>
+            {exec.execType !== 'no_exec' && (
+              <button
+                onClick={() => setEditing(true)}
+                style={{
+                  padding: '5px 12px', borderRadius: 8, border: '1px solid var(--color-border)',
+                  background: '#fff', fontSize: 12, cursor: 'pointer', color: 'var(--color-text)',
+                }}
+              >
+                수정
+              </button>
+            )}
+            <button
+              onClick={handleDelete}
+              disabled={deleteMut.isPending}
+              style={{
+                padding: '5px 12px', borderRadius: 8, border: '1px solid #fecaca',
+                background: '#fff', fontSize: 12, cursor: 'pointer', color: '#dc2626',
+              }}
+            >
+              {deleteMut.isPending ? '삭제 중...' : '삭제'}
+            </button>
+          </>
+        )}
       </div>
     </div>
   )
@@ -60,9 +207,8 @@ function ExecutionList({ id }: { id: string }) {
     )
   }
 
-  // 날짜별 그룹
   const grouped = execs.reduce<Record<string, typeof execs>>((acc, e) => {
-    const key = e.execDate.slice(0, 7) // YYYY-MM
+    const key = e.execDate.slice(0, 7)
     if (!acc[key]) acc[key] = []
     acc[key].push(e)
     return acc
@@ -80,39 +226,9 @@ function ExecutionList({ id }: { id: string }) {
           >
             {month}
           </div>
-          {list.map((e) => {
-            const isBuy = e.execType.startsWith('buy')
-            const stateAfter = e.stateAfter as Record<string, unknown>
-            return (
-              <div
-                key={e.id}
-                className="card"
-                style={{ padding: '12px 14px', marginBottom: 4 }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>{EXEC_LABEL[e.execType] ?? e.execType}</div>
-                    <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 2 }}>
-                      {fmtDate(e.execDate)} · {e.execQty}주 @ {fmtUSD(e.execPrice)}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div
-                      style={{
-                        fontWeight: 700, fontSize: 14,
-                        color: isBuy ? 'var(--color-rise)' : 'var(--color-fall)',
-                      }}
-                    >
-                      {isBuy ? '-' : '+'}{fmtUSD(e.execAmount)}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 2 }}>
-                      T={fmtT(stateAfter?.tValue as number)} · {stateAfter?.quantity as number}주
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+          {list.map((e) => (
+            <ExecCard key={e.id} exec={e} strategyId={id} />
+          ))}
         </div>
       ))}
     </>
@@ -128,7 +244,6 @@ export function HistoryPage() {
     <div style={{ padding: 16, paddingBottom: 80 }}>
       <h2 style={{ fontWeight: 800, fontSize: 22, margin: '0 0 16px' }}>체결 내역</h2>
 
-      {/* 전략 탭 */}
       {strategies.length > 1 && (
         <div style={{ display: 'flex', gap: 8, marginBottom: 12, overflowX: 'auto', paddingBottom: 4 }}>
           {strategies.map((s) => (

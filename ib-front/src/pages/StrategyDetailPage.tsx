@@ -5,20 +5,12 @@ import {
   ResponsiveContainer, ReferenceLine, LineChart, Line,
 } from 'recharts'
 import { useStrategy, useStrategyState, useTodayPlan, useExecutions, usePriceHistory } from '@/queries/iv.queries'
-import { fmtUSD, fmtT, fmtDate, MODE_LABEL, MODE_FULL, MODE_COLOR } from '@/lib/format'
+import { fmtUSD, fmtT, MODE_LABEL, MODE_FULL, MODE_COLOR } from '@/lib/format'
 import { computeRSI } from '@/lib/rsi'
+import { ExecCard } from './HistoryPage'
 
 type Tab = 'chart' | 'history' | 'mode'
 
-const EXEC_LABEL: Record<string, string> = {
-  buy_full: '1회 매수',
-  buy_half_star: '별LOC 매수',
-  buy_half_avg: '평단LOC 매수',
-  sell_quarter: '쿼터매도',
-  sell_fixed: '지정가매도',
-  sell_moc: 'MOC 매도',
-  no_exec: '미체결',
-}
 
 const MODE_STEPS = ['cycle_start', 'first_half', 'second_half', 'reverse'] as const
 const MODE_STEP_LABEL: Record<string, string> = {
@@ -448,30 +440,9 @@ export function StrategyDetailPage() {
               체결 내역이 없습니다.
             </p>
           )}
-          {execs.map((e) => {
-            const isBuy = e.execType.startsWith('buy')
-            const stateAfter = e.stateAfter as Record<string, unknown>
-            return (
-              <div key={e.id} className="card" style={{ padding: '12px 16px', marginBottom: 4 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>{EXEC_LABEL[e.execType] ?? e.execType}</div>
-                    <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 2 }}>
-                      {fmtDate(e.execDate)} · {e.execQty}주 @ {fmtUSD(e.execPrice)}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 700, color: isBuy ? 'var(--color-rise)' : 'var(--color-fall)' }}>
-                      {isBuy ? '-' : '+'}{fmtUSD(e.execAmount)}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 2 }}>
-                      T={fmtT(stateAfter?.tValue as number)} · {stateAfter?.quantity as number}주
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+          {execs.map((e) => (
+            <ExecCard key={e.id} exec={e} strategyId={strategy.id} />
+          ))}
         </div>
       )}
 

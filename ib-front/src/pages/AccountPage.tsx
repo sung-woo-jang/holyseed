@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useStrategies, useDeleteStrategy, useRefreshPrice } from '@/queries/iv.queries'
+import { useStrategies, useDeleteStrategy, useRefreshPrice, useMe, useUpdateNickname } from '@/queries/iv.queries'
 import { fmtUSD } from '@/lib/format'
 import { CycleEditSheet } from '@/components/sheet/CycleEditSheet'
 import { executionsApi } from '@/lib/iv-api'
@@ -64,11 +64,17 @@ function useDarkMode() {
 export function AccountPage() {
   const nav = useNavigate()
   const { data: strategies = [] } = useStrategies()
+  const { data: user } = useMe()
   const deleteMutation = useDeleteStrategy()
   const refreshMutation = useRefreshPrice()
+  const nicknameMutation = useUpdateNickname()
   const [editTarget, setEditTarget] = useState<IvStrategy | null>(null)
   const [isDark, setIsDark] = useDarkMode()
   const [csvLoading, setCsvLoading] = useState(false)
+  const [nicknameEdit, setNicknameEdit] = useState(false)
+  const [nicknameInput, setNicknameInput] = useState('')
+
+  const displayName = user ? (user.nickname ?? user.username) : '...'
 
   const tickers = [...new Set(strategies.map((s) => s.ticker))]
   const { enabled: autoRefresh, toggle: toggleAutoRefresh } = useAutoRefresh(tickers)
@@ -126,12 +132,12 @@ export function AccountPage() {
             fontWeight: 800, fontSize: 20, flexShrink: 0,
           }}
         >
-          라
+          {displayName[0] ?? '?'}
         </div>
         <div>
-          <div style={{ fontWeight: 700, fontSize: 16 }}>라오어 무매 운영자</div>
+          <div style={{ fontWeight: 700, fontSize: 16 }}>{displayName}님</div>
           <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 2 }}>
-            무한매수법 V4.0 · 단일 사용자
+            무한매수법 V4.0 · {user?.username ?? ''}
           </div>
         </div>
       </div>
@@ -230,6 +236,66 @@ export function AccountPage() {
         앱 설정
       </div>
       <div className="card" style={{ marginBottom: 20 }}>
+        {/* 별명 설정 */}
+        <div
+          style={{
+            padding: '13px 0', borderBottom: '1px solid var(--color-border)',
+          }}
+        >
+          {nicknameEdit ? (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                value={nicknameInput}
+                onChange={(e) => setNicknameInput(e.target.value)}
+                placeholder="별명 입력 (최대 50자)"
+                maxLength={50}
+                style={{
+                  flex: 1, padding: '8px 12px', border: '1px solid var(--color-border)',
+                  borderRadius: 8, fontSize: 14, background: 'var(--color-bg)',
+                  color: 'var(--color-text)',
+                }}
+              />
+              <button
+                onClick={async () => {
+                  if (!nicknameInput.trim()) return
+                  await nicknameMutation.mutateAsync(nicknameInput.trim())
+                  setNicknameEdit(false)
+                  setNicknameInput('')
+                }}
+                disabled={nicknameMutation.isPending}
+                style={{
+                  padding: '8px 14px', background: 'var(--color-primary)', color: '#fff',
+                  border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                저장
+              </button>
+              <button
+                onClick={() => { setNicknameEdit(false); setNicknameInput('') }}
+                style={{
+                  padding: '8px 10px', background: 'none', border: '1px solid var(--color-border)',
+                  borderRadius: 8, fontSize: 13, cursor: 'pointer', color: 'var(--color-text)',
+                }}
+              >
+                취소
+              </button>
+            </div>
+          ) : (
+            <div
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+              onClick={() => { setNicknameEdit(true); setNicknameInput(user?.nickname ?? '') }}
+            >
+              <div>
+                <span style={{ fontSize: 14 }}>별명 설정</span>
+                <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 2 }}>
+                  {user?.nickname ? user.nickname : '미설정'}
+                </div>
+              </div>
+              <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>수정 →</span>
+            </div>
+          )}
+        </div>
+
         {/* 다크모드 토글 */}
         <div
           style={{

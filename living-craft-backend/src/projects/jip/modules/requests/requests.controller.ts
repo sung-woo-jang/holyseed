@@ -53,4 +53,14 @@ export class RequestsController {
     const data = await this.requestsService.updateStatus(code, body.status as any);
     return { success: true, message: '상태가 업데이트됐어요', data, timestamp: new Date().toISOString() };
   }
+
+  @Post(':code/schedule')
+  @ApiOperation({ summary: '[관리자] 방문 일정 조절' })
+  async updateSchedule(
+    @Param('code') code: string,
+    @Body() body: { prefDate: string | null; prefTimeSlot: string | null },
+  ) {
+    const data = await this.requestsService.updateSchedule(code, body.prefDate, body.prefTimeSlot);
+    return { success: true, message: '일정이 업데이트됐어요', data, timestamp: new Date().toISOString() };
+  }
 }

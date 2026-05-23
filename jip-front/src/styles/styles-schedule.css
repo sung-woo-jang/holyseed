@@ -1,0 +1,229 @@
+/* ============================================================
+   집수리 — Schedule Picker (calendar + slots)
+   ============================================================ */
+
+.sched-picker { }
+
+/* head */
+.sched-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.sched-month {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.sched-nav { display: flex; gap: 4px; }
+.sched-nav-btn {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: var(--bg-deep);
+  color: var(--ink);
+  display: grid; place-items: center;
+  cursor: pointer;
+  transition: background .12s;
+}
+.sched-nav-btn:hover { background: #DDE2E7; }
+.sched-nav-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+/* legend */
+.sched-legend {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.sched-legend-item { display: flex; align-items: center; gap: 6px; }
+
+.sched-dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--ink-5);
+}
+.sched-dot.open { background: var(--green); }
+.sched-dot.busy { background: var(--orange); }
+.sched-dot.full { background: var(--ink-5); }
+.sched-dot.off  { background: var(--line); }
+
+/* grid */
+.sched-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.sched-weekdays {
+  margin-bottom: 4px;
+}
+.sched-weekday {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--ink-3);
+  padding: 6px 0;
+  letter-spacing: -0.005em;
+}
+.sched-weekday.sun { color: #DC2626; }
+.sched-weekday.sat { color: #2563EB; }
+
+/* date cell */
+.sched-cell {
+  aspect-ratio: 1/1;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1.5px solid transparent;
+  transition: background .12s, border-color .12s, transform .06s;
+  color: var(--ink);
+  position: relative;
+}
+.sched-cell.empty { cursor: default; pointer-events: none; }
+.sched-cell:not(:disabled):hover { background: var(--bg-deep); }
+.sched-cell:not(:disabled):active { transform: scale(0.97); }
+.sched-cell:disabled { cursor: not-allowed; }
+.sched-cell.past { opacity: .35; }
+.sched-cell.past .sched-cell-day { color: var(--ink-5); }
+.sched-cell.st-off:not(.past) .sched-cell-day { color: var(--ink-5); }
+.sched-cell.st-full:not(.past) .sched-cell-day { color: var(--ink-4); }
+
+.sched-cell.sun .sched-cell-day { color: #DC2626; }
+.sched-cell.sat .sched-cell-day { color: #2563EB; }
+.sched-cell.past.sun .sched-cell-day,
+.sched-cell.past.sat .sched-cell-day { color: var(--ink-5); }
+.sched-cell.st-off.sun .sched-cell-day,
+.sched-cell.st-off.sat .sched-cell-day { color: var(--ink-5); }
+
+.sched-cell.today {
+  background: var(--bg);
+}
+.sched-cell.today .sched-cell-day {
+  position: relative;
+}
+.sched-cell.today .sched-cell-day::after {
+  content: '오늘';
+  position: absolute;
+  top: -8px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  font-weight: 800;
+  color: var(--orange);
+}
+.sched-cell.on {
+  background: var(--ink) !important;
+  border-color: var(--ink);
+}
+.sched-cell.on .sched-cell-day,
+.sched-cell.on.sun .sched-cell-day,
+.sched-cell.on.sat .sched-cell-day { color: #fff; }
+.sched-cell.on .sched-dot.open,
+.sched-cell.on .sched-dot.busy {
+  background: var(--orange);
+  box-shadow: 0 0 0 2px rgba(255,107,53,0.3);
+}
+.sched-cell.on .off-label { color: rgba(255,255,255,0.6); }
+.sched-cell.on.today .sched-cell-day::after { color: var(--orange); }
+
+.sched-cell-day {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1;
+}
+.sched-cell-meta {
+  display: flex; align-items: center; justify-content: center;
+  height: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: -0.01em;
+}
+.sched-cell-meta .sched-dot { width: 5px; height: 5px; }
+.off-label { font-size: 9px; line-height: 1; }
+
+/* selected day's time slots */
+.sched-slots {
+  margin-top: 24px;
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.sched-slots-head {
+  display: flex; justify-content: space-between; align-items: end;
+  margin-bottom: 16px;
+  flex-wrap: wrap; gap: 8px;
+}
+.sched-slots-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-3);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.sched-slots-date {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin-top: 4px;
+}
+
+.sched-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+@media (max-width: 600px) {
+  .sched-slot-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.sched-slot {
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .12s, background .12s, transform .06s;
+  display: flex; flex-direction: column;
+  gap: 4px;
+}
+.sched-slot:not(:disabled):hover { border-color: var(--ink-5); }
+.sched-slot:not(:disabled):active { transform: scale(0.98); }
+.sched-slot:disabled { cursor: not-allowed; opacity: .55; background: var(--bg-deep); }
+.sched-slot.on {
+  border-color: var(--orange);
+  background: #FFF8F4;
+  box-shadow: 0 0 0 3px rgba(255,107,53,0.12);
+}
+.sched-slot-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-3);
+  letter-spacing: -0.01em;
+}
+.sched-slot.on .sched-slot-label { color: var(--orange-deep); }
+.sched-slot-range {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.sched-slot-state {
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 4px;
+  color: var(--green);
+}
+.sched-slot.busy .sched-slot-state { color: var(--ink-4); }
+.sched-slot.off .sched-slot-state { color: var(--ink-4); }
+.sched-slot.on .sched-slot-state { color: var(--orange); }

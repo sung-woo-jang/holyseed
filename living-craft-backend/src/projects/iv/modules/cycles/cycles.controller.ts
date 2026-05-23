@@ -1,6 +1,5 @@
 import { Body, Controller, Param, Post } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
-import { Public } from '@common/decorators'
 import { CyclesService } from './cycles.service'
 
 const ok = (data: unknown, message = '성공') => ({
@@ -9,7 +8,6 @@ const ok = (data: unknown, message = '성공') => ({
 
 @ApiTags('IV 사이클')
 @Controller('iv/strategies')
-@Public()
 export class CyclesController {
   constructor(private readonly svc: CyclesService) {}
 

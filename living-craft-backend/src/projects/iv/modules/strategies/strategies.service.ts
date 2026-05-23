@@ -5,8 +5,6 @@ import { IvStrategy } from '../../entities/iv-strategy.entity'
 import { IvState } from '../../entities/iv-state.entity'
 import { CreateStrategyDto } from './dto/request/create-strategy.dto'
 
-const DEFAULT_USER_ID = process.env.IV_DEFAULT_USER_ID ?? 'owner'
-
 @Injectable()
 export class StrategiesService {
   constructor(
@@ -16,26 +14,20 @@ export class StrategiesService {
     private readonly stateRepo: Repository<IvState>,
   ) {}
 
-  async findAll(): Promise<IvStrategy[]> {
-    return this.strategyRepo.find({ where: { userId: DEFAULT_USER_ID }, order: { createdAt: 'ASC' } })
+  async findAll(userId: string): Promise<IvStrategy[]> {
+    return this.strategyRepo.find({ where: { userId }, order: { createdAt: 'ASC' } })
   }
 
-  async findOne(id: string): Promise<IvStrategy> {
-    const strategy = await this.strategyRepo.findOne({ where: { id, userId: DEFAULT_USER_ID } })
+  async findOne(id: string, userId: string): Promise<IvStrategy> {
+    const strategy = await this.strategyRepo.findOne({ where: { id, userId } })
     if (!strategy) throw new NotFoundException('전략을 찾을 수 없습니다.')
     return strategy
   }
 
-  async create(dto: CreateStrategyDto): Promise<IvStrategy> {
-    const strategy = this.strategyRepo.create({
-      ...dto,
-      userId: DEFAULT_USER_ID,
-      cycleNo: 1,
-      cycleDays: 14,
-    })
+  async create(userId: string, dto: CreateStrategyDto): Promise<IvStrategy> {
+    const strategy = this.strategyRepo.create({ ...dto, userId, cycleNo: 1, cycleDays: 14 })
     const saved = await this.strategyRepo.save(strategy)
 
-    // 초기 state 생성
     const state = this.stateRepo.create({
       strategyId: saved.id,
       quantity: 0,
@@ -50,15 +42,15 @@ export class StrategiesService {
     return saved
   }
 
-  async getState(id: string): Promise<IvState> {
-    await this.findOne(id)
+  async getState(id: string, userId: string): Promise<IvState> {
+    await this.findOne(id, userId)
     const state = await this.stateRepo.findOne({ where: { strategyId: id } })
     if (!state) throw new NotFoundException('전략 상태를 찾을 수 없습니다.')
     return state
   }
 
-  async getPortfolioSummary() {
-    const strategies = await this.findAll()
+  async getPortfolioSummary(userId: string) {
+    const strategies = await this.findAll(userId)
     const states = await Promise.all(
       strategies.map((s) => this.stateRepo.findOne({ where: { strategyId: s.id } })),
     )
@@ -76,18 +68,18 @@ export class StrategiesService {
     return { totalPrincipal, totalCash, totalStockValue, totalEvaluation, totalPnl, totalPnlPct, count: strategies.length }
   }
 
-  async update(id: string, data: { principal?: number; division?: number }): Promise<IvStrategy> {
-    await this.findOne(id)
+  async update(id: string, userId: string, data: { principal?: number; division?: number }): Promise<IvStrategy> {
+    await this.findOne(id, userId)
     await this.strategyRepo.update(id, data)
-    return this.findOne(id)
+    return this.findOne(id, userId)
   }
 
   async updateCycleNo(id: string, cycleNo: number): Promise<void> {
     await this.strategyRepo.update(id, { cycleNo })
   }
 
-  async delete(id: string): Promise<void> {
-    await this.findOne(id)
+  async delete(id: string, userId: string): Promise<void> {
+    await this.findOne(id, userId)
     await this.stateRepo.delete({ strategyId: id })
     await this.strategyRepo.delete(id)
   }

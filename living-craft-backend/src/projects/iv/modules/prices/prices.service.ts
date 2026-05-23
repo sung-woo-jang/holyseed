@@ -35,15 +35,16 @@ export class PricesService {
   }
 
   async fetchAndSave(ticker: string): Promise<IvPrice> {
-    // 과거 60거래일 히스토리 bulk seed
+    // 전체 상장 이력 bulk seed
     await this.seedHistory(ticker)
 
     const result = await yf.quote(ticker)
     const closePrice: number = result.regularMarketPrice ?? result.regularMarketPreviousClose
+    const highPrice: number | null = result.regularMarketDayHigh ?? null
     const priceDate = new Date().toISOString().slice(0, 10)
 
     await this.priceRepo.upsert(
-      { ticker, priceDate, closePrice, fetchedAt: new Date() },
+      { ticker, priceDate, closePrice, highPrice, fetchedAt: new Date() },
       { conflictPaths: ['ticker', 'priceDate'] },
     )
 
@@ -80,6 +81,7 @@ export class PricesService {
           ticker,
           priceDate: q.date.toISOString().slice(0, 10),
           closePrice: q.close as number,
+          highPrice: q.high ?? null,
           fetchedAt: new Date(),
         }))
 

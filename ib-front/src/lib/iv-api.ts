@@ -75,6 +75,7 @@ export interface IvPrice {
   ticker: string
   priceDate: string
   closePrice: number
+  highPrice: number | null
   fetchedAt: string
 }
 

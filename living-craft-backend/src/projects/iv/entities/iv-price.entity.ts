@@ -17,6 +17,16 @@ export class IvPrice {
   })
   closePrice: number
 
+  @Column({
+    name: 'high_price',
+    type: 'numeric',
+    precision: 14,
+    scale: 4,
+    nullable: true,
+    transformer: { to: (v: number) => v, from: (v: string) => (v != null ? parseFloat(v) : null) },
+  })
+  highPrice: number | null
+
   @Column({ name: 'fetched_at', type: 'timestamptz', default: () => 'now()' })
   fetchedAt: Date
 }

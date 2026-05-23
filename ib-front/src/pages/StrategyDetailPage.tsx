@@ -69,6 +69,7 @@ export function StrategyDetailPage() {
       return {
         date: p.priceDate.slice(5),
         close: p.closePrice,
+        high: p.highPrice,
         avg: carryAvg > 0 ? carryAvg : undefined,
         rsi: Math.round((rsiValues[i] ?? 50) * 10) / 10,
         change: ((p.closePrice - prev) / prev) * 100,
@@ -293,38 +294,39 @@ export function StrategyDetailPage() {
             </div>
           )}
 
-          {/* 일변동 — 최근 2주(10거래일) 소형 카드 */}
+          {/* 일변동 — 최근 2주 그리드 카드 */}
           {chartData.length > 0 && (() => {
-            const twoWeeks = chartData.slice(-10)
+            const twoWeeks = [...chartData].slice(-10).reverse()
+            const avg5 = twoWeeks.slice(0, 5).reduce((s, d) => s + d.close, 0) / Math.min(5, twoWeeks.length)
             return (
               <div className="card" style={{ marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600 }}>일변동 (최근 2주)</div>
-                  <div style={{ display: 'flex', gap: 12, fontSize: 11, color: 'var(--color-text-secondary)' }}>
-                    <span style={{ color: '#f04452' }}>▲ 상승</span>
-                    <span style={{ color: '#2563eb' }}>▼ 하락</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{strategy.ticker} 최근 종가</div>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
+                    5일 평균 <strong style={{ color: 'var(--color-text)' }}>${avg5.toFixed(2)}</strong>
                   </div>
                 </div>
-                {/* 날짜별 변동 행 */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
                   {twoWeeks.map((d, i) => {
                     const isUp = d.change >= 0
-                    const barWidth = Math.min(Math.abs(d.change) * 8, 60)
                     return (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-                        <span style={{ width: 34, color: 'var(--color-text-secondary)', flexShrink: 0 }}>{d.date}</span>
-                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <div
-                            style={{
-                              width: barWidth, height: 6, borderRadius: 3,
-                              background: isUp ? '#f04452' : '#2563eb',
-                              flexShrink: 0,
-                            }}
-                          />
+                      <div
+                        key={i}
+                        style={{
+                          background: 'var(--color-bg)', borderRadius: 10,
+                          padding: '8px 6px', textAlign: 'center',
+                        }}
+                      >
+                        <div style={{ fontSize: 10, color: 'var(--color-text-secondary)', marginBottom: 4 }}>{d.date}</div>
+                        <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 2 }}>${d.close.toFixed(2)}</div>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: isUp ? '#f04452' : '#2563eb' }}>
+                          {isUp ? '+' : ''}{d.change.toFixed(1)}%
                         </div>
-                        <span style={{ width: 52, textAlign: 'right', fontWeight: 600, color: isUp ? '#f04452' : '#2563eb', flexShrink: 0 }}>
-                          {isUp ? '+' : ''}{d.change.toFixed(2)}%
-                        </span>
+                        {d.high != null && (
+                          <div style={{ fontSize: 10, color: 'var(--color-text-secondary)', marginTop: 2 }}>
+                            H ${d.high.toFixed(2)}
+                          </div>
+                        )}
                       </div>
                     )
                   })}

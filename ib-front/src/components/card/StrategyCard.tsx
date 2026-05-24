@@ -1,22 +1,13 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AreaChart, Area, LineChart, Line, ResponsiveContainer, ReferenceLine } from 'recharts'
-import { useStrategyState, useTodayPlan, usePriceHistory, useExecutions } from '@/queries/iv.queries'
-import { fmtUSD, fmtT, fmtPct, MODE_LABEL, MODE_COLOR } from '@/lib/format'
-import { computeRSI } from '@/lib/rsi'
-import type { IvStrategy } from '@/lib/iv-api'
-import { ExecutionSheet } from '@/components/sheet/ExecutionSheet'
 import { CycleEndOverlay } from '@/components/overlay/CycleEndOverlay'
-
-const EXEC_LABEL: Record<string, string> = {
-  buy_full: '1회 매수',
-  buy_half_star: '별LOC 매수',
-  buy_half_avg: '평단LOC 매수',
-  sell_quarter: '쿼터 매도',
-  sell_fixed: '지정가 매도',
-  sell_moc: 'MOC 매도',
-  no_exec: '미체결',
-}
+import { ExecutionSheet } from '@/components/sheet/ExecutionSheet'
+import { EXEC_LABEL } from '@/lib/exec-types'
+import { fmtUSD, fmtT, fmtPct, MODE_LABEL, MODE_COLOR } from '@/lib/format'
+import type { IvStrategy } from '@/lib/iv-api'
+import { computeRSI } from '@/lib/rsi'
+import { useStrategyState, useTodayPlan, usePriceHistory, useExecutions } from '@/queries/iv.queries'
 
 function starPct(ticker: string, division: number, t: number): number {
   if (ticker === 'TQQQ') return 15 - (30 / division) * t
@@ -95,10 +86,13 @@ export function StrategyCard({ strategy }: Props) {
 
     const latestRsi = rsiArr.length > 0 ? rsiArr[rsiArr.length - 1] : null
     const color =
-      latestRsi == null ? 'var(--color-text-secondary)'
-      : latestRsi >= 70 ? '#ef4444'
-      : latestRsi <= 30 ? '#3182f6'
-      : '#22c55e'
+      latestRsi == null
+        ? 'var(--color-text-secondary)'
+        : latestRsi >= 70
+          ? '#ef4444'
+          : latestRsi <= 30
+            ? '#3182f6'
+            : '#22c55e'
 
     return { chartData: data, currentRsi: latestRsi, rsiColor: color }
   }, [priceHistory])
@@ -111,7 +105,15 @@ export function StrategyCard({ strategy }: Props) {
     <>
       <div className="card" style={{ marginBottom: 12 }}>
         {/* ── 헤더 ── */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8, position: 'relative' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginBottom: 8,
+            position: 'relative',
+          }}
+        >
           <div>
             <span style={{ fontWeight: 800, fontSize: 20 }}>{strategy.ticker}</span>
             <span style={{ marginLeft: 8, fontSize: 13, color: 'var(--color-text-secondary)' }}>
@@ -121,8 +123,13 @@ export function StrategyCard({ strategy }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span
               style={{
-                fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 20,
-                background: modeColor + '22', color: modeColor, whiteSpace: 'nowrap',
+                fontSize: 11,
+                fontWeight: 700,
+                padding: '3px 8px',
+                borderRadius: 20,
+                background: modeColor + '22',
+                color: modeColor,
+                whiteSpace: 'nowrap',
               }}
             >
               {modeLabel}
@@ -130,34 +137,53 @@ export function StrategyCard({ strategy }: Props) {
             <button
               onClick={() => setShowMenu((v) => !v)}
               style={{
-                background: 'none', border: 'none', padding: '2px 4px',
-                cursor: 'pointer', fontSize: 18, color: 'var(--color-text-secondary)',
-                lineHeight: 1, letterSpacing: 1,
+                background: 'none',
+                border: 'none',
+                padding: '2px 4px',
+                cursor: 'pointer',
+                fontSize: 18,
+                color: 'var(--color-text-secondary)',
+                lineHeight: 1,
+                letterSpacing: 1,
               }}
             >
               ···
             </button>
             {showMenu && (
               <>
-                <div
-                  onClick={() => setShowMenu(false)}
-                  style={{ position: 'fixed', inset: 0, zIndex: 10 }}
-                />
+                <div onClick={() => setShowMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 10 }} />
                 <div
                   style={{
-                    position: 'absolute', top: '100%', right: 0, zIndex: 11, marginTop: 4,
-                    background: 'var(--color-card)', border: '1px solid var(--color-border)',
-                    borderRadius: 12, boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-                    minWidth: 160, overflow: 'hidden',
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    zIndex: 11,
+                    marginTop: 4,
+                    background: 'var(--color-card)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 12,
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+                    minWidth: 160,
+                    overflow: 'hidden',
                   }}
                 >
                   <button
-                    onClick={() => { handleJsonExport(); setShowMenu(false) }}
+                    onClick={() => {
+                      handleJsonExport()
+                      setShowMenu(false)
+                    }}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      width: '100%', padding: '13px 16px',
-                      background: 'none', border: 'none', cursor: 'pointer',
-                      fontSize: 14, color: 'var(--color-text)', textAlign: 'left',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      width: '100%',
+                      padding: '13px 16px',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: 14,
+                      color: 'var(--color-text)',
+                      textAlign: 'left',
                     }}
                   >
                     <span style={{ fontSize: 16 }}>↓</span>
@@ -171,14 +197,16 @@ export function StrategyCard({ strategy }: Props) {
 
         {/* ── 종가 + RSI pill ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-          {closePrice != null && (
-            <span style={{ fontSize: 22, fontWeight: 800 }}>{fmtUSD(closePrice)}</span>
-          )}
+          {closePrice != null && <span style={{ fontSize: 22, fontWeight: 800 }}>{fmtUSD(closePrice)}</span>}
           {currentRsi != null && (
             <span
               style={{
-                fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 20,
-                background: rsiColor + '20', color: rsiColor,
+                fontSize: 11,
+                fontWeight: 700,
+                padding: '3px 8px',
+                borderRadius: 20,
+                background: rsiColor + '20',
+                color: rsiColor,
               }}
             >
               RSI {currentRsi.toFixed(0)}
@@ -201,13 +229,22 @@ export function StrategyCard({ strategy }: Props) {
                   <ReferenceLine y={avg} stroke="#06b6d4" strokeDasharray="4 2" strokeWidth={1.5} strokeOpacity={0.8} />
                 )}
                 {starPrice != null && (
-                  <ReferenceLine y={starPrice} stroke="#f59e0b" strokeDasharray="4 2" strokeWidth={1.5} strokeOpacity={0.8} />
+                  <ReferenceLine
+                    y={starPrice}
+                    stroke="#f59e0b"
+                    strokeDasharray="4 2"
+                    strokeWidth={1.5}
+                    strokeOpacity={0.8}
+                  />
                 )}
                 <Area
-                  type="monotone" dataKey="v"
-                  stroke={modeColor} strokeWidth={2}
+                  type="monotone"
+                  dataKey="v"
+                  stroke={modeColor}
+                  strokeWidth={2}
                   fill={`url(#price-${strategy.id})`}
-                  dot={false} isAnimationActive={false}
+                  dot={false}
+                  isAnimationActive={false}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -217,9 +254,12 @@ export function StrategyCard({ strategy }: Props) {
                 <ReferenceLine y={70} stroke="#ef4444" strokeDasharray="3 2" strokeWidth={1} strokeOpacity={0.4} />
                 <ReferenceLine y={30} stroke="#3182f6" strokeDasharray="3 2" strokeWidth={1} strokeOpacity={0.4} />
                 <Line
-                  type="monotone" dataKey="rsi"
-                  stroke={rsiColor} strokeWidth={1.5}
-                  dot={false} isAnimationActive={false}
+                  type="monotone"
+                  dataKey="rsi"
+                  stroke={rsiColor}
+                  strokeWidth={1.5}
+                  dot={false}
+                  isAnimationActive={false}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -230,9 +270,14 @@ export function StrategyCard({ strategy }: Props) {
         {mode === 'reverse' && (
           <div
             style={{
-              padding: '8px 12px', marginBottom: 8,
-              background: 'var(--color-sell-bg)', border: '1px solid #fca5a5',
-              borderRadius: 10, fontSize: 12, fontWeight: 600, color: '#ef4444',
+              padding: '8px 12px',
+              marginBottom: 8,
+              background: 'var(--color-sell-bg)',
+              border: '1px solid #fca5a5',
+              borderRadius: 10,
+              fontSize: 12,
+              fontWeight: 600,
+              color: '#ef4444',
             }}
           >
             리버스 모드 진행 중 · 무한매도 + 쿼터매수
@@ -243,9 +288,14 @@ export function StrategyCard({ strategy }: Props) {
         {plan?.largeNumberBuy && (
           <div
             style={{
-              padding: '8px 12px', marginBottom: 8,
-              background: 'var(--color-star-bg)', border: '1px solid #fbbf24',
-              borderRadius: 10, fontSize: 12, fontWeight: 600, color: '#d97706',
+              padding: '8px 12px',
+              marginBottom: 8,
+              background: 'var(--color-star-bg)',
+              border: '1px solid #fbbf24',
+              borderRadius: 10,
+              fontSize: 12,
+              fontWeight: 600,
+              color: '#d97706',
             }}
           >
             큰수매수 권장: <strong>{fmtUSD(plan.largeNumberBuy.suggested)}</strong>
@@ -255,9 +305,13 @@ export function StrategyCard({ strategy }: Props) {
         {/* ── 현재 상태 KPI (별% 제거 → 5개) ── */}
         <div
           style={{
-            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8,
-            padding: '10px 0', borderTop: '1px solid var(--color-border)',
-            borderBottom: '1px solid var(--color-border)', marginBottom: 12,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 8,
+            padding: '10px 0',
+            borderTop: '1px solid var(--color-border)',
+            borderBottom: '1px solid var(--color-border)',
+            marginBottom: 12,
           }}
         >
           {[
@@ -278,8 +332,13 @@ export function StrategyCard({ strategy }: Props) {
         {starPrice != null && (
           <div
             style={{
-              display: 'flex', gap: 14, marginBottom: 12, flexWrap: 'wrap',
-              padding: '8px 10px', background: 'var(--color-star-bg)', borderRadius: 10,
+              display: 'flex',
+              gap: 14,
+              marginBottom: 12,
+              flexWrap: 'wrap',
+              padding: '8px 10px',
+              background: 'var(--color-star-bg)',
+              borderRadius: 10,
             }}
           >
             {sPct != null && (
@@ -302,7 +361,7 @@ export function StrategyCard({ strategy }: Props) {
                   {strategy.ticker === 'TQQQ' ? '15%' : '20%'} 지정가
                 </div>
                 <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-fall)' }}>
-                  {fmtUSD(avg * (strategy.ticker === 'TQQQ' ? 1.15 : 1.20))}
+                  {fmtUSD(avg * (strategy.ticker === 'TQQQ' ? 1.15 : 1.2))}
                 </div>
               </div>
             )}
@@ -320,55 +379,75 @@ export function StrategyCard({ strategy }: Props) {
                   <div
                     key={i}
                     style={{
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
                       padding: '11px 14px',
                       background: isStar ? 'var(--color-star-bg)' : 'var(--color-card)',
-                      borderBottom: i < coreRows.length - 1 || (showLadder && ladderRows.length > 0) ? '1px solid var(--color-border)' : 'none',
+                      borderBottom:
+                        i < coreRows.length - 1 || (showLadder && ladderRows.length > 0)
+                          ? '1px solid var(--color-border)'
+                          : 'none',
                     }}
                   >
                     <span style={{ fontSize: 13, fontWeight: isStar ? 700 : 400 }}>{row.label}</span>
                     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                      <span style={{ fontSize: 13, color: 'var(--color-rise)', fontWeight: 700 }}>{fmtUSD(row.price)}</span>
-                      <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 28, textAlign: 'right' }}>
+                      <span style={{ fontSize: 13, color: 'var(--color-rise)', fontWeight: 700 }}>
+                        {fmtUSD(row.price)}
+                      </span>
+                      <span
+                        style={{ fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 28, textAlign: 'right' }}
+                      >
                         {row.qty != null ? `${row.qty}주` : '-'}
                       </span>
                     </div>
                   </div>
                 )
               })}
-              {showLadder && ladderRows.map((row, i) => (
-                <div
-                  key={`ladder-${i}`}
-                  style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '11px 14px',
-                    background: 'var(--color-card)',
-                    borderBottom: i < ladderRows.length - 1 ? '1px solid var(--color-border)' : 'none',
-                  }}
-                >
-                  <span style={{ fontSize: 13 }}>{row.label}</span>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <span style={{ fontSize: 13, color: 'var(--color-rise)', fontWeight: 700 }}>{fmtUSD(row.price)}</span>
-                    <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 28, textAlign: 'right' }}>
-                      {row.qty != null ? `${row.qty}주` : '-'}
-                    </span>
+              {showLadder &&
+                ladderRows.map((row, i) => (
+                  <div
+                    key={`ladder-${i}`}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '11px 14px',
+                      background: 'var(--color-card)',
+                      borderBottom: i < ladderRows.length - 1 ? '1px solid var(--color-border)' : 'none',
+                    }}
+                  >
+                    <span style={{ fontSize: 13 }}>{row.label}</span>
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                      <span style={{ fontSize: 13, color: 'var(--color-rise)', fontWeight: 700 }}>
+                        {fmtUSD(row.price)}
+                      </span>
+                      <span
+                        style={{ fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 28, textAlign: 'right' }}
+                      >
+                        {row.qty != null ? `${row.qty}주` : '-'}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
             {ladderRows.length > 0 && (
               <button
                 onClick={() => setShowLadder((v) => !v)}
                 style={{
-                  width: '100%', marginTop: 8,
+                  width: '100%',
+                  marginTop: 8,
                   padding: '11px 14px',
                   border: '1px solid var(--color-border)',
                   borderRadius: 12,
                   background: 'var(--color-bg)',
-                  fontSize: 13, fontWeight: 600,
+                  fontSize: 13,
+                  fontWeight: 600,
                   color: 'var(--color-text-secondary)',
                   cursor: 'pointer',
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                 }}
               >
                 <span>분할 사다리 {ladderRows.length}개</span>
@@ -383,25 +462,33 @@ export function StrategyCard({ strategy }: Props) {
           <div style={{ marginBottom: 10 }}>
             <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>매도점</div>
             <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
-              {plan.sellRows.filter((r) => (r.qty ?? 0) > 0).map((row, i, arr) => (
-                <div
-                  key={i}
-                  style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '11px 14px',
-                    background: 'var(--color-card)',
-                    borderBottom: i < arr.length - 1 ? '1px solid var(--color-border)' : 'none',
-                  }}
-                >
-                  <span style={{ fontSize: 13 }}>{row.label}</span>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <span style={{ fontSize: 13, color: 'var(--color-fall)', fontWeight: 700 }}>{fmtUSD(row.price)}</span>
-                    <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 28, textAlign: 'right' }}>
-                      {row.qty != null ? `${row.qty}주` : '-'}
-                    </span>
+              {plan.sellRows
+                .filter((r) => (r.qty ?? 0) > 0)
+                .map((row, i, arr) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '11px 14px',
+                      background: 'var(--color-card)',
+                      borderBottom: i < arr.length - 1 ? '1px solid var(--color-border)' : 'none',
+                    }}
+                  >
+                    <span style={{ fontSize: 13 }}>{row.label}</span>
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                      <span style={{ fontSize: 13, color: 'var(--color-fall)', fontWeight: 700 }}>
+                        {fmtUSD(row.price)}
+                      </span>
+                      <span
+                        style={{ fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 28, textAlign: 'right' }}
+                      >
+                        {row.qty != null ? `${row.qty}주` : '-'}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         )}
@@ -413,7 +500,15 @@ export function StrategyCard({ strategy }: Props) {
               <span style={{ fontSize: 13, fontWeight: 700 }}>체결 내역</span>
               <button
                 onClick={() => nav('/history')}
-                style={{ background: 'none', border: 'none', padding: 0, fontSize: 13, color: 'var(--color-primary)', cursor: 'pointer', fontWeight: 600 }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  fontSize: 13,
+                  color: 'var(--color-primary)',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                }}
               >
                 전체 →
               </button>
@@ -423,7 +518,9 @@ export function StrategyCard({ strategy }: Props) {
                 <div
                   key={e.id}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
                     padding: '11px 14px',
                     background: 'var(--color-card)',
                     borderBottom: i < visibleExecs.length - 1 ? '1px solid var(--color-border)' : 'none',
@@ -445,15 +542,19 @@ export function StrategyCard({ strategy }: Props) {
               <button
                 onClick={() => setShowAllExecs((v) => !v)}
                 style={{
-                  width: '100%', marginTop: 8,
+                  width: '100%',
+                  marginTop: 8,
                   padding: '11px 14px',
                   border: '1px solid var(--color-border)',
                   borderRadius: 12,
                   background: 'var(--color-bg)',
-                  fontSize: 13, fontWeight: 600,
+                  fontSize: 13,
+                  fontWeight: 600,
                   color: 'var(--color-text-secondary)',
                   cursor: 'pointer',
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                 }}
               >
                 <span>{showAllExecs ? '접기' : `전체 보기 (${recentExecs.length}개)`}</span>
@@ -468,9 +569,15 @@ export function StrategyCard({ strategy }: Props) {
           <button
             onClick={() => setSheetOpen(true)}
             style={{
-              flex: 1, padding: '14px 0', border: '1px solid var(--color-border)',
-              borderRadius: 14, background: 'var(--color-bg)', fontSize: 15, fontWeight: 600,
-              cursor: 'pointer', color: 'var(--color-text)',
+              flex: 1,
+              padding: '14px 0',
+              border: '1px solid var(--color-border)',
+              borderRadius: 14,
+              background: 'var(--color-bg)',
+              fontSize: 15,
+              fontWeight: 600,
+              cursor: 'pointer',
+              color: 'var(--color-text)',
             }}
           >
             체결 입력
@@ -478,9 +585,15 @@ export function StrategyCard({ strategy }: Props) {
           <button
             onClick={() => nav(`/strategy/${strategy.id}`)}
             style={{
-              flex: 1, padding: '14px 0', border: 'none',
-              borderRadius: 14, background: 'var(--color-primary)', color: '#fff',
-              fontSize: 15, fontWeight: 600, cursor: 'pointer',
+              flex: 1,
+              padding: '14px 0',
+              border: 'none',
+              borderRadius: 14,
+              background: 'var(--color-primary)',
+              color: '#fff',
+              fontSize: 15,
+              fontWeight: 600,
+              cursor: 'pointer',
             }}
           >
             상세

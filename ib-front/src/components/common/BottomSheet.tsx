@@ -17,10 +17,17 @@ export function BottomSheet({ onClose, children, maxHeight = '90vh' }: Props) {
 
   // 마운트 후 한 프레임 뒤에 open으로 전환 → 슬라이드 업 애니메이션
   useEffect(() => {
-    const id = requestAnimationFrame(() =>
-      requestAnimationFrame(() => setPhase('open'))
-    )
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => setPhase('open')))
     return () => cancelAnimationFrame(id)
+  }, [])
+
+  // 시트 열림 동안 body 스크롤 잠금
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
   }, [])
 
   function requestClose() {
@@ -56,32 +63,35 @@ export function BottomSheet({ onClose, children, maxHeight = '90vh' }: Props) {
   const sheetY = isHidden
     ? 'translateX(-50%) translateY(100%)'
     : isDragging
-    ? `translateX(-50%) translateY(${dragY}px)`
-    : 'translateX(-50%) translateY(0)'
+      ? `translateX(-50%) translateY(${dragY}px)`
+      : 'translateX(-50%) translateY(0)'
 
-  const backdropAlpha = isHidden
-    ? 0
-    : isDragging
-    ? Math.max(0, 0.5 * (1 - dragY / 300))
-    : 0.5
+  const backdropAlpha = isHidden ? 0 : isDragging ? Math.max(0, 0.5 * (1 - dragY / 300)) : 0.5
 
   return (
     <>
-      {/* 백드롭 */}
+      {/* 백드롭 — touchmove 차단해서 배경 스크롤 방지 */}
       <div
         onClick={requestClose}
+        onTouchMove={(e) => e.preventDefault()}
         style={{
-          position: 'fixed', inset: 0, zIndex: 100,
+          position: 'fixed',
+          inset: 0,
+          zIndex: 100,
           background: `rgba(0,0,0,${backdropAlpha})`,
           transition: isDragging ? 'none' : 'background 0.3s',
+          touchAction: 'none',
         }}
       />
 
       {/* 시트 */}
       <div
         style={{
-          position: 'fixed', bottom: 0, left: '50%',
-          width: '100%', maxWidth: 480,
+          position: 'fixed',
+          bottom: 0,
+          left: '50%',
+          width: '100%',
+          maxWidth: 480,
           background: 'var(--color-card)',
           borderRadius: '20px 20px 0 0',
           zIndex: 101,
@@ -107,21 +117,24 @@ export function BottomSheet({ onClose, children, maxHeight = '90vh' }: Props) {
         >
           <div
             style={{
-              width: 36, height: 4,
+              width: 36,
+              height: 4,
               background: 'var(--color-border)',
-              borderRadius: 2, margin: '0 auto',
+              borderRadius: 2,
+              margin: '0 auto',
               transition: isDragging ? 'none' : 'background 0.2s',
             }}
           />
         </div>
 
-        {/* 스크롤 가능한 콘텐츠 영역 */}
+        {/* 스크롤 가능한 콘텐츠 영역 — overscroll 격리로 배경 전파 차단 */}
         <div
           style={{
             flex: 1,
             overflowY: 'auto',
             minHeight: 0,
             paddingBottom: 'env(safe-area-inset-bottom)',
+            overscrollBehavior: 'contain',
           }}
         >
           {children(requestClose)}

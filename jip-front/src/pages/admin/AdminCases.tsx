@@ -5,14 +5,16 @@ import { useToastStore } from '@/stores/toast'
 import type { Case } from '@/types'
 
 const PHOTO = {
-  bath:    'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548942946_cc0gbn.webp',
-  film:    'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943309_yggm25.webp',
+  bath: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548942946_cc0gbn.webp',
+  film: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943309_yggm25.webp',
   kitchen: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943517_khkjrn.webp',
 } as const
 
 function coverPhoto(c: Case) {
-  return c.photos?.find((p) => p.role === 'cover')?.fileUrl
-    ?? (c.color === 'warm' ? PHOTO.kitchen : c.color === 'cool' ? PHOTO.bath : PHOTO.film)
+  return (
+    c.photos?.find((p) => p.role === 'cover')?.fileUrl ??
+    (c.color === 'warm' ? PHOTO.kitchen : c.color === 'cool' ? PHOTO.bath : PHOTO.film)
+  )
 }
 
 export default function AdminCases() {
@@ -23,13 +25,16 @@ export default function AdminCases() {
 
   const load = useCallback(() => {
     setLoading(true)
-    api.post('/cases/admin/list', {})
+    api
+      .post('/cases/admin/list', {})
       .then((r) => setCases(r.data.data))
       .catch(() => showToast('목록을 불러오지 못했어요', 'error'))
       .finally(() => setLoading(false))
   }, [showToast])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    load()
+  }, [load])
 
   const handlePublish = async (c: Case) => {
     try {
@@ -56,7 +61,16 @@ export default function AdminCases() {
 
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          marginBottom: 24,
+          flexWrap: 'wrap',
+          gap: 16,
+        }}
+      >
         <div>
           <div className="eyebrow">CASES</div>
           <h1 className="h2 mt-8">시공사례 관리</h1>
@@ -76,17 +90,21 @@ export default function AdminCases() {
         {cases.map((c) => (
           <div key={c.id} className="card" style={{ overflow: 'hidden' }}>
             <div style={{ height: 180, overflow: 'hidden', position: 'relative' }}>
-              <img
-                src={coverPhoto(c)}
-                alt=""
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
+              <img src={coverPhoto(c)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               {!c.isPublished && (
-                <div style={{
-                  position: 'absolute', top: 8, left: 8,
-                  background: 'rgba(0,0,0,0.6)', color: '#fff',
-                  fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 4,
-                }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 8,
+                    left: 8,
+                    background: 'rgba(0,0,0,0.6)',
+                    color: '#fff',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: '3px 8px',
+                    borderRadius: 4,
+                  }}
+                >
                   비공개
                 </div>
               )}
@@ -94,15 +112,24 @@ export default function AdminCases() {
             <div className="card-pad">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
                 {c.tags?.slice(0, 3).map((t) => (
-                  <span key={t.id} className="tag" style={{ fontSize: 11, padding: '3px 8px' }}>{t.tag}</span>
+                  <span key={t.id} className="tag" style={{ fontSize: 11, padding: '3px 8px' }}>
+                    {t.tag}
+                  </span>
                 ))}
               </div>
-              <div className="case-card-title" style={{ marginBottom: 4 }}>{c.title}</div>
+              <div className="case-card-title" style={{ marginBottom: 4 }}>
+                {c.title}
+              </div>
               <div className="case-card-meta" style={{ fontSize: 12 }}>
-                {c.area}{c.area && c.hours ? ' · ' : ''}{c.hours ? `${c.hours}시간` : ''}{c.dateText ? ` · ${c.dateText}` : ''}
+                {c.area}
+                {c.area && c.hours ? ' · ' : ''}
+                {c.hours ? `${c.hours}시간` : ''}
+                {c.dateText ? ` · ${c.dateText}` : ''}
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                <button className="btn sm ghost" onClick={() => navigate(`/admin/cases/${c.id}`)}>편집</button>
+                <button className="btn sm ghost" onClick={() => navigate(`/admin/cases/${c.id}`)}>
+                  편집
+                </button>
                 <button className="btn sm ghost" onClick={() => handlePublish(c)}>
                   {c.isPublished ? '숨기기' : '공개'}
                 </button>

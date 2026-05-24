@@ -36,7 +36,9 @@ export function OnboardingPage() {
               <div
                 key={i}
                 style={{
-                  flex: 1, height: 3, borderRadius: 2,
+                  flex: 1,
+                  height: 3,
+                  borderRadius: 2,
                   background: i <= step ? 'var(--color-primary)' : 'var(--color-border)',
                 }}
               />
@@ -60,10 +62,17 @@ export function OnboardingPage() {
               key={t}
               onClick={() => setTicker(t)}
               style={{
-                display: 'block', width: '100%', marginBottom: 12, padding: '16px',
+                display: 'block',
+                width: '100%',
+                marginBottom: 12,
+                padding: '16px',
                 border: `2px solid ${ticker === t ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                borderRadius: 14, background: ticker === t ? 'var(--color-avg-bg)' : 'var(--color-card)',
-                fontSize: 18, fontWeight: 700, cursor: 'pointer', textAlign: 'left',
+                borderRadius: 14,
+                background: ticker === t ? 'var(--color-avg-bg)' : 'var(--color-card)',
+                fontSize: 18,
+                fontWeight: 700,
+                cursor: 'pointer',
+                textAlign: 'left',
                 color: 'var(--color-text)',
               }}
             >
@@ -88,10 +97,17 @@ export function OnboardingPage() {
               key={d}
               onClick={() => setDivision(d)}
               style={{
-                display: 'block', width: '100%', marginBottom: 12, padding: '16px',
+                display: 'block',
+                width: '100%',
+                marginBottom: 12,
+                padding: '16px',
                 border: `2px solid ${division === d ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                borderRadius: 14, background: division === d ? 'var(--color-avg-bg)' : 'var(--color-card)',
-                fontSize: 18, fontWeight: 700, cursor: 'pointer', textAlign: 'left',
+                borderRadius: 14,
+                background: division === d ? 'var(--color-avg-bg)' : 'var(--color-card)',
+                fontSize: 18,
+                fontWeight: 700,
+                cursor: 'pointer',
+                textAlign: 'left',
                 color: 'var(--color-text)',
               }}
             >
@@ -108,19 +124,23 @@ export function OnboardingPage() {
       {step === 2 && (
         <div>
           <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>원금 (USD)</h2>
-          <p style={{ color: 'var(--color-text-secondary)', marginBottom: 16 }}>
-            투입할 총 달러 금액을 입력하세요.
-          </p>
+          <p style={{ color: 'var(--color-text-secondary)', marginBottom: 16 }}>투입할 총 달러 금액을 입력하세요.</p>
           <input
             type="number"
             inputMode="decimal"
             value={principal}
             onChange={(e) => setPrincipal(parseFloat(e.target.value) || 0)}
             style={{
-              width: '100%', padding: '14px', fontSize: 20, fontWeight: 700,
-              border: '2px solid var(--color-border)', borderRadius: 14,
-              outline: 'none', marginBottom: 16,
-              background: 'var(--color-card)', color: 'var(--color-text)',
+              width: '100%',
+              padding: '14px',
+              fontSize: 20,
+              fontWeight: 700,
+              border: '2px solid var(--color-border)',
+              borderRadius: 14,
+              outline: 'none',
+              marginBottom: 16,
+              background: 'var(--color-card)',
+              color: 'var(--color-text)',
             }}
           />
           <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
@@ -129,10 +149,15 @@ export function OnboardingPage() {
                 key={n}
                 onClick={() => setPrincipal((v) => v + n)}
                 style={{
-                  flex: 1, padding: '10px 0', borderRadius: 10,
+                  flex: 1,
+                  padding: '10px 0',
+                  borderRadius: 10,
                   border: '1px solid var(--color-border)',
-                  background: 'var(--color-card)', color: 'var(--color-text)',
-                  cursor: 'pointer', fontWeight: 600, fontSize: 14,
+                  background: 'var(--color-card)',
+                  color: 'var(--color-text)',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14,
                 }}
               >
                 +{n}
@@ -149,9 +174,7 @@ export function OnboardingPage() {
       {step === 3 && (
         <div>
           <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>설정 확인</h2>
-          <p style={{ color: 'var(--color-text-secondary)', marginBottom: 24 }}>
-            아래 내용으로 전략을 시작합니다.
-          </p>
+          <p style={{ color: 'var(--color-text-secondary)', marginBottom: 24 }}>아래 내용으로 전략을 시작합니다.</p>
           <div className="card" style={{ marginBottom: 16 }}>
             {[
               { label: '종목', value: ticker },
@@ -162,7 +185,12 @@ export function OnboardingPage() {
             ].map(({ label, value }) => (
               <div
                 key={label}
-                style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--color-border)' }}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '10px 0',
+                  borderBottom: '1px solid var(--color-border)',
+                }}
               >
                 <span style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
                 <span style={{ fontWeight: 600 }}>{value}</span>
@@ -173,7 +201,16 @@ export function OnboardingPage() {
       )}
 
       {/* 하단 버튼 */}
-      <div style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 32px)', maxWidth: 448 }}>
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 20,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 'calc(100% - 32px)',
+          maxWidth: 448,
+        }}
+      >
         {(() => {
           const needsPrincipal = step >= 2 && principal <= 0
           const isDisabled = createMutation.isPending || needsPrincipal
@@ -182,11 +219,14 @@ export function OnboardingPage() {
               onClick={step < STEPS.length - 1 ? () => setStep(step + 1) : handleSubmit}
               disabled={isDisabled}
               style={{
-                width: '100%', padding: '16px',
+                width: '100%',
+                padding: '16px',
                 background: isDisabled ? 'var(--color-border)' : 'var(--color-primary)',
                 color: isDisabled ? 'var(--color-text-secondary)' : '#fff',
-                border: 'none', borderRadius: 14,
-                fontSize: 17, fontWeight: 600,
+                border: 'none',
+                borderRadius: 14,
+                fontSize: 17,
+                fontWeight: 600,
                 cursor: isDisabled ? 'default' : 'pointer',
               }}
             >

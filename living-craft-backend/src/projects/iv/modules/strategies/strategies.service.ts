@@ -60,7 +60,7 @@ export class StrategiesService {
       if (!st) continue
       totalPrincipal += Number(strategies[i].principal)
       totalCash += Number(st.cash)
-      totalStockValue += Number(st.quantity) * Number(st.lastClose ?? 0)
+      totalStockValue += Number(st.quantity) * Number(st.lastClose ?? st.avgPrice ?? 0)
     }
     const totalEvaluation = totalCash + totalStockValue
     const totalPnl = totalEvaluation - totalPrincipal

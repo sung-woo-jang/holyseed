@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '@/lib/api'
 import { JIcon, JPhoto, JStatusPill } from '@/components/common/JobsShared'
+import { api } from '@/lib/api'
 import type { Job } from '@/types'
 
 function fmtDate(s?: string) {
@@ -28,22 +28,30 @@ export default function AdminJobsList() {
   const [jobs, setJobs] = useState<Job[]>([])
 
   useEffect(() => {
-    api.post('/jobs/admin/list', {
-      status: tab || undefined,
-      search: q || undefined,
-    }).then((r) => setJobs(r.data.data))
+    api
+      .post('/jobs/admin/list', {
+        status: tab || undefined,
+        search: q || undefined,
+      })
+      .then((r) => setJobs(r.data.data))
   }, [tab, q])
 
   const now = new Date()
   const monthSum = jobs
-    .filter((j) => j.paid && j.paidDate && new Date(j.paidDate).getMonth() === now.getMonth() && new Date(j.paidDate).getFullYear() === now.getFullYear())
+    .filter(
+      (j) =>
+        j.paid &&
+        j.paidDate &&
+        new Date(j.paidDate).getMonth() === now.getMonth() &&
+        new Date(j.paidDate).getFullYear() === now.getFullYear()
+    )
     .reduce((s, j) => s + (Number(j.sellingPrice) || 0), 0)
 
   const counts = {
     '': jobs.length,
-    '문의접수': jobs.filter((j) => j.status === '문의접수').length,
-    '시공대기': jobs.filter((j) => j.status === '시공대기').length,
-    '시공완료': jobs.filter((j) => j.status === '시공완료').length,
+    문의접수: jobs.filter((j) => j.status === '문의접수').length,
+    시공대기: jobs.filter((j) => j.status === '시공대기').length,
+    시공완료: jobs.filter((j) => j.status === '시공완료').length,
   }
 
   return (
@@ -57,18 +65,20 @@ export default function AdminJobsList() {
             <span style={{ marginLeft: 8, color: 'var(--ink-4)' }}>· 전체 {jobs.length}건</span>
           </div>
         </div>
-        <button className="btn primary" style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => navigate('/admin/jobs/new')}>
+        <button
+          className="btn primary"
+          style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+          onClick={() => navigate('/admin/jobs/new')}
+        >
           <JIcon.Plus s={16} /> 새 일지
         </button>
       </div>
 
       <div className="jobs-search">
-        <span className="ico"><JIcon.Search /></span>
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="고객명·주소·제품 검색"
-        />
+        <span className="ico">
+          <JIcon.Search />
+        </span>
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="고객명·주소·제품 검색" />
       </div>
 
       <div className="jobs-tabs">
@@ -103,7 +113,9 @@ export default function AdminJobsList() {
                   <span className="sep">·</span>
                   <span>{j.addressShort}</span>
                   <span className="sep">·</span>
-                  <span>{j.workDate ? `시공 ${fmtDate(j.workDate)}` : j.inquiryDate ? `문의 ${fmtDate(j.inquiryDate)}` : ''}</span>
+                  <span>
+                    {j.workDate ? `시공 ${fmtDate(j.workDate)}` : j.inquiryDate ? `문의 ${fmtDate(j.inquiryDate)}` : ''}
+                  </span>
                 </div>
                 <div className="row3">
                   {j.sellingPrice ? (

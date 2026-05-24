@@ -5,7 +5,11 @@ import { useToastStore } from '@/stores/toast'
 import type { QuoteRequest } from '@/types'
 
 const STATUS_LABEL: Record<string, string> = {
-  pending: '검토 대기', accepted: '수락됨', in_progress: '진행 중', done: '완료', cancelled: '취소됨',
+  pending: '검토 대기',
+  accepted: '수락됨',
+  in_progress: '진행 중',
+  done: '완료',
+  cancelled: '취소됨',
 }
 
 export default function BookingsPage() {
@@ -41,7 +45,13 @@ export default function BookingsPage() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="010-0000-0000"
-              style={{ flex: 1, padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 16 }}
+              style={{
+                flex: 1,
+                padding: '12px 16px',
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+                fontSize: 16,
+              }}
               onKeyDown={(e) => e.key === 'Enter' && lookup()}
             />
             <button className="btn primary" onClick={lookup} disabled={loading}>
@@ -65,18 +75,32 @@ export default function BookingsPage() {
                     onClick={() => navigate(`/booking/${r.code}`)}
                     style={{ cursor: 'pointer', padding: 24 }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: 8,
+                      }}
+                    >
                       <div>
                         <div style={{ fontWeight: 700 }}>{r.code}</div>
-                        <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>{new Date(r.createdAt).toLocaleDateString('ko-KR')}</div>
+                        <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>
+                          {new Date(r.createdAt).toLocaleDateString('ko-KR')}
+                        </div>
                       </div>
-                      <span className={`tag${r.status === 'done' ? ' green' : r.status === 'cancelled' ? '' : ' orange'}`}>
+                      <span
+                        className={`tag${r.status === 'done' ? 'green' : r.status === 'cancelled' ? '' : 'orange'}`}
+                      >
                         {STATUS_LABEL[r.status] ?? r.status}
                       </span>
                     </div>
                     <div className="mt-12">
                       {r.items?.slice(0, 2).map((i) => (
-                        <div key={i.id} className="muted" style={{ fontSize: 14 }}>• {i.nameSnapshot}</div>
+                        <div key={i.id} className="muted" style={{ fontSize: 14 }}>
+                          • {i.nameSnapshot}
+                        </div>
                       ))}
                     </div>
                   </div>

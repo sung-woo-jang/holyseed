@@ -47,27 +47,33 @@ export default function AdminCaseForm() {
 
   useEffect(() => {
     if (!isEdit) return
-    api.get(`/cases/admin/${id}`).then((r) => {
-      const c = r.data.data
-      setForm({
-        title: c.title ?? '',
-        area: c.area ?? '',
-        hours: c.hours != null ? String(c.hours) : '',
-        dateText: c.dateText ?? '',
-        color: c.color ?? 'default',
-        intro: c.intro ?? '',
-        story: c.story ?? '',
-        isPublished: c.isPublished ?? true,
+    api
+      .get(`/cases/admin/${id}`)
+      .then((r) => {
+        const c = r.data.data
+        setForm({
+          title: c.title ?? '',
+          area: c.area ?? '',
+          hours: c.hours != null ? String(c.hours) : '',
+          dateText: c.dateText ?? '',
+          color: c.color ?? 'default',
+          intro: c.intro ?? '',
+          story: c.story ?? '',
+          isPublished: c.isPublished ?? true,
+        })
+        setTags((c.tags ?? []).map((t: { tag: string }) => t.tag))
+        setPhotos(
+          (c.photos ?? []).map((p: { role: 'cover' | 'before' | 'after'; label: string; fileUrl: string }) => ({
+            role: p.role,
+            label: p.label ?? '',
+            fileUrl: p.fileUrl ?? '',
+          }))
+        )
       })
-      setTags((c.tags ?? []).map((t: { tag: string }) => t.tag))
-      setPhotos((c.photos ?? []).map((p: { role: 'cover' | 'before' | 'after'; label: string; fileUrl: string }) => ({
-        role: p.role,
-        label: p.label ?? '',
-        fileUrl: p.fileUrl ?? '',
-      })))
-    }).catch(() => {
-      showToast('데이터를 불러오지 못했어요', 'error')
-    }).finally(() => setLoading(false))
+      .catch(() => {
+        showToast('데이터를 불러오지 못했어요', 'error')
+      })
+      .finally(() => setLoading(false))
   }, [id, isEdit, showToast])
 
   const setField = <K extends keyof FormState>(key: K, val: FormState[K]) =>
@@ -75,7 +81,10 @@ export default function AdminCaseForm() {
 
   const addTag = () => {
     const t = tagInput.trim()
-    if (!t || tags.includes(t)) { setTagInput(''); return }
+    if (!t || tags.includes(t)) {
+      setTagInput('')
+      return
+    }
     setTags((prev) => [...prev, t])
     setTagInput('')
   }
@@ -108,11 +117,14 @@ export default function AdminCaseForm() {
 
   const removePhoto = (idx: number) => setPhotos((prev) => prev.filter((_, i) => i !== idx))
   const updatePhotoLabel = (idx: number, label: string) =>
-    setPhotos((prev) => prev.map((p, i) => i === idx ? { ...p, label } : p))
+    setPhotos((prev) => prev.map((p, i) => (i === idx ? { ...p, label } : p)))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.title.trim()) { showToast('제목을 입력해주세요', 'error'); return }
+    if (!form.title.trim()) {
+      showToast('제목을 입력해주세요', 'error')
+      return
+    }
     setSaving(true)
     try {
       const payload = {
@@ -151,7 +163,9 @@ export default function AdminCaseForm() {
   return (
     <form onSubmit={handleSubmit}>
       <div className="steps mb-16">
-        <span className="link" style={{ cursor: 'pointer' }} onClick={() => navigate('/admin/cases')}>시공사례</span>
+        <span className="link" style={{ cursor: 'pointer' }} onClick={() => navigate('/admin/cases')}>
+          시공사례
+        </span>
         <span className="sep">›</span>
         <b>{isEdit ? '수정' : '새 사례'}</b>
       </div>
@@ -169,11 +183,7 @@ export default function AdminCaseForm() {
             {form.isPublished ? '고객 사이트에 노출됩니다.' : '저장만 되고 고객에게 보이지 않아요.'}
           </div>
         </div>
-        <button
-          type="button"
-          className={`jobs-switch ${form.isPublished ? 'on' : ''}`}
-          aria-label="공개 여부"
-        />
+        <button type="button" className={`jobs-switch ${form.isPublished ? 'on' : ''}`} aria-label="공개 여부" />
       </div>
 
       {/* 기본 정보 */}
@@ -276,7 +286,14 @@ export default function AdminCaseForm() {
               {t}
               <button
                 type="button"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12, lineHeight: 1 }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  fontSize: 12,
+                  lineHeight: 1,
+                }}
                 onClick={() => removeTag(t)}
               >
                 ×
@@ -290,11 +307,18 @@ export default function AdminCaseForm() {
             className="input"
             value={tagInput}
             onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                addTag()
+              }
+            }}
             placeholder="태그 입력 후 Enter"
             style={{ flex: 1 }}
           />
-          <button type="button" className="btn ghost" onClick={addTag}>추가</button>
+          <button type="button" className="btn ghost" onClick={addTag}>
+            추가
+          </button>
         </div>
       </div>
 
@@ -313,7 +337,21 @@ export default function AdminCaseForm() {
                   <img src={p.fileUrl} alt="" style={{ width: 120, height: 90, objectFit: 'cover', borderRadius: 8 }} />
                   <button
                     type="button"
-                    style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: 12, lineHeight: '20px', padding: 0 }}
+                    style={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      background: 'rgba(0,0,0,0.6)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: 20,
+                      height: 20,
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      lineHeight: '20px',
+                      padding: 0,
+                    }}
                     onClick={() => removePhoto(globalIdx)}
                   >
                     ×
@@ -331,7 +369,13 @@ export default function AdminCaseForm() {
           </div>
           <label className="btn ghost sm" style={{ cursor: 'pointer', display: 'inline-block' }}>
             {uploading ? '업로드 중...' : '+ 커버 사진 추가'}
-            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handlePhotoAdd(e, 'cover')} disabled={uploading} />
+            <input
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={(e) => handlePhotoAdd(e, 'cover')}
+              disabled={uploading}
+            />
           </label>
         </div>
 
@@ -346,7 +390,21 @@ export default function AdminCaseForm() {
                   <img src={p.fileUrl} alt="" style={{ width: 120, height: 90, objectFit: 'cover', borderRadius: 8 }} />
                   <button
                     type="button"
-                    style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: 12, lineHeight: '20px', padding: 0 }}
+                    style={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      background: 'rgba(0,0,0,0.6)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: 20,
+                      height: 20,
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      lineHeight: '20px',
+                      padding: 0,
+                    }}
                     onClick={() => removePhoto(globalIdx)}
                   >
                     ×
@@ -364,7 +422,14 @@ export default function AdminCaseForm() {
           </div>
           <label className="btn ghost sm" style={{ cursor: 'pointer', display: 'inline-block' }}>
             {uploading ? '업로드 중...' : '+ Before 사진 추가'}
-            <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => handlePhotoAdd(e, 'before')} disabled={uploading} />
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              style={{ display: 'none' }}
+              onChange={(e) => handlePhotoAdd(e, 'before')}
+              disabled={uploading}
+            />
           </label>
         </div>
 
@@ -379,7 +444,21 @@ export default function AdminCaseForm() {
                   <img src={p.fileUrl} alt="" style={{ width: 120, height: 90, objectFit: 'cover', borderRadius: 8 }} />
                   <button
                     type="button"
-                    style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: 12, lineHeight: '20px', padding: 0 }}
+                    style={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      background: 'rgba(0,0,0,0.6)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: 20,
+                      height: 20,
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      lineHeight: '20px',
+                      padding: 0,
+                    }}
                     onClick={() => removePhoto(globalIdx)}
                   >
                     ×
@@ -397,7 +476,14 @@ export default function AdminCaseForm() {
           </div>
           <label className="btn ghost sm" style={{ cursor: 'pointer', display: 'inline-block' }}>
             {uploading ? '업로드 중...' : '+ After 사진 추가'}
-            <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => handlePhotoAdd(e, 'after')} disabled={uploading} />
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              style={{ display: 'none' }}
+              onChange={(e) => handlePhotoAdd(e, 'after')}
+              disabled={uploading}
+            />
           </label>
         </div>
       </div>

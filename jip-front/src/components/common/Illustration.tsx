@@ -1,37 +1,52 @@
 import type { CSSProperties } from 'react'
 
 const ILLUST: Record<string, { emoji: string; bg: string }> = {
-  default:   { emoji: '🏠',   bg: '#F2F4F6' },
-  kitchen:   { emoji: '🍳',   bg: '#FFF1EB' },
-  bath:      { emoji: '🚿',   bg: '#E0EAFE' },
-  film:      { emoji: '🎨',   bg: '#F5F3FF' },
-  faucet:    { emoji: '🚰',   bg: '#FFF1EB' },
-  sink:      { emoji: '🪣',   bg: '#FFF1EB' },
-  counter:   { emoji: '🧱',   bg: '#FFF1EB' },
-  sanding:   { emoji: '✨',   bg: '#FFF7ED' },
-  door:      { emoji: '🚪',   bg: '#F5F3FF' },
-  hinge:     { emoji: '🔩',   bg: '#FFF1EB' },
-  toilet:    { emoji: '🚽',   bg: '#E0EAFE' },
-  bidet:     { emoji: '💧',   bg: '#E0EAFE' },
-  shower:    { emoji: '🚿',   bg: '#E0EAFE' },
-  cabinet:   { emoji: '🗄️',  bg: '#E0EAFE' },
-  accessory: { emoji: '🧻',   bg: '#E0EAFE' },
-  wall:      { emoji: '🖼️',  bg: '#F5F3FF' },
-  molding:   { emoji: '📐',   bg: '#F5F3FF' },
-  patch:     { emoji: '🩹',   bg: '#FEF3C7' },
-  wax:       { emoji: '✨',   bg: '#FEF3C7' },
-  hero:      { emoji: '🔧',   bg: '#FFF1EB' },
-  person:    { emoji: '👷‍♂️', bg: '#FEF3C7' },
+  default: { emoji: '🏠', bg: '#F2F4F6' },
+  kitchen: { emoji: '🍳', bg: '#FFF1EB' },
+  bath: { emoji: '🚿', bg: '#E0EAFE' },
+  film: { emoji: '🎨', bg: '#F5F3FF' },
+  faucet: { emoji: '🚰', bg: '#FFF1EB' },
+  sink: { emoji: '🪣', bg: '#FFF1EB' },
+  counter: { emoji: '🧱', bg: '#FFF1EB' },
+  sanding: { emoji: '✨', bg: '#FFF7ED' },
+  door: { emoji: '🚪', bg: '#F5F3FF' },
+  hinge: { emoji: '🔩', bg: '#FFF1EB' },
+  toilet: { emoji: '🚽', bg: '#E0EAFE' },
+  bidet: { emoji: '💧', bg: '#E0EAFE' },
+  shower: { emoji: '🚿', bg: '#E0EAFE' },
+  cabinet: { emoji: '🗄️', bg: '#E0EAFE' },
+  accessory: { emoji: '🧻', bg: '#E0EAFE' },
+  wall: { emoji: '🖼️', bg: '#F5F3FF' },
+  molding: { emoji: '📐', bg: '#F5F3FF' },
+  patch: { emoji: '🩹', bg: '#FEF3C7' },
+  wax: { emoji: '✨', bg: '#FEF3C7' },
+  hero: { emoji: '🔧', bg: '#FFF1EB' },
+  person: { emoji: '👷‍♂️', bg: '#FEF3C7' },
 }
 
 const ITEM_ILLUST: Record<string, string> = {
-  k1: 'counter', k2: 'sanding', k3: 'sink', k4: 'faucet', k5: 'door', k6: 'hinge',
-  b1: 'faucet', b2: 'sink', b3: 'toilet', b4: 'bidet', b5: 'accessory', b6: 'shower', b7: 'cabinet',
-  f1: 'door', f2: 'wall', f3: 'molding',
+  k1: 'counter',
+  k2: 'sanding',
+  k3: 'sink',
+  k4: 'faucet',
+  k5: 'door',
+  k6: 'hinge',
+  b1: 'faucet',
+  b2: 'sink',
+  b3: 'toilet',
+  b4: 'bidet',
+  b5: 'accessory',
+  b6: 'shower',
+  b7: 'cabinet',
+  f1: 'door',
+  f2: 'wall',
+  f3: 'molding',
 }
 
 const CAT_ILLUST: Record<string, string> = {
-  kitchen: 'kitchen', bath: 'bath', film: 'film',
+  kitchen: 'kitchen',
+  bath: 'bath',
+  film: 'film',
 }
 
 interface IllustrationProps {
@@ -59,7 +74,8 @@ export default function Illustration({ kind = 'default', imageUrl, style }: Illu
     >
       <rect width="100" height="100" fill={meta.bg} />
       <text
-        x="50" y="52"
+        x="50"
+        y="52"
         textAnchor="middle"
         dominantBaseline="central"
         fontSize="50"
@@ -71,7 +87,15 @@ export default function Illustration({ kind = 'default', imageUrl, style }: Illu
   )
 }
 
-export function ItemIllust({ code, imageUrl, style }: { code: string; imageUrl?: string | null; style?: CSSProperties }) {
+export function ItemIllust({
+  code,
+  imageUrl,
+  style,
+}: {
+  code: string
+  imageUrl?: string | null
+  style?: CSSProperties
+}) {
   if (imageUrl) {
     return (
       <img
@@ -84,7 +108,15 @@ export function ItemIllust({ code, imageUrl, style }: { code: string; imageUrl?:
   return <Illustration kind={ITEM_ILLUST[code] ?? 'default'} style={style} />
 }
 
-export function CatIllust({ code, imageUrl, style }: { code: string; imageUrl?: string | null; style?: CSSProperties }) {
+export function CatIllust({
+  code,
+  imageUrl,
+  style,
+}: {
+  code: string
+  imageUrl?: string | null
+  style?: CSSProperties
+}) {
   if (imageUrl) {
     return (
       <img

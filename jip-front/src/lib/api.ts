@@ -19,5 +19,5 @@ api.interceptors.response.use(
       localStorage.removeItem('jip_user')
     }
     return Promise.reject(err)
-  },
+  }
 )

@@ -5,6 +5,17 @@ import tsParser from '@typescript-eslint/parser'
 import prettier from 'eslint-plugin-prettier'
 
 export default [
+  {
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      'jip-front/**',
+      'pc-front/**',
+      'ib-front/**',
+      'asset-diary-front/**',
+      'packages/**',
+    ],
+  },
   js.configs.recommended,
   {
     files: ['**/*.ts', '**/*.tsx'],

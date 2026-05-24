@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useCategories, useServiceItems } from '@/queries/catalog'
 import { ItemIllust } from '@/components/common/Illustration'
+import { useCategories, useServiceItems } from '@/queries/catalog'
 
-function fmtKRW(n: number) { return n.toLocaleString('ko-KR') + '원' }
+function fmtKRW(n: number) {
+  return n.toLocaleString('ko-KR') + '원'
+}
 
 export default function ServicesPage() {
   const navigate = useNavigate()
@@ -36,13 +38,13 @@ export default function ServicesPage() {
 
         <div className="filter-row mt-40">
           {cats.map((c) => (
-            <button key={c.code} className={`pill${cat === c.code ? ' on' : ''}`} onClick={() => handleCat(c.code)}>
+            <button key={c.code} className={`pill${cat === c.code ? 'on' : ''}`} onClick={() => handleCat(c.code)}>
               {c.name}
             </button>
           ))}
         </div>
 
-        <div className="svc-grid">
+        <div className="svc-grid mt-40">
           {items?.map((item) => (
             <div key={item.id} className="svc-card" onClick={() => navigate(`/service/${item.code}`)}>
               <div style={{ overflow: 'hidden' }}>

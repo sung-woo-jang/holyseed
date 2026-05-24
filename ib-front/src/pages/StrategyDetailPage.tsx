@@ -1,16 +1,23 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, ReferenceLine, LineChart, Line,
+  ComposedChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+  LineChart,
+  Line,
 } from 'recharts'
-import { useStrategy, useStrategyState, useTodayPlan, useExecutions, usePriceHistory } from '@/queries/iv.queries'
 import { fmtUSD, fmtT, MODE_LABEL, MODE_FULL, MODE_COLOR } from '@/lib/format'
 import { computeRSI } from '@/lib/rsi'
+import { useStrategy, useStrategyState, useTodayPlan, useExecutions, usePriceHistory } from '@/queries/iv.queries'
 import { ExecCard } from './HistoryPage'
 
 type Tab = 'chart' | 'history' | 'mode'
-
 
 const MODE_STEPS = ['cycle_start', 'first_half', 'second_half', 'reverse'] as const
 const MODE_STEP_LABEL: Record<string, string> = {
@@ -98,10 +105,13 @@ export function StrategyDetailPage() {
   // 최신 RSI
   const currentRsi = chartData.length > 0 ? chartData[chartData.length - 1].rsi : null
   const rsiColor =
-    currentRsi == null ? 'var(--color-text-secondary)'
-    : currentRsi >= 70 ? '#ef4444'
-    : currentRsi <= 30 ? '#3182f6'
-    : '#22c55e'
+    currentRsi == null
+      ? 'var(--color-text-secondary)'
+      : currentRsi >= 70
+        ? '#ef4444'
+        : currentRsi <= 30
+          ? '#3182f6'
+          : '#22c55e'
 
   // 핵심 지표 계산
   const sPct = state.avgPrice > 0 ? starPctFn(strategy.ticker, strategy.division, state.tValue) : null
@@ -112,14 +122,27 @@ export function StrategyDetailPage() {
       {/* 헤더 */}
       <div
         style={{
-          display: 'flex', alignItems: 'center', gap: 12, padding: '16px 16px 12px',
-          background: 'var(--color-card)', borderBottom: '1px solid var(--color-border)',
-          position: 'sticky', top: 0, zIndex: 10,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '16px 16px 12px',
+          background: 'var(--color-card)',
+          borderBottom: '1px solid var(--color-border)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
         }}
       >
         <button
           onClick={() => nav(-1)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, padding: 0, color: 'var(--color-text)' }}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 20,
+            padding: 0,
+            color: 'var(--color-text)',
+          }}
         >
           ←
         </button>
@@ -131,8 +154,12 @@ export function StrategyDetailPage() {
         </div>
         <span
           style={{
-            fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 20,
-            background: MODE_COLOR[mode] + '22', color: MODE_COLOR[mode],
+            fontSize: 11,
+            fontWeight: 700,
+            padding: '3px 8px',
+            borderRadius: 20,
+            background: MODE_COLOR[mode] + '22',
+            color: MODE_COLOR[mode],
           }}
         >
           {MODE_LABEL[mode] ?? mode}
@@ -142,19 +169,32 @@ export function StrategyDetailPage() {
       {/* 탭 */}
       <div
         style={{
-          display: 'flex', padding: '0 16px',
-          background: 'var(--color-card)', borderBottom: '1px solid var(--color-border)',
+          display: 'flex',
+          padding: '0 16px',
+          background: 'var(--color-card)',
+          borderBottom: '1px solid var(--color-border)',
         }}
       >
-        {([['chart', '차트'], ['history', '히스토리'], ['mode', '모드 흐름']] as const).map(([key, label]) => (
+        {(
+          [
+            ['chart', '차트'],
+            ['history', '히스토리'],
+            ['mode', '모드 흐름'],
+          ] as const
+        ).map(([key, label]) => (
           <button
             key={key}
             onClick={() => setTab(key)}
             style={{
-              flex: 1, padding: '12px 0', background: 'none', border: 'none',
+              flex: 1,
+              padding: '12px 0',
+              background: 'none',
+              border: 'none',
               borderBottom: tab === key ? '2px solid var(--color-primary)' : '2px solid transparent',
               color: tab === key ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-              fontWeight: tab === key ? 700 : 400, fontSize: 14, cursor: 'pointer',
+              fontWeight: tab === key ? 700 : 400,
+              fontSize: 14,
+              cursor: 'pointer',
             }}
           >
             {label}
@@ -177,9 +217,10 @@ export function StrategyDetailPage() {
                 { label: '종가', value: fmtUSD(state.lastClose) },
                 {
                   label: '평가손익',
-                  value: state.avgPrice > 0 && state.lastClose > 0
-                    ? `${(((state.lastClose - state.avgPrice) / state.avgPrice) * 100).toFixed(1)}%`
-                    : '-',
+                  value:
+                    state.avgPrice > 0 && state.lastClose > 0
+                      ? `${(((state.lastClose - state.avgPrice) / state.avgPrice) * 100).toFixed(1)}%`
+                      : '-',
                 },
               ].map(({ label, value }) => (
                 <div key={label}>
@@ -202,7 +243,15 @@ export function StrategyDetailPage() {
                   </span>
                   {visibleData.some((d) => d.avg != null) && (
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span style={{ width: 12, height: 2, background: '#06b6d4', display: 'inline-block', borderTop: '2px dashed #06b6d4' }} />
+                      <span
+                        style={{
+                          width: 12,
+                          height: 2,
+                          background: '#06b6d4',
+                          display: 'inline-block',
+                          borderTop: '2px dashed #06b6d4',
+                        }}
+                      />
                       평단
                     </span>
                   )}
@@ -214,7 +263,11 @@ export function StrategyDetailPage() {
                       key={p}
                       onClick={() => setPeriod(p)}
                       style={{
-                        padding: '3px 8px', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                        padding: '3px 8px',
+                        borderRadius: 8,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: 'pointer',
                         border: `1px solid ${period === p ? 'var(--color-primary)' : 'var(--color-border)'}`,
                         background: period === p ? 'var(--color-primary)' : 'var(--color-card)',
                         color: period === p ? '#fff' : 'var(--color-text-secondary)',
@@ -240,12 +293,30 @@ export function StrategyDetailPage() {
                   <Tooltip
                     formatter={(v: number, name: string) => [`$${v.toFixed(2)}`, name === 'close' ? '종가' : '평단']}
                     labelStyle={{ fontSize: 11 }}
-                    contentStyle={{ fontSize: 12, borderRadius: 8, background: 'var(--color-card)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}
+                    contentStyle={{
+                      fontSize: 12,
+                      borderRadius: 8,
+                      background: 'var(--color-card)',
+                      border: '1px solid var(--color-border)',
+                      color: 'var(--color-text)',
+                    }}
                   />
-                  <Area type="monotone" dataKey="close" stroke="#f59e0b" strokeWidth={2} fill="url(#colorClose)" dot={false} />
+                  <Area
+                    type="monotone"
+                    dataKey="close"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    fill="url(#colorClose)"
+                    dot={false}
+                  />
                   <Line
-                    type="monotone" dataKey="avg" stroke="#06b6d4" strokeWidth={1.5}
-                    strokeDasharray="4 2" dot={false} connectNulls
+                    type="monotone"
+                    dataKey="avg"
+                    stroke="#06b6d4"
+                    strokeWidth={1.5}
+                    strokeDasharray="4 2"
+                    dot={false}
+                    connectNulls
                   />
                 </ComposedChart>
               </ResponsiveContainer>
@@ -255,15 +326,21 @@ export function StrategyDetailPage() {
           {/* RSI 패널 */}
           {chartData.length > 0 && currentRsi != null && (
             <div className="card" style={{ marginBottom: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}
+              >
                 <div>
                   <span style={{ fontSize: 26, fontWeight: 800, color: rsiColor }}>{currentRsi.toFixed(0)}</span>
                   <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginLeft: 8 }}>RSI14</span>
                 </div>
                 <span
                   style={{
-                    fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 12,
-                    background: rsiColor + '20', color: rsiColor,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    padding: '3px 10px',
+                    borderRadius: 12,
+                    background: rsiColor + '20',
+                    color: rsiColor,
                   }}
                 >
                   {currentRsi >= 70 ? '과매수' : currentRsi <= 30 ? '과매도' : '중립'}
@@ -274,7 +351,16 @@ export function StrategyDetailPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={Math.floor(visibleData.length / 4)} />
                   <YAxis tick={{ fontSize: 10 }} width={30} domain={[0, 100]} ticks={[30, 50, 70]} />
-                  <Tooltip formatter={(v: number) => [v.toFixed(1), 'RSI']} contentStyle={{ fontSize: 12, borderRadius: 8, background: 'var(--color-card)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }} />
+                  <Tooltip
+                    formatter={(v: number) => [v.toFixed(1), 'RSI']}
+                    contentStyle={{
+                      fontSize: 12,
+                      borderRadius: 8,
+                      background: 'var(--color-card)',
+                      border: '1px solid var(--color-border)',
+                      color: 'var(--color-text)',
+                    }}
+                  />
                   <ReferenceLine y={70} stroke="#f04452" strokeDasharray="3 3" />
                   <ReferenceLine y={30} stroke="#3182f6" strokeDasharray="3 3" />
                   <Line type="monotone" dataKey="rsi" stroke={rsiColor} strokeWidth={1.5} dot={false} />
@@ -287,83 +373,114 @@ export function StrategyDetailPage() {
           )}
 
           {/* 일변동 — 최근 2주 그리드 카드 */}
-          {chartData.length > 0 && (() => {
-            const twoWeeks = [...chartData].slice(-10).reverse()
-            const avg5 = twoWeeks.slice(0, 5).reduce((s, d) => s + d.close, 0) / Math.min(5, twoWeeks.length)
-            return (
-              <div className="card" style={{ marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{strategy.ticker} 최근 종가</div>
-                  <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
-                    5일 평균 <strong style={{ color: 'var(--color-text)' }}>${avg5.toFixed(2)}</strong>
+          {chartData.length > 0 &&
+            (() => {
+              const twoWeeks = [...chartData].slice(-10).reverse()
+              const avg5 = twoWeeks.slice(0, 5).reduce((s, d) => s + d.close, 0) / Math.min(5, twoWeeks.length)
+              return (
+                <div className="card" style={{ marginBottom: 12 }}>
+                  <div
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>{strategy.ticker} 최근 종가</div>
+                    <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
+                      5일 평균 <strong style={{ color: 'var(--color-text)' }}>${avg5.toFixed(2)}</strong>
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
+                    {twoWeeks.map((d, i) => {
+                      const isUp = d.change >= 0
+                      return (
+                        <div
+                          key={i}
+                          style={{
+                            background: 'var(--color-bg)',
+                            borderRadius: 10,
+                            padding: '8px 6px',
+                            textAlign: 'center',
+                          }}
+                        >
+                          <div style={{ fontSize: 10, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+                            {d.date}
+                          </div>
+                          <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 2 }}>${d.close.toFixed(2)}</div>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: isUp ? '#f04452' : '#2563eb' }}>
+                            {isUp ? '+' : ''}
+                            {d.change.toFixed(1)}%
+                          </div>
+                          {d.high != null && (
+                            <div style={{ fontSize: 10, color: 'var(--color-text-secondary)', marginTop: 2 }}>
+                              H ${d.high.toFixed(2)}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
-                  {twoWeeks.map((d, i) => {
-                    const isUp = d.change >= 0
-                    return (
-                      <div
-                        key={i}
-                        style={{
-                          background: 'var(--color-bg)', borderRadius: 10,
-                          padding: '8px 6px', textAlign: 'center',
-                        }}
-                      >
-                        <div style={{ fontSize: 10, color: 'var(--color-text-secondary)', marginBottom: 4 }}>{d.date}</div>
-                        <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 2 }}>${d.close.toFixed(2)}</div>
-                        <div style={{ fontSize: 11, fontWeight: 600, color: isUp ? '#f04452' : '#2563eb' }}>
-                          {isUp ? '+' : ''}{d.change.toFixed(1)}%
-                        </div>
-                        {d.high != null && (
-                          <div style={{ fontSize: 10, color: 'var(--color-text-secondary)', marginTop: 2 }}>
-                            H ${d.high.toFixed(2)}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          })()}
+              )
+            })()}
 
           {/* T값 추이 */}
-          {tChartData.length > 0 && (
-            <div className="card" style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>T값 추이</div>
-              <ResponsiveContainer width="100%" height={120}>
-                <LineChart data={tChartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-                  <YAxis
-                    tick={{ fontSize: 10 }} width={30}
-                    domain={[0, strategy.division]}
-                    ticks={[0, Math.floor(strategy.division / 2), strategy.division - 1, strategy.division]}
-                  />
-                  <Tooltip formatter={(v: number) => [v.toFixed(2), 'T값']} contentStyle={{ fontSize: 12, borderRadius: 8, background: 'var(--color-card)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }} />
-                  <ReferenceLine
-                    y={strategy.division / 2} stroke="#22c55e" strokeDasharray="4 2"
-                    label={{ value: '전→후', position: 'insideTopLeft', fontSize: 9, fill: '#22c55e' }}
-                  />
-                  <ReferenceLine
-                    y={strategy.division - 1} stroke="#f97316" strokeDasharray="4 2"
-                    label={{ value: '리버스', position: 'insideTopLeft', fontSize: 9, fill: '#f97316' }}
-                  />
-                  <Line
-                    type="stepAfter" dataKey="t" stroke="#3182f6" strokeWidth={2}
-                    dot={{ r: 3, fill: '#3182f6' }} isAnimationActive={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+          {tChartData.length > 0 &&
+            (() => {
+              const maxT = Math.max(...tChartData.map((d) => d.t))
+              const halfDiv = strategy.division / 2
+              const revDiv = strategy.division - 1
+              const domainMax = maxT < halfDiv ? halfDiv : maxT < revDiv ? revDiv : strategy.division
+              const ticks = [0, halfDiv, revDiv, strategy.division].filter((t) => t <= domainMax)
+              return (
+                <div className="card" style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>T값 추이</div>
+                  <ResponsiveContainer width="100%" height={120}>
+                    <LineChart data={tChartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                      <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                      <YAxis tick={{ fontSize: 10 }} width={30} domain={[0, domainMax]} ticks={ticks} />
+                      <Tooltip
+                        formatter={(v: number) => [v.toFixed(2), 'T값']}
+                        contentStyle={{
+                          fontSize: 12,
+                          borderRadius: 8,
+                          background: 'var(--color-card)',
+                          border: '1px solid var(--color-border)',
+                          color: 'var(--color-text)',
+                        }}
+                      />
+                      {halfDiv <= domainMax && (
+                        <ReferenceLine
+                          y={halfDiv}
+                          stroke="#22c55e"
+                          strokeDasharray="4 2"
+                          label={{ value: '전→후', position: 'insideTopLeft', fontSize: 9, fill: '#22c55e' }}
+                        />
+                      )}
+                      {revDiv <= domainMax && (
+                        <ReferenceLine
+                          y={revDiv}
+                          stroke="#f97316"
+                          strokeDasharray="4 2"
+                          label={{ value: '리버스', position: 'insideTopLeft', fontSize: 9, fill: '#f97316' }}
+                        />
+                      )}
+                      <Line
+                        type="stepAfter"
+                        dataKey="t"
+                        stroke="#3182f6"
+                        strokeWidth={2}
+                        dot={{ r: 3, fill: '#3182f6' }}
+                        isAnimationActive={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )
+            })()}
 
           {/* KeyMetricsCard — 핵심 지표 */}
           {(sPct != null || currentRsi != null) && (
             <div className="card" style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>
-                오늘 핵심 지표
-              </div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>오늘 핵심 지표</div>
               {[
                 { label: '별%', value: sPct != null ? `${sPct.toFixed(3)}%` : '-', color: '#f59e0b' },
                 { label: '별지점', value: starPrice != null ? fmtUSD(starPrice) : '-', color: '#f59e0b' },
@@ -374,7 +491,9 @@ export function StrategyDetailPage() {
                 <div
                   key={label}
                   style={{
-                    display: 'flex', justifyContent: 'space-between', padding: '8px 0',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    padding: '8px 0',
                     borderBottom: i < arr.length - 1 ? '1px solid var(--color-border)' : 'none',
                     fontSize: 13,
                   }}
@@ -389,9 +508,7 @@ export function StrategyDetailPage() {
           {/* 오늘 계획 */}
           {plan && (
             <div className="card">
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}>
-                오늘 계획 · {plan.planDate}
-              </div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}>오늘 계획 · {plan.planDate}</div>
               {plan.buyRows.length > 0 && (
                 <div style={{ marginBottom: 12 }}>
                   <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 6 }}>매수점</div>
@@ -402,7 +519,9 @@ export function StrategyDetailPage() {
                         <div
                           key={i}
                           style={{
-                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
                             padding: '11px 14px',
                             background: isStar ? 'var(--color-star-bg)' : 'var(--color-card)',
                             borderBottom: i < plan.buyRows.length - 1 ? '1px solid var(--color-border)' : 'none',
@@ -410,8 +529,17 @@ export function StrategyDetailPage() {
                         >
                           <span style={{ fontSize: 13, fontWeight: isStar ? 700 : 400 }}>{row.label}</span>
                           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                            <span style={{ fontSize: 13, color: 'var(--color-rise)', fontWeight: 700 }}>{fmtUSD(row.price)}</span>
-                            <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 28, textAlign: 'right' }}>
+                            <span style={{ fontSize: 13, color: 'var(--color-rise)', fontWeight: 700 }}>
+                              {fmtUSD(row.price)}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: 12,
+                                color: 'var(--color-text-secondary)',
+                                minWidth: 28,
+                                textAlign: 'right',
+                              }}
+                            >
                               {row.qty != null ? `${row.qty}주` : '-'}
                             </span>
                           </div>
@@ -421,35 +549,47 @@ export function StrategyDetailPage() {
                   </div>
                 </div>
               )}
-              {plan.sellRows.filter((r) => (r.qty ?? 0) > 0).length > 0 && (() => {
-                const sellRows = plan.sellRows.filter((r) => (r.qty ?? 0) > 0)
-                return (
-                  <div>
-                    <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 6 }}>매도점</div>
-                    <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
-                      {sellRows.map((row, i) => (
-                        <div
-                          key={i}
-                          style={{
-                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            padding: '11px 14px',
-                            background: 'var(--color-card)',
-                            borderBottom: i < sellRows.length - 1 ? '1px solid var(--color-border)' : 'none',
-                          }}
-                        >
-                          <span style={{ fontSize: 13 }}>{row.label}</span>
-                          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                            <span style={{ fontSize: 13, color: 'var(--color-fall)', fontWeight: 700 }}>{fmtUSD(row.price)}</span>
-                            <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 28, textAlign: 'right' }}>
-                              {row.qty != null ? `${row.qty}주` : '-'}
-                            </span>
+              {plan.sellRows.filter((r) => (r.qty ?? 0) > 0).length > 0 &&
+                (() => {
+                  const sellRows = plan.sellRows.filter((r) => (r.qty ?? 0) > 0)
+                  return (
+                    <div>
+                      <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 6 }}>매도점</div>
+                      <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+                        {sellRows.map((row, i) => (
+                          <div
+                            key={i}
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              padding: '11px 14px',
+                              background: 'var(--color-card)',
+                              borderBottom: i < sellRows.length - 1 ? '1px solid var(--color-border)' : 'none',
+                            }}
+                          >
+                            <span style={{ fontSize: 13 }}>{row.label}</span>
+                            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                              <span style={{ fontSize: 13, color: 'var(--color-fall)', fontWeight: 700 }}>
+                                {fmtUSD(row.price)}
+                              </span>
+                              <span
+                                style={{
+                                  fontSize: 12,
+                                  color: 'var(--color-text-secondary)',
+                                  minWidth: 28,
+                                  textAlign: 'right',
+                                }}
+                              >
+                                {row.qty != null ? `${row.qty}주` : '-'}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )
-              })()}
+                  )
+                })()}
             </div>
           )}
         </div>
@@ -473,13 +613,11 @@ export function StrategyDetailPage() {
       {tab === 'mode' && (
         <div style={{ padding: 16 }}>
           <div className="card" style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>
-              현재 모드: {MODE_FULL[mode] ?? mode}
-            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>현재 모드: {MODE_FULL[mode] ?? mode}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
               {MODE_STEPS.map((step, i) => {
                 const isActive = step === mode
-                const isPast = MODE_STEPS.indexOf(step) < MODE_STEPS.indexOf(mode as typeof MODE_STEPS[number])
+                const isPast = MODE_STEPS.indexOf(step) < MODE_STEPS.indexOf(mode as (typeof MODE_STEPS)[number])
                 const color = MODE_COLOR[step]
 
                 // 날짜 결정
@@ -494,13 +632,19 @@ export function StrategyDetailPage() {
                 }
 
                 return (
-                  <div key={step} style={{ display: 'flex', gap: 12, paddingBottom: i < MODE_STEPS.length - 1 ? 16 : 0 }}>
+                  <div
+                    key={step}
+                    style={{ display: 'flex', gap: 12, paddingBottom: i < MODE_STEPS.length - 1 ? 16 : 0 }}
+                  >
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 20 }}>
                       <div
                         style={{
-                          width: 16, height: 16, borderRadius: 8, flexShrink: 0,
-                          background: (isActive || isPast) ? color : 'var(--color-border)',
-                          border: `2px solid ${(isActive || isPast) ? color : 'var(--color-border)'}`,
+                          width: 16,
+                          height: 16,
+                          borderRadius: 8,
+                          flexShrink: 0,
+                          background: isActive || isPast ? color : 'var(--color-border)',
+                          border: `2px solid ${isActive || isPast ? color : 'var(--color-border)'}`,
                         }}
                       />
                       {i < MODE_STEPS.length - 1 && (
@@ -510,13 +654,23 @@ export function StrategyDetailPage() {
                     <div style={{ paddingBottom: 4 }}>
                       <div
                         style={{
-                          fontWeight: isActive ? 700 : 500, fontSize: 14,
+                          fontWeight: isActive ? 700 : 500,
+                          fontSize: 14,
                           color: isActive ? color : isPast ? 'var(--color-text-secondary)' : 'var(--color-text)',
                         }}
                       >
                         {MODE_STEP_LABEL[step]}
                         {isActive && (
-                          <span style={{ marginLeft: 8, fontSize: 10, padding: '2px 6px', background: color + '22', color, borderRadius: 10 }}>
+                          <span
+                            style={{
+                              marginLeft: 8,
+                              fontSize: 10,
+                              padding: '2px 6px',
+                              background: color + '22',
+                              color,
+                              borderRadius: 10,
+                            }}
+                          >
                             현재
                           </span>
                         )}
@@ -552,8 +706,12 @@ export function StrategyDetailPage() {
               <div
                 key={label}
                 style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '11px 0', borderBottom: '1px solid var(--color-border)', fontSize: 13,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '11px 0',
+                  borderBottom: '1px solid var(--color-border)',
+                  fontSize: 13,
                 }}
               >
                 <span style={{ color: 'var(--color-text-secondary)' }}>{label}</span>

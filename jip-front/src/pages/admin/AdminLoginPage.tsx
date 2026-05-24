@@ -27,18 +27,52 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '24px 16px' }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--bg)',
+        padding: '24px 16px',
+      }}
+    >
       <div style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, background: 'var(--ink)', borderRadius: 14, color: '#fff', fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 20, marginBottom: 12 }}>집</div>
-          <div className="eyebrow" style={{ display: 'block', marginBottom: 4 }}>ADMIN</div>
-          <h1 style={{ fontFamily: 'var(--serif)', fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}>집슐랭 관리자</h1>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 48,
+              height: 48,
+              background: 'var(--ink)',
+              borderRadius: 14,
+              color: '#fff',
+              fontFamily: 'var(--serif)',
+              fontWeight: 700,
+              fontSize: 20,
+              marginBottom: 12,
+            }}
+          >
+            집
+          </div>
+          <div className="eyebrow" style={{ display: 'block', marginBottom: 4 }}>
+            ADMIN
+          </div>
+          <h1
+            style={{ fontFamily: 'var(--serif)', fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}
+          >
+            집슐랭 관리자
+          </h1>
         </div>
 
         <div className="card card-pad">
           <form onSubmit={login}>
             <div className="field">
-              <label className="field-label" htmlFor="username">아이디</label>
+              <label className="field-label" htmlFor="username">
+                아이디
+              </label>
               <input
                 id="username"
                 className="input"
@@ -50,7 +84,9 @@ export default function AdminLoginPage() {
               />
             </div>
             <div className="field" style={{ marginTop: 16 }}>
-              <label className="field-label" htmlFor="password">비밀번호</label>
+              <label className="field-label" htmlFor="password">
+                비밀번호
+              </label>
               <input
                 id="password"
                 className="input"
@@ -67,7 +103,9 @@ export default function AdminLoginPage() {
           </form>
         </div>
 
-        <div className="center muted" style={{ marginTop: 20, fontSize: 12 }}>김장인 시공 관리 시스템</div>
+        <div className="center muted" style={{ marginTop: 20, fontSize: 12 }}>
+          김장인 시공 관리 시스템
+        </div>
       </div>
     </div>
   )

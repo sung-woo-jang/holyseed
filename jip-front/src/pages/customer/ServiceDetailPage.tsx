@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { ItemIllust } from '@/components/common/Illustration'
 import { useServiceItem, useCategories, useServiceItems } from '@/queries/catalog'
 import { useCartStore } from '@/stores/cart'
 import { useToastStore } from '@/stores/toast'
-import { ItemIllust } from '@/components/common/Illustration'
 
-function fmtKRW(n: number) { return n.toLocaleString('ko-KR') + '원' }
+function fmtKRW(n: number) {
+  return n.toLocaleString('ko-KR') + '원'
+}
 
 export default function ServiceDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -22,12 +24,18 @@ export default function ServiceDetailPage() {
 
   const hasProducts = (item?.productGroups?.length ?? 0) > 0
   const [activeGroupId, setActiveGroupId] = useState<number | null>(null)
-  const activeGroup = item?.productGroups?.find((g) => g.id === (activeGroupId ?? item?.productGroups?.[0]?.id))
-    ?? item?.productGroups?.[0]
+  const activeGroup =
+    item?.productGroups?.find((g) => g.id === (activeGroupId ?? item?.productGroups?.[0]?.id)) ??
+    item?.productGroups?.[0]
 
   const inCart = cartItems.some((c) => c.serviceItemCode === item?.code)
 
-  if (isLoading) return <div className="container" style={{ paddingTop: 80 }}>로딩 중...</div>
+  if (isLoading)
+    return (
+      <div className="container" style={{ paddingTop: 80 }}>
+        로딩 중...
+      </div>
+    )
   if (error || !item) {
     return (
       <section className="section">
@@ -35,7 +43,9 @@ export default function ServiceDetailPage() {
           <div className="empty">
             <h3 className="h3">서비스를 찾을 수 없어요</h3>
             <p className="muted mt-16">링크를 다시 확인하시거나 전체 서비스에서 골라보세요.</p>
-            <button className="btn primary mt-24" onClick={() => navigate('/services')}>전체 서비스 →</button>
+            <button className="btn primary mt-24" onClick={() => navigate('/services')}>
+              전체 서비스 →
+            </button>
           </div>
         </div>
       </section>
@@ -63,11 +73,15 @@ export default function ServiceDetailPage() {
       <div className="container">
         {/* breadcrumb */}
         <div className="steps mb-24">
-          <button className="link" onClick={() => navigate('/services')}>서비스</button>
+          <button className="link" onClick={() => navigate('/services')}>
+            서비스
+          </button>
           {cat && (
             <>
               <span className="sep">›</span>
-              <button className="link" onClick={() => navigate(`/services?cat=${cat.code}`)}>{cat.name}</button>
+              <button className="link" onClick={() => navigate(`/services?cat=${cat.code}`)}>
+                {cat.name}
+              </button>
             </>
           )}
           <span className="sep">›</span>
@@ -84,10 +98,22 @@ export default function ServiceDetailPage() {
             <h1 className="h2 mt-16">{item.name}</h1>
             <p className="lead mt-12">{item.description}</p>
             <div className="svc-intro-meta">
-              <div><span className="lbl">시공비</span><span className="val">{fmtKRW(item.price)}</span></div>
-              <div><span className="lbl">소요시간</span><span className="val">{item.duration}</span></div>
-              <div><span className="lbl">방문비</span><span className="val">20,000원 별도</span></div>
-              <div><span className="lbl">결제</span><span className="val">시공 후 정산</span></div>
+              <div>
+                <span className="lbl">시공비</span>
+                <span className="val">{fmtKRW(item.price)}</span>
+              </div>
+              <div>
+                <span className="lbl">소요시간</span>
+                <span className="val">{item.duration}</span>
+              </div>
+              <div>
+                <span className="lbl">방문비</span>
+                <span className="val">20,000원 별도</span>
+              </div>
+              <div>
+                <span className="lbl">결제</span>
+                <span className="val">시공 후 정산</span>
+              </div>
             </div>
           </div>
         </div>
@@ -99,7 +125,8 @@ export default function ServiceDetailPage() {
               <div>
                 <h2 className="h2">제품 라인업</h2>
                 <p className="lead mt-12">
-                  원하는 제품을 골라주세요.<br />
+                  원하는 제품을 골라주세요.
+                  <br />
                   카드를 누르면 자세한 설명을 볼 수 있어요.
                 </p>
               </div>
@@ -112,7 +139,7 @@ export default function ServiceDetailPage() {
                   <button
                     key={g.id}
                     type="button"
-                    className={`seg-tab${(activeGroupId ?? item.productGroups[0].id) === g.id ? ' on' : ''}`}
+                    className={`seg-tab${(activeGroupId ?? item.productGroups[0].id) === g.id ? 'on' : ''}`}
                     onClick={() => setActiveGroupId(g.id)}
                   >
                     <div className="seg-tab-label">{g.label}</div>
@@ -123,7 +150,9 @@ export default function ServiceDetailPage() {
             )}
 
             {activeGroup?.description && (
-              <p className="muted mt-16" style={{ fontSize: 13, marginBottom: 0 }}>{activeGroup.description}</p>
+              <p className="muted mt-16" style={{ fontSize: 13, marginBottom: 0 }}>
+                {activeGroup.description}
+              </p>
             )}
 
             <div className="product-grid mt-16">
@@ -158,11 +187,7 @@ export default function ServiceDetailPage() {
               <p className="muted mt-12" style={{ margin: '12px 0 16px', lineHeight: 1.6 }}>
                 이 시공은 별도 제품 선택 없이 진행돼요. 현장에서 직접 보고 함께 협의해서 결정합니다.
               </p>
-              <button
-                className={`btn lg ${inCart ? 'ghost' : 'primary'}`}
-                disabled={inCart}
-                onClick={addSimple}
-              >
+              <button className={`btn lg ${inCart ? 'ghost' : 'primary'}`} disabled={inCart} onClick={addSimple}>
                 {inCart ? '✓ 견적함에 담겼어요' : '견적함에 담기'}
               </button>
             </div>
@@ -182,7 +207,10 @@ export default function ServiceDetailPage() {
                   <div className="svc-card-body">
                     <div className="svc-card-title">{rel.name}</div>
                     <div className="svc-card-desc">{rel.description}</div>
-                    <div className="svc-card-price"><b>{fmtKRW(rel.price)}</b>{rel.unit ? ` · ${rel.unit}` : ''}</div>
+                    <div className="svc-card-price">
+                      <b>{fmtKRW(rel.price)}</b>
+                      {rel.unit ? ` · ${rel.unit}` : ''}
+                    </div>
                   </div>
                 </div>
               ))}

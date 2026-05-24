@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { strategiesApi, cyclesApi } from '@/lib/iv-api'
-import { keys, useStrategyState } from '@/queries/iv.queries'
-import { fmtUSD, fmtT } from '@/lib/format'
 import { BottomSheet } from '@/components/common/BottomSheet'
+import { fmtUSD, fmtT } from '@/lib/format'
+import { strategiesApi, cyclesApi } from '@/lib/iv-api'
 import type { IvStrategy } from '@/lib/iv-api'
+import { keys, useStrategyState } from '@/queries/iv.queries'
 
 const PRINCIPAL_INCREMENTS = [50, 100, 500, 1000]
 
@@ -57,7 +57,14 @@ export function CycleEditSheet({ strategy, onClose }: Props) {
             </div>
             <button
               onClick={requestClose}
-              style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--color-text-secondary)', padding: '4px 8px' }}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: 20,
+                cursor: 'pointer',
+                color: 'var(--color-text-secondary)',
+                padding: '4px 8px',
+              }}
             >
               ✕
             </button>
@@ -67,9 +74,14 @@ export function CycleEditSheet({ strategy, onClose }: Props) {
           {isMidCycle && (
             <div
               style={{
-                padding: '10px 12px', marginBottom: 16,
-                background: 'var(--color-star-bg)', border: '1px solid #fbbf24',
-                borderRadius: 10, fontSize: 12, color: '#d97706', fontWeight: 500,
+                padding: '10px 12px',
+                marginBottom: 16,
+                background: 'var(--color-star-bg)',
+                border: '1px solid #fbbf24',
+                borderRadius: 10,
+                fontSize: 12,
+                color: '#d97706',
+                fontWeight: 500,
               }}
             >
               사이클 진행 중 (T = {fmtT(tValue)}). 원금·분할수 변경은 다음 사이클부터 적용됩니다.
@@ -78,7 +90,9 @@ export function CycleEditSheet({ strategy, onClose }: Props) {
 
           {/* 원금 */}
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 8 }}>원금 (USD)</label>
+            <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 8 }}>
+              원금 (USD)
+            </label>
             <input
               type="number"
               inputMode="decimal"
@@ -86,10 +100,16 @@ export function CycleEditSheet({ strategy, onClose }: Props) {
               onChange={(e) => setPrincipal(parseFloat(e.target.value) || 0)}
               onFocus={(e) => e.target.select()}
               style={{
-                width: '100%', padding: '14px', fontSize: 20, fontWeight: 700,
-                border: '2px solid var(--color-border)', borderRadius: 14,
-                background: 'var(--color-card)', color: 'var(--color-text)',
-                outline: 'none', marginBottom: 10,
+                width: '100%',
+                padding: '14px',
+                fontSize: 20,
+                fontWeight: 700,
+                border: '2px solid var(--color-border)',
+                borderRadius: 14,
+                background: 'var(--color-card)',
+                color: 'var(--color-text)',
+                outline: 'none',
+                marginBottom: 10,
                 boxSizing: 'border-box',
               }}
             />
@@ -99,10 +119,15 @@ export function CycleEditSheet({ strategy, onClose }: Props) {
                   key={n}
                   onClick={() => setPrincipal((v) => v + n)}
                   style={{
-                    flex: 1, padding: '10px 0', borderRadius: 10,
+                    flex: 1,
+                    padding: '10px 0',
+                    borderRadius: 10,
                     border: '1px solid var(--color-border)',
-                    background: 'var(--color-card)', color: 'var(--color-text)',
-                    cursor: 'pointer', fontWeight: 600, fontSize: 14,
+                    background: 'var(--color-card)',
+                    color: 'var(--color-text)',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: 14,
                   }}
                 >
                   +{n}
@@ -116,18 +141,23 @@ export function CycleEditSheet({ strategy, onClose }: Props) {
 
           {/* 분할수 */}
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 8 }}>분할수</label>
+            <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 8 }}>
+              분할수
+            </label>
             <div style={{ display: 'flex', gap: 10 }}>
               {([20, 40] as const).map((d) => (
                 <button
                   key={d}
                   onClick={() => setDivision(d)}
                   style={{
-                    flex: 1, padding: '12px',
+                    flex: 1,
+                    padding: '12px',
                     border: `2px solid ${division === d ? 'var(--color-primary)' : 'var(--color-border)'}`,
                     borderRadius: 12,
                     background: division === d ? 'var(--color-avg-bg)' : 'var(--color-card)',
-                    fontWeight: 700, fontSize: 15, cursor: 'pointer',
+                    fontWeight: 700,
+                    fontSize: 15,
+                    cursor: 'pointer',
                     color: division === d ? 'var(--color-primary)' : 'var(--color-text)',
                   }}
                 >
@@ -145,10 +175,14 @@ export function CycleEditSheet({ strategy, onClose }: Props) {
             onClick={() => updateMutation.mutate()}
             disabled={updateMutation.isPending || !changed}
             style={{
-              width: '100%', padding: '14px',
+              width: '100%',
+              padding: '14px',
               background: changed ? 'var(--color-primary)' : 'var(--color-border)',
               color: changed ? '#fff' : 'var(--color-text-secondary)',
-              border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700,
+              border: 'none',
+              borderRadius: 12,
+              fontSize: 15,
+              fontWeight: 700,
               cursor: changed ? 'pointer' : 'default',
               marginBottom: 20,
             }}
@@ -161,9 +195,17 @@ export function CycleEditSheet({ strategy, onClose }: Props) {
             <button
               onClick={() => setDanger(!danger)}
               style={{
-                width: '100%', background: 'none', border: 'none', cursor: 'pointer',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                fontSize: 13, fontWeight: 600, color: '#ef4444', padding: 0,
+                width: '100%',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: 13,
+                fontWeight: 600,
+                color: '#ef4444',
+                padding: 0,
               }}
             >
               위험 구역
@@ -183,9 +225,15 @@ export function CycleEditSheet({ strategy, onClose }: Props) {
                   }}
                   disabled={forceEndMutation.isPending}
                   style={{
-                    width: '100%', padding: '12px', background: 'var(--color-sell-bg)',
-                    border: '1px solid #fca5a5', borderRadius: 10,
-                    fontSize: 13, fontWeight: 600, color: '#ef4444', cursor: 'pointer',
+                    width: '100%',
+                    padding: '12px',
+                    background: 'var(--color-sell-bg)',
+                    border: '1px solid #fca5a5',
+                    borderRadius: 10,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: '#ef4444',
+                    cursor: 'pointer',
                   }}
                 >
                   {forceEndMutation.isPending ? '종료 중...' : '사이클 강제 종료'}

@@ -1,21 +1,28 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
-import { IsNumber } from 'class-validator'
-import { ApiProperty } from '@nestjs/swagger'
+import { IsNumber, IsOptional, IsString } from 'class-validator'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Transform } from 'class-transformer'
 import { ExecutionsService } from './executions.service'
 import { CreateExecutionsDto } from './dto/request/create-executions.dto'
 
 class UpdateExecutionDto {
-  @ApiProperty({ description: '체결가', example: 74.32 })
-  @IsNumber()
-  @Transform(({ value }) => parseFloat(value))
-  price: number
+  @ApiPropertyOptional({ description: '체결 유형', example: 'buy_half_star' })
+  @IsOptional()
+  @IsString()
+  execType?: string
 
-  @ApiProperty({ description: '체결 수량', example: 4 })
+  @ApiPropertyOptional({ description: '체결가', example: 74.32 })
+  @IsOptional()
   @IsNumber()
-  @Transform(({ value }) => parseFloat(value))
-  qty: number
+  @Transform(({ value }) => (value !== undefined && value !== null ? parseFloat(value) : undefined))
+  price?: number
+
+  @ApiPropertyOptional({ description: '체결 수량', example: 4 })
+  @IsOptional()
+  @IsNumber()
+  @Transform(({ value }) => (value !== undefined && value !== null ? parseFloat(value) : undefined))
+  qty?: number
 }
 
 const ok = (data: unknown, message = '성공') => ({
@@ -53,7 +60,7 @@ export class ExecutionsController {
     @Param('execId') execId: string,
     @Body() dto: UpdateExecutionDto,
   ) {
-    await this.svc.updateOne(id, execId, { price: dto.price, qty: dto.qty })
+    await this.svc.updateOne(id, execId, { execType: dto.execType, price: dto.price, qty: dto.qty })
     return ok(null, '체결이 수정되었습니다.')
   }
 }

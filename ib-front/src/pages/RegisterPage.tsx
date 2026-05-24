@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { authApi } from '@/lib/iv-api'
 import { TOKEN_KEY } from '@/lib/api'
+import { authApi } from '@/lib/iv-api'
 
 export function RegisterPage() {
   const nav = useNavigate()
@@ -14,9 +14,18 @@ export function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    if (username.length < 3) { setError('아이디는 3자 이상이어야 합니다.'); return }
-    if (password !== confirm) { setError('비밀번호가 일치하지 않습니다.'); return }
-    if (password.length < 6) { setError('비밀번호는 6자 이상이어야 합니다.'); return }
+    if (username.length < 3) {
+      setError('아이디는 3자 이상이어야 합니다.')
+      return
+    }
+    if (password !== confirm) {
+      setError('비밀번호가 일치하지 않습니다.')
+      return
+    }
+    if (password.length < 6) {
+      setError('비밀번호는 6자 이상이어야 합니다.')
+      return
+    }
     setLoading(true)
     try {
       const { token } = await authApi.register({ username, password })
@@ -31,21 +40,32 @@ export function RegisterPage() {
   }
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '12px', border: '1px solid var(--color-border)',
-    borderRadius: 12, fontSize: 15, background: 'var(--color-bg)',
-    color: 'var(--color-text)', boxSizing: 'border-box',
+    width: '100%',
+    padding: '12px',
+    border: '1px solid var(--color-border)',
+    borderRadius: 12,
+    fontSize: 15,
+    background: 'var(--color-bg)',
+    color: 'var(--color-text)',
+    boxSizing: 'border-box',
   }
 
   return (
     <div
       style={{
-        minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'var(--color-bg)', padding: 16,
+        minHeight: '100dvh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--color-bg)',
+        padding: 16,
       }}
     >
       <div style={{ width: '100%', maxWidth: 360 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--color-primary)', marginBottom: 4 }}>무한매수법</div>
+          <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--color-primary)', marginBottom: 4 }}>
+            무한매수법
+          </div>
           <div style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>자동매매 어시스턴트 V4.0</div>
         </div>
 
@@ -54,37 +74,74 @@ export function RegisterPage() {
 
           <form onSubmit={handleSubmit}>
             {[
-              { label: '아이디 (3자 이상)', value: username, set: setUsername, type: 'text', placeholder: '아이디 입력' },
-              { label: '비밀번호 (6자 이상)', value: password, set: setPassword, type: 'password', placeholder: '비밀번호 입력' },
-              { label: '비밀번호 확인', value: confirm, set: setConfirm, type: 'password', placeholder: '비밀번호 재입력' },
+              {
+                label: '아이디 (3자 이상)',
+                value: username,
+                set: setUsername,
+                type: 'text',
+                placeholder: '아이디 입력',
+              },
+              {
+                label: '비밀번호 (6자 이상)',
+                value: password,
+                set: setPassword,
+                type: 'password',
+                placeholder: '비밀번호 입력',
+              },
+              {
+                label: '비밀번호 확인',
+                value: confirm,
+                set: setConfirm,
+                type: 'password',
+                placeholder: '비밀번호 재입력',
+              },
             ].map(({ label, value, set, type, placeholder }) => (
               <div key={label} style={{ marginBottom: 12 }}>
-                <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 6 }}>{label}</label>
+                <label
+                  style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 6 }}
+                >
+                  {label}
+                </label>
                 <input
-                  type={type} value={value} onChange={(e) => set(e.target.value)}
-                  placeholder={placeholder} required
+                  type={type}
+                  value={value}
+                  onChange={(e) => set(e.target.value)}
+                  placeholder={placeholder}
+                  required
                   style={inputStyle}
                 />
               </div>
             ))}
 
             {error && (
-              <div style={{
-                padding: '10px 12px', marginBottom: 16,
-                background: 'var(--color-sell-bg)', border: '1px solid #fca5a5',
-                borderRadius: 10, fontSize: 13, color: '#ef4444',
-              }}>
+              <div
+                style={{
+                  padding: '10px 12px',
+                  marginBottom: 16,
+                  background: 'var(--color-sell-bg)',
+                  border: '1px solid #fca5a5',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  color: '#ef4444',
+                }}
+              >
                 {error}
               </div>
             )}
 
             <button
-              type="submit" disabled={loading}
+              type="submit"
+              disabled={loading}
               style={{
-                width: '100%', padding: '14px', marginTop: 8,
+                width: '100%',
+                padding: '14px',
+                marginTop: 8,
                 background: loading ? 'var(--color-border)' : 'var(--color-primary)',
                 color: loading ? 'var(--color-text-secondary)' : '#fff',
-                border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700,
+                border: 'none',
+                borderRadius: 12,
+                fontSize: 15,
+                fontWeight: 700,
                 cursor: loading ? 'default' : 'pointer',
               }}
             >

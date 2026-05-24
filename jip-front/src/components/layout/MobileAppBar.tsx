@@ -18,17 +18,33 @@ export default function MobileAppBar() {
   const isBrand = top === 'home' || parts.length === 0
 
   const TITLES: Record<string, string> = {
-    services: '서비스', cart: '견적함', request: '견적 요청',
-    'request-done': '요청 완료', cases: '시공사례', about: '시공자 소개',
-    bookings: '예약 확인', booking: '예약 상세', service: '서비스',
-    product: '제품', case: '시공사례',
+    services: '서비스',
+    cart: '견적함',
+    request: '견적 요청',
+    'request-done': '요청 완료',
+    cases: '시공사례',
+    about: '시공자 소개',
+    bookings: '예약 확인',
+    booking: '예약 상세',
+    service: '서비스',
+    product: '제품',
+    case: '시공사례',
   }
 
   return (
-    <header className={`mobile-appbar${scrolled ? ' shadow' : ''}`}>
+    <header className={`mobile-appbar${scrolled ? 'shadow' : ''}`}>
       {showBack ? (
         <button className="back" onClick={() => navigate(-1)} aria-label="back">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>

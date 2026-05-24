@@ -23,7 +23,7 @@ api.interceptors.response.use(
       window.location.href = '/login'
     }
     return Promise.reject(err)
-  },
+  }
 )
 
 export function unwrap<T>(res: { data: { data: T } }): T {

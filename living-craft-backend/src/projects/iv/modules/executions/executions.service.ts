@@ -84,13 +84,20 @@ export class ExecutionsService {
     await this.rebuildState(strategyId)
   }
 
-  async updateOne(strategyId: string, execId: string, data: { price: number; qty: number }): Promise<void> {
+  async updateOne(strategyId: string, execId: string, data: { execType?: string; price?: number; qty?: number }): Promise<void> {
     const exec = await this.execRepo.findOne({ where: { id: execId, strategyId } })
     if (!exec) throw new NotFoundException('체결 내역을 찾을 수 없습니다.')
+
+    const newExecType = data.execType ?? exec.execType
+    const isNoExec = newExecType === 'no_exec'
+    const price = isNoExec ? null : (data.price ?? exec.execPrice)
+    const qty = isNoExec ? null : (data.qty ?? exec.execQty)
+
     await this.execRepo.update(execId, {
-      execPrice: data.price,
-      execQty: data.qty,
-      execAmount: data.price * data.qty,
+      ...(data.execType ? { execType: data.execType } : {}),
+      execPrice: price,
+      execQty: qty,
+      execAmount: price != null && qty != null ? price * qty : null,
     })
     await this.rebuildState(strategyId)
   }

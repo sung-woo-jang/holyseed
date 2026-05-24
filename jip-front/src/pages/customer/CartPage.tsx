@@ -1,11 +1,13 @@
 import { useNavigate } from 'react-router-dom'
 import { useCartStore } from '@/stores/cart'
 
-function fmtKRW(n: number) { return n.toLocaleString('ko-KR') + '원' }
+function fmtKRW(n: number) {
+  return n.toLocaleString('ko-KR') + '원'
+}
 
 const PHOTOS: Record<string, string> = {
-  bath:    'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548942946_cc0gbn.webp',
-  film:    'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943309_yggm25.webp',
+  bath: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548942946_cc0gbn.webp',
+  film: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943309_yggm25.webp',
   kitchen: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943517_khkjrn.webp',
 }
 
@@ -25,9 +27,15 @@ function Steps({ current }: { current: number }) {
       {STEPS.map((it, i) => (
         <span key={i} style={{ display: 'contents' }}>
           {i > 0 && <span className="sep">·</span>}
-          {i === current
-            ? <b>0{i + 1} {it}</b>
-            : <span>0{i + 1} {it}</span>}
+          {i === current ? (
+            <b>
+              0{i + 1} {it}
+            </b>
+          ) : (
+            <span>
+              0{i + 1} {it}
+            </span>
+          )}
         </span>
       ))}
     </div>
@@ -49,7 +57,9 @@ export default function CartPage() {
           <div className="empty mt-40">
             <h3 className="h3">아직 담긴 서비스가 없어요</h3>
             <p className="muted mt-16">필요한 시공을 골라 견적함에 담아보세요.</p>
-            <button className="btn primary mt-24" onClick={() => navigate('/services')}>서비스 둘러보기 →</button>
+            <button className="btn primary mt-24" onClick={() => navigate('/services')}>
+              서비스 둘러보기 →
+            </button>
           </div>
         </div>
       </section>
@@ -69,7 +79,11 @@ export default function CartPage() {
             {items.map((item, i) => (
               <div key={i} className="cart-line">
                 <div style={{ width: 88, height: 88, borderRadius: 10, overflow: 'hidden', flexShrink: 0 }}>
-                  <img src={itemPhoto(item.serviceItemCode)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img
+                    src={itemPhoto(item.serviceItemCode)}
+                    alt=""
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
                 </div>
                 <div>
                   <div className="cart-line-title">{item.serviceItemName}</div>
@@ -82,7 +96,9 @@ export default function CartPage() {
                   ) : (
                     <div className="cart-line-sub">{item.serviceItemUnit}</div>
                   )}
-                  <button className="btn sm ghost mt-8" onClick={() => remove(i)}>제거</button>
+                  <button className="btn sm ghost mt-8" onClick={() => remove(i)}>
+                    제거
+                  </button>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div className="cart-line-price">{fmtKRW(item.serviceItemPrice + item.productPrice)}</div>
@@ -95,7 +111,9 @@ export default function CartPage() {
               </div>
             ))}
             <div className="mt-24">
-              <button className="btn ghost" onClick={() => navigate('/services')}>+ 서비스 더 담기</button>
+              <button className="btn ghost" onClick={() => navigate('/services')}>
+                + 서비스 더 담기
+              </button>
             </div>
           </div>
 
@@ -117,10 +135,10 @@ export default function CartPage() {
             <p className="muted" style={{ fontSize: 12, marginTop: 12 }}>
               실제 금액은 현장 확인 후 확정됩니다. 결제는 시공 완료 후에 진행돼요.
             </p>
-            <button className="btn primary block lg mt-24" onClick={() => navigate('/request')}>
+            <button className="btn primary lg mt-24 block" onClick={() => navigate('/request')}>
               견적 요청하기 →
             </button>
-            <button className="btn ghost block mt-8" onClick={clear}>
+            <button className="btn ghost mt-8 block" onClick={clear}>
               견적함 비우기
             </button>
           </aside>

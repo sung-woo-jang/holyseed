@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
+import { useParams, useNavigate } from 'react-router-dom'
+import { JIcon, JPhoto, JPubToggle } from '@/components/common/JobsShared'
 import { api } from '@/lib/api'
 import { useToastStore } from '@/stores/toast'
-import { JIcon, JPhoto, JPubToggle } from '@/components/common/JobsShared'
 import type { Job, JobStatus } from '@/types'
 
 const PUBLIC_FIELDS = [
@@ -24,15 +24,32 @@ const PUBLIC_FIELDS = [
 ]
 
 interface FormValues {
-  customerName: string; phone: string; addressFull: string; addressShort: string
-  inquiryDate: string; workDate: string; status: JobStatus; productName: string
-  brand: string; model: string; requestNote: string; workSummary: string
-  sellingPrice: string; costPrice: string; materialSource: string
-  paid: boolean; paidDate: string; internalMemo: string
+  customerName: string
+  phone: string
+  addressFull: string
+  addressShort: string
+  inquiryDate: string
+  workDate: string
+  status: JobStatus
+  productName: string
+  brand: string
+  model: string
+  requestNote: string
+  workSummary: string
+  sellingPrice: string
+  costPrice: string
+  materialSource: string
+  paid: boolean
+  paidDate: string
+  internalMemo: string
   isPublished: boolean
 }
 
-interface PhotoEntry { role: 'before' | 'after'; label: string; fileUrl: string }
+interface PhotoEntry {
+  role: 'before' | 'after'
+  label: string
+  fileUrl: string
+}
 
 export default function AdminJobForm() {
   const { id } = useParams<{ id: string }>()
@@ -80,15 +97,23 @@ export default function AdminJobForm() {
       setIsPublished(job.isPublished ?? false)
       if (job.publicFields) setPublicFields(job.publicFields)
       if (job.beforePhotos || job.afterPhotos) {
-        const before = (job.beforePhotos ?? []).map((p) => ({ role: 'before' as const, label: p.label ?? '', fileUrl: p.fileUrl ?? '' }))
-        const after = (job.afterPhotos ?? []).map((p) => ({ role: 'after' as const, label: p.label ?? '', fileUrl: p.fileUrl ?? '' }))
+        const before = (job.beforePhotos ?? []).map((p) => ({
+          role: 'before' as const,
+          label: p.label ?? '',
+          fileUrl: p.fileUrl ?? '',
+        }))
+        const after = (job.afterPhotos ?? []).map((p) => ({
+          role: 'after' as const,
+          label: p.label ?? '',
+          fileUrl: p.fileUrl ?? '',
+        }))
         setPhotos([...before, ...after])
       }
     })
   }, [id, isEdit, reset])
 
   const togglePublicField = (key: string) => {
-    setPublicFields((prev) => prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key])
+    setPublicFields((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]))
   }
 
   const uploadPhoto = async (file: File) => {
@@ -116,8 +141,6 @@ export default function AdminJobForm() {
   }
 
   const removePhoto = (idx: number) => setPhotos((prev) => prev.filter((_, i) => i !== idx))
-  const updatePhotoLabel = (idx: number, label: string) =>
-    setPhotos((prev) => prev.map((p, i) => i === idx ? { ...p, label } : p))
 
   const onSubmit = async (form: FormValues) => {
     setSaving(true)
@@ -145,7 +168,13 @@ export default function AdminJobForm() {
     }
   }
 
-  const PUBLIC_FIELD_INPUTS: { fkey: string; key: keyof FormValues; label: string; type: string; options?: string[] }[] = [
+  const PUBLIC_FIELD_INPUTS: {
+    fkey: string
+    key: keyof FormValues
+    label: string
+    type: string
+    options?: string[]
+  }[] = [
     { fkey: 'customer_name', key: 'customerName', label: '고객명', type: 'text' },
     { fkey: 'phone', key: 'phone', label: '전화번호', type: 'text' },
     { fkey: 'address_short', key: 'addressShort', label: '간이주소', type: 'text' },
@@ -163,7 +192,9 @@ export default function AdminJobForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="steps mb-16">
-        <span className="link" onClick={() => navigate('/admin/jobs')}>시공 일지</span>
+        <span className="link" onClick={() => navigate('/admin/jobs')}>
+          시공 일지
+        </span>
         <span className="sep">›</span>
         <b>{isEdit ? '수정' : '새 일지'}</b>
       </div>
@@ -171,9 +202,7 @@ export default function AdminJobForm() {
 
       {/* 마스터 공개 스위치 */}
       <div className={`jobs-master-row mb-24 ${isPublished ? 'on' : ''}`}>
-        <div className="ico">
-          {isPublished ? <JIcon.Globe s={20} /> : <JIcon.Lock s={18} />}
-        </div>
+        <div className="ico">{isPublished ? <JIcon.Globe s={20} /> : <JIcon.Lock s={18} />}</div>
         <div className="copy">
           <div className="ttl">{isPublished ? '고객 공유 켜짐' : '고객 공유 꺼짐'}</div>
           <div className="sub">
@@ -207,7 +236,11 @@ export default function AdminJobForm() {
                 <textarea className="textarea" {...register(key)} />
               ) : type === 'select' ? (
                 <select className="input" {...register(key)}>
-                  {options?.map((o) => <option key={o} value={o}>{o}</option>)}
+                  {options?.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
                 </select>
               ) : (
                 <input className="input" type={type} {...register(key)} />
@@ -223,7 +256,10 @@ export default function AdminJobForm() {
         {(['before', 'after'] as const).map((role) => {
           const fkey = role === 'before' ? 'before_photos' : 'after_photos'
           const roleLabel = role === 'before' ? '시공 전 사진' : '시공 후 사진'
-          const roleIndices = photos.reduce<number[]>((acc, p, i) => { if (p.role === role) acc.push(i); return acc }, [])
+          const roleIndices = photos.reduce<number[]>((acc, p, i) => {
+            if (p.role === role) acc.push(i)
+            return acc
+          }, [])
           return (
             <div key={role} className="jobs-fld-row">
               <div className="field">
@@ -237,20 +273,42 @@ export default function AdminJobForm() {
                         <button
                           type="button"
                           onClick={() => removePhoto(gi)}
-                          style={{ position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                        >✕</button>
+                          style={{
+                            position: 'absolute',
+                            top: 4,
+                            right: 4,
+                            width: 20,
+                            height: 20,
+                            borderRadius: '50%',
+                            background: 'rgba(0,0,0,0.6)',
+                            color: '#fff',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: 11,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          ✕
+                        </button>
                       </div>
                     )
                   })}
                   <label className="cell add">
-                    <input type="file" accept="image/*" multiple style={{ display: 'none' }} disabled={uploadingRole !== null} onChange={(e) => handlePhotoAdd(e, role)} />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      style={{ display: 'none' }}
+                      disabled={uploadingRole !== null}
+                      onChange={(e) => handlePhotoAdd(e, role)}
+                    />
                     <JIcon.Plus s={18} />
                     <span>{uploadingRole === role ? '업로드 중...' : '사진 추가'}</span>
                   </label>
                 </div>
-                {roleIndices.length > 0 && (
-                  <div className="jobs-photo-foot">{roleIndices.length}장 업로드됨</div>
-                )}
+                {roleIndices.length > 0 && <div className="jobs-photo-foot">{roleIndices.length}장 업로드됨</div>}
               </div>
               <div className="pub-cell">
                 <JPubToggle on={publicFields.includes(fkey)} onClick={() => togglePublicField(fkey)} />
@@ -264,7 +322,9 @@ export default function AdminJobForm() {
           <JIcon.Lock s={13} /> 내부 전용 — 고객 절대 안 보임
         </div>
         <div className="jobs-locked-banner">
-          <div className="ico"><JIcon.Lock s={14} /></div>
+          <div className="ico">
+            <JIcon.Lock s={14} />
+          </div>
           <div className="txt">
             아래 <b>6개 필드</b>는 서버 화이트리스트로 차단되어 있어 절대 응답에 포함되지 않습니다.
           </div>
@@ -278,12 +338,20 @@ export default function AdminJobForm() {
             { key: 'paidDate', label: '입금일', type: 'date' },
           ].map(({ key, label, type }) => (
             <div key={key} className="jobs-locked-fld">
-              <label><JIcon.Lock s={12} /> {label}</label>
-              <input className="input" type={type === 'money' ? 'number' : type} {...register(key as keyof FormValues)} />
+              <label>
+                <JIcon.Lock s={12} /> {label}
+              </label>
+              <input
+                className="input"
+                type={type === 'money' ? 'number' : type}
+                {...register(key as keyof FormValues)}
+              />
             </div>
           ))}
           <div className="jobs-locked-fld bool-row">
-            <label><JIcon.Lock s={12} /> 입금 완료</label>
+            <label>
+              <JIcon.Lock s={12} /> 입금 완료
+            </label>
             <button
               type="button"
               className={`jobs-switch sm ${watch('paid') ? 'on' : ''}`}
@@ -295,13 +363,17 @@ export default function AdminJobForm() {
             <input type="checkbox" {...register('paid')} style={{ display: 'none' }} />
           </div>
           <div className="jobs-locked-fld wide">
-            <label><JIcon.Lock s={12} /> 내부 메모</label>
+            <label>
+              <JIcon.Lock s={12} /> 내부 메모
+            </label>
             <textarea className="textarea" {...register('internalMemo')} />
           </div>
         </div>
 
         <div className="jobs-form-footer">
-          <button type="button" className="btn ghost" onClick={() => navigate('/admin/jobs')}>취소</button>
+          <button type="button" className="btn ghost" onClick={() => navigate('/admin/jobs')}>
+            취소
+          </button>
           <div className="grow" />
           <button type="submit" className="btn primary" disabled={saving}>
             {saving ? '저장 중...' : isPublished ? '저장 · 공유' : '저장'}

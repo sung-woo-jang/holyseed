@@ -1,12 +1,14 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
+import { useNavigate } from 'react-router-dom'
+import SchedulePicker, { type SchedValue } from '@/components/common/SchedulePicker'
 import { api } from '@/lib/api'
 import { useCartStore } from '@/stores/cart'
 import { useToastStore } from '@/stores/toast'
-import SchedulePicker, { type SchedValue } from '@/components/common/SchedulePicker'
 
-function fmtKRW(n: number) { return n.toLocaleString('ko-KR') + '원' }
+function fmtKRW(n: number) {
+  return n.toLocaleString('ko-KR') + '원'
+}
 
 const VISIT_FEE = 20000
 
@@ -17,13 +19,20 @@ function Steps({ current }: { current: number }) {
       {STEPS.map((it, i) => (
         <span key={i} style={{ display: 'contents' }}>
           {i > 0 && <span className="sep">·</span>}
-          {i === current ? <b>0{i + 1} {it}</b> : <span>0{i + 1} {it}</span>}
+          {i === current ? (
+            <b>
+              0{i + 1} {it}
+            </b>
+          ) : (
+            <span>
+              0{i + 1} {it}
+            </span>
+          )}
         </span>
       ))}
     </div>
   )
 }
-
 
 interface FormValues {
   contactName: string
@@ -41,7 +50,11 @@ export default function RequestPage() {
   const [uploading, setUploading] = useState(false)
   const [pref, setPref] = useState<SchedValue>({ date: '', time: null })
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>()
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormValues>()
 
   const itemsTotal = items.reduce((s, i) => s + i.serviceItemPrice + i.productPrice, 0)
   const total = itemsTotal + VISIT_FEE
@@ -78,7 +91,9 @@ export default function RequestPage() {
         <div className="container">
           <div className="empty">
             <h3 className="h3">견적함이 비어있어요</h3>
-            <button className="btn primary mt-24" onClick={() => navigate('/services')}>서비스 담으러 가기</button>
+            <button className="btn primary mt-24" onClick={() => navigate('/services')}>
+              서비스 담으러 가기
+            </button>
           </div>
         </div>
       </section>
@@ -98,9 +113,13 @@ export default function RequestPage() {
           unitSnapshot: i.serviceItemUnit,
           priceSnapshot: i.serviceItemPrice,
           productCode: i.productCode,
-          productSnapshot: i.productCode ? {
-            name: i.productName, brand: i.productBrand, price: i.productPrice,
-          } : null,
+          productSnapshot: i.productCode
+            ? {
+                name: i.productName,
+                brand: i.productBrand,
+                price: i.productPrice,
+              }
+            : null,
         })),
         visitFee: VISIT_FEE,
         itemsTotal,
@@ -125,10 +144,8 @@ export default function RequestPage() {
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="cart-grid mt-40">
-
             {/* 왼쪽 — 폼 */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
               {/* 연락처 */}
               <div className="card card-pad">
                 <h3 className="h3 mb-20">연락처</h3>
@@ -141,13 +158,21 @@ export default function RequestPage() {
                     </div>
                     <div className="field">
                       <label className="field-label">전화번호 *</label>
-                      <input className="input" placeholder="010-0000-0000" {...register('contactPhone', { required: true })} />
+                      <input
+                        className="input"
+                        placeholder="010-0000-0000"
+                        {...register('contactPhone', { required: true })}
+                      />
                       {errors.contactPhone && <span className="form-error">전화번호를 입력해주세요</span>}
                     </div>
                   </div>
                   <div className="field">
                     <label className="field-label">시공 주소 *</label>
-                    <input className="input" placeholder="서울 ○○구 ○○로 00, 동·호수" {...register('contactAddress', { required: true })} />
+                    <input
+                      className="input"
+                      placeholder="서울 ○○구 ○○로 00, 동·호수"
+                      {...register('contactAddress', { required: true })}
+                    />
                     <span className="field-hint">정확한 동·호수까지 적어주세요. 방문 일정 잡을 때 필요합니다.</span>
                     {errors.contactAddress && <span className="form-error">주소를 입력해주세요</span>}
                   </div>
@@ -160,10 +185,17 @@ export default function RequestPage() {
                   <h3 className="h3">희망 일정</h3>
                   {pref.date && pref.time != null ? (
                     <span className="tag orange">
-                      {new Date(pref.date + 'T00:00:00').toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })} · {pref.time}시 이후
+                      {new Date(pref.date + 'T00:00:00').toLocaleDateString('ko-KR', {
+                        month: 'long',
+                        day: 'numeric',
+                        weekday: 'short',
+                      })}{' '}
+                      · {pref.time}시 이후
                     </span>
                   ) : (
-                    <span className="muted" style={{ fontSize: 13 }}>날짜를 골라주세요 (선택)</span>
+                    <span className="muted" style={{ fontSize: 13 }}>
+                      날짜를 골라주세요 (선택)
+                    </span>
                   )}
                 </div>
                 <SchedulePicker value={pref} onChange={setPref} />
@@ -176,7 +208,9 @@ export default function RequestPage() {
               <div className="card card-pad">
                 <h3 className="h3 mb-20">
                   사진 · 메모
-                  <span className="muted" style={{ fontSize: 13, fontWeight: 400, marginLeft: 8 }}>(선택)</span>
+                  <span className="muted" style={{ fontSize: 13, fontWeight: 400, marginLeft: 8 }}>
+                    (선택)
+                  </span>
                 </h3>
 
                 <div className="field">
@@ -184,17 +218,67 @@ export default function RequestPage() {
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 4 }}>
                     {photoUrls.map((url, i) => (
                       <div key={i} style={{ position: 'relative' }}>
-                        <img src={url} alt="" style={{ width: 88, height: 88, objectFit: 'cover', borderRadius: 10, border: '1px solid var(--line)' }} />
+                        <img
+                          src={url}
+                          alt=""
+                          style={{
+                            width: 88,
+                            height: 88,
+                            objectFit: 'cover',
+                            borderRadius: 10,
+                            border: '1px solid var(--line)',
+                          }}
+                        />
                         <button
                           type="button"
                           onClick={() => removePhoto(i)}
-                          style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: '#EF4444', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                        >✕</button>
+                          style={{
+                            position: 'absolute',
+                            top: -6,
+                            right: -6,
+                            width: 20,
+                            height: 20,
+                            borderRadius: '50%',
+                            background: '#EF4444',
+                            color: '#fff',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: 11,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          ✕
+                        </button>
                       </div>
                     ))}
                     {photoUrls.length < 4 && (
-                      <label style={{ width: 88, height: 88, borderRadius: 10, background: 'var(--bg-deep)', border: '1px dashed var(--line)', cursor: uploading ? 'wait' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, color: 'var(--ink-4)', fontSize: 12 }}>
-                        <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handlePhotoSelect} disabled={uploading} />
+                      <label
+                        style={{
+                          width: 88,
+                          height: 88,
+                          borderRadius: 10,
+                          background: 'var(--bg-deep)',
+                          border: '1px dashed var(--line)',
+                          cursor: uploading ? 'wait' : 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 4,
+                          color: 'var(--ink-4)',
+                          fontSize: 12,
+                        }}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          style={{ display: 'none' }}
+                          onChange={handlePhotoSelect}
+                          disabled={uploading}
+                        />
                         <span style={{ fontSize: 22, lineHeight: 1 }}>+</span>
                         <span>{uploading ? '...' : '사진 추가'}</span>
                       </label>
@@ -244,7 +328,7 @@ export default function RequestPage() {
               <p className="muted" style={{ fontSize: 12, marginTop: 12 }}>
                 실제 금액은 현장 확인 후 확정됩니다. 시공 완료 후 결제.
               </p>
-              <button type="submit" className="btn primary block lg mt-24" disabled={submitting}>
+              <button type="submit" className="btn primary lg mt-24 block" disabled={submitting}>
                 {submitting ? '전송 중...' : '견적 요청 보내기'}
               </button>
               {!pref.date && (

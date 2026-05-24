@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { JIcon, JPhoto, JStatusPill } from '@/components/common/JobsShared'
 import { api } from '@/lib/api'
 import { useToastStore } from '@/stores/toast'
-import { JIcon, JPhoto, JStatusPill } from '@/components/common/JobsShared'
 import type { Job } from '@/types'
 
 function fmtKRW(n: number | undefined) {
@@ -26,14 +26,16 @@ export default function AdminJobDetail() {
     })
   }
 
-  useEffect(() => { load() }, [id])
+  useEffect(() => {
+    load()
+  }, [id])
 
   const togglePublish = async () => {
     if (!job) return
     try {
       await api.post(`/jobs/admin/${id}/update`, { isPublished: !job.isPublished })
       showToast(job.isPublished ? '비공개로 전환됐어요' : '공개로 전환됐어요')
-      setJob((prev) => prev ? { ...prev, isPublished: !prev.isPublished } : prev)
+      setJob((prev) => (prev ? { ...prev, isPublished: !prev.isPublished } : prev))
     } catch {
       showToast('변경 실패', 'error')
     }
@@ -66,7 +68,9 @@ export default function AdminJobDetail() {
   return (
     <>
       <div className="steps mb-16">
-        <span className="link" onClick={() => navigate('/admin/jobs')}>시공 일지</span>
+        <span className="link" onClick={() => navigate('/admin/jobs')}>
+          시공 일지
+        </span>
         <span className="sep">›</span>
         <b>{job.customerName ?? job.id}</b>
       </div>
@@ -76,15 +80,29 @@ export default function AdminJobDetail() {
           <h1>{job.productName ?? '일지'}</h1>
           <div className="meta">
             <JStatusPill status={job.status} />
-            {job.customerName && <><span className="sep">·</span><span>{job.customerName}</span></>}
-            {job.addressShort && <><span className="sep">·</span><span>{job.addressShort}</span></>}
+            {job.customerName && (
+              <>
+                <span className="sep">·</span>
+                <span>{job.customerName}</span>
+              </>
+            )}
+            {job.addressShort && (
+              <>
+                <span className="sep">·</span>
+                <span>{job.addressShort}</span>
+              </>
+            )}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button className={`btn ${job.isPublished ? 'ghost' : 'primary'}`} onClick={togglePublish}>
             {job.isPublished ? '비공개로' : '공개로 전환'}
           </button>
-          <button className="btn ink" style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => navigate(`/admin/jobs/${id}/edit`)}>
+          <button
+            className="btn ink"
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            onClick={() => navigate(`/admin/jobs/${id}/edit`)}
+          >
             <JIcon.Edit s={14} /> 수정
           </button>
         </div>
@@ -95,11 +113,21 @@ export default function AdminJobDetail() {
         <div className="jobs-hero">
           {beforePhotos.length > 0 && (
             <div className="group">
-              <div className="head"><span className="tag">BEFORE</span>시공 전 ({beforePhotos.length}장)</div>
-              <div className={`jobs-gallery ${beforePhotos.length === 1 ? 'one' : beforePhotos.length === 2 ? 'two' : ''}`}>
+              <div className="head">
+                <span className="tag">BEFORE</span>시공 전 ({beforePhotos.length}장)
+              </div>
+              <div
+                className={`jobs-gallery ${beforePhotos.length === 1 ? 'one' : beforePhotos.length === 2 ? 'two' : ''}`}
+              >
                 {beforePhotos.map((p, i) => (
                   <div key={i} className="cell">
-                    <JPhoto fileUrl={p.fileUrl} role="before" label={p.label ?? undefined} idx={i} style={{ height: '100%' }} />
+                    <JPhoto
+                      fileUrl={p.fileUrl}
+                      role="before"
+                      label={p.label ?? undefined}
+                      idx={i}
+                      style={{ height: '100%' }}
+                    />
                   </div>
                 ))}
               </div>
@@ -107,11 +135,21 @@ export default function AdminJobDetail() {
           )}
           {afterPhotos.length > 0 && (
             <div className="group after">
-              <div className="head"><span className="tag">AFTER</span>시공 후 ({afterPhotos.length}장)</div>
-              <div className={`jobs-gallery ${afterPhotos.length === 1 ? 'one' : afterPhotos.length === 2 ? 'two' : ''}`}>
+              <div className="head">
+                <span className="tag">AFTER</span>시공 후 ({afterPhotos.length}장)
+              </div>
+              <div
+                className={`jobs-gallery ${afterPhotos.length === 1 ? 'one' : afterPhotos.length === 2 ? 'two' : ''}`}
+              >
                 {afterPhotos.map((p, i) => (
                   <div key={i} className="cell">
-                    <JPhoto fileUrl={p.fileUrl} role="after" label={p.label ?? undefined} idx={i} style={{ height: '100%' }} />
+                    <JPhoto
+                      fileUrl={p.fileUrl}
+                      role="after"
+                      label={p.label ?? undefined}
+                      idx={i}
+                      style={{ height: '100%' }}
+                    />
                   </div>
                 ))}
               </div>
@@ -121,9 +159,7 @@ export default function AdminJobDetail() {
       )}
 
       {/* 요청사항 + 작업요약 */}
-      {job.requestNote && (
-        <div className="jobs-request-note mt-20">{job.requestNote}</div>
-      )}
+      {job.requestNote && <div className="jobs-request-note mt-20">{job.requestNote}</div>}
       {job.workSummary && (
         <div className="jobs-work-summary mt-16">
           {job.workSummary}
@@ -184,8 +220,15 @@ export default function AdminJobDetail() {
       {/* 공유 바 */}
       {job.isPublished && (
         <div className="jobs-share">
-          <div className="url">{window.location.origin}/jobs/{id}</div>
-          <button type="button" className="btn sm" style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={copyUrl}>
+          <div className="url">
+            {window.location.origin}/jobs/{id}
+          </div>
+          <button
+            type="button"
+            className="btn sm"
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            onClick={copyUrl}
+          >
             <JIcon.Copy s={13} /> URL 복사
           </button>
         </div>

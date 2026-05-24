@@ -1,12 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  authApi,
-  strategiesApi,
-  plansApi,
-  executionsApi,
-  pricesApi,
-  type FillRowInput,
-} from '@/lib/iv-api'
+import { authApi, strategiesApi, plansApi, executionsApi, pricesApi, type FillRowInput } from '@/lib/iv-api'
 
 // ─────────────────────────────────────────
 // Keys
@@ -24,8 +17,7 @@ export const keys = {
 // ─────────────────────────────────────────
 // Queries
 // ─────────────────────────────────────────
-export const useMe = () =>
-  useQuery({ queryKey: keys.me, queryFn: authApi.me, staleTime: 1000 * 60 * 5 })
+export const useMe = () => useQuery({ queryKey: keys.me, queryFn: authApi.me, staleTime: 1000 * 60 * 5 })
 
 export const useStrategies = () =>
   useQuery({ queryKey: keys.strategies, queryFn: strategiesApi.getAll, staleTime: 1000 * 60 })
@@ -75,8 +67,7 @@ export const useDeleteStrategy = () => {
 export const useCreateExecution = (strategyId: string) => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: { execDate: string; rows: FillRowInput[] }) =>
-      executionsApi.create(strategyId, data),
+    mutationFn: (data: { execDate: string; rows: FillRowInput[] }) => executionsApi.create(strategyId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: keys.state(strategyId) })
       qc.invalidateQueries({ queryKey: keys.plan(strategyId) })
@@ -100,8 +91,17 @@ export const useDeleteExecution = (strategyId: string) => {
 export const useUpdateExecution = (strategyId: string) => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ execId, price, qty }: { execId: string; price: number; qty: number }) =>
-      executionsApi.updateOne(strategyId, execId, { price, qty }),
+    mutationFn: ({
+      execId,
+      execType,
+      price,
+      qty,
+    }: {
+      execId: string
+      execType?: string
+      price?: number
+      qty?: number
+    }) => executionsApi.updateOne(strategyId, execId, { execType, price, qty }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: keys.state(strategyId) })
       qc.invalidateQueries({ queryKey: keys.plan(strategyId) })

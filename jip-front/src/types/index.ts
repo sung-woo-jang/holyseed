@@ -121,12 +121,13 @@ export interface QuoteRequest {
   contactPhone: string
   contactAddress: string
   memo: string
-  prefDate: string
-  prefTimeSlot: string
+  prefDate: string | null
+  prefTimeSlot: string | null
   visitFee: number
   itemsTotal: number
   createdAt: string
   items: QuoteRequestItem[]
+  photos?: { fileUrl: string }[]
 }
 
 // 일정
@@ -166,6 +167,7 @@ export interface Job {
   addressShort?: string
   inquiryDate?: string
   workDate?: string
+  updatedAt?: string
   status?: JobStatus
   productName?: string
   brand?: string

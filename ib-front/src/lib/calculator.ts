@@ -21,11 +21,15 @@ function recalcAvg(prevAvg: number, prevQty: number, price: number, qty: number)
 
 function applyTNormal(t: number, execType: string): number {
   switch (execType) {
-    case 'buy_full': return t + 1
+    case 'buy_full':
+      return t + 1
     case 'buy_half_star':
-    case 'buy_half_avg': return t + 0.5
-    case 'sell_quarter': return t * 0.75
-    default: return t
+    case 'buy_half_avg':
+      return t + 0.5
+    case 'sell_quarter':
+      return t * 0.75
+    default:
+      return t
   }
 }
 
@@ -50,7 +54,7 @@ function resolveMode(t: number, division: number, quantity: number): string {
 
 export function computePreview(
   state: { quantity: number; cash: number; avgPrice: number; tValue: number; mode: string; division: number },
-  fills: FillPreview[],
+  fills: FillPreview[]
 ): PreviewState {
   let { quantity, cash, avgPrice, tValue } = state
   const isReverse = state.mode === 'reverse'

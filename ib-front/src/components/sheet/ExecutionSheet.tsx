@@ -1,29 +1,11 @@
 import { useState, useMemo } from 'react'
-import { useCreateExecution } from '@/queries/iv.queries'
-import { fmtUSD, fmtT, MODE_LABEL, MODE_COLOR } from '@/lib/format'
-import { computePreview } from '@/lib/calculator'
 import { BottomSheet } from '@/components/common/BottomSheet'
+import { ExecTypeSheet, EXEC_LABEL } from '@/components/sheet/ExecTypeSheet'
+import { computePreview } from '@/lib/calculator'
+import { T_DELTA } from '@/lib/exec-types'
+import { fmtUSD, fmtT, MODE_LABEL, MODE_COLOR } from '@/lib/format'
 import type { IvStrategy, IvState, DailyPlan, FillRowInput } from '@/lib/iv-api'
-
-const EXEC_TYPES: { value: string; label: string }[] = [
-  { value: 'buy_full', label: '1회 매수' },
-  { value: 'buy_half_star', label: '별LOC 매수 (1/2)' },
-  { value: 'buy_half_avg', label: '평단LOC 매수 (1/2)' },
-  { value: 'sell_quarter', label: '쿼터 매도' },
-  { value: 'sell_fixed', label: '지정가 매도' },
-  { value: 'sell_moc', label: 'MOC 매도' },
-  { value: 'no_exec', label: '미체결' },
-]
-
-const T_DELTA: Record<string, string> = {
-  buy_full: 'T +1.0',
-  buy_half_star: 'T +0.5',
-  buy_half_avg: 'T +0.5',
-  sell_quarter: 'T ×0.75',
-  sell_fixed: 'T ×0.25 (다음 매수 후 확정)',
-  sell_moc: 'T ×0.95',
-  no_exec: '변화 없음',
-}
+import { useCreateExecution } from '@/queries/iv.queries'
 
 interface Row {
   execType: string
@@ -45,49 +27,10 @@ interface Props {
   onClose: (result?: CloseResult) => void
 }
 
-function ExecTypeSheet({ selected, onSelect, onClose }: {
-  selected: string
-  onSelect: (val: string) => void
-  onClose: () => void
-}) {
-  return (
-    <BottomSheet onClose={onClose}>
-      {(requestClose) => (
-        <>
-          <div style={{ padding: '4px 20px 12px', borderBottom: '1px solid var(--color-border)', fontWeight: 700, fontSize: 15, textAlign: 'center' }}>
-            체결 유형 선택
-          </div>
-          {EXEC_TYPES.map((t, idx) => (
-            <button
-              key={t.value}
-              onClick={() => { onSelect(t.value); requestClose() }}
-              style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                width: '100%', padding: '16px 20px',
-                background: 'none', border: 'none',
-                borderBottom: idx < EXEC_TYPES.length - 1 ? '1px solid var(--color-border)' : 'none',
-                textAlign: 'left', fontSize: 17,
-                color: selected === t.value ? 'var(--color-primary)' : 'var(--color-text)',
-                cursor: 'pointer', fontWeight: selected === t.value ? 700 : 400,
-              }}
-            >
-              <span>{t.label}</span>
-              {selected === t.value && <span style={{ fontSize: 18 }}>✓</span>}
-            </button>
-          ))}
-          <div style={{ height: 8 }} />
-        </>
-      )}
-    </BottomSheet>
-  )
-}
-
 export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
   const today = new Date().toISOString().slice(0, 10)
   const [execDate, setExecDate] = useState(today)
-  const [rows, setRows] = useState<Row[]>([
-    { execType: 'buy_full', price: '', qty: '', note: '' },
-  ])
+  const [rows, setRows] = useState<Row[]>([{ execType: 'buy_full', price: '', qty: '', note: '' }])
   const [openDropdown, setOpenDropdown] = useState<number | null>(null)
 
   const mutation = useCreateExecution(strategy.id)
@@ -136,15 +79,12 @@ export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
   function autofill(rowIdx: number, execType: string) {
     if (!plan) return
     const match =
-      plan.buyRows.find((r) => r.execType === execType) ??
-      plan.sellRows.find((r) => r.execType === execType)
+      plan.buyRows.find((r) => r.execType === execType) ?? plan.sellRows.find((r) => r.execType === execType)
     if (!match) return
     setRows((r) =>
       r.map((row, idx) =>
-        idx === rowIdx
-          ? { ...row, price: String(match.price.toFixed(2)), qty: String(match.qty ?? '') }
-          : row,
-      ),
+        idx === rowIdx ? { ...row, price: String(match.price.toFixed(2)), qty: String(match.qty ?? '') } : row
+      )
     )
   }
 
@@ -157,7 +97,14 @@ export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
             <h3 style={{ margin: 0, fontWeight: 700, fontSize: 17 }}>{strategy.ticker} 체결 입력</h3>
             <button
               onClick={requestClose}
-              style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--color-text-secondary)', padding: '4px 8px' }}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: 20,
+                cursor: 'pointer',
+                color: 'var(--color-text-secondary)',
+                padding: '4px 8px',
+              }}
             >
               ✕
             </button>
@@ -167,14 +114,21 @@ export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
           {state && (
             <div
               style={{
-                display: 'grid', gridTemplateColumns: '1fr auto 1fr',
-                gap: 8, padding: '12px', borderRadius: 12,
-                background: 'var(--color-bg)', marginBottom: 16, fontSize: 12,
+                display: 'grid',
+                gridTemplateColumns: '1fr auto 1fr',
+                gap: 8,
+                padding: '12px',
+                borderRadius: 12,
+                background: 'var(--color-bg)',
+                marginBottom: 16,
+                fontSize: 12,
                 alignItems: 'center',
               }}
             >
               <div>
-                <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--color-text-secondary)', fontSize: 11 }}>현재</div>
+                <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--color-text-secondary)', fontSize: 11 }}>
+                  현재
+                </div>
                 {[
                   { label: 'T값', value: fmtT(state.tValue) },
                   { label: '평단', value: fmtUSD(state.avgPrice) },
@@ -191,16 +145,31 @@ export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
               <div style={{ fontSize: 16, color: 'var(--color-text-secondary)', textAlign: 'center' }}>→</div>
 
               <div>
-                <div style={{ fontWeight: 600, marginBottom: 6, color: preview ? 'var(--color-primary)' : 'var(--color-text-secondary)', fontSize: 11 }}>
+                <div
+                  style={{
+                    fontWeight: 600,
+                    marginBottom: 6,
+                    color: preview ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                    fontSize: 11,
+                  }}
+                >
                   {preview ? '예상' : '예상 (입력 후 표시)'}
                 </div>
                 {preview ? (
                   <>
                     {[
                       { label: 'T값', value: fmtT(preview.tValue), changed: preview.tValue !== state.tValue },
-                      { label: '평단', value: fmtUSD(preview.avgPrice), changed: Math.abs(preview.avgPrice - state.avgPrice) > 0.001 },
+                      {
+                        label: '평단',
+                        value: fmtUSD(preview.avgPrice),
+                        changed: Math.abs(preview.avgPrice - state.avgPrice) > 0.001,
+                      },
                       { label: '보유', value: `${preview.quantity}주`, changed: preview.quantity !== state.quantity },
-                      { label: '잔금', value: fmtUSD(preview.cash), changed: Math.abs(preview.cash - state.cash) > 0.001 },
+                      {
+                        label: '잔금',
+                        value: fmtUSD(preview.cash),
+                        changed: Math.abs(preview.cash - state.cash) > 0.001,
+                      },
                     ].map(({ label, value, changed }) => (
                       <div key={label} style={{ marginBottom: 3 }}>
                         <span style={{ color: 'var(--color-text-secondary)' }}>{label} </span>
@@ -210,9 +179,12 @@ export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
                     <div style={{ marginTop: 4 }}>
                       <span
                         style={{
-                          fontSize: 10, padding: '2px 6px', borderRadius: 10,
+                          fontSize: 10,
+                          padding: '2px 6px',
+                          borderRadius: 10,
                           background: MODE_COLOR[preview.mode] + '22',
-                          color: MODE_COLOR[preview.mode], fontWeight: 700,
+                          color: MODE_COLOR[preview.mode],
+                          fontWeight: 700,
                         }}
                       >
                         {MODE_LABEL[preview.mode] ?? preview.mode}
@@ -228,21 +200,40 @@ export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
 
           {/* 날짜 */}
           <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 4 }}>체결 날짜</label>
+            <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 4 }}>
+              체결 날짜
+            </label>
             <input
-              type="date" value={execDate}
+              type="date"
+              value={execDate}
               onChange={(e) => setExecDate(e.target.value)}
-              style={{ width: '100%', padding: '10px', border: '1px solid var(--color-border)', borderRadius: 10, fontSize: 14, background: 'var(--color-bg)', color: 'var(--color-text)' }}
+              style={{
+                width: '100%',
+                padding: '10px',
+                border: '1px solid var(--color-border)',
+                borderRadius: 10,
+                fontSize: 14,
+                background: 'var(--color-bg)',
+                color: 'var(--color-text)',
+              }}
             />
           </div>
 
           {/* 체결 행 */}
           {rows.map((row, i) => (
-            <div key={i} style={{ border: '1px solid var(--color-border)', borderRadius: 12, padding: 12, marginBottom: 8 }}>
+            <div
+              key={i}
+              style={{ border: '1px solid var(--color-border)', borderRadius: 12, padding: 12, marginBottom: 8 }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <span style={{ fontSize: 12, fontWeight: 600 }}>체결 {i + 1}</span>
                 {rows.length > 1 && (
-                  <button onClick={() => removeRow(i)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 13 }}>삭제</button>
+                  <button
+                    onClick={() => removeRow(i)}
+                    style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 13 }}
+                  >
+                    삭제
+                  </button>
                 )}
               </div>
 
@@ -250,13 +241,21 @@ export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
                 <button
                   onClick={() => setOpenDropdown(openDropdown === i ? null : i)}
                   style={{
-                    width: '100%', padding: '10px 12px', border: '1px solid var(--color-border)',
-                    borderRadius: 8, fontSize: 16, background: 'var(--color-bg)', textAlign: 'left',
-                    cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 8,
+                    fontSize: 16,
+                    background: 'var(--color-bg)',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
                     color: 'var(--color-text)',
                   }}
                 >
-                  <span>{EXEC_TYPES.find((t) => t.value === row.execType)?.label}</span>
+                  <span>{EXEC_LABEL[row.execType] ?? row.execType}</span>
                   <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>▼</span>
                 </button>
 
@@ -279,26 +278,55 @@ export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
                   <div>
                     <label style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>체결가 ($)</label>
                     <input
-                      type="number" step="0.01" value={row.price}
+                      type="number"
+                      step="0.01"
+                      value={row.price}
                       onChange={(e) => updateRow(i, 'price', e.target.value)}
                       placeholder="0.00"
-                      style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 13, background: 'var(--color-bg)', color: 'var(--color-text)' }}
+                      style={{
+                        width: '100%',
+                        padding: '8px',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: 8,
+                        fontSize: 13,
+                        background: 'var(--color-bg)',
+                        color: 'var(--color-text)',
+                      }}
                     />
                   </div>
                   <div>
                     <label style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>수량 (주)</label>
                     <input
-                      type="number" step="1" value={row.qty}
+                      type="number"
+                      step="1"
+                      value={row.qty}
                       onChange={(e) => updateRow(i, 'qty', e.target.value)}
                       placeholder="0"
-                      style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 13, background: 'var(--color-bg)', color: 'var(--color-text)' }}
+                      style={{
+                        width: '100%',
+                        padding: '8px',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: 8,
+                        fontSize: 13,
+                        background: 'var(--color-bg)',
+                        color: 'var(--color-text)',
+                      }}
                     />
                   </div>
                 </div>
               )}
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
-                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 8, background: 'var(--color-bg)', color: 'var(--color-text-secondary)', fontWeight: 600 }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    padding: '2px 8px',
+                    borderRadius: 8,
+                    background: 'var(--color-bg)',
+                    color: 'var(--color-text-secondary)',
+                    fontWeight: 600,
+                  }}
+                >
                   {T_DELTA[row.execType] ?? ''}
                 </span>
                 {row.price && row.qty && row.execType !== 'no_exec' && (
@@ -313,10 +341,16 @@ export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
           <button
             onClick={addRow}
             style={{
-              display: 'block', width: '100%', padding: '10px',
-              border: '1px dashed var(--color-border)', borderRadius: 10,
-              background: 'var(--color-bg)', fontSize: 13, color: 'var(--color-text-secondary)',
-              cursor: 'pointer', marginBottom: 16,
+              display: 'block',
+              width: '100%',
+              padding: '10px',
+              border: '1px dashed var(--color-border)',
+              borderRadius: 10,
+              background: 'var(--color-bg)',
+              fontSize: 13,
+              color: 'var(--color-text-secondary)',
+              cursor: 'pointer',
+              marginBottom: 16,
             }}
           >
             + 체결 추가
@@ -326,10 +360,16 @@ export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
             onClick={handleSubmit}
             disabled={mutation.isPending}
             style={{
-              display: 'block', width: '100%', padding: '14px',
-              background: 'var(--color-primary)', color: '#fff',
-              border: 'none', borderRadius: 14,
-              fontSize: 16, fontWeight: 700, cursor: 'pointer',
+              display: 'block',
+              width: '100%',
+              padding: '14px',
+              background: 'var(--color-primary)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 14,
+              fontSize: 16,
+              fontWeight: 700,
+              cursor: 'pointer',
             }}
           >
             {mutation.isPending ? '저장 중...' : '체결 저장'}

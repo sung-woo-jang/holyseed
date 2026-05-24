@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { authApi } from '@/lib/iv-api'
 import { TOKEN_KEY } from '@/lib/api'
+import { authApi } from '@/lib/iv-api'
 
 export function LoginPage() {
   const nav = useNavigate()
@@ -29,13 +29,19 @@ export function LoginPage() {
   return (
     <div
       style={{
-        minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'var(--color-bg)', padding: 16,
+        minHeight: '100dvh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--color-bg)',
+        padding: 16,
       }}
     >
       <div style={{ width: '100%', maxWidth: 360 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--color-primary)', marginBottom: 4 }}>무한매수법</div>
+          <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--color-primary)', marginBottom: 4 }}>
+            무한매수법
+          </div>
           <div style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>자동매매 어시스턴트 V4.0</div>
         </div>
 
@@ -44,48 +50,79 @@ export function LoginPage() {
 
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 6 }}>아이디</label>
+              <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 6 }}>
+                아이디
+              </label>
               <input
-                type="text" value={username} onChange={(e) => setUsername(e.target.value)}
-                placeholder="아이디 입력" required
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="아이디 입력"
+                required
                 style={{
-                  width: '100%', padding: '12px', border: '1px solid var(--color-border)',
-                  borderRadius: 12, fontSize: 15, background: 'var(--color-bg)',
-                  color: 'var(--color-text)', boxSizing: 'border-box',
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 12,
+                  fontSize: 15,
+                  background: 'var(--color-bg)',
+                  color: 'var(--color-text)',
+                  boxSizing: 'border-box',
                 }}
               />
             </div>
 
             <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 6 }}>비밀번호</label>
+              <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 6 }}>
+                비밀번호
+              </label>
               <input
-                type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                placeholder="비밀번호 입력" required
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="비밀번호 입력"
+                required
                 style={{
-                  width: '100%', padding: '12px', border: '1px solid var(--color-border)',
-                  borderRadius: 12, fontSize: 15, background: 'var(--color-bg)',
-                  color: 'var(--color-text)', boxSizing: 'border-box',
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 12,
+                  fontSize: 15,
+                  background: 'var(--color-bg)',
+                  color: 'var(--color-text)',
+                  boxSizing: 'border-box',
                 }}
               />
             </div>
 
             {error && (
-              <div style={{
-                padding: '10px 12px', marginBottom: 16,
-                background: 'var(--color-sell-bg)', border: '1px solid #fca5a5',
-                borderRadius: 10, fontSize: 13, color: '#ef4444',
-              }}>
+              <div
+                style={{
+                  padding: '10px 12px',
+                  marginBottom: 16,
+                  background: 'var(--color-sell-bg)',
+                  border: '1px solid #fca5a5',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  color: '#ef4444',
+                }}
+              >
                 {error}
               </div>
             )}
 
             <button
-              type="submit" disabled={loading}
+              type="submit"
+              disabled={loading}
               style={{
-                width: '100%', padding: '14px',
+                width: '100%',
+                padding: '14px',
                 background: loading ? 'var(--color-border)' : 'var(--color-primary)',
                 color: loading ? 'var(--color-text-secondary)' : '#fff',
-                border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700,
+                border: 'none',
+                borderRadius: 12,
+                fontSize: 15,
+                fontWeight: 700,
                 cursor: loading ? 'default' : 'pointer',
               }}
             >

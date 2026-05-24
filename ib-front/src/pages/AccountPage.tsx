@@ -1,20 +1,28 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useStrategies, useDeleteStrategy, useMe, useUpdateNickname } from '@/queries/iv.queries'
-import { fmtUSD } from '@/lib/format'
 import { CycleEditSheet } from '@/components/sheet/CycleEditSheet'
 import { TOKEN_KEY } from '@/lib/api'
+import { fmtUSD } from '@/lib/format'
 import type { IvStrategy } from '@/lib/iv-api'
+import { useStrategies, useDeleteStrategy, useMe, useUpdateNickname } from '@/queries/iv.queries'
 
 function useDarkMode() {
   const [isDark, setIsDark] = useState(() => {
-    try { return localStorage.getItem('iv-dark') === '1' } catch { return false }
+    try {
+      return localStorage.getItem('iv-dark') === '1'
+    } catch {
+      return false
+    }
   })
 
   useEffect(() => {
     if (isDark) document.documentElement.classList.add('dark')
     else document.documentElement.classList.remove('dark')
-    try { localStorage.setItem('iv-dark', isDark ? '1' : '0') } catch { /* noop */ }
+    try {
+      localStorage.setItem('iv-dark', isDark ? '1' : '0')
+    } catch {
+      /* noop */
+    }
   }, [isDark])
 
   return [isDark, setIsDark] as const
@@ -38,9 +46,7 @@ export function AccountPage() {
     const d = new Date(s.createdAt)
     return acc === null || d < acc ? d : acc
   }, null)
-  const operatingDays = oldestDate
-    ? Math.floor((Date.now() - oldestDate.getTime()) / 86400000)
-    : 0
+  const operatingDays = oldestDate ? Math.floor((Date.now() - oldestDate.getTime()) / 86400000) : 0
 
   // 완료 사이클: 전략별 (cycleNo - 1) 합산
   const completedCycles = strategies.reduce((sum, s) => sum + Math.max(0, s.cycleNo - 1), 0)
@@ -53,10 +59,17 @@ export function AccountPage() {
       <div className="card" style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
         <div
           style={{
-            width: 48, height: 48, borderRadius: 24,
-            background: 'var(--color-primary)', color: '#fff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 800, fontSize: 20, flexShrink: 0,
+            width: 48,
+            height: 48,
+            borderRadius: 24,
+            background: 'var(--color-primary)',
+            color: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 800,
+            fontSize: 20,
+            flexShrink: 0,
           }}
         >
           {displayName[0] ?? '?'}
@@ -72,13 +85,14 @@ export function AccountPage() {
       {/* 운용 통계 */}
       {strategies.length > 0 && (
         <>
-          <div style={{ fontSize: 13, color: 'var(--color-text)', fontWeight: 700, marginBottom: 8 }}>
-            운용 현황
-          </div>
+          <div style={{ fontSize: 13, color: 'var(--color-text)', fontWeight: 700, marginBottom: 8 }}>운용 현황</div>
           <div
             className="card"
             style={{
-              marginBottom: 20, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8,
+              marginBottom: 20,
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr 1fr',
+              gap: 8,
             }}
           >
             {[
@@ -96,9 +110,7 @@ export function AccountPage() {
       )}
 
       {/* 전략 목록 */}
-      <div style={{ fontSize: 13, color: 'var(--color-text)', fontWeight: 700, marginBottom: 8 }}>
-        전략 운용
-      </div>
+      <div style={{ fontSize: 13, color: 'var(--color-text)', fontWeight: 700, marginBottom: 8 }}>전략 운용</div>
       <div className="card" style={{ marginBottom: 20 }}>
         {strategies.length === 0 && (
           <p style={{ color: 'var(--color-text-secondary)', textAlign: 'center', margin: '16px 0' }}>
@@ -109,7 +121,9 @@ export function AccountPage() {
           <div
             key={s.id}
             style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
               padding: '12px 0',
               borderBottom: i < strategies.length - 1 ? '1px solid var(--color-border)' : 'none',
             }}
@@ -124,8 +138,14 @@ export function AccountPage() {
               <button
                 onClick={() => setEditTarget(s)}
                 style={{
-                  background: 'none', border: '1px solid var(--color-border)', color: 'var(--color-text)',
-                  borderRadius: 10, padding: '9px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                  background: 'none',
+                  border: '1px solid var(--color-border)',
+                  color: 'var(--color-text)',
+                  borderRadius: 10,
+                  padding: '9px 16px',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: 600,
                 }}
               >
                 설정
@@ -137,8 +157,14 @@ export function AccountPage() {
                   }
                 }}
                 style={{
-                  background: 'none', border: '1px solid #fca5a5', color: '#ef4444',
-                  borderRadius: 10, padding: '9px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                  background: 'none',
+                  border: '1px solid #fca5a5',
+                  color: '#ef4444',
+                  borderRadius: 10,
+                  padding: '9px 16px',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: 600,
                 }}
               >
                 삭제
@@ -149,9 +175,17 @@ export function AccountPage() {
         <button
           onClick={() => nav('/strategy/new')}
           style={{
-            display: 'block', width: '100%', marginTop: 12, padding: '14px',
-            background: 'var(--color-primary)', color: '#fff',
-            border: 'none', borderRadius: 14, fontSize: 15, fontWeight: 700, cursor: 'pointer',
+            display: 'block',
+            width: '100%',
+            marginTop: 12,
+            padding: '14px',
+            background: 'var(--color-primary)',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 14,
+            fontSize: 15,
+            fontWeight: 700,
+            cursor: 'pointer',
           }}
         >
           + 전략 추가
@@ -159,14 +193,13 @@ export function AccountPage() {
       </div>
 
       {/* 앱 설정 */}
-      <div style={{ fontSize: 13, color: 'var(--color-text)', fontWeight: 700, marginBottom: 8 }}>
-        앱 설정
-      </div>
+      <div style={{ fontSize: 13, color: 'var(--color-text)', fontWeight: 700, marginBottom: 8 }}>앱 설정</div>
       <div className="card" style={{ marginBottom: 20 }}>
         {/* 별명 설정 */}
         <div
           style={{
-            padding: '13px 0', borderBottom: '1px solid var(--color-border)',
+            padding: '13px 0',
+            borderBottom: '1px solid var(--color-border)',
           }}
         >
           {nicknameEdit ? (
@@ -177,8 +210,12 @@ export function AccountPage() {
                 placeholder="별명 입력 (최대 50자)"
                 maxLength={50}
                 style={{
-                  flex: 1, padding: '8px 12px', border: '1px solid var(--color-border)',
-                  borderRadius: 8, fontSize: 14, background: 'var(--color-bg)',
+                  flex: 1,
+                  padding: '8px 12px',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 8,
+                  fontSize: 14,
+                  background: 'var(--color-bg)',
                   color: 'var(--color-text)',
                 }}
               />
@@ -191,17 +228,31 @@ export function AccountPage() {
                 }}
                 disabled={nicknameMutation.isPending}
                 style={{
-                  padding: '8px 14px', background: 'var(--color-primary)', color: '#fff',
-                  border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  padding: '8px 14px',
+                  background: 'var(--color-primary)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
                 }}
               >
                 저장
               </button>
               <button
-                onClick={() => { setNicknameEdit(false); setNicknameInput('') }}
+                onClick={() => {
+                  setNicknameEdit(false)
+                  setNicknameInput('')
+                }}
                 style={{
-                  padding: '8px 10px', background: 'none', border: '1px solid var(--color-border)',
-                  borderRadius: 8, fontSize: 13, cursor: 'pointer', color: 'var(--color-text)',
+                  padding: '8px 10px',
+                  background: 'none',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  color: 'var(--color-text)',
                 }}
               >
                 취소
@@ -210,7 +261,10 @@ export function AccountPage() {
           ) : (
             <div
               style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
-              onClick={() => { setNicknameEdit(true); setNicknameInput(user?.nickname ?? '') }}
+              onClick={() => {
+                setNicknameEdit(true)
+                setNicknameInput(user?.nickname ?? '')
+              }}
             >
               <div>
                 <span style={{ fontSize: 14 }}>별명 설정</span>
@@ -226,7 +280,9 @@ export function AccountPage() {
         {/* 다크모드 토글 */}
         <div
           style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             padding: '13px 0',
           }}
         >
@@ -234,16 +290,27 @@ export function AccountPage() {
           <button
             onClick={() => setIsDark((v) => !v)}
             style={{
-              width: 48, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
+              width: 48,
+              height: 26,
+              borderRadius: 13,
+              border: 'none',
+              cursor: 'pointer',
               background: isDark ? 'var(--color-primary)' : 'var(--color-border)',
-              position: 'relative', transition: 'background 0.2s',
+              position: 'relative',
+              transition: 'background 0.2s',
             }}
           >
             <span
               style={{
-                position: 'absolute', top: 3, left: isDark ? 25 : 3,
-                width: 20, height: 20, borderRadius: 10, background: '#fff',
-                transition: 'left 0.2s', display: 'block',
+                position: 'absolute',
+                top: 3,
+                left: isDark ? 25 : 3,
+                width: 20,
+                height: 20,
+                borderRadius: 10,
+                background: '#fff',
+                transition: 'left 0.2s',
+                display: 'block',
               }}
             />
           </button>
@@ -259,10 +326,17 @@ export function AccountPage() {
           }
         }}
         style={{
-          display: 'block', width: '100%', padding: '14px',
-          background: 'none', border: '1px solid #fca5a5',
-          borderRadius: 12, fontSize: 14, fontWeight: 600,
-          color: '#ef4444', cursor: 'pointer', marginBottom: 16,
+          display: 'block',
+          width: '100%',
+          padding: '14px',
+          background: 'none',
+          border: '1px solid #fca5a5',
+          borderRadius: 12,
+          fontSize: 14,
+          fontWeight: 600,
+          color: '#ef4444',
+          cursor: 'pointer',
+          marginBottom: 16,
         }}
       >
         로그아웃
@@ -274,9 +348,7 @@ export function AccountPage() {
       </div>
 
       {/* CycleEditSheet */}
-      {editTarget && (
-        <CycleEditSheet strategy={editTarget} onClose={() => setEditTarget(null)} />
-      )}
+      {editTarget && <CycleEditSheet strategy={editTarget} onClose={() => setEditTarget(null)} />}
     </div>
   )
 }

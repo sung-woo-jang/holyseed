@@ -12,10 +12,14 @@ const SLOTS = [
 
 const STATUS_CYCLE: SlotStatus[] = ['open', 'busy', 'off']
 const STATUS_COLOR: Record<SlotStatus, string> = {
-  open: '#10B981', busy: '#F59E0B', off: '#9CA3AF',
+  open: '#10B981',
+  busy: '#F59E0B',
+  off: '#9CA3AF',
 }
 const STATUS_LABEL: Record<SlotStatus, string> = {
-  open: '가능', busy: '예약', off: '닫힘',
+  open: '가능',
+  busy: '예약',
+  off: '닫힘',
 }
 
 type SlotId = 'am' | 'noon' | 'pm' | 'eve'
@@ -36,7 +40,7 @@ export default function AdminSchedule() {
     const next = STATUS_CYCLE[nextIdx]
     try {
       await api.post(`/schedule/admin/${date}`, { [slot]: next })
-      setDays((prev) => prev.map((d) => d.date === date ? { ...d, [slot]: next } : d))
+      setDays((prev) => prev.map((d) => (d.date === date ? { ...d, [slot]: next } : d)))
     } catch {
       showToast('업데이트 실패', 'error')
     }
@@ -65,7 +69,10 @@ export default function AdminSchedule() {
             <tr>
               <th>날짜</th>
               {SLOTS.map((s) => (
-                <th key={s.id}>{s.label}<div style={{ fontWeight: 400, fontSize: 11 }}>{s.range}</div></th>
+                <th key={s.id}>
+                  {s.label}
+                  <div style={{ fontWeight: 400, fontSize: 11 }}>{s.range}</div>
+                </th>
               ))}
               <th>메모</th>
             </tr>
@@ -87,9 +94,14 @@ export default function AdminSchedule() {
                         <button
                           onClick={() => toggleSlot(d.date, s.id as SlotId, val)}
                           style={{
-                            padding: '4px 12px', borderRadius: 20, border: 'none', cursor: 'pointer',
-                            background: STATUS_COLOR[val] + '20', color: STATUS_COLOR[val],
-                            fontWeight: 700, fontSize: 12,
+                            padding: '4px 12px',
+                            borderRadius: 20,
+                            border: 'none',
+                            cursor: 'pointer',
+                            background: STATUS_COLOR[val] + '20',
+                            color: STATUS_COLOR[val],
+                            fontWeight: 700,
+                            fontSize: 12,
                           }}
                         >
                           {STATUS_LABEL[val]}
@@ -97,7 +109,9 @@ export default function AdminSchedule() {
                       </td>
                     )
                   })}
-                  <td className="muted" style={{ fontSize: 12 }}>{d.note ?? ''}</td>
+                  <td className="muted" style={{ fontSize: 12 }}>
+                    {d.note ?? ''}
+                  </td>
                 </tr>
               )
             })}

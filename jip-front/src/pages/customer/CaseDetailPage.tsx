@@ -1,17 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useCase } from '@/queries/cases'
 
-const PHOTO = {
-  bath: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548942946_cc0gbn.webp',
-  film: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943309_yggm25.webp',
-  kitchen: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943517_khkjrn.webp',
-} as const
-
-function casePhoto(color: string) {
-  if (color === 'warm') return PHOTO.kitchen
-  if (color === 'cool') return PHOTO.bath
-  return PHOTO.film
-}
 
 export default function CaseDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -39,7 +28,7 @@ export default function CaseDetailPage() {
     )
   }
 
-  const photo = c.photos?.find((p) => p.role === 'cover')?.fileUrl ?? casePhoto(c.color)
+  const photo = c.photos?.find((p) => p.role === 'cover')?.fileUrl
 
   return (
     <section className="section">
@@ -53,8 +42,8 @@ export default function CaseDetailPage() {
         </div>
 
         {/* 커버 */}
-        <div style={{ height: 320, borderRadius: 'var(--radius-lg)', overflow: 'hidden', marginBottom: 32 }}>
-          <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <div style={{ height: 320, borderRadius: 'var(--radius-lg)', overflow: 'hidden', marginBottom: 32, background: 'var(--bg-deep)' }}>
+          {photo && <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
@@ -89,7 +78,7 @@ export default function CaseDetailPage() {
                     <div className="tag mb-8">Before</div>
                     <div style={{ height: 200, borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
                       <img
-                        src={p.fileUrl || photo}
+                        src={p.fileUrl}
                         alt={p.label}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
@@ -108,7 +97,7 @@ export default function CaseDetailPage() {
                     <div className="tag green mb-8">After</div>
                     <div style={{ height: 200, borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
                       <img
-                        src={p.fileUrl || photo}
+                        src={p.fileUrl}
                         alt={p.label}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
@@ -133,8 +122,8 @@ export default function CaseDetailPage() {
               견적 요청하기 →
             </button>
           </div>
-          <div className="about-art">
-            <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <div className="about-art" style={{ background: 'var(--bg-deep)', overflow: 'hidden', borderRadius: 'var(--radius-xl)' }}>
+            {photo && <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
           </div>
         </div>
       </div>

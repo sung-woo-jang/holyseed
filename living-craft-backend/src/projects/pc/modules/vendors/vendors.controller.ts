@@ -5,7 +5,7 @@ import { CreateVendorDto } from './dto/request/create-vendor.dto';
 import { UpdateVendorDto } from './dto/request/update-vendor.dto';
 
 @ApiTags('PC 업체')
-@Controller('pc/vendors')
+@Controller('jip/pc/vendors')
 export class VendorsController {
   constructor(private readonly vendorsService: VendorsService) {}
 

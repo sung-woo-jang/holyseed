@@ -23,20 +23,42 @@ export interface ProductColor {
   sortOrder: number
 }
 
+export interface ProductPhoto {
+  id: number
+  productId: number
+  fileUrl: string
+  role: 'main' | 'detail' | 'example' | 'color'
+  label: string
+  sortOrder: number
+}
+
 export interface Product {
   id: number
   code: string
+  modelCode?: string
   brand: string
   name: string
   spec: string
-  price: number
+  price: number | null
   illustKind: string
   imageUrl?: string | null
   description: string
   sortOrder: number
   isActive: boolean
+  serviceItemId?: number | null
+  serviceItem?: {
+    id: number
+    code: string
+    name: string
+    price: number
+    unit: string
+    duration: string
+    illustKind: string
+    category?: { id: number; code: string; name: string; color?: string }
+  } | null
   features: ProductFeature[]
   colors: ProductColor[]
+  photos?: ProductPhoto[]
 }
 
 export interface ProductGroup {
@@ -63,11 +85,12 @@ export interface ServiceItem {
   isActive: boolean
   categoryId: number
   productGroups: ProductGroup[]
+  products?: Product[]
 }
 
-export interface FullCatalog {
-  categories: (Category & { items: ServiceItem[] })[]
-}
+export type FullCatalog = (Category & {
+  items: (ServiceItem & { productGroups: ProductGroup[] })[]
+})[]
 
 // 시공사례
 
@@ -184,6 +207,15 @@ export interface Job {
   publicFields?: string[]
   beforePhotos?: JobPhoto[]
   afterPhotos?: JobPhoto[]
+}
+
+// 사이트 에셋
+
+export interface SiteAsset {
+  id: number
+  key: string
+  imageUrl: string
+  caption?: string
 }
 
 // 장바구니 아이템

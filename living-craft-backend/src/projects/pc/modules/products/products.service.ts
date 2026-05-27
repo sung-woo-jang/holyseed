@@ -11,6 +11,7 @@ import { UpdateProductDto } from './dto/request/update-product.dto';
 import { SearchProductsDto } from './dto/request/search-products.dto';
 import { CompareProductsDto } from './dto/request/compare-products.dto';
 import { ImportProductsDto } from './dto/request/import-products.dto';
+import { LinkServiceItemDto } from './dto/request/link-service-item.dto';
 import { CategoriesService } from '../categories/categories.service';
 import { PricesService } from '../prices/prices.service';
 
@@ -191,6 +192,30 @@ export class ProductsService {
     });
 
     return { products: result, vendors };
+  }
+
+  async linkServiceItem(productId: number, dto: LinkServiceItemDto): Promise<Product> {
+    const product = await this.productRepo.findOne({ where: { id: productId } });
+    if (!product) throw new NotFoundException('제품을 찾을 수 없습니다.');
+
+    if (dto.code !== undefined && dto.code !== null) {
+      const dup = await this.productRepo.findOne({ where: { code: dto.code } });
+      if (dup && dup.id !== productId) throw new BadRequestException(`이미 사용 중인 코드입니다: ${dto.code}`);
+    }
+
+    Object.assign(product, {
+      serviceItemId: dto.serviceItemId !== undefined ? dto.serviceItemId : product.serviceItemId,
+      code: dto.code !== undefined ? dto.code : product.code,
+      illustKind: dto.illustKind ?? product.illustKind,
+      sortOrder: dto.sortOrder ?? product.sortOrder,
+    });
+    return this.productRepo.save(product);
+  }
+
+  async recomputePrice(productId: number): Promise<void> {
+    const product = await this.productRepo.findOne({ where: { id: productId } });
+    if (!product) throw new NotFoundException('제품을 찾을 수 없습니다.');
+    await this.pricesService.recomputeRepresentativePrice(productId);
   }
 
   async importBulk(dto: ImportProductsDto) {

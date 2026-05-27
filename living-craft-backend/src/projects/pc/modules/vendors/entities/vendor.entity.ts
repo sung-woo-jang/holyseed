@@ -2,7 +2,7 @@ import { Entity, Column } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { BaseEntity } from '@common/entities/base.entity';
 
-@Entity('vendors', { schema: 'pc' })
+@Entity('pc_vendors', { schema: 'jip' })
 export class Vendor extends BaseEntity {
   @ApiProperty({ description: '업체명', example: 'A마트' })
   @Column({ length: 120, unique: true })

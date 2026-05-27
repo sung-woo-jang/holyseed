@@ -2,8 +2,28 @@ import { Entity, Column, Index } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { BaseEntity } from '@common/entities/base.entity';
 
-@Entity('products', { schema: 'pc' })
+@Entity('pc_products', { schema: 'jip' })
 export class Product extends BaseEntity {
+  @ApiPropertyOptional({ description: '고객 URL 코드 (고유)', example: 'k1-1' })
+  @Column({ length: 30, nullable: true, unique: true })
+  code: string;
+
+  @ApiPropertyOptional({ description: 'ServiceItem ID (고객 노출용)' })
+  @Column({ name: 'service_item_id', type: 'int', nullable: true })
+  @Index()
+  serviceItemId: number;
+
+  @ApiProperty({ description: '일러스트 종류', default: 'default' })
+  @Column({ name: 'illust_kind', length: 50, default: 'default' })
+  illustKind: string;
+
+  @ApiProperty({ description: '노출 순서 (ServiceItem 안에서)', default: 0 })
+  @Column({ name: 'sort_order', default: 0 })
+  sortOrder: number;
+
+  @ApiPropertyOptional({ description: '대표가 캐시 (활성 업체 최저가)', example: 46000 })
+  @Column({ name: 'representative_price', type: 'int', nullable: true })
+  representativePrice: number;
   @ApiProperty({ description: '모델코드 (고유)', example: 'G60AL' })
   @Column({ name: 'model_code', length: 120, unique: true })
   modelCode: string;

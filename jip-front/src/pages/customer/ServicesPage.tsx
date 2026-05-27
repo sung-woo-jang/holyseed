@@ -38,7 +38,7 @@ export default function ServicesPage() {
 
         <div className="filter-row mt-40">
           {cats.map((c) => (
-            <button key={c.code} className={`pill${cat === c.code ? 'on' : ''}`} onClick={() => handleCat(c.code)}>
+            <button key={c.code} className={`pill${cat === c.code ? ' on' : ''}`} onClick={() => handleCat(c.code)}>
               {c.name}
             </button>
           ))}

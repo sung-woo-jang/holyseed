@@ -1,20 +1,9 @@
 import { useNavigate } from 'react-router-dom'
 import { useCartStore } from '@/stores/cart'
+import { useCatalog } from '@/queries/catalog'
 
 function fmtKRW(n: number) {
   return n.toLocaleString('ko-KR') + '원'
-}
-
-const PHOTOS: Record<string, string> = {
-  bath: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548942946_cc0gbn.webp',
-  film: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943309_yggm25.webp',
-  kitchen: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943517_khkjrn.webp',
-}
-
-function itemPhoto(code: string) {
-  if (code.startsWith('b')) return PHOTOS.bath
-  if (code.startsWith('k')) return PHOTOS.kitchen
-  return PHOTOS.film
 }
 
 const VISIT_FEE = 20000
@@ -45,6 +34,8 @@ function Steps({ current }: { current: number }) {
 export default function CartPage() {
   const navigate = useNavigate()
   const { items, remove, clear } = useCartStore()
+  const { data: catalog } = useCatalog()
+  const allItems = catalog?.flatMap((c) => c.items) ?? []
 
   const itemsTotal = items.reduce((s, i) => s + i.serviceItemPrice + i.productPrice, 0)
   const visitFee = items.length > 0 ? VISIT_FEE : 0
@@ -78,12 +69,13 @@ export default function CartPage() {
           <div>
             {items.map((item, i) => (
               <div key={i} className="cart-line">
-                <div style={{ width: 88, height: 88, borderRadius: 10, overflow: 'hidden', flexShrink: 0 }}>
-                  <img
-                    src={itemPhoto(item.serviceItemCode)}
-                    alt=""
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
+                <div style={{ width: 88, height: 88, borderRadius: 10, overflow: 'hidden', flexShrink: 0, background: 'var(--bg-deep)' }}>
+                  {(() => {
+                    const imgUrl = allItems.find((si) => si.code === item.serviceItemCode)?.imageUrl
+                    return imgUrl ? (
+                      <img src={imgUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : null
+                  })()}
                 </div>
                 <div>
                   <div className="cart-line-title">{item.serviceItemName}</div>

@@ -13,7 +13,7 @@ import { ProductImagesService } from './product-images.service';
 import { FilesService } from '@shared/files/files.service';
 
 @ApiTags('PC 제품 이미지')
-@Controller('pc/products')
+@Controller('jip/pc/products')
 export class ProductImagesController {
   constructor(
     private readonly productImagesService: ProductImagesService,

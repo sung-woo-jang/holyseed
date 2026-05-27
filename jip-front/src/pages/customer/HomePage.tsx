@@ -2,32 +2,20 @@ import { useNavigate } from 'react-router-dom'
 import { ItemIllust, CatIllust } from '@/components/common/Illustration'
 import { useRecentCases } from '@/queries/cases'
 import { useCategories, useFeaturedItems } from '@/queries/catalog'
+import { useSiteAssets } from '@/queries/siteAssets'
 import type { Case } from '@/types'
 
 function fmtKRW(n: number) {
   return n.toLocaleString('ko-KR') + '원'
 }
 
-// 카테고리/케이스 color 기반 사진 매핑 (메인사진 + 카탈로그 아이템 사진)
-const PHOTO = {
-  bath: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548942946_cc0gbn.webp',
-  film: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943309_yggm25.webp',
-  kitchen: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943517_khkjrn.webp',
-} as const
-
-function casePhoto(color: string) {
-  if (color === 'warm') return PHOTO.kitchen
-  if (color === 'cool') return PHOTO.bath
-  return PHOTO.film
-}
-
 function CaseCard({ c }: { c: Case }) {
   const navigate = useNavigate()
-  const photo = c.photos?.find((p) => p.role === 'cover')?.fileUrl ?? casePhoto(c.color)
+  const photo = c.photos?.find((p) => p.role === 'cover')?.fileUrl
   return (
     <div className="case-card" onClick={() => navigate(`/case/${c.id}`)}>
-      <div style={{ overflow: 'hidden' }}>
-        <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      <div style={{ overflow: 'hidden', background: 'var(--bg-deep)' }}>
+        {photo && <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
       </div>
       <div className="case-card-body">
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
@@ -51,6 +39,7 @@ export default function HomePage() {
   const { data: categories } = useCategories()
   const { data: featuredItems } = useFeaturedItems()
   const { data: recentCases } = useRecentCases()
+  const { data: assets } = useSiteAssets()
 
   return (
     <>
@@ -92,8 +81,10 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-          <div className="hero-art" style={{ overflow: 'hidden', borderRadius: 'var(--radius-xl)' }}>
-            <img src={PHOTO.bath} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <div className="hero-art" style={{ overflow: 'hidden', borderRadius: 'var(--radius-xl)', background: 'var(--bg-deep)' }}>
+            {assets?.['home.hero']?.imageUrl && (
+              <img src={assets['home.hero'].imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            )}
             <div className="hero-art-badge">오늘 견적 가능</div>
           </div>
         </div>
@@ -115,7 +106,7 @@ export default function HomePage() {
             {categories?.map((c) => (
               <div key={c.id} className="cat-card" onClick={() => navigate(`/services?cat=${c.code}`)}>
                 <div style={{ overflow: 'hidden' }}>
-                  <CatIllust code={c.code} imageUrl={c.imageUrl ?? PHOTO[c.code as keyof typeof PHOTO]} />
+                  <CatIllust code={c.code} imageUrl={c.imageUrl ?? undefined} />
                 </div>
                 <div className="cat-card-body">
                   <div className="cat-card-title">{c.name}</div>
@@ -250,8 +241,10 @@ export default function HomePage() {
                 </button>
               </div>
             </div>
-            <div className="about-art" style={{ overflow: 'hidden', borderRadius: 'var(--radius-xl)' }}>
-              <img src={PHOTO.kitchen} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div className="about-art" style={{ overflow: 'hidden', borderRadius: 'var(--radius-xl)', background: 'var(--bg-deep)' }}>
+              {assets?.['home.about_cta']?.imageUrl && (
+                <img src={assets['home.about_cta'].imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              )}
             </div>
           </div>
         </div>

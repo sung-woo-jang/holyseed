@@ -6,9 +6,10 @@ import { UpdateProductDto } from './dto/request/update-product.dto';
 import { SearchProductsDto } from './dto/request/search-products.dto';
 import { CompareProductsDto } from './dto/request/compare-products.dto';
 import { ImportProductsDto } from './dto/request/import-products.dto';
+import { LinkServiceItemDto } from './dto/request/link-service-item.dto';
 
 @ApiTags('PC 제품')
-@Controller('pc/products')
+@Controller('jip/pc/products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
@@ -59,5 +60,19 @@ export class ProductsController {
   async delete(@Param('id', ParseIntPipe) id: number) {
     await this.productsService.delete(id);
     return { success: true, message: '제품 삭제 성공', data: null, timestamp: new Date().toISOString() };
+  }
+
+  @Post(':id/link-service-item')
+  @ApiOperation({ summary: 'ServiceItem 연결 (고객 사이트 노출 설정)' })
+  async linkServiceItem(@Param('id', ParseIntPipe) id: number, @Body() dto: LinkServiceItemDto) {
+    const data = await this.productsService.linkServiceItem(id, dto);
+    return { success: true, message: 'ServiceItem 연결 완료', data, timestamp: new Date().toISOString() };
+  }
+
+  @Post(':id/recompute-price')
+  @ApiOperation({ summary: '대표가 수동 재계산' })
+  async recomputePrice(@Param('id', ParseIntPipe) id: number) {
+    await this.productsService.recomputePrice(id);
+    return { success: true, message: '대표가 재계산 완료', data: null, timestamp: new Date().toISOString() };
   }
 }

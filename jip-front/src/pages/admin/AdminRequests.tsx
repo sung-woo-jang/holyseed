@@ -53,7 +53,7 @@ export default function AdminRequests() {
 
       <div className="filter-row mb-24">
         {STATUS_TABS.map((t) => (
-          <button key={t.k} className={`pill${filter === t.k ? 'on' : ''}`} onClick={() => setFilter(t.k)}>
+          <button key={t.k} className={`pill${filter === t.k ? ' on' : ''}`} onClick={() => setFilter(t.k)}>
             {t.label}
           </button>
         ))}

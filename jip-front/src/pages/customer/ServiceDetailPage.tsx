@@ -22,7 +22,10 @@ export default function ServiceDetailPage() {
   const { data: catItems } = useServiceItems(cat?.code)
   const related = catItems?.filter((i) => i.code !== item?.code).slice(0, 3) ?? []
 
-  const hasProducts = (item?.productGroups?.length ?? 0) > 0
+  const pcProducts = item?.products ?? []
+  const hasPcProducts = pcProducts.length > 0
+  const hasLegacyGroups = (item?.productGroups?.length ?? 0) > 0 && !hasPcProducts
+  const hasProducts = hasPcProducts || hasLegacyGroups
   const [activeGroupId, setActiveGroupId] = useState<number | null>(null)
   const activeGroup =
     item?.productGroups?.find((g) => g.id === (activeGroupId ?? item?.productGroups?.[0]?.id)) ??
@@ -132,14 +135,14 @@ export default function ServiceDetailPage() {
               </div>
             </div>
 
-            {/* 그룹 탭 */}
-            {item.productGroups.length > 1 && (
+            {/* 그룹 탭 (레거시 카탈로그만) */}
+            {hasLegacyGroups && item.productGroups.length > 1 && (
               <div className="seg-tabs">
                 {item.productGroups.map((g) => (
                   <button
                     key={g.id}
                     type="button"
-                    className={`seg-tab${(activeGroupId ?? item.productGroups[0].id) === g.id ? 'on' : ''}`}
+                    className={`seg-tab${(activeGroupId ?? item.productGroups[0].id) === g.id ? ' on' : ''}`}
                     onClick={() => setActiveGroupId(g.id)}
                   >
                     <div className="seg-tab-label">{g.label}</div>
@@ -149,14 +152,14 @@ export default function ServiceDetailPage() {
               </div>
             )}
 
-            {activeGroup?.description && (
+            {hasLegacyGroups && activeGroup?.description && (
               <p className="muted mt-16" style={{ fontSize: 13, marginBottom: 0 }}>
                 {activeGroup.description}
               </p>
             )}
 
             <div className="product-grid mt-16">
-              {activeGroup?.products.map((prod) => (
+              {(hasPcProducts ? pcProducts : (activeGroup?.products ?? [])).map((prod) => (
                 <button
                   key={prod.id}
                   type="button"
@@ -173,7 +176,9 @@ export default function ServiceDetailPage() {
                   </div>
                   <div className="product-foot">
                     <span className="product-label">자재비</span>
-                    <span className="product-price">{fmtKRW(prod.price)}</span>
+                    <span className="product-price">
+                      {prod.price != null ? fmtKRW(prod.price) : '현장 확정'}
+                    </span>
                   </div>
                   <div className="product-go">→</div>
                 </button>

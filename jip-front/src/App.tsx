@@ -8,6 +8,11 @@ import MobileAppBar from '@/components/layout/MobileAppBar'
 import MobileTabBar from '@/components/layout/MobileTabBar'
 import AdminCaseForm from '@/pages/admin/AdminCaseForm'
 import AdminCases from '@/pages/admin/AdminCases'
+import AdminCatalogCategories from '@/pages/admin/AdminCatalogCategories'
+import AdminCatalogCategoryForm from '@/pages/admin/AdminCatalogCategoryForm'
+import AdminCatalogItems from '@/pages/admin/AdminCatalogItems'
+import AdminCatalogItemForm from '@/pages/admin/AdminCatalogItemForm'
+import AdminCatalogProducts from '@/pages/admin/AdminCatalogProducts'
 import AdminDashboard from '@/pages/admin/AdminDashboard'
 import AdminJobDetail from '@/pages/admin/AdminJobDetail'
 import AdminJobForm from '@/pages/admin/AdminJobForm'
@@ -17,6 +22,15 @@ import AdminLoginPage from '@/pages/admin/AdminLoginPage'
 import AdminRequestDetail from '@/pages/admin/AdminRequestDetail'
 import AdminRequests from '@/pages/admin/AdminRequests'
 import AdminSchedule from '@/pages/admin/AdminSchedule'
+import AdminSiteAssets from '@/pages/admin/AdminSiteAssets'
+import PcLayout from '@/pages/admin/pc/PcLayout'
+import PcComparePage from '@/pages/admin/pc/PcComparePage'
+import PcProductsPage from '@/pages/admin/pc/PcProductsPage'
+import PcProductDetailPage from '@/pages/admin/pc/PcProductDetailPage'
+import PcProductFormPage from '@/pages/admin/pc/PcProductFormPage'
+import PcVendorsPage from '@/pages/admin/pc/PcVendorsPage'
+import PcCategoriesPage from '@/pages/admin/pc/PcCategoriesPage'
+import PcImportPage from '@/pages/admin/pc/PcImportPage'
 import AboutPage from '@/pages/customer/AboutPage'
 import BookingDetailPage from '@/pages/customer/BookingDetailPage'
 import BookingsPage from '@/pages/customer/BookingsPage'
@@ -56,49 +70,71 @@ export default function App() {
       <ScrollToTop />
       {!isAdmin && <Header />}
       {!isAdmin && <MobileAppBar />}
-      <main className={isAdmin ? undefined : 'page-content'}>
-        <Routes>
-          {/* 고객 */}
-          <Route path="/" element={<HomePage />} />
-          <Route path="/services" element={<ServicesPage />} />
-          <Route path="/service/:id" element={<ServiceDetailPage />} />
-          <Route path="/product/:id" element={<ProductDetailPage />} />
-          <Route path="/cart" element={<CartPage />} />
-          <Route path="/request" element={<RequestPage />} />
-          <Route path="/request-done/:code" element={<RequestDonePage />} />
-          <Route path="/cases" element={<CasesPage />} />
-          <Route path="/case/:id" element={<CaseDetailPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/bookings" element={<BookingsPage />} />
-          <Route path="/booking/:code" element={<BookingDetailPage />} />
-          <Route path="/jobs/:id" element={<JobPublicPage />} />
-
-          {/* 관리자 — 로그인 */}
-          <Route path="/admin/login" element={<AdminLoginPage />} />
-
-          {/* 관리자 — 사이드바 레이아웃 */}
-          <Route
-            path="/admin"
-            element={
-              <AdminGuard>
-                <AdminLayout />
-              </AdminGuard>
-            }
-          >
-            <Route index element={<AdminDashboard />} />
-            <Route path="requests" element={<AdminRequests />} />
-            <Route path="requests/:code" element={<AdminRequestDetail />} />
-            <Route path="schedule" element={<AdminSchedule />} />
-            <Route path="cases" element={<AdminCases />} />
-            <Route path="cases/new" element={<AdminCaseForm />} />
-            <Route path="cases/:id" element={<AdminCaseForm />} />
-            <Route path="jobs" element={<AdminJobsList />} />
-            <Route path="jobs/new" element={<AdminJobForm />} />
-            <Route path="jobs/:id" element={<AdminJobDetail />} />
-            <Route path="jobs/:id/edit" element={<AdminJobForm />} />
-          </Route>
-        </Routes>
-      </main>
+      {isAdmin ? (
+        <main>
+          <Routes>
+            <Route path="/admin/login" element={<AdminLoginPage />} />
+            <Route
+              path="/admin"
+              element={
+                <AdminGuard>
+                  <AdminLayout />
+                </AdminGuard>
+              }
+            >
+              <Route index element={<AdminDashboard />} />
+              <Route path="requests" element={<AdminRequests />} />
+              <Route path="requests/:code" element={<AdminRequestDetail />} />
+              <Route path="schedule" element={<AdminSchedule />} />
+              <Route path="cases" element={<AdminCases />} />
+              <Route path="cases/new" element={<AdminCaseForm />} />
+              <Route path="cases/:id" element={<AdminCaseForm />} />
+              <Route path="jobs" element={<AdminJobsList />} />
+              <Route path="jobs/new" element={<AdminJobForm />} />
+              <Route path="jobs/:id" element={<AdminJobDetail />} />
+              <Route path="jobs/:id/edit" element={<AdminJobForm />} />
+              <Route path="site-assets" element={<AdminSiteAssets />} />
+              <Route path="catalog/categories" element={<AdminCatalogCategories />} />
+              <Route path="catalog/categories/new" element={<AdminCatalogCategoryForm />} />
+              <Route path="catalog/categories/:code/edit" element={<AdminCatalogCategoryForm />} />
+              <Route path="catalog/items" element={<AdminCatalogItems />} />
+              <Route path="catalog/items/new" element={<AdminCatalogItemForm />} />
+              <Route path="catalog/items/:code/edit" element={<AdminCatalogItemForm />} />
+              <Route path="catalog/products" element={<AdminCatalogProducts />} />
+              <Route path="pc" element={<PcLayout />}>
+                <Route path="compare" element={<PcComparePage />} />
+                <Route path="products" element={<PcProductsPage />} />
+                <Route path="products/new" element={<PcProductFormPage />} />
+                <Route path="products/:id" element={<PcProductDetailPage />} />
+                <Route path="products/:id/edit" element={<PcProductFormPage />} />
+                <Route path="vendors" element={<PcVendorsPage />} />
+                <Route path="categories" element={<PcCategoriesPage />} />
+                <Route path="import" element={<PcImportPage />} />
+              </Route>
+            </Route>
+          </Routes>
+        </main>
+      ) : (
+        <main className="page-content">
+          <div key={location.key} className="page-fade">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/services" element={<ServicesPage />} />
+              <Route path="/service/:id" element={<ServiceDetailPage />} />
+              <Route path="/product/:id" element={<ProductDetailPage />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/request" element={<RequestPage />} />
+              <Route path="/request-done/:code" element={<RequestDonePage />} />
+              <Route path="/cases" element={<CasesPage />} />
+              <Route path="/case/:id" element={<CaseDetailPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/bookings" element={<BookingsPage />} />
+              <Route path="/booking/:code" element={<BookingDetailPage />} />
+              <Route path="/jobs/:id" element={<JobPublicPage />} />
+            </Routes>
+          </div>
+        </main>
+      )}
       {!isAdmin && <Footer />}
       {!isAdmin && <MobileTabBar />}
       <Toast />

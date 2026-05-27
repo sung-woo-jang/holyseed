@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
 import { ProductImage } from './entities/product-image.entity';
+import { ProductFeature } from './entities/product-feature.entity';
+import { ProductColor } from './entities/product-color.entity';
 import { ProductPrice } from '../prices/entities/product-price.entity';
 import { Vendor } from '../vendors/entities/vendor.entity';
 import { PcCategory } from '../categories/entities/category.entity';
@@ -15,7 +17,7 @@ import { FilesModule } from '@shared/files/files.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Product, ProductImage, ProductPrice, Vendor, PcCategory]),
+    TypeOrmModule.forFeature([Product, ProductImage, ProductFeature, ProductColor, ProductPrice, Vendor, PcCategory]),
     FilesModule,
   ],
   controllers: [ProductsController, ProductImagesController],

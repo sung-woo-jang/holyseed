@@ -2,7 +2,7 @@ import { Entity, Column, Index, Unique } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { BaseEntity } from '@common/entities/base.entity';
 
-@Entity('product_prices', { schema: 'pc' })
+@Entity('pc_product_prices', { schema: 'jip' })
 @Unique(['productId', 'vendorId'])
 export class ProductPrice extends BaseEntity {
   @ApiProperty({ description: '제품 ID', example: 1 })

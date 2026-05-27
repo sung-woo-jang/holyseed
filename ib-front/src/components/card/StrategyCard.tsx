@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AreaChart, Area, LineChart, Line, ResponsiveContainer, ReferenceLine } from 'recharts'
+import { AreaChart, Area, LineChart, Line, ResponsiveContainer, ReferenceLine, Tooltip } from 'recharts'
 import { CycleEndOverlay } from '@/components/overlay/CycleEndOverlay'
 import { ExecutionSheet } from '@/components/sheet/ExecutionSheet'
 import { EXEC_LABEL } from '@/lib/exec-types'
@@ -80,6 +80,7 @@ export function StrategyCard({ strategy }: Props) {
     const rsiOffset = rsiArr.length - last30.length
 
     const data = last30.map((p, i) => ({
+      date: p.priceDate,
       v: p.closePrice,
       rsi: Math.round((rsiArr[rsiOffset + i] ?? 50) * 10) / 10,
     }))
@@ -97,9 +98,22 @@ export function StrategyCard({ strategy }: Props) {
     return { chartData: data, currentRsi: latestRsi, rsiColor: color }
   }, [priceHistory])
 
-  // 매수점: 핵심행(★, 별, 큰수, 평단) vs 분할 사다리
-  const coreRows = plan?.buyRows.filter((r) => !r.label.includes('분할')) ?? []
-  const ladderRows = plan?.buyRows.filter((r) => r.label.includes('분할')) ?? []
+  // 매수점: state 기준 실시간 계산
+  const { coreRows, ladderRows } = useMemo(() => {
+    if (!state || !starPrice || avg <= 0) return { coreRows: [], ladderRows: [] }
+    const locBuy = starPrice - 0.01
+    const core = [
+      { label: '★ LOC', price: locBuy, qty: 1, isStar: true },
+      { label: '평단 LOC', price: avg, qty: 1, isStar: false },
+    ]
+    const ladder = Array.from({ length: 6 }, (_, i) => ({
+      label: `분할${i + 3} LOC`,
+      price: Math.round(locBuy * Math.pow(0.93, i + 1) * 100) / 100,
+      qty: 1,
+      isStar: false,
+    }))
+    return { coreRows: core, ladderRows: ladder }
+  }, [state, starPrice, avg])
 
   return (
     <>
@@ -237,6 +251,39 @@ export function StrategyCard({ strategy }: Props) {
                     strokeOpacity={0.8}
                   />
                 )}
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null
+                    const d = payload[0].payload
+                    const dateStr = d.date ? d.date.slice(5).replace('-', '/') : ''
+                    const price = d.v as number
+                    const rsi = d.rsi as number
+                    const pctFromAvg = avg > 0 ? ((price - avg) / avg) * 100 : null
+                    return (
+                      <div style={{
+                        background: 'var(--color-card)',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: 8,
+                        padding: '6px 10px',
+                        fontSize: 12,
+                        lineHeight: 1.6,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                      }}>
+                        <div style={{ fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 2 }}>{dateStr}</div>
+                        <div style={{ fontWeight: 700 }}>{fmtUSD(price)}</div>
+                        {pctFromAvg != null && (
+                          <div style={{ color: pctFromAvg >= 0 ? 'var(--color-rise)' : 'var(--color-fall)', fontSize: 11 }}>
+                            평단 대비 {pctFromAvg >= 0 ? '+' : ''}{pctFromAvg.toFixed(1)}%
+                          </div>
+                        )}
+                        <div style={{ color: rsi >= 70 ? '#ef4444' : rsi <= 30 ? '#3182f6' : '#22c55e', fontSize: 11 }}>
+                          RSI {rsi}
+                        </div>
+                      </div>
+                    )
+                  }}
+                  cursor={{ stroke: 'var(--color-text-secondary)', strokeWidth: 1, strokeOpacity: 0.4 }}
+                />
                 <Area
                   type="monotone"
                   dataKey="v"
@@ -244,6 +291,7 @@ export function StrategyCard({ strategy }: Props) {
                   strokeWidth={2}
                   fill={`url(#price-${strategy.id})`}
                   dot={false}
+                  activeDot={{ r: 4, fill: modeColor, strokeWidth: 0 }}
                   isAnimationActive={false}
                 />
               </AreaChart>
@@ -253,12 +301,34 @@ export function StrategyCard({ strategy }: Props) {
               <LineChart data={chartData} margin={{ top: 4, right: 0, bottom: 4, left: 0 }}>
                 <ReferenceLine y={70} stroke="#ef4444" strokeDasharray="3 2" strokeWidth={1} strokeOpacity={0.4} />
                 <ReferenceLine y={30} stroke="#3182f6" strokeDasharray="3 2" strokeWidth={1} strokeOpacity={0.4} />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null
+                    const rsi = payload[0].payload.rsi as number
+                    return (
+                      <div style={{
+                        background: 'var(--color-card)',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: 8,
+                        padding: '4px 8px',
+                        fontSize: 11,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                        color: rsi >= 70 ? '#ef4444' : rsi <= 30 ? '#3182f6' : '#22c55e',
+                        fontWeight: 700,
+                      }}>
+                        RSI {rsi}
+                      </div>
+                    )
+                  }}
+                  cursor={{ stroke: 'var(--color-text-secondary)', strokeWidth: 1, strokeOpacity: 0.4 }}
+                />
                 <Line
                   type="monotone"
                   dataKey="rsi"
                   stroke={rsiColor}
                   strokeWidth={1.5}
                   dot={false}
+                  activeDot={{ r: 3, fill: rsiColor, strokeWidth: 0 }}
                   isAnimationActive={false}
                 />
               </LineChart>
@@ -368,42 +438,39 @@ export function StrategyCard({ strategy }: Props) {
           </div>
         )}
 
-        {/* ── 매수점 (네이티브 리스트 셀) ── */}
-        {plan && plan.buyRows.length > 0 && (
+        {/* ── 매수점 (state 기준 실시간 계산) ── */}
+        {coreRows.length > 0 && (
           <div style={{ marginBottom: 10 }}>
             <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>매수점</div>
             <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
-              {coreRows.map((row, i) => {
-                const isStar = row.label.includes('★') || row.label.includes('별') || row.label.includes('큰수')
-                return (
-                  <div
-                    key={i}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '11px 14px',
-                      background: isStar ? 'var(--color-star-bg)' : 'var(--color-card)',
-                      borderBottom:
-                        i < coreRows.length - 1 || (showLadder && ladderRows.length > 0)
-                          ? '1px solid var(--color-border)'
-                          : 'none',
-                    }}
-                  >
-                    <span style={{ fontSize: 13, fontWeight: isStar ? 700 : 400 }}>{row.label}</span>
-                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                      <span style={{ fontSize: 13, color: 'var(--color-rise)', fontWeight: 700 }}>
-                        {fmtUSD(row.price)}
-                      </span>
-                      <span
-                        style={{ fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 28, textAlign: 'right' }}
-                      >
-                        {row.qty != null ? `${row.qty}주` : '-'}
-                      </span>
-                    </div>
+              {coreRows.map((row, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '11px 14px',
+                    background: row.isStar ? 'var(--color-star-bg)' : 'var(--color-card)',
+                    borderBottom:
+                      i < coreRows.length - 1 || (showLadder && ladderRows.length > 0)
+                        ? '1px solid var(--color-border)'
+                        : 'none',
+                  }}
+                >
+                  <span style={{ fontSize: 13, fontWeight: row.isStar ? 700 : 400 }}>{row.label}</span>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <span style={{ fontSize: 13, color: 'var(--color-rise)', fontWeight: 700 }}>
+                      {fmtUSD(row.price)}
+                    </span>
+                    <span
+                      style={{ fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 28, textAlign: 'right' }}
+                    >
+                      {row.qty}주
+                    </span>
                   </div>
-                )
-              })}
+                </div>
+              ))}
               {showLadder &&
                 ladderRows.map((row, i) => (
                   <div
@@ -425,7 +492,7 @@ export function StrategyCard({ strategy }: Props) {
                       <span
                         style={{ fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 28, textAlign: 'right' }}
                       >
-                        {row.qty != null ? `${row.qty}주` : '-'}
+                        {row.qty}주
                       </span>
                     </div>
                   </div>
@@ -457,40 +524,52 @@ export function StrategyCard({ strategy }: Props) {
           </div>
         )}
 
-        {/* ── 매도점 (네이티브 리스트 셀) ── */}
-        {plan && plan.sellRows.filter((r) => (r.qty ?? 0) > 0).length > 0 && (
-          <div style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>매도점</div>
-            <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
-              {plan.sellRows
-                .filter((r) => (r.qty ?? 0) > 0)
-                .map((row, i, arr) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '11px 14px',
-                      background: 'var(--color-card)',
-                      borderBottom: i < arr.length - 1 ? '1px solid var(--color-border)' : 'none',
-                    }}
-                  >
-                    <span style={{ fontSize: 13 }}>{row.label}</span>
-                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                      <span style={{ fontSize: 13, color: 'var(--color-fall)', fontWeight: 700 }}>
-                        {fmtUSD(row.price)}
-                      </span>
-                      <span
-                        style={{ fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 28, textAlign: 'right' }}
-                      >
-                        {row.qty != null ? `${row.qty}주` : '-'}
-                      </span>
+        {/* ── 매도점 (state 기준 실시간 계산) ── */}
+        {state && starPrice != null && qty > 0 && (
+          (() => {
+            const locSell = starPrice
+            const quarterQty = Math.floor(qty / 4)
+            const fixedMultiplier = strategy.ticker === 'TQQQ' ? 1.15 : 1.20
+            const fixedPrice = avg * fixedMultiplier
+            const fixedQty = qty - quarterQty
+            const fixedLabel = strategy.ticker === 'TQQQ' ? '15% 지정가' : '20% 지정가'
+            const sellRows = [
+              { label: '★% LOC (쿼터)', price: locSell, qty: quarterQty },
+              { label: fixedLabel, price: fixedPrice, qty: fixedQty },
+            ].filter((r) => r.qty > 0)
+            return (
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>매도점</div>
+                <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+                  {sellRows.map((row, i, arr) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '11px 14px',
+                        background: 'var(--color-card)',
+                        borderBottom: i < arr.length - 1 ? '1px solid var(--color-border)' : 'none',
+                      }}
+                    >
+                      <span style={{ fontSize: 13 }}>{row.label}</span>
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                        <span style={{ fontSize: 13, color: 'var(--color-fall)', fontWeight: 700 }}>
+                          {fmtUSD(row.price)}
+                        </span>
+                        <span
+                          style={{ fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 28, textAlign: 'right' }}
+                        >
+                          {row.qty}주
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
-            </div>
-          </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })()
         )}
 
         {/* ── 체결 내역 섹션 ── */}

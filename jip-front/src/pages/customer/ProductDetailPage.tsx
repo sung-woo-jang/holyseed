@@ -26,12 +26,13 @@ type ProductFull = Product & {
       category?: { name: string; code: string; color: string }
     }
   }
+  serviceItem?: Product['serviceItem']
 }
 
 function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className={`faq-item${open ? 'open' : ''}`}>
+    <div className={`faq-item${open ? ' open' : ''}`}>
       <button className="faq-q" onClick={() => setOpen(!open)}>
         <span>{q}</span>
         <span className="faq-icon">{open ? '−' : '+'}</span>
@@ -73,7 +74,7 @@ export default function ProductDetailPage() {
   }
 
   const product = data as ProductFull
-  const serviceItem = product.productGroup?.serviceItem
+  const serviceItem = product.serviceItem ?? product.productGroup?.serviceItem
   const group = product.productGroup
   const cat = serviceItem?.category
 
@@ -92,7 +93,7 @@ export default function ProductDetailPage() {
     )
   }
 
-  const totalPrice = serviceItem.price + product.price
+  const totalPrice = serviceItem.price + (product.price ?? 0)
   const inCart = cartItems.some((c) => c.serviceItemCode === serviceItem.code && c.productCode === product.code)
   const otherInCartIdx = cartItems.findIndex(
     (c) => c.serviceItemCode === serviceItem.code && c.productCode !== product.code
@@ -101,7 +102,13 @@ export default function ProductDetailPage() {
 
   const others = (group?.products ?? []).filter((p) => p.code !== product.code)
 
-  const photos = [{ label: '대표' }, { label: '디테일' }, { label: '시공 예시' }, { label: '컬러' }]
+  const ROLE_LABEL: Record<string, string> = { main: '대표', detail: '디테일', example: '시공 예시', color: '컬러' }
+  const photos =
+    product.photos && product.photos.length > 0
+      ? product.photos.map((p) => ({ label: p.label || ROLE_LABEL[p.role] || p.role, fileUrl: p.fileUrl }))
+      : product.imageUrl
+        ? [{ label: '대표', fileUrl: product.imageUrl }]
+        : [{ label: '대표', fileUrl: null }]
 
   const addWithProduct = () => {
     if (inCart) return
@@ -152,22 +159,22 @@ export default function ProductDetailPage() {
             <div className="product-hero">
               <Illustration
                 kind={product.illustKind}
-                imageUrl={product.imageUrl}
+                imageUrl={photos[activePhoto].fileUrl}
                 style={{ width: '100%', height: '100%' }}
               />
               <div className="product-photo-label">{photos[activePhoto].label}</div>
             </div>
             <div className="product-thumbs">
-              {photos.map((_p, i) => (
+              {photos.map((p, i) => (
                 <button
                   key={i}
                   type="button"
-                  className={`product-thumb${i === activePhoto ? 'on' : ''}`}
+                  className={`product-thumb${i === activePhoto ? ' on' : ''}`}
                   onClick={() => setActivePhoto(i)}
                 >
                   <Illustration
                     kind={product.illustKind}
-                    imageUrl={product.imageUrl}
+                    imageUrl={p.fileUrl}
                     style={{ width: '100%', height: '100%' }}
                   />
                 </button>
@@ -222,12 +229,14 @@ export default function ProductDetailPage() {
               </div>
               <div className="product-pricing-row">
                 <span className="muted">자재비 · {product.name}</span>
-                <span>{fmtKRW(product.price)}</span>
+                <span>{product.price != null ? fmtKRW(product.price) : '현장 확정'}</span>
               </div>
               <div className="product-pricing-total">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                   <span className="label">합계 (방문비 별도)</span>
-                  <span className="val">{fmtKRW(totalPrice)}</span>
+                  <span className="val">
+                    {product.price != null ? fmtKRW(totalPrice) : `${fmtKRW(serviceItem.price)} + 자재 현장 확정`}
+                  </span>
                 </div>
               </div>
             </div>
@@ -258,7 +267,7 @@ export default function ProductDetailPage() {
             <div className="store-bigimg-art">
               <Illustration
                 kind={product.illustKind}
-                imageUrl={product.imageUrl}
+                imageUrl={photos[0].fileUrl}
                 style={{ width: '100%', height: '100%' }}
               />
             </div>
@@ -308,7 +317,7 @@ export default function ProductDetailPage() {
                   <div className="store-detail-art">
                     <Illustration
                       kind={product.illustKind}
-                      imageUrl={product.imageUrl}
+                      imageUrl={photos[i % photos.length].fileUrl}
                       style={{ width: '100%', height: '100%' }}
                     />
                     <div className="store-detail-tag">{d.tag}</div>
@@ -327,7 +336,11 @@ export default function ProductDetailPage() {
               <div className="store-compare-side before">
                 <div className="store-compare-tag">BEFORE</div>
                 <div className="store-compare-art">
-                  <Illustration kind="default" style={{ width: '100%', height: '100%' }} />
+                  <Illustration
+                    kind={product.illustKind}
+                    imageUrl={photos.find((p) => p.label === '시공 예시')?.fileUrl ?? photos[photos.length > 1 ? 1 : 0].fileUrl}
+                    style={{ width: '100%', height: '100%' }}
+                  />
                 </div>
                 <div className="store-compare-caption">오래 써서 녹슬고 누수가 시작된 기존 제품</div>
               </div>
@@ -337,7 +350,7 @@ export default function ProductDetailPage() {
                 <div className="store-compare-art">
                   <Illustration
                     kind={product.illustKind}
-                    imageUrl={product.imageUrl}
+                    imageUrl={photos[0].fileUrl}
                     style={{ width: '100%', height: '100%' }}
                   />
                 </div>
@@ -381,7 +394,9 @@ export default function ProductDetailPage() {
               )}
               <div className="store-spec-row">
                 <span className="store-spec-key">자재비</span>
-                <span className="store-spec-val">{fmtKRW(product.price)}</span>
+                <span className="store-spec-val">
+                  {product.price != null ? fmtKRW(product.price) : '현장 확정'}
+                </span>
               </div>
               <div className="store-spec-row">
                 <span className="store-spec-key">시공비</span>
@@ -600,9 +615,11 @@ export default function ProductDetailPage() {
             </div>
             <div className="sticky-cta-price">
               <span className="muted" style={{ fontSize: 12 }}>
-                시공 {fmtKRW(serviceItem.price)} + 자재 {fmtKRW(product.price)}
+                시공 {fmtKRW(serviceItem.price)} + 자재 {product.price != null ? fmtKRW(product.price) : '현장 확정'}
               </span>
-              <div className="sticky-cta-total">{fmtKRW(totalPrice)}</div>
+              <div className="sticky-cta-total">
+                {product.price != null ? fmtKRW(totalPrice) : `${fmtKRW(serviceItem.price)} + α`}
+              </div>
             </div>
           </div>
           <div className="sticky-cta-actions">

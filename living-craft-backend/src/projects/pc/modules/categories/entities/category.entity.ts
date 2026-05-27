@@ -2,7 +2,7 @@ import { Entity, Column, Index, Unique } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { BaseEntity } from '@common/entities/base.entity';
 
-@Entity('categories', { schema: 'pc' })
+@Entity('pc_categories', { schema: 'jip' })
 @Unique(['parentId', 'name'])
 export class PcCategory extends BaseEntity {
   @ApiPropertyOptional({ description: '부모 카테고리 ID (null이면 최상위)', example: null })

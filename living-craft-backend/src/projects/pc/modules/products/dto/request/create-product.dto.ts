@@ -1,4 +1,4 @@
-import { IsString, IsInt, IsOptional, IsBoolean, MaxLength, Min, IsNumber } from 'class-validator';
+import { IsString, IsInt, IsOptional, IsBoolean, MaxLength, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -51,4 +51,28 @@ export class CreateProductDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional({ description: '고객 URL 코드 (고유)', example: 'k1-1' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  @Transform(({ value }) => value?.trim() || null)
+  code?: string;
+
+  @ApiPropertyOptional({ description: 'ServiceItem ID' })
+  @IsOptional()
+  @IsInt()
+  serviceItemId?: number;
+
+  @ApiPropertyOptional({ description: '일러스트 종류', default: 'default' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  illustKind?: string;
+
+  @ApiPropertyOptional({ description: '노출 순서', default: 0 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  sortOrder?: number;
 }

@@ -54,4 +54,26 @@ export class UpdateProductDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional({ description: '고객 URL 코드 (고유)', example: 'k1-1' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  code?: string;
+
+  @ApiPropertyOptional({ description: 'ServiceItem ID' })
+  @IsOptional()
+  @IsInt()
+  serviceItemId?: number;
+
+  @ApiPropertyOptional({ description: '일러스트 종류' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  illustKind?: string;
+
+  @ApiPropertyOptional({ description: '노출 순서' })
+  @IsOptional()
+  @IsInt()
+  sortOrder?: number;
 }

@@ -1,9 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-
-const PHOTO = {
-  bath: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548942946_cc0gbn.webp',
-  kitchen: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943517_khkjrn.webp',
-} as const
+import { useSiteAssets } from '@/queries/siteAssets'
 
 const TECH_INFO = {
   name: '김장인',
@@ -37,6 +33,7 @@ const PHILOSOPHIES = [
 
 export default function AboutPage() {
   const navigate = useNavigate()
+  const { data: assets } = useSiteAssets()
 
   return (
     <section className="section">
@@ -71,8 +68,10 @@ export default function AboutPage() {
               <div className="mt-8">📞 {TECH_INFO.phone}</div>
             </div>
           </div>
-          <div className="about-art">
-            <img src={PHOTO.bath} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <div className="about-art" style={{ background: 'var(--bg-deep)', overflow: 'hidden', borderRadius: 'var(--radius-xl)' }}>
+            {assets?.['about.intro']?.imageUrl && (
+              <img src={assets['about.intro'].imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            )}
           </div>
         </div>
 
@@ -102,11 +101,15 @@ export default function AboutPage() {
               overflow: 'hidden',
             }}
           >
-            <div style={{ aspectRatio: '4/3', overflow: 'hidden' }}>
-              <img src={PHOTO.bath} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div style={{ aspectRatio: '4/3', overflow: 'hidden', background: 'var(--bg-deep)' }}>
+              {assets?.['about.gallery.1']?.imageUrl && (
+                <img src={assets['about.gallery.1'].imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              )}
             </div>
-            <div style={{ aspectRatio: '4/3', overflow: 'hidden' }}>
-              <img src={PHOTO.kitchen} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div style={{ aspectRatio: '4/3', overflow: 'hidden', background: 'var(--bg-deep)' }}>
+              {assets?.['about.gallery.2']?.imageUrl && (
+                <img src={assets['about.gallery.2'].imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              )}
             </div>
           </div>
         </div>

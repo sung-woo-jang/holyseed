@@ -57,13 +57,13 @@ export default function Header() {
   const route = location.pathname.split('/')[1] || 'home'
 
   return (
-    <header className={`topbar${scrolled ? 'shadow' : ''}`}>
+    <header className={`topbar${scrolled ? ' shadow' : ''}`}>
       <div className="topbar-inner container">
         <Link to="/" className="brand">
           <div className="brand-mark">집</div>
           <span>집수리</span>
         </Link>
-        <nav className={`nav${menuOpen ? 'open' : ''}`}>
+        <nav className={`nav${menuOpen ? ' open' : ''}`}>
           <Link className={route === 'services' || route === 'service' ? 'on' : ''} to="/services">
             서비스
           </Link>

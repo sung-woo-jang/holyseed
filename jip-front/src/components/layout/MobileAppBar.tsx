@@ -32,7 +32,7 @@ export default function MobileAppBar() {
   }
 
   return (
-    <header className={`mobile-appbar${scrolled ? 'shadow' : ''}`}>
+    <header className={`mobile-appbar${scrolled ? ' shadow' : ''}`}>
       {showBack ? (
         <button className="back" onClick={() => navigate(-1)} aria-label="back">
           <svg

@@ -1,11 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { BottomSheet } from '@/components/common/BottomSheet'
 import { ExecTypeSheet, EXEC_LABEL } from '@/components/sheet/ExecTypeSheet'
 import { computePreview } from '@/lib/calculator'
 import { T_DELTA } from '@/lib/exec-types'
 import { fmtUSD, fmtT, MODE_LABEL, MODE_COLOR } from '@/lib/format'
 import type { IvStrategy, IvState, DailyPlan, FillRowInput } from '@/lib/iv-api'
-import { useCreateExecution } from '@/queries/iv.queries'
+import { useCreateExecution, usePriceHistory } from '@/queries/iv.queries'
 
 interface Row {
   execType: string
@@ -31,9 +31,26 @@ export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
   const today = new Date().toISOString().slice(0, 10)
   const [execDate, setExecDate] = useState(today)
   const [rows, setRows] = useState<Row[]>([{ execType: 'buy_full', price: '', qty: '', note: '' }])
-  const [openDropdown, setOpenDropdown] = useState<number | null>(null)
+  const [openDropdown, setOpenDropdown] = useState<number | null>(0)
 
   const mutation = useCreateExecution(strategy.id)
+  const { data: priceHistory } = usePriceHistory(strategy.ticker)
+
+  const closePriceForDate = useMemo(() => {
+    if (!priceHistory) return null
+    const match = priceHistory.find((p) => p.priceDate === execDate)
+    return match?.closePrice ?? null
+  }, [priceHistory, execDate])
+
+  useEffect(() => {
+    setRows((prev) =>
+      prev.map((row) =>
+        row.execType !== 'no_exec'
+          ? { ...row, price: closePriceForDate != null ? closePriceForDate.toFixed(2) : '' }
+          : row
+      )
+    )
+  }, [closePriceForDate])
 
   function addRow() {
     setRows((r) => [...r, { execType: 'buy_full', price: '', qty: '', note: '' }])
@@ -82,9 +99,13 @@ export function ExecutionSheet({ strategy, state, plan, onClose }: Props) {
       plan.buyRows.find((r) => r.execType === execType) ?? plan.sellRows.find((r) => r.execType === execType)
     if (!match) return
     setRows((r) =>
-      r.map((row, idx) =>
-        idx === rowIdx ? { ...row, price: String(match.price.toFixed(2)), qty: String(match.qty ?? '') } : row
-      )
+      r.map((row, idx) => {
+        if (idx !== rowIdx) return row
+        const price = closePriceForDate != null
+          ? closePriceForDate.toFixed(2)
+          : row.price || match.price.toFixed(2)
+        return { ...row, price, qty: String(match.qty ?? '') }
+      })
     )
   }
 

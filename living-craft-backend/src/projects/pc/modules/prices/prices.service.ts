@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { ProductPrice } from './entities/product-price.entity';
 import { UpsertPriceDto } from './dto/request/upsert-price.dto';
 
@@ -9,6 +9,8 @@ export class PricesService {
   constructor(
     @InjectRepository(ProductPrice)
     private readonly repo: Repository<ProductPrice>,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   async findByProductId(productId: number): Promise<ProductPrice[]> {
@@ -25,6 +27,7 @@ export class PricesService {
       where: { productId: dto.productId, vendorId: dto.vendorId },
     });
 
+    let saved: ProductPrice;
     if (existing) {
       Object.assign(existing, {
         price: dto.price,
@@ -32,27 +35,50 @@ export class PricesService {
         note: dto.note ?? existing.note,
         quotedAt: dto.quotedAt ? new Date(dto.quotedAt) : existing.quotedAt,
       });
-      return this.repo.save(existing);
+      saved = await this.repo.save(existing);
+    } else {
+      const price = this.repo.create({
+        productId: dto.productId,
+        vendorId: dto.vendorId,
+        price: dto.price,
+        currency: dto.currency || 'KRW',
+        note: dto.note,
+        quotedAt: dto.quotedAt ? new Date(dto.quotedAt) : null,
+      });
+      saved = await this.repo.save(price);
     }
 
-    const price = this.repo.create({
-      productId: dto.productId,
-      vendorId: dto.vendorId,
-      price: dto.price,
-      currency: dto.currency || 'KRW',
-      note: dto.note,
-      quotedAt: dto.quotedAt ? new Date(dto.quotedAt) : null,
-    });
-    return this.repo.save(price);
+    await this.recomputeRepresentativePrice(dto.productId);
+    return saved;
   }
 
   async delete(id: number): Promise<void> {
     const price = await this.repo.findOne({ where: { id } });
     if (!price) throw new NotFoundException('가격 정보를 찾을 수 없습니다.');
     await this.repo.delete(id);
+    await this.recomputeRepresentativePrice(price.productId);
   }
 
   async deleteByProductId(productId: number): Promise<void> {
     await this.repo.delete({ productId });
+    await this.dataSource.query(
+      `UPDATE jip.pc_products SET representative_price = NULL WHERE id = $1`,
+      [productId],
+    );
+  }
+
+  async recomputeRepresentativePrice(productId: number): Promise<void> {
+    const result = await this.dataSource.query(
+      `SELECT MIN(pp.price)::int AS min_price
+       FROM jip.pc_product_prices pp
+       JOIN jip.pc_vendors v ON v.id = pp.vendor_id
+       WHERE pp.product_id = $1 AND v.is_active = true`,
+      [productId],
+    );
+    const minPrice = result[0]?.min_price ?? null;
+    await this.dataSource.query(
+      `UPDATE jip.pc_products SET representative_price = $1 WHERE id = $2`,
+      [minPrice, productId],
+    );
   }
 }

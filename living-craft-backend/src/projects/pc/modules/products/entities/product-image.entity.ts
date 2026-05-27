@@ -2,7 +2,7 @@ import { Entity, Column, Index } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { BaseEntity } from '@common/entities/base.entity';
 
-@Entity('product_images', { schema: 'pc' })
+@Entity('pc_product_images', { schema: 'jip' })
 export class ProductImage extends BaseEntity {
   @ApiProperty({ description: '제품 ID', example: 1 })
   @Column({ name: 'product_id', type: 'int' })
@@ -32,4 +32,12 @@ export class ProductImage extends BaseEntity {
   @ApiPropertyOptional({ description: '이미지 높이', example: 600 })
   @Column({ type: 'int', nullable: true })
   height: number;
+
+  @ApiProperty({ description: '이미지 역할 (main/detail/example/color)', default: 'main' })
+  @Column({ length: 20, default: 'main' })
+  role: string;
+
+  @ApiPropertyOptional({ description: '이미지 레이블', example: '주방 시공 후' })
+  @Column({ length: 100, nullable: true })
+  label: string;
 }

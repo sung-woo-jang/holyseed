@@ -21,7 +21,7 @@ export class ProductImagesService {
     const product = await this.productRepo.findOne({ where: { id: productId } });
     if (!product) throw new NotFoundException('제품을 찾을 수 없습니다.');
 
-    const { filename, path: s3Key, url } = await this.filesService.uploadImage(file, 'pc/products');
+    const { filename, path: s3Key, url } = await this.filesService.uploadImage(file, 'jip/pc/products');
 
     return await this.dataSource.transaction(async (em) => {
       if (isPrimary) {

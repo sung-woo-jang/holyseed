@@ -65,7 +65,7 @@ export default function MobileTabBar() {
     <nav className="tabbar">
       <div className="tabbar-inner">
         {tabs.map((t) => (
-          <button key={t.k} className={`tab-item${t.on ? 'on' : ''}`} onClick={() => navigate(t.go)}>
+          <button key={t.k} className={`tab-item${t.on ? ' on' : ''}`} onClick={() => navigate(t.go)}>
             <t.Icon />
             <span>{t.label}</span>
             {t.badge && <span className="badge">{t.badge}</span>}

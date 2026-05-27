@@ -146,7 +146,7 @@ export default function SchedulePicker({ value, onChange }: Props) {
       {/* 요일 헤더 */}
       <div className="sched-grid sched-weekdays">
         {WEEKDAYS.map((w, i) => (
-          <div key={w} className={`sched-weekday${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}`}>
+          <div key={w} className={`sched-weekday${i === 0 ? ' sun' : i === 6 ? ' sat' : ''}`}>
             {w}
           </div>
         ))}
@@ -212,7 +212,7 @@ export default function SchedulePicker({ value, onChange }: Props) {
               <button
                 key={h}
                 type="button"
-                className={`pill${value.time === h ? 'on' : ''}`}
+                className={`pill${value.time === h ? ' on' : ''}`}
                 onClick={() => onChange({ date: value.date, time: value.time === h ? null : h })}
               >
                 {h}시~

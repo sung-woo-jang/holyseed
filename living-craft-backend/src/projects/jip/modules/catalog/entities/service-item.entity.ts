@@ -1,7 +1,6 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from '@common/entities/base.entity';
 import { Category } from './category.entity';
-import { ProductGroup } from './product-group.entity';
 
 @Entity('service_items', { schema: 'jip' })
 export class ServiceItem extends BaseEntity {
@@ -44,7 +43,4 @@ export class ServiceItem extends BaseEntity {
   @ManyToOne(() => Category, (cat) => cat.items)
   @JoinColumn({ name: 'category_id' })
   category: Category;
-
-  @OneToMany(() => ProductGroup, (pg) => pg.serviceItem)
-  productGroups: ProductGroup[];
 }

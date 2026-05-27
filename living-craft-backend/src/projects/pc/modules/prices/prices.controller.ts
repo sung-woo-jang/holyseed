@@ -4,7 +4,7 @@ import { PricesService } from './prices.service';
 import { UpsertPriceDto } from './dto/request/upsert-price.dto';
 
 @ApiTags('PC 가격')
-@Controller('pc/prices')
+@Controller('jip/pc/prices')
 export class PricesController {
   constructor(private readonly pricesService: PricesService) {}
 

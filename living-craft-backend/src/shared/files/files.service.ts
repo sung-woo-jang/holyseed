@@ -2,8 +2,8 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
 import { memoryStorage } from 'multer';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { join, dirname } from 'path';
+import { existsSync, promises as fs } from 'fs';
 import { FileUtil } from '@common/utils/file.util';
 import { ERROR_MESSAGES } from '@common/constants';
 import { NcpStorageService } from '@common/services/ncp-storage.service';
@@ -12,17 +12,14 @@ import sharp from 'sharp';
 @Injectable()
 export class FilesService {
   private readonly uploadPath: string;
+  private readonly publicBaseUrl: string;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly ncpStorageService: NcpStorageService,
   ) {
-    this.uploadPath = this.configService.get<string>(
-      'app.uploadPath',
-      './uploads',
-    );
-    // NCP Object Storage 사용으로 로컬 디렉토리 생성 불필요
-    // this.ensureUploadDirectories();
+    this.uploadPath = this.configService.get<string>('app.uploadPath', './uploads');
+    this.publicBaseUrl = this.configService.get<string>('app.publicBaseUrl', 'http://localhost:8000');
   }
 
   /**
@@ -146,12 +143,11 @@ export class FilesService {
           `품질: ${adaptiveQuality}`,
       );
 
-      // NCP Object Storage에 업로드
-      const url = await this.ncpStorageService.uploadFile(
-        processedBuffer,
-        s3Key,
-        'image/webp',
-      );
+      // 로컬 디스크에 저장
+      const localPath = join(this.uploadPath, s3Key);
+      await fs.mkdir(dirname(localPath), { recursive: true });
+      await fs.writeFile(localPath, processedBuffer);
+      const url = `${this.publicBaseUrl}/uploads/${s3Key}`;
 
       return {
         filename,
@@ -177,35 +173,31 @@ export class FilesService {
   }
 
   /**
-   * 파일 삭제 (NCP Object Storage)
+   * 파일 삭제 (로컬 디스크)
    */
-  async deleteFile(s3Key: string): Promise<void> {
-    await this.ncpStorageService.deleteFile(s3Key);
+  async deleteFile(filePath: string): Promise<void> {
+    try {
+      const localPath = join(this.uploadPath, filePath);
+      await fs.unlink(localPath);
+    } catch (error) {
+      console.error('파일 삭제 실패:', error.message);
+    }
   }
 
   /**
-   * 파일 URL에서 S3 Key 추출
-   * NCP URL: https://kr.object.ncloudstorage.com/living-craft/images/filename.jpg
-   * -> S3 Key: images/filename.jpg
+   * 파일 URL에서 로컬 경로(key) 추출
+   * http://localhost:8000/uploads/jip/catalog/items/xxx.webp -> jip/catalog/items/xxx.webp
    */
   getFilePathFromUrl(url: string): string {
-    const bucketName = this.configService.get<string>('app.ncp.bucketName');
-
-    // 로컬 URL 형식인 경우 (하위 호환성)
+    const prefix = `${this.publicBaseUrl}/uploads/`;
+    if (url.startsWith(prefix)) {
+      return url.replace(prefix, '');
+    }
+    // 하위 호환: /uploads/ 상대경로
     if (url.startsWith('/uploads/')) {
       return url.replace('/uploads/', '');
     }
-
-    // NCP URL에서 S3 Key 추출
-    try {
-      const urlObj = new URL(url);
-      const pathWithBucket = urlObj.pathname.substring(1); // 맨 앞 '/' 제거
-      return pathWithBucket.replace(`${bucketName}/`, '');
-    } catch (error) {
-      console.error('URL 파싱 실패:', error);
-      // URL 파싱 실패 시 그대로 반환
-      return url;
-    }
+    return url;
   }
 
   /**
@@ -234,12 +226,10 @@ export class FilesService {
     const s3Key = `documents/${filename}`;
 
     try {
-      // 문서 파일은 리사이징 없이 원본 그대로 NCP에 업로드
-      const url = await this.ncpStorageService.uploadFile(
-        file.buffer,
-        s3Key,
-        file.mimetype,
-      );
+      const localPath = join(this.uploadPath, s3Key);
+      await fs.mkdir(dirname(localPath), { recursive: true });
+      await fs.writeFile(localPath, file.buffer);
+      const url = `${this.publicBaseUrl}/uploads/${s3Key}`;
 
       return {
         filename,

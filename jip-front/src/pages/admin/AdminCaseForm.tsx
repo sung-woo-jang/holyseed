@@ -367,7 +367,7 @@ export default function AdminCaseForm() {
               )
             })}
           </div>
-          <label className="btn ghost sm" style={{ cursor: 'pointer', display: 'inline-block' }}>
+          <label className="btn ghost sm" style={{ cursor: 'pointer' }}>
             {uploading ? '업로드 중...' : '+ 커버 사진 추가'}
             <input
               type="file"
@@ -420,7 +420,7 @@ export default function AdminCaseForm() {
               )
             })}
           </div>
-          <label className="btn ghost sm" style={{ cursor: 'pointer', display: 'inline-block' }}>
+          <label className="btn ghost sm" style={{ cursor: 'pointer' }}>
             {uploading ? '업로드 중...' : '+ Before 사진 추가'}
             <input
               type="file"
@@ -474,7 +474,7 @@ export default function AdminCaseForm() {
               )
             })}
           </div>
-          <label className="btn ghost sm" style={{ cursor: 'pointer', display: 'inline-block' }}>
+          <label className="btn ghost sm" style={{ cursor: 'pointer' }}>
             {uploading ? '업로드 중...' : '+ After 사진 추가'}
             <input
               type="file"

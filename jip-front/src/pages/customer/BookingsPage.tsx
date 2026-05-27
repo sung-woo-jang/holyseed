@@ -91,7 +91,7 @@ export default function BookingsPage() {
                         </div>
                       </div>
                       <span
-                        className={`tag${r.status === 'done' ? 'green' : r.status === 'cancelled' ? '' : 'orange'}`}
+                        className={`tag${r.status === 'done' ? ' green' : r.status === 'cancelled' ? '' : ' orange'}`}
                       >
                         {STATUS_LABEL[r.status] ?? r.status}
                       </span>

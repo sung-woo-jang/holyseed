@@ -6,7 +6,7 @@ import { UpdateCategoryDto } from './dto/request/update-category.dto';
 import { ReorderCategoriesDto } from './dto/request/reorder-categories.dto';
 
 @ApiTags('PC 카테고리')
-@Controller('pc/categories')
+@Controller('jip/pc/categories')
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 

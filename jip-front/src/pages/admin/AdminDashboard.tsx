@@ -90,7 +90,7 @@ export default function AdminDashboard() {
                 <td>{r.contactName}</td>
                 <td>{r.items?.[0]?.nameSnapshot ?? '—'}</td>
                 <td>
-                  <span className={`tag${r.status === 'done' ? 'green' : r.status === 'pending' ? 'orange' : ''}`}>
+                  <span className={`tag${r.status === 'done' ? ' green' : r.status === 'pending' ? ' orange' : ''}`}>
                     {STATUS_LABEL[r.status] ?? r.status}
                   </span>
                 </td>

@@ -4,18 +4,6 @@ import { api } from '@/lib/api'
 import { useToastStore } from '@/stores/toast'
 import type { Case } from '@/types'
 
-const PHOTO = {
-  bath: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548942946_cc0gbn.webp',
-  film: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943309_yggm25.webp',
-  kitchen: 'https://kr.object.ncloudstorage.com/living-craft/jip/cases/1779548943517_khkjrn.webp',
-} as const
-
-function coverPhoto(c: Case) {
-  return (
-    c.photos?.find((p) => p.role === 'cover')?.fileUrl ??
-    (c.color === 'warm' ? PHOTO.kitchen : c.color === 'cool' ? PHOTO.bath : PHOTO.film)
-  )
-}
 
 export default function AdminCases() {
   const navigate = useNavigate()
@@ -89,8 +77,10 @@ export default function AdminCases() {
       <div className="case-grid">
         {cases.map((c) => (
           <div key={c.id} className="card" style={{ overflow: 'hidden' }}>
-            <div style={{ height: 180, overflow: 'hidden', position: 'relative' }}>
-              <img src={coverPhoto(c)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div style={{ height: 180, overflow: 'hidden', position: 'relative', background: 'var(--bg-deep)' }}>
+              {c.photos?.find((p) => p.role === 'cover')?.fileUrl && (
+                <img src={c.photos.find((p) => p.role === 'cover')!.fileUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              )}
               {!c.isPublished && (
                 <div
                   style={{

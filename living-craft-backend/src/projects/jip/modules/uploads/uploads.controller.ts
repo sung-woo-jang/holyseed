@@ -11,6 +11,7 @@ import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FilesService } from '@shared/files/files.service';
 import { Public } from '@common/decorators';
 import { CatalogService } from '../catalog/catalog.service';
+import { SiteAssetsService } from '../site-assets/site-assets.service';
 
 @ApiTags('JIP 파일 업로드')
 @Controller('jip/uploads')
@@ -18,6 +19,7 @@ export class UploadsController {
   constructor(
     private readonly filesService: FilesService,
     private readonly catalogService: CatalogService,
+    private readonly siteAssetsService: SiteAssetsService,
   ) {}
 
   private async uploadPhoto(file: Express.Multer.File, subfolder: string) {
@@ -68,20 +70,6 @@ export class UploadsController {
     return { success: true, message: '이미지가 등록됐어요', data: { url: data.url }, timestamp: new Date().toISOString() };
   }
 
-  @Post('catalog-product-photo')
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: '[관리자] 카탈로그 제품 사진 등록' })
-  async uploadCatalogProductPhoto(
-    @UploadedFile() file: Express.Multer.File,
-    @Body('productCode') productCode: string,
-  ) {
-    if (!productCode) throw new BadRequestException('productCode를 입력해주세요.');
-    const data = await this.uploadPhoto(file, 'jip/catalog/products');
-    await this.catalogService.updateProductImage(productCode, data.url);
-    return { success: true, message: '이미지가 등록됐어요', data: { url: data.url }, timestamp: new Date().toISOString() };
-  }
-
   @Post('catalog-category-photo')
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
@@ -94,5 +82,20 @@ export class UploadsController {
     const data = await this.uploadPhoto(file, 'jip/catalog/categories');
     await this.catalogService.updateCategoryImage(categoryCode, data.url);
     return { success: true, message: '이미지가 등록됐어요', data: { url: data.url }, timestamp: new Date().toISOString() };
+  }
+
+  @Post('site-asset')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: '[관리자] 사이트 에셋 사진 등록' })
+  async uploadSiteAsset(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('assetKey') assetKey: string,
+    @Body('caption') caption?: string,
+  ) {
+    if (!assetKey) throw new BadRequestException('assetKey를 입력해주세요.');
+    const data = await this.uploadPhoto(file, 'jip/site-assets');
+    await this.siteAssetsService.upsert(assetKey, data.url, caption);
+    return { success: true, message: '사이트 에셋이 등록됐어요', data: { url: data.url }, timestamp: new Date().toISOString() };
   }
 }

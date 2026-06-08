@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import { createRoute } from '@granite-js/react-native';
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Button } from '@toss/tds-react-native';
+import { Border, Button, ListRow, Loader, TextField } from '@toss/tds-react-native';
 import { useQuery } from '@tanstack/react-query';
 import ScreenHeader from '../../components/common/ScreenHeader';
 import { useTheme } from '../../lib/theme';
@@ -134,22 +132,23 @@ function AssetDetailScreen({ navigation, params }: { navigation: any; params: { 
               <Text style={[styles.catLabel, { color: theme.textMuted }]}>{meta.label}</Text>
               {editingName ? (
                 <View style={styles.renameRow}>
-                  <TextInput
-                    style={[styles.renameInput, { borderColor: theme.brand, color: theme.text, backgroundColor: theme.bg }]}
-                    value={nameInput}
-                    onChangeText={setNameInput}
-                    autoFocus
-                  />
-                  <TouchableOpacity
-                    style={[styles.renameConfirmBtn, { backgroundColor: theme.brand }]}
+                  <View style={{ flex: 1 }}>
+                    <TextField
+                      variant="line"
+                      value={nameInput}
+                      onChangeText={setNameInput}
+                      autoFocus
+                    />
+                  </View>
+                  <Button
+                    size="medium"
+                    type="primary"
+                    display="inline"
+                    loading={updateAsset.isPending}
                     onPress={handleRename}
-                    disabled={updateAsset.isPending}
                   >
-                    {updateAsset.isPending
-                      ? <ActivityIndicator color="#fff" size="small" />
-                      : <Text style={styles.renameConfirmText}>확인</Text>
-                    }
-                  </TouchableOpacity>
+                    확인
+                  </Button>
                 </View>
               ) : (
                 <Text style={[styles.assetName, { color: theme.text }]}>{asset.name}</Text>
@@ -248,26 +247,28 @@ function AssetDetailScreen({ navigation, params }: { navigation: any; params: { 
         <View style={[styles.section, { backgroundColor: theme.card, marginTop: 8 }]}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>스냅샷 히스토리</Text>
           {snapshotsQ.isLoading ? (
-            <View style={styles.emptyRow}><ActivityIndicator /></View>
+            <Loader.Centered size="small" />
           ) : snapshots.length === 0 ? (
             <View style={styles.emptyRow}>
               <Text style={[styles.emptyText, { color: theme.textMuted }]}>스냅샷이 없어요</Text>
             </View>
           ) : (
             snapshots.map((s, idx) => (
-              <View key={s.date + idx} style={[styles.snapRow, { borderBottomColor: theme.border, borderBottomWidth: idx < snapshots.length - 1 ? 1 : 0 }]}>
-                <Text style={[styles.snapDate, { color: theme.textMuted }]}>{s.date}</Text>
-                {isFx ? (
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={[styles.snapValue, { color: theme.text }]}>${s.value.toLocaleString()}</Text>
-                    <Text style={[styles.snapSub, { color: theme.textMuted }]}>
-                      ≈ {krwShort(s.valueKRW)} · {s.fxRate.toLocaleString()}원
-                    </Text>
-                  </View>
-                ) : (
-                  <Text style={[styles.snapValue, { color: theme.text }]}>{krw(s.valueKRW || s.value)}</Text>
-                )}
-              </View>
+              <React.Fragment key={s.date + idx}>
+                <ListRow
+                  contents={<Text style={[styles.snapDate, { color: theme.textMuted }]}>{s.date}</Text>}
+                  right={isFx ? (
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={[styles.snapValue, { color: theme.text }]}>${s.value.toLocaleString()}</Text>
+                      <Text style={[styles.snapSub, { color: theme.textMuted }]}>≈ {krwShort(s.valueKRW)} · {s.fxRate.toLocaleString()}원</Text>
+                    </View>
+                  ) : (
+                    <Text style={[styles.snapValue, { color: theme.text }]}>{krw(s.valueKRW || s.value)}</Text>
+                  )}
+                  verticalPadding="small"
+                />
+                {idx < snapshots.length - 1 && <Border type="full" />}
+              </React.Fragment>
             ))
           )}
         </View>
@@ -280,18 +281,26 @@ function AssetDetailScreen({ navigation, params }: { navigation: any; params: { 
               const amtColor = tx.type === 'INCOME' ? theme.brand : tx.type === 'EXPENSE' ? theme.danger : theme.textMuted;
               const sign = tx.type === 'INCOME' ? '+' : tx.type === 'EXPENSE' ? '-' : '';
               return (
-                <View key={tx.id} style={[styles.txRow, { borderBottomColor: theme.border, borderBottomWidth: idx < relatedTxs.length - 1 ? 1 : 0 }]}>
-                  <View style={[styles.txIcon, { backgroundColor: theme.bg }]}>
-                    <Text style={{ fontSize: 16 }}>{tx.category.slice(0, 1)}</Text>
-                  </View>
-                  <View style={styles.txInfo}>
-                    <Text style={[styles.txTitle, { color: theme.text }]}>{tx.title}</Text>
-                    <Text style={[styles.txMeta, { color: theme.textMuted }]}>{tx.date}</Text>
-                  </View>
-                  <Text style={[styles.txAmount, { color: amtColor }]}>
-                    {sign}{krwShort(tx.amount)}
-                  </Text>
-                </View>
+                <React.Fragment key={tx.id}>
+                  <ListRow
+                    left={
+                      <View style={[styles.txIcon, { backgroundColor: theme.bg }]}>
+                        <Text style={{ fontSize: 16 }}>{tx.category.slice(0, 1)}</Text>
+                      </View>
+                    }
+                    contents={
+                      <View>
+                        <Text style={[styles.txTitle, { color: theme.text }]}>{tx.title}</Text>
+                        <Text style={[styles.txMeta, { color: theme.textMuted }]}>{tx.date}</Text>
+                      </View>
+                    }
+                    right={
+                      <Text style={[styles.txAmount, { color: amtColor }]}>{sign}{krwShort(tx.amount)}</Text>
+                    }
+                    verticalPadding="small"
+                  />
+                  {idx < relatedTxs.length - 1 && <Border type="full" />}
+                </React.Fragment>
               );
             })}
           </View>

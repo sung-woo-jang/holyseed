@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from './common/Icon';
 
 export type TabKey = 'home' | 'assets' | 'book' | 'more';
@@ -29,8 +30,9 @@ interface TabBarProps {
 }
 
 export default function TabBar({ activeTab, onTabPress }: TabBarProps) {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       {TABS.map((tab) => {
         const isActive = tab.key === activeTab;
         const color = isActive ? COLOR_ACTIVE : COLOR_INACTIVE;

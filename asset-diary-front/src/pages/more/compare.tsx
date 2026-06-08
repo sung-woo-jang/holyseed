@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { createRoute } from '@granite-js/react-native';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import { Border, ListRow, Loader } from '@toss/tds-react-native';
 import ScreenHeader from '../../components/common/ScreenHeader';
 import WaterfallChart from '../../components/charts/WaterfallChart';
 import { useTheme } from '../../lib/theme';
@@ -74,7 +75,7 @@ function CompareScreen({ navigation }: { navigation: any }) {
     return (
       <View style={[styles.root, { backgroundColor: theme.bg }]}>
         <ScreenHeader title="연간 비교" onBack={() => navigation?.goBack?.()} />
-        <View style={styles.loadingBox}><ActivityIndicator size="large" color={theme.brand} /></View>
+        <Loader.Centered size="medium" type="primary" />
       </View>
     );
   }
@@ -153,25 +154,31 @@ function CompareScreen({ navigation }: { navigation: any }) {
           {contribs
             .slice()
             .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
-            .map((c) => {
+            .map((c, idx, arr) => {
               const weight = Math.abs(change) > 0 ? ((Math.abs(c.value) / Math.abs(change)) * 100).toFixed(0) : '0';
               const catKey = Object.keys(ASSET_CATEGORY_META).find(
                 (k) => ASSET_CATEGORY_META[k as keyof typeof ASSET_CATEGORY_META].label === c.category
               );
               const catColor = c.color ?? (catKey ? ASSET_CATEGORY_META[catKey as keyof typeof ASSET_CATEGORY_META].color : '#94A3B8');
               return (
-                <View key={c.category} style={styles.contribRow}>
-                  <View style={[styles.accentBar, { backgroundColor: catColor }]} />
-                  <View style={styles.contribInfo}>
-                    <View style={styles.contribTopRow}>
-                      <Text style={[styles.contribCat, { color: theme.text }]}>{c.category}</Text>
-                      <Text style={[styles.contribWeight, { color: theme.textMuted }]}>{weight}%</Text>
-                    </View>
-                  </View>
-                  <Text style={[styles.contribVal, { color: c.value >= 0 ? theme.brand : theme.danger }]}>
-                    {c.value >= 0 ? '+' : ''}{krwShort(c.value)}
-                  </Text>
-                </View>
+                <React.Fragment key={c.category}>
+                  <ListRow
+                    left={<View style={[styles.accentBar, { backgroundColor: catColor }]} />}
+                    contents={
+                      <View style={styles.contribTopRow}>
+                        <Text style={[styles.contribCat, { color: theme.text }]}>{c.category}</Text>
+                        <Text style={[styles.contribWeight, { color: theme.textMuted }]}>{weight}%</Text>
+                      </View>
+                    }
+                    right={
+                      <Text style={[styles.contribVal, { color: c.value >= 0 ? theme.brand : theme.danger }]}>
+                        {c.value >= 0 ? '+' : ''}{krwShort(c.value)}
+                      </Text>
+                    }
+                    verticalPadding="small"
+                  />
+                  {idx < arr.length - 1 && <Border type="full" />}
+                </React.Fragment>
               );
             })}
         </View>

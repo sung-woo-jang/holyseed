@@ -76,7 +76,7 @@ export default function JoinSheet({ visible, onClose, initialCode }: JoinSheetPr
             초대받은 코드를 입력하면 가구에 합류할 수 있어요
           </Text>
           <TextField
-            variant="box"
+            variant="line"
             placeholder="TOSS-XXXXXX"
             value={code}
             onChangeText={setCode}

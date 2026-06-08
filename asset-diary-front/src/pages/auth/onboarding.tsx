@@ -32,13 +32,14 @@ function OnboardingPage() {
     <View style={styles.container}>
       <Text style={styles.title}>가구를 만들어보세요</Text>
       <Text style={styles.desc}>가족이나 파트너와 함께 자산을 관리할 수 있어요.</Text>
-      <TextField
-        variant="box"
-        placeholder="가구 이름 (예: 우리 가족)"
-        value={name}
-        onChangeText={setName}
-        style={styles.field}
-      />
+      <View style={styles.field}>
+        <TextField
+          variant="line"
+          placeholder="가구 이름 (예: 우리 가족)"
+          value={name}
+          onChangeText={setName}
+        />
+      </View>
       <Button
         display="full"
         size="big"

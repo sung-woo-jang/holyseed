@@ -69,7 +69,7 @@ function AddCategorySheet({
     >
       <View style={styles.sheetBody}>
         <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>이름</Text>
-        <TextField variant="box" placeholder="카테고리 이름" value={name} onChangeText={setName} />
+        <TextField variant="line" placeholder="카테고리 이름" value={name} onChangeText={setName} />
 
         <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>유형</Text>
         <Segmented

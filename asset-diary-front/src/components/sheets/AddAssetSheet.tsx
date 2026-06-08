@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import {
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheet, Button, ListRow, Switch, TextField } from '@toss/tds-react-native';
 import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
@@ -38,7 +36,6 @@ interface AddAssetSheetProps {
 
 export default function AddAssetSheet({ visible, onClose }: AddAssetSheetProps) {
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
   const [step, setStep] = useState<1 | 2>(1);
   const [assetName, setAssetName] = useState('');
   const [category, setCategory] = useState<AssetCategory | null>(null);
@@ -88,116 +85,130 @@ export default function AddAssetSheet({ visible, onClose }: AddAssetSheetProps) 
 
   const headerTitle = `자산 추가 · ${step}/2`;
 
-  return (
-    <BottomSheet.Root
-      open={visible}
-      onClose={handleClose}
-      header={<BottomSheet.Header>{headerTitle}</BottomSheet.Header>}
-    >
-      {saved ? (
+  if (saved) {
+    return (
+      <BottomSheet.Root open={visible} onClose={handleClose}>
         <View style={styles.confirmBox}>
           <TossEmoji code={TE.check} size={64} />
           <Text style={[styles.confirmTitle, { color: theme.text }]}>자산이 추가됐어요!</Text>
           <Text style={[styles.confirmSub, { color: theme.textMuted }]}>스냅샷을 입력하면 순자산에 반영돼요</Text>
         </View>
-      ) : step === 1 ? (
-        <>
-          <ScrollView contentContainerStyle={styles.body}>
-            <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>자산 이름</Text>
-            <TextField
-              variant="box"
-              placeholder="예: 토스뱅크 파킹통장"
-              value={assetName}
-              onChangeText={setAssetName}
-            />
-            <Text style={[styles.fieldLabel, { color: theme.textMuted, marginTop: 20 }]}>카테고리</Text>
-            <View style={styles.categoryGrid}>
-              {CATEGORY_OPTIONS.map((opt) => {
-                const selected = category === opt.key;
-                const isLiab = opt.key === 'LIABILITY';
-                return (
-                  <TouchableOpacity
-                    key={opt.key}
-                    style={[
-                      styles.categoryCell,
-                      {
-                        borderColor: selected ? (isLiab ? theme.danger : theme.brand) : theme.border,
-                        backgroundColor: selected ? (isLiab ? 'rgba(240,68,82,0.10)' : theme.brandSoft) : theme.bg,
-                      },
-                    ]}
-                    onPress={() => setCategory(opt.key)}
-                  >
-                    <Text style={[styles.categoryCellText, { color: selected ? (isLiab ? theme.danger : theme.brand) : theme.text }]}>
-                      {opt.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </ScrollView>
-          <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
+      </BottomSheet.Root>
+    );
+  }
+
+  if (step === 1) {
+    return (
+      <BottomSheet.Root
+        open={visible}
+        onClose={handleClose}
+        header={<BottomSheet.Header>{headerTitle}</BottomSheet.Header>}
+        cta={
+          <View style={styles.cta}>
             <Button display="full" size="big" type="primary" disabled={!step1Valid} onPress={() => setStep(2)}>
               다음
             </Button>
           </View>
-        </>
-      ) : (
-        <>
-          <ScrollView contentContainerStyle={styles.body}>
-            <Text style={[styles.fieldLabel, { color: theme.textMuted, textAlign: 'center' }]}>
-              {isLiability ? '부채 잔액' : '현재 평가액'}
-            </Text>
-            <View style={styles.amountWrap}>
-              <TextInput
-                style={[styles.amountInput, { color: isLiability ? theme.danger : theme.text }]}
-                keyboardType="numeric"
-                placeholder="0"
-                placeholderTextColor={theme.border}
-                value={amount}
-                onChangeText={(t) => setAmount(formatNum(t))}
-                autoFocus
-              />
-              <Text style={[styles.amountUnit, { color: theme.textMuted }]}>{isFx ? currency : '원'}</Text>
-            </View>
-
-            <ListRow
-              contents="외화 자산이에요"
-              right={<Switch checked={isFx} onCheckedChange={(v) => { setIsFx(v); if (!v) setCurrency('USD'); }} />}
-              verticalPadding="small"
-            />
-
-            {isFx && (
-              <View style={styles.currencyRow}>
-                {CURRENCIES.map((c) => (
-                  <TouchableOpacity
-                    key={c}
-                    style={[styles.currencyChip, { backgroundColor: currency === c ? theme.brand : theme.bg, borderColor: currency === c ? theme.brand : theme.border }]}
-                    onPress={() => setCurrency(c)}
-                  >
-                    <Text style={[styles.currencyChipText, { color: currency === c ? '#fff' : theme.text }]}>{c}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-
-            <TouchableOpacity onPress={() => handleSave(true)} disabled={isPending} style={styles.skipBtn}>
-              <Text style={[styles.skipText, { color: theme.textMuted }]}>건너뛰기 (나중에 입력)</Text>
-            </TouchableOpacity>
-            {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
-          </ScrollView>
-          <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-            <Button display="full" size="big" type="primary" disabled={amtNum === 0} loading={isPending} onPress={() => handleSave(false)}>
-              저장하기
-            </Button>
+        }
+      >
+        <View style={styles.body}>
+          <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>자산 이름</Text>
+          <TextField
+            variant="box"
+            placeholder="예: 토스뱅크 파킹통장"
+            value={assetName}
+            onChangeText={setAssetName}
+          />
+          <Text style={[styles.fieldLabel, { color: theme.textMuted, marginTop: 20 }]}>카테고리</Text>
+          <View style={styles.categoryGrid}>
+            {CATEGORY_OPTIONS.map((opt) => {
+              const selected = category === opt.key;
+              const isLiab = opt.key === 'LIABILITY';
+              return (
+                <TouchableOpacity
+                  key={opt.key}
+                  style={[
+                    styles.categoryCell,
+                    {
+                      borderColor: selected ? (isLiab ? theme.danger : theme.brand) : theme.border,
+                      backgroundColor: selected ? (isLiab ? 'rgba(240,68,82,0.10)' : theme.brandSoft) : theme.bg,
+                    },
+                  ]}
+                  onPress={() => setCategory(opt.key)}
+                >
+                  <Text style={[styles.categoryCellText, { color: selected ? (isLiab ? theme.danger : theme.brand) : theme.text }]}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-        </>
-      )}
+        </View>
+      </BottomSheet.Root>
+    );
+  }
+
+  return (
+    <BottomSheet.Root
+      open={visible}
+      onClose={handleClose}
+      header={<BottomSheet.Header>{headerTitle}</BottomSheet.Header>}
+      cta={
+        <View style={styles.cta}>
+          {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
+          <Button display="full" size="big" type="primary" disabled={amtNum === 0} loading={isPending} onPress={() => handleSave(false)}>
+            저장하기
+          </Button>
+        </View>
+      }
+    >
+      <View style={styles.body}>
+        <Text style={[styles.fieldLabel, { color: theme.textMuted, textAlign: 'center' }]}>
+          {isLiability ? '부채 잔액' : '현재 평가액'}
+        </Text>
+        <View style={styles.amountWrap}>
+          <TextInput
+            style={[styles.amountInput, { color: isLiability ? theme.danger : theme.text }]}
+            keyboardType="numeric"
+            placeholder="0"
+            placeholderTextColor={theme.border}
+            value={amount}
+            onChangeText={(t) => setAmount(formatNum(t))}
+            autoFocus
+          />
+          <Text style={[styles.amountUnit, { color: theme.textMuted }]}>{isFx ? currency : '원'}</Text>
+        </View>
+
+        <ListRow
+          contents="외화 자산이에요"
+          right={<Switch checked={isFx} onCheckedChange={(v) => { setIsFx(v); if (!v) setCurrency('USD'); }} />}
+          verticalPadding="small"
+        />
+
+        {isFx && (
+          <View style={styles.currencyRow}>
+            {CURRENCIES.map((c) => (
+              <TouchableOpacity
+                key={c}
+                style={[styles.currencyChip, { backgroundColor: currency === c ? theme.brand : theme.bg, borderColor: currency === c ? theme.brand : theme.border }]}
+                onPress={() => setCurrency(c)}
+              >
+                <Text style={[styles.currencyChipText, { color: currency === c ? '#fff' : theme.text }]}>{c}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        <TouchableOpacity onPress={() => handleSave(true)} disabled={isPending} style={styles.skipBtn}>
+          <Text style={[styles.skipText, { color: theme.textMuted }]}>건너뛰기 (나중에 입력)</Text>
+        </TouchableOpacity>
+      </View>
     </BottomSheet.Root>
   );
 }
 
 const styles = StyleSheet.create({
-  body: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8 },
+  body: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12 },
   fieldLabel: { fontSize: 12, fontWeight: '600', marginBottom: 8 },
   categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   categoryCell: { width: '47%', paddingVertical: 16, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
@@ -210,7 +221,7 @@ const styles = StyleSheet.create({
   currencyChipText: { fontSize: 14, fontWeight: '700' },
   skipBtn: { alignItems: 'center', paddingVertical: 12 },
   skipText: { fontSize: 14, textDecorationLine: 'underline' },
-  footer: { paddingHorizontal: 20, paddingTop: 12 },
+  cta: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8 },
   confirmBox: { paddingVertical: 60, alignItems: 'center', gap: 12 },
   confirmTitle: { fontSize: 22, fontWeight: '800' },
   confirmSub: { fontSize: 14 },

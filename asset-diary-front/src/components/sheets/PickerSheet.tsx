@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { BottomSheet } from '@toss/tds-react-native';
 
 interface PickerSheetProps {
@@ -16,9 +16,7 @@ export default function PickerSheet({ visible, title, onClose, children }: Picke
       onClose={onClose}
       header={<BottomSheet.Header>{title}</BottomSheet.Header>}
     >
-      <ScrollView contentContainerStyle={styles.body}>
-        {children}
-      </ScrollView>
+      <View style={styles.body}>{children}</View>
     </BottomSheet.Root>
   );
 }

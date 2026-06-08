@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import {
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheet, Button, TextField } from '@toss/tds-react-native';
 import { useTheme } from '../../lib/theme';
 import { useDataSource } from '../../lib/data-source';
@@ -29,7 +27,6 @@ function formatAmount(raw: string): string {
 export default function SnapshotSheet({ visible, onClose, focusAssetId }: SnapshotSheetProps) {
   const theme = useTheme();
   const data = useDataSource();
-  const insets = useSafeAreaInsets();
   const [values, setValues] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
@@ -87,74 +84,71 @@ export default function SnapshotSheet({ visible, onClose, focusAssetId }: Snapsh
   }
 
   const isPending = upsert.isPending || batch.isPending;
-
   const title = focusAssetId ? '개별 스냅샷 입력' : '일괄 스냅샷 입력';
+
+  if (saved) {
+    return (
+      <BottomSheet.Root open={visible} onClose={onClose}>
+        <View style={styles.confirmBox}>
+          <TossEmoji code={TE.check} size={64} />
+          <Text style={[styles.confirmTitle, { color: theme.text }]}>저장 완료!</Text>
+          <Text style={[styles.confirmSub, { color: theme.textMuted }]}>대시보드가 업데이트됐어요</Text>
+        </View>
+      </BottomSheet.Root>
+    );
+  }
 
   return (
     <BottomSheet.Root
       open={visible}
       onClose={onClose}
       header={<BottomSheet.Header>{title}</BottomSheet.Header>}
-    >
-      {saved ? (
-        <View style={styles.confirmBox}>
-          <TossEmoji code={TE.check} size={64} />
-          <Text style={[styles.confirmTitle, { color: theme.text }]}>저장 완료!</Text>
-          <Text style={[styles.confirmSub, { color: theme.textMuted }]}>대시보드가 업데이트됐어요</Text>
+      cta={
+        <View style={styles.cta}>
+          {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
+          <Button display="full" size="big" type="primary" disabled={!hasInput} loading={isPending} onPress={handleSave}>
+            저장하기
+          </Button>
         </View>
-      ) : (
-        <>
-          {!focusAssetId && hasInput && (
-            <View style={[styles.deltaSummary, {
-              backgroundColor: delta >= 0 ? theme.brandSoft : '#FEE2E2',
-              marginHorizontal: 20,
-              marginBottom: 8,
-            }]}>
-              <Text style={[styles.deltaSumLabel, { color: delta >= 0 ? theme.brand : theme.danger }]}>합계 변화</Text>
-              <Text style={[styles.deltaSumValue, { color: delta >= 0 ? theme.brand : theme.danger }]}>
-                {delta >= 0 ? '+' : ''}{krw(delta)}
-              </Text>
-            </View>
-          )}
-
-          <ScrollView contentContainerStyle={styles.body}>
-            {assets.map((asset, idx) => {
-              const newVal = getNum(asset.id);
-              const diff = newVal !== null ? newVal - asset.value : null;
-              return (
-                <View key={asset.id} style={[styles.assetRow, { borderBottomColor: theme.border, borderBottomWidth: idx < assets.length - 1 ? 1 : 0 }]}>
-                  <View style={styles.assetInfo}>
-                    <Text style={[styles.assetName, { color: theme.text }]}>{asset.name}</Text>
-                    <Text style={[styles.prevVal, { color: theme.textMuted }]}>이전: {krwShort(asset.value)}</Text>
-                  </View>
-                  <View style={styles.inputWrap}>
-                    <TextField
-                      variant="line"
-                      placeholder="금액 입력"
-                      keyboardType="numeric"
-                      value={values[asset.id] ?? ''}
-                      onChangeText={(t) => setValues((prev) => ({ ...prev, [asset.id]: formatAmount(t) }))}
-                      style={styles.tfInput}
-                    />
-                    {diff !== null && (
-                      <Text style={[styles.diffText, { color: diff >= 0 ? theme.brand : theme.danger }]}>
-                        {diff >= 0 ? '+' : ''}{krwShort(diff)}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-              );
-            })}
-          </ScrollView>
-
-          <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-            {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
-            <Button display="full" size="big" type="primary" disabled={!hasInput} loading={isPending} onPress={handleSave}>
-              저장하기
-            </Button>
+      }
+    >
+      <View style={styles.body}>
+        {!focusAssetId && hasInput && (
+          <View style={[styles.deltaSummary, { backgroundColor: delta >= 0 ? theme.brandSoft : '#FEE2E2' }]}>
+            <Text style={[styles.deltaSumLabel, { color: delta >= 0 ? theme.brand : theme.danger }]}>합계 변화</Text>
+            <Text style={[styles.deltaSumValue, { color: delta >= 0 ? theme.brand : theme.danger }]}>
+              {delta >= 0 ? '+' : ''}{krw(delta)}
+            </Text>
           </View>
-        </>
-      )}
+        )}
+        {assets.map((asset, idx) => {
+          const newVal = getNum(asset.id);
+          const diff = newVal !== null ? newVal - asset.value : null;
+          return (
+            <View key={asset.id} style={[styles.assetRow, { borderBottomColor: theme.border, borderBottomWidth: idx < assets.length - 1 ? 1 : 0 }]}>
+              <View style={styles.assetInfo}>
+                <Text style={[styles.assetName, { color: theme.text }]}>{asset.name}</Text>
+                <Text style={[styles.prevVal, { color: theme.textMuted }]}>이전: {krwShort(asset.value)}</Text>
+              </View>
+              <View style={styles.inputWrap}>
+                <TextField
+                  variant="line"
+                  placeholder="금액 입력"
+                  keyboardType="numeric"
+                  value={values[asset.id] ?? ''}
+                  onChangeText={(t) => setValues((prev) => ({ ...prev, [asset.id]: formatAmount(t) }))}
+                  style={styles.tfInput}
+                />
+                {diff !== null && (
+                  <Text style={[styles.diffText, { color: diff >= 0 ? theme.brand : theme.danger }]}>
+                    {diff >= 0 ? '+' : ''}{krwShort(diff)}
+                  </Text>
+                )}
+              </View>
+            </View>
+          );
+        })}
+      </View>
     </BottomSheet.Root>
   );
 }
@@ -163,10 +157,10 @@ const styles = StyleSheet.create({
   confirmBox: { paddingVertical: 60, alignItems: 'center', gap: 12 },
   confirmTitle: { fontSize: 22, fontWeight: '800' },
   confirmSub: { fontSize: 14 },
-  deltaSummary: { borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  body: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12 },
+  deltaSummary: { borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   deltaSumLabel: { fontSize: 13 },
   deltaSumValue: { fontSize: 16, fontWeight: '700' },
-  body: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 },
   assetRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
   assetInfo: { flex: 1 },
   assetName: { fontSize: 14, fontWeight: '600' },
@@ -174,6 +168,6 @@ const styles = StyleSheet.create({
   inputWrap: { alignItems: 'flex-end', gap: 4, width: 140 },
   tfInput: { width: 140 },
   diffText: { fontSize: 12, fontWeight: '600' },
-  footer: { paddingHorizontal: 20, paddingTop: 12 },
+  cta: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8 },
   errorText: { fontSize: 13, textAlign: 'center', marginBottom: 8 },
 });

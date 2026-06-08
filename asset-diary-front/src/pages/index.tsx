@@ -30,7 +30,7 @@ function Page() {
   }
 
   return (
-    <SafeAreaView style={styles.root} edges={['bottom']}>
+    <SafeAreaView style={styles.root} edges={[]}>
       {activeTab === 'home' && <HomeScreen />}
       {activeTab === 'assets' && <AssetsScreen onAssetPress={handleAssetPress} />}
       {activeTab === 'book' && <BookScreen />}

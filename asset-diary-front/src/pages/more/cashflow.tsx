@@ -26,7 +26,8 @@ function filterByPeriod(txs: MockTransaction[], period: Period): MockTransaction
   return txs;
 }
 
-function CashflowScreen({ navigation }: { navigation: any }) {
+function CashflowScreen() {
+  const navigation = Route.useNavigation();
   const theme = useTheme();
   const data = useDataSource();
   const [period, setPeriod] = useState<Period>('올해');

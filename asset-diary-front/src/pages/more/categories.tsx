@@ -109,7 +109,8 @@ function AddCategorySheet({
   );
 }
 
-function CategoriesPage({ navigation }: { navigation: any }) {
+function CategoriesPage() {
+  const navigation = Route.useNavigation();
   const theme = useTheme();
   const role = useMockRole();
   const data = useDataSource();

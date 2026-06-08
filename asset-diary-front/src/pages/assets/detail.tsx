@@ -25,7 +25,9 @@ import { qk } from '../../queries/keys';
 import { useUpdateAsset, useDeleteAsset } from '../../queries/mutations';
 import type { AssetCategory } from '../../types/api';
 
-function AssetDetailScreen({ navigation, params }: { navigation: any; params: { id: string } }) {
+function AssetDetailScreen() {
+  const navigation = Route.useNavigation();
+  const params = Route.useParams() as { id?: string };
   const theme = useTheme();
   const data = useDataSource();
   const role = useMockRole();
@@ -38,13 +40,14 @@ function AssetDetailScreen({ navigation, params }: { navigation: any; params: { 
   const updateAsset = useUpdateAsset();
   const deleteAsset = useDeleteAsset();
 
-  const asset = data.assets.find((a) => a.id === params.id);
+  const assetId = params?.id;
+  const asset = assetId ? data.assets.find((a) => a.id === assetId) : undefined;
 
   // 실제 스냅샷 쿼리 — useHouseholdData의 snapshots:{} 는 항상 빈 객체
   const snapshotsQ = useQuery({
-    queryKey: qk.assetSnapshots(Number(params.id)),
-    queryFn: () => snapshotsApi.list(Number(params.id)),
-    enabled: !!params.id && !isNaN(Number(params.id)),
+    queryKey: qk.assetSnapshots(Number(assetId)),
+    queryFn: () => snapshotsApi.list(Number(assetId)),
+    enabled: !!assetId && !isNaN(Number(assetId)),
     staleTime: 30_000,
   });
 

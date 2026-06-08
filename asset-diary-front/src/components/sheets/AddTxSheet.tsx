@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { Button, TextFieldBig, ListRow, SegmentedControl } from '@toss/tds-react-native';
 import SheetModal from './SheetModal';
+import EmptyState from '../common/EmptyState';
 import { useTheme } from '../../lib/theme';
 import { useDataSource } from '../../lib/data-source';
 import TossEmoji from '../common/TossEmoji';
@@ -213,7 +214,9 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
 
       {/* 출금 자산 피커 */}
       <PickerSheet visible={fromPicker} title="자산 선택" onClose={() => setFromPicker(false)}>
-        {assetOptions.map((a) => (
+        {assetOptions.length === 0 ? (
+          <EmptyState compact icon="💰" title="선택할 자산이 없어요" desc="자산 탭에서 먼저 자산을 추가해주세요" />
+        ) : assetOptions.map((a) => (
           <ListRow
             key={a.id}
             contents={a.name}
@@ -226,7 +229,9 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
 
       {/* 입금 자산 피커 */}
       <PickerSheet visible={toPicker} title="자산 선택" onClose={() => setToPicker(false)}>
-        {assetOptions.map((a) => (
+        {assetOptions.length === 0 ? (
+          <EmptyState compact icon="💰" title="선택할 자산이 없어요" desc="자산 탭에서 먼저 자산을 추가해주세요" />
+        ) : assetOptions.map((a) => (
           <ListRow
             key={a.id}
             contents={a.name}

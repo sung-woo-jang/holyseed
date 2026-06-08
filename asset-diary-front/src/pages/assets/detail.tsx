@@ -10,6 +10,7 @@ import {
 import { Border, Button, ListRow, Loader, TextField } from '@toss/tds-react-native';
 import { useQuery } from '@tanstack/react-query';
 import ScreenHeader from '../../components/common/ScreenHeader';
+import EmptyState from '../../components/common/EmptyState';
 import { useTheme } from '../../lib/theme';
 import { useDataSource, useMockRole } from '../../lib/data-source';
 import TossEmoji from '../../components/common/TossEmoji';
@@ -37,9 +38,7 @@ function AssetDetailScreen({ navigation, params }: { navigation: any; params: { 
   const updateAsset = useUpdateAsset();
   const deleteAsset = useDeleteAsset();
 
-  const asset = data.assets.find((a) => a.id === params.id) ?? data.assets[0]!;
-  const meta = ASSET_CATEGORY_META[(asset?.category ?? 'CASH') as AssetCategory];
-  const isFx = (asset?.currency ?? 'KRW') !== 'KRW';
+  const asset = data.assets.find((a) => a.id === params.id);
 
   // 실제 스냅샷 쿼리 — useHouseholdData의 snapshots:{} 는 항상 빈 객체
   const snapshotsQ = useQuery({
@@ -60,9 +59,22 @@ function AssetDetailScreen({ navigation, params }: { navigation: any; params: { 
     .slice()
     .reverse();
 
+  // 자산을 못 찾으면 (삭제됐거나 잘못된 id) 빈 상태 표시
   if (!asset) {
-    return <View style={[styles.root, { backgroundColor: theme.bg }]}><ScreenHeader title="자산 상세" onBack={() => navigation?.goBack?.()} /></View>;
+    return (
+      <View style={[styles.root, { backgroundColor: theme.bg }]}>
+        <ScreenHeader title="자산 상세" onBack={() => navigation?.goBack?.()} />
+        <EmptyState
+          icon="🔍"
+          title="자산을 찾을 수 없어요"
+          desc="삭제되었거나 접근할 수 없는 자산이에요"
+        />
+      </View>
+    );
   }
+
+  const meta = ASSET_CATEGORY_META[asset.category as AssetCategory];
+  const isFx = asset.currency !== 'KRW';
 
   const chartData = snapshots.map((s) => ({
     date: s.date,
@@ -74,7 +86,7 @@ function AssetDetailScreen({ navigation, params }: { navigation: any; params: { 
     .slice(0, 4);
 
   async function handleRename() {
-    if (!nameInput.trim()) return;
+    if (!asset || !nameInput.trim()) return;
     await updateAsset.mutateAsync({ id: Number(asset.id), dto: { name: nameInput.trim() } });
     setEditingName(false);
     setNameInput('');
@@ -82,6 +94,7 @@ function AssetDetailScreen({ navigation, params }: { navigation: any; params: { 
   }
 
   async function handleDelete() {
+    if (!asset) return;
     await deleteAsset.mutateAsync(Number(asset.id));
     navigation?.goBack?.();
   }

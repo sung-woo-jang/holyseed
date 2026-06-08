@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { createRoute } from '@granite-js/react-native';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import ScreenHeader from '../../components/common/ScreenHeader';
+import EmptyState from '../../components/common/EmptyState';
 import Segmented from '../../components/common/Segmented';
 import HBar from '../../components/charts/HBar';
 import TossEmoji from '../../components/common/TossEmoji';
@@ -57,6 +58,8 @@ function CashflowScreen({ navigation }: { navigation: any }) {
   const trend = Object.entries(monthMap).sort(([a], [b]) => a.localeCompare(b)).slice(-12);
   const maxTrend = Math.max(...trend.map(([, v]) => Math.max(v.income, v.expense)), 1);
 
+  const hasData = filtered.length > 0;
+
   return (
     <View style={[styles.root, { backgroundColor: theme.bg }]}>
       <ScreenHeader title="현금흐름" onBack={() => navigation?.goBack?.()} />
@@ -70,7 +73,16 @@ function CashflowScreen({ navigation }: { navigation: any }) {
           />
         </View>
 
+        {!hasData && (
+          <EmptyState
+            icon="🧾"
+            title="이 기간에는 거래가 없어요"
+            desc="다른 기간을 선택하거나 가계부에서 거래를 추가해보세요"
+          />
+        )}
+
         {/* Income vs Expense 카드 */}
+        {hasData && (<>
         <View style={[styles.summaryCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
@@ -151,6 +163,7 @@ function CashflowScreen({ navigation }: { navigation: any }) {
             })
           )}
         </View>
+        </>)}
       </ScrollView>
     </View>
   );

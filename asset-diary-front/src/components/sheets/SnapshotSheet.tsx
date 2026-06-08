@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { Button, TextField } from '@toss/tds-react-native';
 import SheetModal from './SheetModal';
+import EmptyState from '../common/EmptyState';
 import { useTheme } from '../../lib/theme';
 import { useDataSource } from '../../lib/data-source';
 import { krw, krwShort } from '../../lib/format';
@@ -86,6 +87,7 @@ export default function SnapshotSheet({ visible, onClose, focusAssetId }: Snapsh
 
   const isPending = upsert.isPending || batch.isPending;
   const title = focusAssetId ? '개별 스냅샷 입력' : '일괄 스냅샷 입력';
+  const isEmpty = assets.length === 0;
 
   if (saved) {
     return (
@@ -95,6 +97,29 @@ export default function SnapshotSheet({ visible, onClose, focusAssetId }: Snapsh
           <Text style={[styles.confirmTitle, { color: theme.text }]}>저장 완료!</Text>
           <Text style={[styles.confirmSub, { color: theme.textMuted }]}>대시보드가 업데이트됐어요</Text>
         </View>
+      </SheetModal>
+    );
+  }
+
+  if (isEmpty) {
+    return (
+      <SheetModal
+        visible={visible}
+        onClose={onClose}
+        header={title}
+        cta={
+          <View style={styles.cta}>
+            <Button display="full" size="big" type="primary" style="weak" onPress={onClose}>
+              닫기
+            </Button>
+          </View>
+        }
+      >
+        <EmptyState
+          icon="📭"
+          title="아직 등록된 자산이 없어요"
+          desc="자산을 먼저 추가하면 스냅샷을 입력할 수 있어요"
+        />
       </SheetModal>
     );
   }

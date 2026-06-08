@@ -6,7 +6,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
-import { BottomSheet, Button, TextField } from '@toss/tds-react-native';
+import { Button, TextField } from '@toss/tds-react-native';
+import SheetModal from './SheetModal';
 import { useTheme } from '../../lib/theme';
 import { useAuthStore } from '../../stores/auth.store';
 import { api } from '../../lib/api';
@@ -68,11 +69,7 @@ export default function JoinSheet({ visible, onClose, initialCode }: JoinSheetPr
   function handleClose() { setStep(1); setCode(''); setPreview(null); setError(''); onClose(); }
 
   return (
-    <BottomSheet.Root
-      open={visible}
-      onClose={handleClose}
-      header={<BottomSheet.Header>초대 코드로 합류</BottomSheet.Header>}
-    >
+    <SheetModal visible={visible} onClose={handleClose} header="초대 코드로 합류">
       {step === 1 && (
         <View style={[styles.body, { paddingBottom: insets.bottom + 20 }]}>
           <Text style={[styles.desc, { color: theme.textMuted }]}>
@@ -114,7 +111,7 @@ export default function JoinSheet({ visible, onClose, initialCode }: JoinSheetPr
           <Text style={[styles.confirmSub, { color: theme.textMuted }]}>{preview?.householdName ?? '가구'}에 합류했어요</Text>
         </View>
       )}
-    </BottomSheet.Root>
+    </SheetModal>
   );
 }
 

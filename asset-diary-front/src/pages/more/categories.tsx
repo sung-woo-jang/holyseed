@@ -8,8 +8,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { BottomSheet, Border, Button, ListHeader, ListRow, TextField } from '@toss/tds-react-native';
-// 주: AddCategorySheet 내부에서는 BottomSheet가 스크롤을 자동 처리하므로 ScrollView를 쓰지 않음
+import { Border, Button, ListHeader, ListRow, TextField } from '@toss/tds-react-native';
+import SheetModal from '../../components/sheets/SheetModal';
 import ScreenHeader from '../../components/common/ScreenHeader';
 import TossEmoji from '../../components/common/TossEmoji';
 import Segmented from '../../components/common/Segmented';
@@ -55,10 +55,10 @@ function AddCategorySheet({
   }
 
   return (
-    <BottomSheet.Root
-      open={visible}
+    <SheetModal
+      visible={visible}
       onClose={onClose}
-      header={<BottomSheet.Header>카테고리 추가</BottomSheet.Header>}
+      header="카테고리 추가"
       cta={
         <View style={styles.sheetCta}>
           <Button display="full" size="big" type="primary" disabled={!name.trim()} loading={saving} onPress={handleAdd}>
@@ -105,7 +105,7 @@ function AddCategorySheet({
           ))}
         </View>
       </View>
-    </BottomSheet.Root>
+    </SheetModal>
   );
 }
 

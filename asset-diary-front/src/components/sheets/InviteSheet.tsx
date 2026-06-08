@@ -7,7 +7,8 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheet, Button, ListRow } from '@toss/tds-react-native';
+import { Button, ListRow } from '@toss/tds-react-native';
+import SheetModal from './SheetModal';
 import { useTheme } from '../../lib/theme';
 import { Icon } from '../common/Icon';
 import { useInvite } from '../../queries/mutations';
@@ -56,11 +57,7 @@ export default function InviteSheet({ visible, onClose }: InviteSheetProps) {
   }
 
   return (
-    <BottomSheet.Root
-      open={visible}
-      onClose={handleClose}
-      header={<BottomSheet.Header>멤버 초대</BottomSheet.Header>}
-    >
+    <SheetModal visible={visible} onClose={handleClose} header="멤버 초대">
       {step === 1 ? (
         <View style={[styles.body, { paddingBottom: insets.bottom + 20 }]}>
           <Text style={[styles.stepLabel, { color: theme.textMuted }]}>권한 선택</Text>
@@ -103,7 +100,7 @@ export default function InviteSheet({ visible, onClose }: InviteSheetProps) {
           </View>
         </View>
       )}
-    </BottomSheet.Root>
+    </SheetModal>
   );
 }
 

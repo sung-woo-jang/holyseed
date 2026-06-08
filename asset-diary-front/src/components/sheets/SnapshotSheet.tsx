@@ -4,7 +4,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import { BottomSheet, Button, TextField } from '@toss/tds-react-native';
+import { Button, TextField } from '@toss/tds-react-native';
+import SheetModal from './SheetModal';
 import { useTheme } from '../../lib/theme';
 import { useDataSource } from '../../lib/data-source';
 import { krw, krwShort } from '../../lib/format';
@@ -88,21 +89,21 @@ export default function SnapshotSheet({ visible, onClose, focusAssetId }: Snapsh
 
   if (saved) {
     return (
-      <BottomSheet.Root open={visible} onClose={onClose}>
+      <SheetModal visible={visible} onClose={onClose}>
         <View style={styles.confirmBox}>
           <TossEmoji code={TE.check} size={64} />
           <Text style={[styles.confirmTitle, { color: theme.text }]}>저장 완료!</Text>
           <Text style={[styles.confirmSub, { color: theme.textMuted }]}>대시보드가 업데이트됐어요</Text>
         </View>
-      </BottomSheet.Root>
+      </SheetModal>
     );
   }
 
   return (
-    <BottomSheet.Root
-      open={visible}
+    <SheetModal
+      visible={visible}
       onClose={onClose}
-      header={<BottomSheet.Header>{title}</BottomSheet.Header>}
+      header={title}
       cta={
         <View style={styles.cta}>
           {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
@@ -149,7 +150,7 @@ export default function SnapshotSheet({ visible, onClose, focusAssetId }: Snapsh
           );
         })}
       </View>
-    </BottomSheet.Root>
+    </SheetModal>
   );
 }
 

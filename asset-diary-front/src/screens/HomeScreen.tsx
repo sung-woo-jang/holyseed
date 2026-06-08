@@ -18,6 +18,7 @@ import { Icon } from '../components/common/Icon';
 import LineChart from '../components/charts/LineChart';
 import DonutChart from '../components/charts/DonutChart';
 import SnapshotSheet from '../components/sheets/SnapshotSheet';
+import EmptyState from '../components/common/EmptyState';
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -110,35 +111,48 @@ export default function HomeScreen() {
         <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <Text style={[styles.cardTitle, { color: theme.text }]}>올해 자산군별 기여도</Text>
           <Text style={[styles.cardSub, { color: theme.textMuted }]}>우리집 순자산이 얼마나 늘었는지 자산별로 쪼개봤어요</Text>
-          <View style={styles.donutRow}>
-            <View style={styles.donutWrap}>
-              <DonutChart data={data.contributions} size={140} thickness={18} dark={theme.dark} />
-              <View style={styles.donutCenter}>
-                <Text style={[styles.donutLabel, { color: theme.textMuted }]}>총 기여</Text>
-                <Text style={[styles.donutValue, { color: theme.text }]}>
-                  +{krwShort(data.contributions.reduce((s, c) => s + c.value, 0))}
-                </Text>
+          {data.contributions.length === 0 ? (
+            <EmptyState
+              compact
+              icon="📊"
+              title="아직 기여도 데이터가 없어요"
+              desc="스냅샷을 입력하면 자산군별 기여도가 표시돼요"
+            />
+          ) : (
+            <>
+              <View style={styles.donutRow}>
+                <View style={styles.donutWrap}>
+                  <DonutChart data={data.contributions} size={140} thickness={18} dark={theme.dark} />
+                  <View style={styles.donutCenter}>
+                    <Text style={[styles.donutLabel, { color: theme.textMuted }]}>총 기여</Text>
+                    <Text style={[styles.donutValue, { color: theme.text }]}>
+                      +{krwShort(data.contributions.reduce((s, c) => s + c.value, 0))}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.legend}>
+                  {data.contributions.slice(0, 4).map((c, i) => (
+                    <View key={i} style={styles.legendRow}>
+                      <View style={[styles.legendDot, { backgroundColor: c.color }]} />
+                      <Text style={[styles.legendCat, { color: theme.text }]}>{c.category}</Text>
+                      <Text style={[styles.legendVal, { color: c.value >= 0 ? theme.brand : theme.danger }]}>
+                        {c.value > 0 ? '+' : ''}{krwShort(c.value)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
               </View>
-            </View>
-            <View style={styles.legend}>
-              {data.contributions.slice(0, 4).map((c, i) => (
-                <View key={i} style={styles.legendRow}>
-                  <View style={[styles.legendDot, { backgroundColor: c.color }]} />
-                  <Text style={[styles.legendCat, { color: theme.text }]}>{c.category}</Text>
-                  <Text style={[styles.legendVal, { color: c.value >= 0 ? theme.brand : theme.danger }]}>
-                    {c.value > 0 ? '+' : ''}{krwShort(c.value)}
+              {data.contributions[0] && (
+                <View style={[styles.insightBox, { backgroundColor: theme.brandSoft }]}>
+                  <Text style={[styles.insightText, { color: theme.text }]}>
+                    {'💡 '}
+                    <Text style={{ fontWeight: '700' }}>{data.contributions[0].category}</Text>
+                    {`가 우리집 자산 성장의 가장 큰 원동력이에요.\n올해만 +${krwShort(data.contributions[0].value)} 기여했어요.`}
                   </Text>
                 </View>
-              ))}
-            </View>
-          </View>
-          <View style={[styles.insightBox, { backgroundColor: theme.brandSoft }]}>
-            <Text style={[styles.insightText, { color: theme.text }]}>
-              {'💡 '}
-              <Text style={{ fontWeight: '700' }}>{data.contributions[0]?.category}</Text>
-              {`가 우리집 자산 성장의 가장 큰 원동력이에요.\n올해만 +${krwShort(data.contributions[0]?.value ?? 0)} 기여했어요.`}
-            </Text>
-          </View>
+              )}
+            </>
+          )}
         </View>
       </View>
 
@@ -146,8 +160,13 @@ export default function HomeScreen() {
       <View style={styles.sectionPad}>
         <View style={styles.sectionHeader}>
           <Text style={[styles.cardTitle, { color: theme.text }]}>최근 거래</Text>
-          <TextButton typography="t5" variant="clear" color={theme.textMuted}>모두 보기</TextButton>
+          {recentTxs.length > 0 && (
+            <TextButton typography="t5" variant="clear" color={theme.textMuted}>모두 보기</TextButton>
+          )}
         </View>
+        {recentTxs.length === 0 && (
+          <EmptyState compact icon="🧾" title="아직 거래 내역이 없어요" desc="가계부에서 첫 거래를 기록해보세요" />
+        )}
         {recentTxs.map((tx, i) => {
           const catDef = getCategoryDef(tx.category);
           return (

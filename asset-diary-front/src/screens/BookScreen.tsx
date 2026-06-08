@@ -17,6 +17,7 @@ import AutoBadge from '../components/common/AutoBadge';
 import { Icon } from '../components/common/Icon';
 import AddTxSheet from '../components/sheets/AddTxSheet';
 import AddRecurringSheet from '../components/sheets/AddRecurringSheet';
+import EmptyState from '../components/common/EmptyState';
 import { useToggleRecurring } from '../queries/mutations';
 
 type BookTab = 'tx' | 'rec';
@@ -174,14 +175,25 @@ export default function BookScreen() {
 
         {tab === 'rec' && (
           <>
-            {/* Summary card */}
-            <View style={styles.sectionPad}>
-              <View style={[styles.recSummary, { backgroundColor: theme.brandSoft }]}>
-                <Text style={[styles.recSummaryLabel, { color: theme.textMuted }]}>매월 고정으로 나가는 돈</Text>
-                <Text style={[styles.recSummaryValue, { color: theme.brand }]}>-{krwShort(totalRec)}원</Text>
-                <Text style={[styles.recSummaryMeta, { color: theme.textMuted }]}>활성 {activeRec.length}건 · 일시중지 {inactiveRec.length}건</Text>
+            {/* Summary card — 정기지출이 있을 때만 */}
+            {recurring.length > 0 && (
+              <View style={styles.sectionPad}>
+                <View style={[styles.recSummary, { backgroundColor: theme.brandSoft }]}>
+                  <Text style={[styles.recSummaryLabel, { color: theme.textMuted }]}>매월 고정으로 나가는 돈</Text>
+                  <Text style={[styles.recSummaryValue, { color: theme.brand }]}>-{krwShort(totalRec)}원</Text>
+                  <Text style={[styles.recSummaryMeta, { color: theme.textMuted }]}>활성 {activeRec.length}건 · 일시중지 {inactiveRec.length}건</Text>
+                </View>
               </View>
-            </View>
+            )}
+
+            {/* 빈 상태 */}
+            {recurring.length === 0 && (
+              <EmptyState
+                icon="🔁"
+                title="등록된 정기지출이 없어요"
+                desc={isViewer ? '소유자가 정기지출을 추가하면 표시돼요' : '아래 + 버튼으로 매월 고정 지출을 등록해보세요'}
+              />
+            )}
 
             {/* Recurring items */}
             {recurring.map((r, i) => {

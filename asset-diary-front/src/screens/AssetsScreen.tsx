@@ -15,6 +15,7 @@ import { TE } from '../lib/toss-emoji';
 import TossEmoji from '../components/common/TossEmoji';
 import SnapshotSheet from '../components/sheets/SnapshotSheet';
 import AddAssetSheet from '../components/sheets/AddAssetSheet';
+import EmptyState from '../components/common/EmptyState';
 import type { AssetCategory } from '../types/api';
 import type { MockAsset } from '../lib/mock-data';
 
@@ -70,8 +71,8 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
           </View>
         )}
 
-        {/* Action buttons */}
-        {!isViewer && !pickingAsset && (
+        {/* Action buttons — 자산이 있을 때만 */}
+        {!isViewer && !pickingAsset && data.assets.length > 0 && (
           <View style={styles.actionBlock}>
             <View style={styles.actionRow}>
               <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.brand }]} onPress={() => { setSnapshotFocusId(undefined); setSnapshotOpen(true); }}>
@@ -84,6 +85,15 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
               </TouchableOpacity>
             </View>
           </View>
+        )}
+
+        {/* 빈 상태 */}
+        {data.assets.length === 0 && (
+          <EmptyState
+            icon="💰"
+            title="아직 등록된 자산이 없어요"
+            desc={isViewer ? '소유자가 자산을 추가하면 여기에 표시돼요' : '아래 + 버튼으로 첫 자산을 추가해보세요'}
+          />
         )}
 
         {/* Asset groups */}

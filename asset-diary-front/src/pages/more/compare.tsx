@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { useQuery } from '@tanstack/react-query';
 import { Border, ListRow, Loader } from '@toss/tds-react-native';
 import ScreenHeader from '../../components/common/ScreenHeader';
+import EmptyState from '../../components/common/EmptyState';
 import WaterfallChart from '../../components/charts/WaterfallChart';
 import { useTheme } from '../../lib/theme';
 import { useDataSource } from '../../lib/data-source';
@@ -76,6 +77,19 @@ function CompareScreen({ navigation }: { navigation: any }) {
       <View style={[styles.root, { backgroundColor: theme.bg }]}>
         <ScreenHeader title="연간 비교" onBack={() => navigation?.goBack?.()} />
         <Loader.Centered size="medium" type="primary" />
+      </View>
+    );
+  }
+
+  if (years.length < 2) {
+    return (
+      <View style={[styles.root, { backgroundColor: theme.bg }]}>
+        <ScreenHeader title="연간 비교" onBack={() => navigation?.goBack?.()} />
+        <EmptyState
+          icon="📈"
+          title="비교할 데이터가 아직 부족해요"
+          desc="2년 이상 자산 스냅샷이 쌓이면 연도별 증감을 비교할 수 있어요"
+        />
       </View>
     );
   }

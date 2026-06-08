@@ -4,17 +4,13 @@ import { useQuery } from '@tanstack/react-query'
 import { pcProductsApi, pcCategoriesApi, pcKeys } from '@/queries/pc'
 import type { PcCategoryNode } from '@/queries/pc'
 
-function flattenCategories(nodes: PcCategoryNode[]): Array<{ id: number; name: string }> {
-  return nodes.flatMap((n) => [{ id: n.id, name: n.name }, ...flattenCategories(n.children ?? [])])
-}
-
 export default function PcProductsPage() {
   const navigate = useNavigate()
   const [categoryId, setCategoryId] = useState('')
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
 
-  const { data: categories } = useQuery({ queryKey: pcKeys.categoriesAll(), queryFn: pcCategoriesApi.all })
+  const { data: categories } = useQuery({ queryKey: [...pcKeys.categoriesAll(), 'tree'], queryFn: pcCategoriesApi.tree })
 
   const { data, isLoading } = useQuery({
     queryKey: ['pc-products', 'search', { categoryId, search }],
@@ -26,7 +22,7 @@ export default function PcProductsPage() {
     }),
   })
 
-  const flatCategories = categories ? flattenCategories(categories as PcCategoryNode[]) : []
+  const tree = (categories as PcCategoryNode[] | undefined) ?? []
   const products = data?.items || []
 
   return (
@@ -41,10 +37,21 @@ export default function PcProductsPage() {
           className="input"
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
-          style={{ width: 180, fontSize: 13 }}
+          style={{ width: 200, fontSize: 13 }}
         >
           <option value="">전체 카테고리</option>
-          {flatCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {tree.map((parent) =>
+            parent.children && parent.children.length > 0 ? (
+              <optgroup key={parent.id} label={parent.name}>
+                <option value={parent.id}>— 전체</option>
+                {parent.children.map((child) => (
+                  <option key={child.id} value={child.id}>{child.name}</option>
+                ))}
+              </optgroup>
+            ) : (
+              <option key={parent.id} value={parent.id}>{parent.name}</option>
+            )
+          )}
         </select>
         <input
           className="input"

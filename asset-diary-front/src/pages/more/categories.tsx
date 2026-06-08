@@ -1,23 +1,25 @@
 import React, { useState } from 'react';
 import { createRoute } from '@granite-js/react-native';
 import {
+  Alert,
   Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Button, TextField } from '@toss/tds-react-native';
 import ScreenHeader from '../../components/common/ScreenHeader';
 import TossEmoji from '../../components/common/TossEmoji';
 import Segmented from '../../components/common/Segmented';
 import { useTheme } from '../../lib/theme';
-import { useMockRole } from '../../lib/data-source';
+import { useDataSource, useMockRole } from '../../lib/data-source';
 import { getCategoryDef } from '../../lib/category-meta';
 import { CATEGORY_ICON_CHOICES } from '../../lib/toss-emoji';
 import { Icon } from '../../components/common/Icon';
+import { useCreateCategory, useDeleteCategory } from '../../queries/mutations';
 import type { CategoryType } from '../../types/api';
 
 const TYPE_LABELS: Record<CategoryType, string> = {
@@ -28,14 +30,6 @@ const TYPE_LABELS: Record<CategoryType, string> = {
 
 const COLORS = ['#3182F6', '#0AB39C', '#F59E0B', '#EF4444', '#A78BFA', '#EC4899', '#06B6D4', '#8B5CF6'];
 
-interface CustomCategory {
-  id: string;
-  type: CategoryType;
-  name: string;
-  iconCode: string;
-  color: string;
-}
-
 function AddCategorySheet({
   visible,
   onClose,
@@ -43,22 +37,28 @@ function AddCategorySheet({
 }: {
   visible: boolean;
   onClose: () => void;
-  onAdd: (cat: CustomCategory) => void;
+  onAdd: (dto: { type: CategoryType; name: string; icon: string }) => Promise<void>;
 }) {
   const theme = useTheme();
   const [name, setName] = useState('');
   const [type, setType] = useState<CategoryType>('EXPENSE');
   const [iconCode, setIconCode] = useState(CATEGORY_ICON_CHOICES[0]?.code ?? '1F381');
   const [color, setColor] = useState(COLORS[0] ?? '#3182F6');
+  const [saving, setSaving] = useState(false);
 
-  function handleAdd() {
+  async function handleAdd() {
     if (!name.trim()) return;
-    onAdd({ id: Date.now().toString(), type, name: name.trim(), iconCode, color });
-    setName('');
-    setType('EXPENSE');
-    setIconCode(CATEGORY_ICON_CHOICES[0]?.code ?? '1F381');
-    setColor(COLORS[0] ?? '#3182F6');
-    onClose();
+    setSaving(true);
+    try {
+      await onAdd({ type, name: name.trim(), icon: iconCode });
+      setName('');
+      setType('EXPENSE');
+      setIconCode(CATEGORY_ICON_CHOICES[0]?.code ?? '1F381');
+      setColor(COLORS[0] ?? '#3182F6');
+      onClose();
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -76,10 +76,9 @@ function AddCategorySheet({
           <ScrollView contentContainerStyle={styles.sheetBody}>
             {/* 이름 */}
             <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>이름</Text>
-            <TextInput
-              style={[styles.nameInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.bg }]}
+            <TextField
+              variant="box"
               placeholder="카테고리 이름"
-              placeholderTextColor={theme.textMuted}
               value={name}
               onChangeText={setName}
             />
@@ -121,13 +120,16 @@ function AddCategorySheet({
               ))}
             </View>
 
-            <TouchableOpacity
-              style={[styles.addBtn, { backgroundColor: name.trim() ? theme.brand : theme.border }]}
-              onPress={handleAdd}
+            <Button
+              display="full"
+              size="big"
+              type="primary"
               disabled={!name.trim()}
+              loading={saving}
+              onPress={handleAdd}
             >
-              <Text style={[styles.addBtnText, { color: name.trim() ? '#fff' : theme.textMuted }]}>추가하기</Text>
-            </TouchableOpacity>
+              추가하기
+            </Button>
           </ScrollView>
         </Pressable>
       </Pressable>
@@ -138,17 +140,43 @@ function AddCategorySheet({
 function CategoriesPage({ navigation }: { navigation: any }) {
   const theme = useTheme();
   const role = useMockRole();
+  const data = useDataSource();
   const canEdit = role !== 'VIEWER';
   const [addVisible, setAddVisible] = useState(false);
-  const [customs, setCustoms] = useState<CustomCategory[]>([]);
+  const createCategory = useCreateCategory();
+  const deleteCategory = useDeleteCategory();
+
+  const typeOrder: CategoryType[] = ['INCOME', 'EXPENSE', 'TRANSFER'];
+
+  async function handleAdd(dto: { type: CategoryType; name: string; icon: string }) {
+    await createCategory.mutateAsync(dto);
+  }
+
+  async function handleDelete(id: number, name: string) {
+    Alert.alert('카테고리 삭제', `"${name}"을(를) 삭제할까요?`, [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '삭제',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteCategory.mutateAsync(id);
+          } catch (e: any) {
+            Alert.alert('오류', e?.message ?? '삭제에 실패했어요.');
+          }
+        },
+      },
+    ]);
+  }
+
+  // API 카테고리 있으면 그걸, 없으면 로컬 fallback
+  const hasApiCategories = data.categories.length > 0;
 
   const builtinByType: Record<CategoryType, string[]> = {
     INCOME: ['급여', '투자수익', '사업소득', '기타수입'],
     EXPENSE: ['주거', '식비', '교통', '의료', '쇼핑', '여가', '교육', '보험료', '구독', '기타'],
     TRANSFER: ['이체'],
   };
-
-  const typeOrder: CategoryType[] = ['INCOME', 'EXPENSE', 'TRANSFER'];
 
   return (
     <View style={[styles.root, { backgroundColor: theme.bg }]}>
@@ -161,21 +189,38 @@ function CategoriesPage({ navigation }: { navigation: any }) {
         </View>
 
         {typeOrder.map((t) => {
-          const builtins = builtinByType[t];
-          const customItems = customs.filter((c) => c.type === t);
-          const allItems = [...builtins.map((name) => ({ name, isBuiltin: true, iconCode: getCategoryDef(name).iconCode, color: getCategoryDef(name).color })), ...customItems.map((c) => ({ name: c.name, isBuiltin: false, iconCode: c.iconCode, color: c.color, id: c.id }))];
+          const items = hasApiCategories
+            ? data.categories
+                .filter((c) => c.type === t)
+                .map((c) => {
+                  const def = getCategoryDef(c.name);
+                  return {
+                    id: c.id,
+                    name: c.name,
+                    isBuiltin: c.isBuiltin,
+                    iconCode: def.iconCode,
+                    color: def.color,
+                  };
+                })
+            : builtinByType[t].map((name) => ({
+                id: 0,
+                name,
+                isBuiltin: true,
+                iconCode: getCategoryDef(name).iconCode,
+                color: getCategoryDef(name).color,
+              }));
 
           return (
             <View key={t} style={[styles.typeCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <View style={[styles.typeCardHeader, { borderBottomColor: theme.border }]}>
                 <Text style={[styles.typeCardTitle, { color: theme.text }]}>
-                  {TYPE_LABELS[t]} ({allItems.length})
+                  {TYPE_LABELS[t]} ({items.length})
                 </Text>
               </View>
-              {allItems.map((item, idx) => (
+              {items.map((item, idx) => (
                 <View
-                  key={item.name}
-                  style={[styles.catRow, { borderBottomColor: theme.border, borderBottomWidth: idx < allItems.length - 1 ? 1 : 0 }]}
+                  key={item.id || item.name}
+                  style={[styles.catRow, { borderBottomColor: theme.border, borderBottomWidth: idx < items.length - 1 ? 1 : 0 }]}
                 >
                   <View style={[styles.catIconBox, { backgroundColor: item.color + '22' }]}>
                     <TossEmoji code={item.iconCode} size={28} />
@@ -187,13 +232,14 @@ function CategoriesPage({ navigation }: { navigation: any }) {
                     </Text>
                   </View>
                   <View style={[styles.colorDot, { backgroundColor: item.color }]} />
-                  {!item.isBuiltin && canEdit && (
+                  {!item.isBuiltin && canEdit && item.id > 0 && (
                     <TouchableOpacity
-                      onPress={() => setCustoms((prev) => prev.filter((c) => c.id !== (item as any).id))}
+                      onPress={() => handleDelete(item.id, item.name)}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       style={{ marginLeft: 8 }}
+                      disabled={deleteCategory.isPending}
                     >
-                      <Text style={[styles.deleteText, { color: theme.danger }]}>삭제</Text>
+                      <Text style={[styles.deleteText, { color: deleteCategory.isPending ? theme.textMuted : theme.danger }]}>삭제</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -203,12 +249,11 @@ function CategoriesPage({ navigation }: { navigation: any }) {
         })}
 
         {canEdit && (
-          <TouchableOpacity
-            style={[styles.addCatBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
-            onPress={() => setAddVisible(true)}
-          >
-            <Text style={[styles.addCatBtnText, { color: theme.brand }]}>+ 카테고리 추가</Text>
-          </TouchableOpacity>
+          <View style={styles.addCatBtnWrap}>
+            <Button display="full" size="big" type="primary" style="weak" onPress={() => setAddVisible(true)}>
+              + 카테고리 추가
+            </Button>
+          </View>
         )}
 
         <View style={{ height: 32 }} />
@@ -217,7 +262,7 @@ function CategoriesPage({ navigation }: { navigation: any }) {
       <AddCategorySheet
         visible={addVisible}
         onClose={() => setAddVisible(false)}
-        onAdd={(cat) => setCustoms((prev) => [...prev, cat])}
+        onAdd={handleAdd}
       />
     </View>
   );
@@ -237,6 +282,7 @@ const styles = StyleSheet.create({
   colorDot: { width: 12, height: 12, borderRadius: 6 },
   deleteText: { fontSize: 13, fontWeight: '500' },
   addCatBtn: { marginHorizontal: 20, borderRadius: 14, borderWidth: 1, paddingVertical: 16, alignItems: 'center', marginTop: 4 },
+  addCatBtnWrap: { marginHorizontal: 20, marginTop: 4 },
   addCatBtnText: { fontSize: 15, fontWeight: '700' },
   // AddCategorySheet styles
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },

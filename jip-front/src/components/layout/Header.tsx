@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
 import { useCartStore } from '@/stores/cart'
@@ -57,30 +57,27 @@ export default function Header() {
   const route = location.pathname.split('/')[1] || 'home'
 
   return (
-    <header className={`topbar${scrolled ? ' shadow' : ''}`}>
+    <header className={`topbar${scrolled ? 'shadow' : ''}`}>
       <div className="topbar-inner container">
         <Link to="/" className="brand">
           <div className="brand-mark">집</div>
           <span>집수리</span>
         </Link>
-        <nav className={`nav${menuOpen ? ' open' : ''}`}>
+        <nav className={`nav${menuOpen ? 'open' : ''}`}>
           <Link className={route === 'services' || route === 'service' ? 'on' : ''} to="/services">
             서비스
           </Link>
           <Link className={route === 'cases' || route === 'case' ? 'on' : ''} to="/cases">
             시공사례
           </Link>
-          <Link className={route === 'about' ? 'on' : ''} to="/about">
-            시공자 소개
-          </Link>
+          {/*<Link className={route === 'about' ? 'on' : ''} to="/about">*/}
+          {/*  시공자 소개*/}
+          {/*</Link>*/}
           <Link className={route === 'bookings' || route === 'booking' ? 'on' : ''} to="/bookings">
             예약 확인
           </Link>
           <Link className={route === 'cart' ? 'on' : ''} to="/cart">
             견적함{cartCount > 0 && <span className="count">{cartCount}</span>}
-          </Link>
-          <Link className="admin-link" to="/admin">
-            관리자
           </Link>
         </nav>
         <button className="hamburger" onClick={() => setMenuOpen((o) => !o)} aria-label="menu">

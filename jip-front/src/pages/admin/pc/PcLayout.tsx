@@ -2,7 +2,6 @@ import { Navigate, NavLink, Outlet, useLocation } from 'react-router-dom'
 
 const navItems = [
   { to: '/admin/pc/compare', label: '비교표' },
-  { to: '/admin/pc/products', label: '제품' },
   { to: '/admin/pc/vendors', label: '거래처' },
   { to: '/admin/pc/categories', label: '카테고리' },
   { to: '/admin/pc/import', label: '임포트' },

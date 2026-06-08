@@ -9,6 +9,7 @@ import { Route as _MoreCashflowRoute } from '../pages/more/cashflow';
 import { Route as _MoreCategoriesRoute } from '../pages/more/categories';
 import { Route as _MoreCompareRoute } from '../pages/more/compare';
 import { Route as _MoreMembersRoute } from '../pages/more/members';
+import { Route as _MoreSettingsRoute } from '../pages/more/settings';
 
 declare module '@granite-js/react-native' {
   interface RegisterScreenInput {
@@ -21,6 +22,7 @@ declare module '@granite-js/react-native' {
     '/more/categories': (typeof _MoreCategoriesRoute)['_inputType'];
     '/more/compare': (typeof _MoreCompareRoute)['_inputType'];
     '/more/members': (typeof _MoreMembersRoute)['_inputType'];
+    '/more/settings': (typeof _MoreSettingsRoute)['_inputType'];
   }
 
   interface RegisterScreen {
@@ -33,5 +35,6 @@ declare module '@granite-js/react-native' {
     '/more/categories': (typeof _MoreCategoriesRoute)['_outputType'];
     '/more/compare': (typeof _MoreCompareRoute)['_outputType'];
     '/more/members': (typeof _MoreMembersRoute)['_outputType'];
+    '/more/settings': (typeof _MoreSettingsRoute)['_outputType'];
   }
 }

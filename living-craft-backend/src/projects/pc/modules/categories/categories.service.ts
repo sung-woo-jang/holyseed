@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { PcCategory } from './entities/category.entity';
+import { Product } from '../products/entities/product.entity';
 import { CreateCategoryDto } from './dto/request/create-category.dto';
 import { UpdateCategoryDto } from './dto/request/update-category.dto';
 
@@ -18,6 +19,8 @@ export class CategoriesService {
   constructor(
     @InjectRepository(PcCategory)
     private readonly repo: Repository<PcCategory>,
+    @InjectRepository(Product)
+    private readonly productRepo: Repository<Product>,
   ) {}
 
   async findAll(): Promise<PcCategory[]> {
@@ -66,6 +69,7 @@ export class CategoriesService {
       throw new ConflictException('하위 카테고리가 존재합니다. 먼저 하위 카테고리를 삭제하세요.');
     }
     await this.findOne(id);
+    await this.productRepo.delete({ categoryId: id });
     await this.repo.delete(id);
   }
 

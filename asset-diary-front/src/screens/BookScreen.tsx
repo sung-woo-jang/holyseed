@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Switch } from '@toss/tds-react-native';
 import { useDataSource, useMockRole } from '../lib/data-source';
 import { useTheme } from '../lib/theme';
 import { krwShort, monthDayWeek } from '../lib/format';
@@ -16,6 +17,8 @@ import TossEmoji from '../components/common/TossEmoji';
 import AutoBadge from '../components/common/AutoBadge';
 import { Icon } from '../components/common/Icon';
 import AddTxSheet from '../components/sheets/AddTxSheet';
+import AddRecurringSheet from '../components/sheets/AddRecurringSheet';
+import { useToggleRecurring } from '../queries/mutations';
 
 type BookTab = 'tx' | 'rec';
 
@@ -26,7 +29,9 @@ export default function BookScreen() {
   const data = useDataSource();
   const [tab, setTab] = useState<BookTab>('tx');
   const [addTxVisible, setAddTxVisible] = useState(false);
+  const [addRecVisible, setAddRecVisible] = useState(false);
   const isViewer = role === 'VIEWER';
+  const toggleRecurring = useToggleRecurring();
 
   const months = useMemo(() => {
     const set = new Set(data.transactions.map(t => t.date.slice(0, 7)));
@@ -202,9 +207,18 @@ export default function BookScreen() {
                       </View>
                       <View style={styles.recRight}>
                         <Text style={[styles.recAmount, { color: theme.text }]}>-{krwShort(r.amount)}원</Text>
-                        <View style={[styles.toggleChip, { backgroundColor: r.active ? theme.brand : theme.bg }]}>
-                          <Text style={[styles.toggleText, { color: r.active ? '#fff' : theme.textMuted }]}>{r.active ? '활성' : '중지'}</Text>
-                        </View>
+                        {!isViewer && (
+                          <Switch
+                            checked={r.active}
+                            onCheckedChange={() => toggleRecurring.mutate(Number(r.id))}
+                            disabled={toggleRecurring.isPending}
+                          />
+                        )}
+                        {isViewer && (
+                          <View style={[styles.toggleChip, { backgroundColor: r.active ? theme.brand : theme.bg }]}>
+                            <Text style={[styles.toggleText, { color: r.active ? '#fff' : theme.textMuted }]}>{r.active ? '활성' : '중지'}</Text>
+                          </View>
+                        )}
                       </View>
                     </View>
                   );
@@ -219,13 +233,14 @@ export default function BookScreen() {
       {!isViewer && (
         <TouchableOpacity
           style={[styles.fab, { backgroundColor: theme.brand, bottom: insets.bottom + 16 }]}
-          onPress={() => tab === 'tx' && setAddTxVisible(true)}
+          onPress={() => tab === 'tx' ? setAddTxVisible(true) : setAddRecVisible(true)}
         >
           {Icon.plus('#fff')}
         </TouchableOpacity>
       )}
 
       <AddTxSheet visible={addTxVisible} onClose={() => setAddTxVisible(false)} />
+      <AddRecurringSheet visible={addRecVisible} onClose={() => setAddRecVisible(false)} />
     </View>
   );
 }

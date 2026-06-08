@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Toast from '@/components/common/Toast'
 import AdminLayout from '@/components/layout/AdminLayout'
 import Footer from '@/components/layout/Footer'
@@ -10,8 +10,8 @@ import AdminCaseForm from '@/pages/admin/AdminCaseForm'
 import AdminCases from '@/pages/admin/AdminCases'
 import AdminCatalogCategories from '@/pages/admin/AdminCatalogCategories'
 import AdminCatalogCategoryForm from '@/pages/admin/AdminCatalogCategoryForm'
-import AdminCatalogItems from '@/pages/admin/AdminCatalogItems'
 import AdminCatalogItemForm from '@/pages/admin/AdminCatalogItemForm'
+import AdminCatalogItems from '@/pages/admin/AdminCatalogItems'
 import AdminCatalogProducts from '@/pages/admin/AdminCatalogProducts'
 import AdminDashboard from '@/pages/admin/AdminDashboard'
 import AdminJobDetail from '@/pages/admin/AdminJobDetail'
@@ -23,15 +23,18 @@ import AdminRequestDetail from '@/pages/admin/AdminRequestDetail'
 import AdminRequests from '@/pages/admin/AdminRequests'
 import AdminSchedule from '@/pages/admin/AdminSchedule'
 import AdminSiteAssets from '@/pages/admin/AdminSiteAssets'
-import PcLayout from '@/pages/admin/pc/PcLayout'
+import PcCategoriesPage from '@/pages/admin/pc/PcCategoriesPage'
 import PcComparePage from '@/pages/admin/pc/PcComparePage'
-import PcProductsPage from '@/pages/admin/pc/PcProductsPage'
+import PcImportPage from '@/pages/admin/pc/PcImportPage'
+import PcLayout from '@/pages/admin/pc/PcLayout'
 import PcProductDetailPage from '@/pages/admin/pc/PcProductDetailPage'
 import PcProductFormPage from '@/pages/admin/pc/PcProductFormPage'
 import PcVendorsPage from '@/pages/admin/pc/PcVendorsPage'
-import PcCategoriesPage from '@/pages/admin/pc/PcCategoriesPage'
-import PcImportPage from '@/pages/admin/pc/PcImportPage'
-import AboutPage from '@/pages/customer/AboutPage'
+import UtilsLayout from '@/pages/admin/utils/UtilsLayout'
+import WatermarkPage from '@/pages/admin/utils/WatermarkPage'
+import QrCodePage from '@/pages/admin/utils/QrCodePage'
+import ResizePage from '@/pages/admin/utils/ResizePage'
+import NotFoundPage from '@/pages/NotFoundPage'
 import BookingDetailPage from '@/pages/customer/BookingDetailPage'
 import BookingsPage from '@/pages/customer/BookingsPage'
 import CartPage from '@/pages/customer/CartPage'
@@ -103,14 +106,19 @@ export default function App() {
               <Route path="catalog/products" element={<AdminCatalogProducts />} />
               <Route path="pc" element={<PcLayout />}>
                 <Route path="compare" element={<PcComparePage />} />
-                <Route path="products" element={<PcProductsPage />} />
                 <Route path="products/new" element={<PcProductFormPage />} />
                 <Route path="products/:id" element={<PcProductDetailPage />} />
-                <Route path="products/:id/edit" element={<PcProductFormPage />} />
+                <Route path="products/:id/edit" element={<Navigate to="/admin/pc/compare?categoryId=all" replace />} />
                 <Route path="vendors" element={<PcVendorsPage />} />
                 <Route path="categories" element={<PcCategoriesPage />} />
                 <Route path="import" element={<PcImportPage />} />
               </Route>
+              <Route path="utils" element={<UtilsLayout />}>
+                <Route path="watermark" element={<WatermarkPage />} />
+                <Route path="qrcode" element={<QrCodePage />} />
+                <Route path="resize" element={<ResizePage />} />
+              </Route>
+              <Route path="*" element={<NotFoundPage variant="admin" />} />
             </Route>
           </Routes>
         </main>
@@ -127,10 +135,11 @@ export default function App() {
               <Route path="/request-done/:code" element={<RequestDonePage />} />
               <Route path="/cases" element={<CasesPage />} />
               <Route path="/case/:id" element={<CaseDetailPage />} />
-              <Route path="/about" element={<AboutPage />} />
+              {/*<Route path="/about" element={<AboutPage />} />*/}
               <Route path="/bookings" element={<BookingsPage />} />
               <Route path="/booking/:code" element={<BookingDetailPage />} />
               <Route path="/jobs/:id" element={<JobPublicPage />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </div>
         </main>

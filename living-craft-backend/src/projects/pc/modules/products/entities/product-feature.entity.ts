@@ -1,5 +1,5 @@
 import { Entity, Column, Index } from 'typeorm';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { BaseEntity } from '@common/entities/base.entity';
 
 @Entity('pc_product_features', { schema: 'jip' })
@@ -12,6 +12,10 @@ export class ProductFeature extends BaseEntity {
   @ApiProperty({ description: '특징 텍스트', example: '실버 코팅 마감' })
   @Column({ length: 200 })
   label: string;
+
+  @ApiPropertyOptional({ description: '특징 설명문 (고객 상세 노출)' })
+  @Column({ type: 'text', nullable: true })
+  description: string;
 
   @ApiProperty({ description: '정렬 순서', default: 0 })
   @Column({ name: 'sort_order', default: 0 })

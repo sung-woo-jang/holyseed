@@ -17,7 +17,7 @@ export class ProductImagesService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async upload(productId: number, file: Express.Multer.File, isPrimary = false, sortOrder = 0): Promise<ProductImage> {
+  async upload(productId: number, file: Express.Multer.File, isPrimary = false, sortOrder = 0, role = 'main', label?: string): Promise<ProductImage> {
     const product = await this.productRepo.findOne({ where: { id: productId } });
     if (!product) throw new NotFoundException('제품을 찾을 수 없습니다.');
 
@@ -34,8 +34,22 @@ export class ProductImagesService {
         s3Key,
         isPrimary,
         sortOrder,
+        role,
+        label: label ?? null,
       });
-      const saved = await em.save(image);
+      let saved: ProductImage;
+      try {
+        saved = await em.save(image);
+      } catch (err) {
+        if (err?.code === '23505' && err?.constraint?.startsWith('PK_')) {
+          await this.dataSource.query(
+            `SELECT setval('jip.pc_product_images_id_seq', (SELECT MAX(id) FROM jip.pc_product_images))`,
+          );
+          saved = await em.save(image);
+        } else {
+          throw err;
+        }
+      }
 
       if (isPrimary) {
         await em.update(Product, { id: productId }, { primaryImageUrl: url });
@@ -58,6 +72,16 @@ export class ProductImagesService {
       await em.update(ProductImage, { id: imageId }, { isPrimary: true });
       await em.update(Product, { id: image.productId }, { primaryImageUrl: image.url });
     });
+  }
+
+  async updateMeta(imageId: number, data: { role?: string; label?: string; sortOrder?: number }): Promise<void> {
+    const image = await this.imageRepo.findOne({ where: { id: imageId } });
+    if (!image) throw new NotFoundException('이미지를 찾을 수 없습니다.');
+    const partial: Partial<ProductImage> = {};
+    if (data.role !== undefined) partial.role = data.role;
+    if (data.label !== undefined) partial.label = data.label;
+    if (data.sortOrder !== undefined) partial.sortOrder = data.sortOrder;
+    await this.imageRepo.update(imageId, partial);
   }
 
   async updateSortOrder(imageId: number, sortOrder: number): Promise<void> {

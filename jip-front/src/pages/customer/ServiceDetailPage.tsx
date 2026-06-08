@@ -164,7 +164,7 @@ export default function ServiceDetailPage() {
                   key={prod.id}
                   type="button"
                   className="product-card"
-                  onClick={() => navigate(`/product/${prod.code}`)}
+                  onClick={() => { const slug = prod.code || prod.modelCode; if (slug) navigate(`/product/${slug}`) }}
                 >
                   <div className="product-illust">
                     <ItemIllust code={prod.illustKind} imageUrl={prod.imageUrl} />

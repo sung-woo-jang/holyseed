@@ -3,6 +3,8 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Like, Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { ProductImage } from './entities/product-image.entity';
+import { ProductFeature } from './entities/product-feature.entity';
+import { ProductColor } from './entities/product-color.entity';
 import { ProductPrice } from '../prices/entities/product-price.entity';
 import { Vendor } from '../vendors/entities/vendor.entity';
 import { PcCategory } from '../categories/entities/category.entity';
@@ -22,6 +24,10 @@ export class ProductsService {
     private readonly productRepo: Repository<Product>,
     @InjectRepository(ProductImage)
     private readonly imageRepo: Repository<ProductImage>,
+    @InjectRepository(ProductFeature)
+    private readonly featureRepo: Repository<ProductFeature>,
+    @InjectRepository(ProductColor)
+    private readonly colorRepo: Repository<ProductColor>,
     @InjectRepository(ProductPrice)
     private readonly priceRepo: Repository<ProductPrice>,
     @InjectRepository(Vendor)
@@ -81,9 +87,11 @@ export class ProductsService {
     const product = await this.productRepo.findOne({ where: { id } });
     if (!product) throw new NotFoundException('제품을 찾을 수 없습니다.');
 
-    const [images, prices] = await Promise.all([
+    const [images, prices, features, colors] = await Promise.all([
       this.imageRepo.find({ where: { productId: id }, order: { sortOrder: 'ASC', isPrimary: 'DESC' } }),
       this.priceRepo.find({ where: { productId: id }, order: { price: 'ASC' } }),
+      this.featureRepo.find({ where: { productId: id }, order: { sortOrder: 'ASC' } }),
+      this.colorRepo.find({ where: { productId: id }, order: { sortOrder: 'ASC' } }),
     ]);
 
     const vendorIds = [...new Set(prices.map((p) => p.vendorId))];
@@ -96,6 +104,8 @@ export class ProductsService {
       ...product,
       category,
       images,
+      features,
+      colors,
       prices: prices.map((p) => ({ ...p, vendor: vendorMap.get(p.vendorId) })),
     };
   }
@@ -192,6 +202,20 @@ export class ProductsService {
     });
 
     return { products: result, vendors };
+  }
+
+  async setFeatures(productId: number, features: { label: string; description?: string }[]): Promise<ProductFeature[]> {
+    await this.featureRepo.delete({ productId });
+    if (features.length === 0) return [];
+    const entities = features.map((f, i) => this.featureRepo.create({ productId, label: f.label, description: f.description ?? null, sortOrder: i }));
+    return this.featureRepo.save(entities);
+  }
+
+  async setColors(productId: number, labels: string[]): Promise<ProductColor[]> {
+    await this.colorRepo.delete({ productId });
+    if (labels.length === 0) return [];
+    const entities = labels.map((label, i) => this.colorRepo.create({ productId, label, sortOrder: i }));
+    return this.colorRepo.save(entities);
   }
 
   async linkServiceItem(productId: number, dto: LinkServiceItemDto): Promise<Product> {

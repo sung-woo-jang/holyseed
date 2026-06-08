@@ -1,5 +1,6 @@
 import React from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Button } from '@toss/tds-react-native';
 import { useTheme } from '../lib/theme';
 import { useDataSource, useMockRole } from '../lib/data-source';
 import { clearTokens } from '../lib/storage';
@@ -144,9 +145,15 @@ export default function MoreScreen({ navigation }: MoreScreenProps) {
 
       {/* Logout */}
       <View style={styles.footer}>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-          <Text style={[styles.logoutText, { color: theme.danger }]}>로그아웃</Text>
-        </TouchableOpacity>
+        <Button
+          display="full"
+          size="big"
+          type="danger"
+          style="weak"
+          onPress={handleLogout}
+        >
+          로그아웃
+        </Button>
         <Text style={[styles.footerText, { color: theme.textMuted }]}>자산일기 v1.0 · Apps-in-Toss</Text>
       </View>
     </ScrollView>

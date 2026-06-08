@@ -45,9 +45,9 @@ export default function Footer() {
               <li>
                 <Link to="/cases">시공사례</Link>
               </li>
-              <li>
-                <Link to="/about">시공자 소개</Link>
-              </li>
+              {/*<li>*/}
+              {/*  <Link to="/about">시공자 소개</Link>*/}
+              {/*</li>*/}
               <li>
                 <Link to="/bookings">예약 확인</Link>
               </li>

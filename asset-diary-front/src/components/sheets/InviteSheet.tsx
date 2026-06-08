@@ -8,9 +8,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Button } from '@toss/tds-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../lib/theme';
 import { Icon } from '../common/Icon';
+import { useInvite } from '../../queries/mutations';
 
 type InviteRole = 'EDITOR' | 'VIEWER';
 
@@ -24,20 +26,25 @@ const ROLE_INFO: Record<InviteRole, { label: string; desc: string }> = {
   VIEWER: { label: '조회자', desc: '조회만 가능, 입력·관리 불가' },
 };
 
-function generateCode() {
-  return 'TOSS-' + Math.random().toString(36).toUpperCase().slice(2, 8);
-}
-
 export default function InviteSheet({ visible, onClose }: InviteSheetProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState<1 | 2>(1);
   const [role, setRole] = useState<InviteRole>('EDITOR');
-  const [code] = useState(() => generateCode());
+  const [code, setCode] = useState('');
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState('');
+  const invite = useInvite();
 
-  function handleNext() {
-    setStep(2);
+  async function handleNext() {
+    setError('');
+    try {
+      const result = await invite.mutateAsync(role);
+      setCode(result.code);
+      setStep(2);
+    } catch (e: any) {
+      setError(e?.message ?? '초대 코드 생성에 실패했어요.');
+    }
   }
 
   function handleCopy() {
@@ -48,6 +55,8 @@ export default function InviteSheet({ visible, onClose }: InviteSheetProps) {
 
   function handleClose() {
     setStep(1);
+    setCode('');
+    setError('');
     onClose();
   }
 
@@ -85,9 +94,16 @@ export default function InviteSheet({ visible, onClose }: InviteSheetProps) {
                   {role === r && Icon.check(theme.brand, 18)}
                 </TouchableOpacity>
               ))}
-              <TouchableOpacity style={[styles.nextBtn, { backgroundColor: theme.brand }]} onPress={handleNext}>
-                <Text style={styles.nextBtnText}>초대 코드 생성</Text>
-              </TouchableOpacity>
+              {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
+              <Button
+                display="full"
+                size="big"
+                type="primary"
+                loading={invite.isPending}
+                onPress={handleNext}
+              >
+                초대 코드 생성
+              </Button>
             </View>
           ) : (
             <View style={[styles.body, { paddingBottom: insets.bottom + 20 }]}>
@@ -109,7 +125,7 @@ export default function InviteSheet({ visible, onClose }: InviteSheetProps) {
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.brand }]} onPress={handleClose}>
-                  <Text style={[styles.actionBtnText, { color: '#fff' }]}>토스로 보내기</Text>
+                  <Text style={[styles.actionBtnText, { color: '#fff' }]}>닫기</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -141,4 +157,5 @@ const styles = StyleSheet.create({
   btnRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
   actionBtn: { flex: 1, borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 1 },
   actionBtnText: { fontSize: 14, fontWeight: '700' },
+  errorText: { fontSize: 13, textAlign: 'center' },
 });

@@ -6,12 +6,11 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Button, Switch, TextFieldBig, TextField } from '@toss/tds-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../lib/theme';
 import { useDataSource } from '../../lib/data-source';
@@ -22,6 +21,7 @@ import { CATEGORY_DEFS, getCategoryDef } from '../../lib/category-meta';
 import { TE } from '../../lib/toss-emoji';
 import { Icon } from '../common/Icon';
 import { krw } from '../../lib/format';
+import { useCreateRecurring } from '../../queries/mutations';
 
 function formatNum(raw: string): string {
   const n = raw.replace(/[^0-9]/g, '');
@@ -41,18 +41,22 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
   const insets = useSafeAreaInsets();
   const [amount, setAmount] = useState('');
   const [name, setName] = useState('');
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState<{ id: number; name: string } | null>(null);
   const [dayOfMonth, setDayOfMonth] = useState(25);
-  const [fromAsset, setFromAsset] = useState('');
+  const [fromAsset, setFromAsset] = useState<{ id: string; name: string } | null>(null);
   const [autoGenerate, setAutoGenerate] = useState(true);
   const [catPicker, setCatPicker] = useState(false);
   const [assetPicker, setAssetPicker] = useState(false);
   const [dayPicker, setDayPicker] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+  const createRecurring = useCreateRecurring();
 
   const expenseCategories = Object.entries(CATEGORY_DEFS)
     .filter(([, def]) => def.type === 'EXPENSE')
     .map(([n]) => n);
+
+  const apiExpenseCategories = data.categories.filter((c) => c.type === 'EXPENSE');
 
   const assetOptions = data.assets.filter((a) => !a.isLiability);
   const amtNum = Number(amount.replace(/[^0-9]/g, ''));
@@ -65,19 +69,36 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
   function reset() {
     setAmount('');
     setName('');
-    setCategory('');
+    setCategory(null);
     setDayOfMonth(25);
-    setFromAsset('');
+    setFromAsset(null);
     setAutoGenerate(true);
+    setError('');
   }
 
-  function handleSave() {
-    setSaved(true);
-    setTimeout(() => {
-      setSaved(false);
-      reset();
-      onClose();
-    }, 700);
+  async function handleSave() {
+    setError('');
+    const todayStr = new Date().toISOString().split('T')[0]!;
+    try {
+      await createRecurring.mutateAsync({
+        name,
+        type: 'EXPENSE',
+        amount: amtNum,
+        ...(category && category.id > 0 ? { categoryId: category.id } : {}),
+        ...(fromAsset ? { fromAssetId: Number(fromAsset.id) } : {}),
+        frequency: 'MONTHLY',
+        dayOfMonth,
+        startDate: todayStr,
+      });
+      setSaved(true);
+      setTimeout(() => {
+        setSaved(false);
+        reset();
+        onClose();
+      }, 700);
+    } catch (e: any) {
+      setError(e?.message ?? '저장에 실패했어요. 다시 시도해 주세요.');
+    }
   }
 
   return (
@@ -113,31 +134,30 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
 
                 {/* 금액 */}
                 <View style={styles.amountWrap}>
-                  <TextInput
-                    style={[styles.amountInput, { color: theme.text }]}
-                    keyboardType="numeric"
+                  <TextFieldBig
                     placeholder="0"
-                    placeholderTextColor={theme.border}
+                    keyboardType="numeric"
                     value={amount}
                     onChangeText={(t) => setAmount(formatNum(t))}
+                    suffix="원"
+                    style={styles.amountField}
                   />
-                  <Text style={[styles.amountUnit, { color: theme.textMuted }]}>원</Text>
                 </View>
 
                 {/* 이름 */}
-                <TextInput
-                  style={[styles.nameInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.bg }]}
+                <TextField
+                  variant="box"
                   placeholder="항목 이름 (예: 넷플릭스)"
-                  placeholderTextColor={theme.textMuted}
                   value={name}
                   onChangeText={setName}
+                  style={styles.nameField}
                 />
 
                 {/* 필드 카드 */}
                 <View style={[styles.fieldsCard, { backgroundColor: theme.bg, borderColor: theme.border }]}>
                   <FormRow
                     label="카테고리"
-                    value={category || '선택'}
+                    value={category?.name || '선택'}
                     onPress={() => setCatPicker(true)}
                   />
                   <FormRow
@@ -147,7 +167,7 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
                   />
                   <FormRow
                     label="출금 자산"
-                    value={fromAsset || '선택'}
+                    value={fromAsset?.name || '선택'}
                     onPress={() => setAssetPicker(true)}
                   />
                 </View>
@@ -159,10 +179,8 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
                     <Text style={[styles.toggleSub, { color: theme.textMuted }]}>결제일에 자동으로 거래가 기록돼요</Text>
                   </View>
                   <Switch
-                    value={autoGenerate}
-                    onValueChange={setAutoGenerate}
-                    trackColor={{ false: theme.border, true: theme.brand }}
-                    thumbColor="#fff"
+                    checked={autoGenerate}
+                    onCheckedChange={setAutoGenerate}
                   />
                 </View>
 
@@ -171,7 +189,7 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
                   <View style={[styles.previewCard, { borderColor: theme.brand }]}>
                     <Text style={[styles.previewText, { color: theme.text }]}>
                       <Text style={{ fontWeight: '700' }}>{nextDateStr}</Text>에{' '}
-                      <Text style={{ fontWeight: '700' }}>{fromAsset || '선택한 자산'}</Text>에서{' '}
+                      <Text style={{ fontWeight: '700' }}>{fromAsset?.name || '선택한 자산'}</Text>에서{' '}
                       <Text style={{ fontWeight: '700', color: theme.danger }}>-{krw(amtNum)}</Text>이 자동으로 기록돼요
                     </Text>
                   </View>
@@ -179,13 +197,17 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
               </ScrollView>
 
               <View style={[styles.footer, { borderTopColor: theme.border, paddingBottom: insets.bottom + 12 }]}>
-                <TouchableOpacity
-                  style={[styles.saveBtn, { backgroundColor: isValid ? theme.brand : theme.border }]}
-                  onPress={handleSave}
+                {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
+                <Button
+                  display="full"
+                  size="big"
+                  type="primary"
                   disabled={!isValid}
+                  loading={createRecurring.isPending}
+                  onPress={handleSave}
                 >
-                  <Text style={[styles.saveBtnText, { color: isValid ? '#fff' : theme.textMuted }]}>저장하기</Text>
-                </TouchableOpacity>
+                  저장하기
+                </Button>
               </View>
             </>
           )}
@@ -195,20 +217,36 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
 
       {/* 카테고리 피커 */}
       <PickerSheet visible={catPicker} title="카테고리 선택" onClose={() => setCatPicker(false)}>
-        {expenseCategories.map((n) => {
-          const def = getCategoryDef(n);
-          return (
-            <TouchableOpacity
-              key={n}
-              style={[styles.pickerItem, { borderBottomColor: theme.border }]}
-              onPress={() => { setCategory(n); setCatPicker(false); }}
-            >
-              <TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />
-              <Text style={[styles.pickerItemText, { color: theme.text }]}>{n}</Text>
-              {category === n && Icon.check(theme.brand, 16)}
-            </TouchableOpacity>
-          );
-        })}
+        {apiExpenseCategories.length > 0
+          ? apiExpenseCategories.map((c) => {
+              const def = getCategoryDef(c.name);
+              return (
+                <TouchableOpacity
+                  key={c.id}
+                  style={[styles.pickerItem, { borderBottomColor: theme.border }]}
+                  onPress={() => { setCategory({ id: c.id, name: c.name }); setCatPicker(false); }}
+                >
+                  <TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />
+                  <Text style={[styles.pickerItemText, { color: theme.text }]}>{c.name}</Text>
+                  {category?.id === c.id && Icon.check(theme.brand, 16)}
+                </TouchableOpacity>
+              );
+            })
+          : expenseCategories.map((n) => {
+              const def = getCategoryDef(n);
+              return (
+                <TouchableOpacity
+                  key={n}
+                  style={[styles.pickerItem, { borderBottomColor: theme.border }]}
+                  onPress={() => { setCategory({ id: 0, name: n }); setCatPicker(false); }}
+                >
+                  <TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />
+                  <Text style={[styles.pickerItemText, { color: theme.text }]}>{n}</Text>
+                  {category?.name === n && Icon.check(theme.brand, 16)}
+                </TouchableOpacity>
+              );
+            })
+        }
       </PickerSheet>
 
       {/* 자산 피커 */}
@@ -217,10 +255,10 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
           <TouchableOpacity
             key={a.id}
             style={[styles.pickerItem, { borderBottomColor: theme.border }]}
-            onPress={() => { setFromAsset(a.name); setAssetPicker(false); }}
+            onPress={() => { setFromAsset({ id: a.id, name: a.name }); setAssetPicker(false); }}
           >
             <Text style={[styles.pickerItemText, { color: theme.text }]}>{a.name}</Text>
-            {fromAsset === a.name && Icon.check(theme.brand, 16)}
+            {fromAsset?.id === a.id && Icon.check(theme.brand, 16)}
           </TouchableOpacity>
         ))}
       </PickerSheet>
@@ -252,10 +290,9 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   infoBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 20 },
   infoText: { flex: 1, fontSize: 13, lineHeight: 18 },
-  amountWrap: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', marginBottom: 16 },
-  amountInput: { fontSize: 32, fontWeight: '800', textAlign: 'center', minWidth: 80 },
-  amountUnit: { fontSize: 18, fontWeight: '700', marginLeft: 6 },
-  nameInput: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, marginBottom: 12 },
+  amountWrap: { alignItems: 'center', marginBottom: 16 },
+  amountField: { width: '100%' },
+  nameField: { marginBottom: 12 },
   fieldsCard: { borderRadius: 14, borderWidth: 1, marginBottom: 12, overflow: 'hidden' },
   toggleRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 12 },
   toggleInfo: { flex: 1 },
@@ -273,4 +310,5 @@ const styles = StyleSheet.create({
   dayGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingBottom: 12 },
   dayCell: { width: 42, height: 42, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   dayCellText: { fontSize: 14, fontWeight: '600' },
+  errorText: { fontSize: 13, textAlign: 'center', marginBottom: 8 },
 });

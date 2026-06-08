@@ -1,23 +1,43 @@
 import React, { useMemo, useState } from 'react';
 import { createRoute } from '@granite-js/react-native';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import ScreenHeader from '../../components/common/ScreenHeader';
 import WaterfallChart from '../../components/charts/WaterfallChart';
 import { useTheme } from '../../lib/theme';
 import { useDataSource } from '../../lib/data-source';
+import { useAuthStore } from '../../stores/auth.store';
+import { comparisonApi } from '../../api';
+import { qk } from '../../queries/keys';
 import { krw, krwShort } from '../../lib/format';
 import { ASSET_CATEGORY_META } from '../../lib/category-meta';
 
 function CompareScreen({ navigation }: { navigation: any }) {
   const theme = useTheme();
   const data = useDataSource();
+  const { currentHousehold, useMock } = useAuthStore();
+  const hid = currentHousehold?.id;
 
-  const years = Object.keys(data.yearlyContrib).map(Number).sort((a, b) => a - b);
+  // 실제 연간 비교 API
+  const compareQ = useQuery({
+    queryKey: qk.comparison(hid ?? 0),
+    queryFn: () => comparisonApi.yearly(hid!),
+    enabled: !!hid && !useMock,
+    staleTime: 60_000,
+  });
+
+  // API 결과가 있으면 그걸, 없으면 mock 데이터 폴백
+  const apiData: any = compareQ.data;
+  const apiYearlyContrib: Record<number, any[]> = apiData?.yearlyContrib ?? {};
+  const hasApiData = Object.keys(apiYearlyContrib).length > 0;
+
+  const yearlyContrib = hasApiData ? apiYearlyContrib : data.yearlyContrib;
+  const years = Object.keys(yearlyContrib).map(Number).sort((a, b) => a - b);
   const [selectedYearIdx, setSelectedYearIdx] = useState(years.length > 1 ? years.length - 1 : 0);
   const selectedYear = years[selectedYearIdx] ?? (years[years.length - 1] ?? new Date().getFullYear());
   const prevYear = selectedYear - 1;
 
-  const contribs = data.yearlyContrib[selectedYear] ?? [];
+  const contribs: { category: string; value: number; color: string }[] = yearlyContrib[selectedYear] ?? [];
 
   const prevNetWorth = useMemo(() => {
     const h = data.netWorth.monthlyHistory;
@@ -36,13 +56,28 @@ function CompareScreen({ navigation }: { navigation: any }) {
     { label: `${selectedYear}년말`, value: currentNetWorth, type: 'total' },
   ];
 
-  // 5년 bar chart 데이터 (mock: 연도별 netWorth 추정)
-  const yearBars = years.map((y) => {
-    if (y === new Date().getFullYear()) return { year: y, value: data.netWorth.current };
-    const ybContribs = data.yearlyContrib[y] ?? [];
-    return { year: y, value: ybContribs.reduce((s, c) => s + c.value, 0) };
-  });
+  // 5년 bar chart 데이터
+  const netWorthByYear: Record<number, number> = hasApiData
+    ? (apiData?.netWorthByYear ?? {})
+    : Object.fromEntries(
+        years.map((y) => {
+          if (y === new Date().getFullYear()) return [y, data.netWorth.current];
+          const ybContribs: any[] = yearlyContrib[y] ?? [];
+          return [y, ybContribs.reduce((s: number, c: any) => s + (c.value ?? 0), 0)];
+        })
+      );
+
+  const yearBars = years.map((y) => ({ year: y, value: netWorthByYear[y] ?? 0 }));
   const maxBar = Math.max(...yearBars.map((b) => b.value), 1);
+
+  if (compareQ.isLoading) {
+    return (
+      <View style={[styles.root, { backgroundColor: theme.bg }]}>
+        <ScreenHeader title="연간 비교" onBack={() => navigation?.goBack?.()} />
+        <View style={styles.loadingBox}><ActivityIndicator size="large" color={theme.brand} /></View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.root, { backgroundColor: theme.bg }]}>
@@ -147,6 +182,7 @@ function CompareScreen({ navigation }: { navigation: any }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   yearScroll: { paddingHorizontal: 20, paddingVertical: 12 },
   yearPill: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, marginRight: 8 },
   yearPillText: { fontSize: 13, fontWeight: '600' },

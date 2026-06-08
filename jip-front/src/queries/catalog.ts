@@ -1,6 +1,6 @@
-import { useMutation, useQuery, keepPreviousData, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import type { Category, ServiceItem, FullCatalog } from '@/types'
+import type { Category, FullCatalog, ServiceItem } from '@/types'
 
 export function useCatalog() {
   return useQuery<FullCatalog>({
@@ -74,8 +74,7 @@ export function useAdminCategory(code: string) {
 export function useAdminItems(categoryCode?: string) {
   return useQuery<ServiceItem[]>({
     queryKey: ['admin-items', categoryCode ?? 'all'],
-    queryFn: () =>
-      api.post('/catalog/admin/items/list', { categoryCode }).then((r) => r.data.data),
+    queryFn: () => api.post('/catalog/admin/items/list', { categoryCode }).then((r) => r.data.data),
     placeholderData: keepPreviousData,
   })
 }

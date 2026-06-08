@@ -3,6 +3,7 @@ import { PcCategoriesModule } from './modules/categories/categories.module';
 import { VendorsModule } from './modules/vendors/vendors.module';
 import { ProductsModule } from './modules/products/products.module';
 import { PricesModule } from './modules/prices/prices.module';
+import { PcSequenceSyncService } from './pc-sequence-sync.service';
 
 @Module({
   imports: [
@@ -11,5 +12,6 @@ import { PricesModule } from './modules/prices/prices.module';
     ProductsModule,
     PricesModule,
   ],
+  providers: [PcSequenceSyncService],
 })
 export class PcModule {}

@@ -7,16 +7,17 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Button, TextField } from '@toss/tds-react-native';
 import { useTheme } from '../../lib/theme';
 import { useDataSource } from '../../lib/data-source';
 import { krw, krwShort } from '../../lib/format';
 import TossEmoji from '../common/TossEmoji';
 import { TE } from '../../lib/toss-emoji';
+import { useUpsertSnapshot, useBatchSnapshots } from '../../queries/mutations';
 
 interface SnapshotSheetProps {
   visible: boolean;
@@ -36,6 +37,9 @@ export default function SnapshotSheet({ visible, onClose, focusAssetId }: Snapsh
   const insets = useSafeAreaInsets();
   const [values, setValues] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+  const upsert = useUpsertSnapshot();
+  const batch = useBatchSnapshots();
 
   const assets = focusAssetId
     ? data.assets.filter((a) => a.id === focusAssetId)
@@ -55,14 +59,44 @@ export default function SnapshotSheet({ visible, onClose, focusAssetId }: Snapsh
   const delta = totalNew - totalOld;
   const hasInput = Object.values(values).some((v) => v.replace(/[^0-9]/g, '') !== '');
 
-  function handleSave() {
-    setSaved(true);
-    setTimeout(() => {
-      setSaved(false);
-      setValues({});
-      onClose();
-    }, 700);
+  async function handleSave() {
+    setError('');
+    const today = new Date().toISOString().split('T')[0]!;
+    try {
+      if (focusAssetId) {
+        const asset = assets[0];
+        if (!asset) return;
+        const value = getNum(asset.id);
+        if (value === null) return;
+        await upsert.mutateAsync({
+          assetId: Number(asset.id),
+          dto: { date: today, value, ...(asset.fxRate ? { fxRateToKRW: asset.fxRate } : {}) },
+        });
+      } else {
+        const items = assets
+          .map((a) => ({ a, value: getNum(a.id) }))
+          .filter((x): x is { a: typeof x.a; value: number } => x.value !== null)
+          .map(({ a, value }) => ({
+            assetId: Number(a.id),
+            date: today,
+            value,
+            ...(a.fxRate ? { fxRateToKRW: a.fxRate } : {}),
+          }));
+        if (items.length === 0) return;
+        await batch.mutateAsync(items);
+      }
+      setSaved(true);
+      setTimeout(() => {
+        setSaved(false);
+        setValues({});
+        onClose();
+      }, 700);
+    } catch (e: any) {
+      setError(e?.message ?? '저장에 실패했어요. 다시 시도해 주세요.');
+    }
   }
+
+  const isPending = upsert.isPending || batch.isPending;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -111,13 +145,13 @@ export default function SnapshotSheet({ visible, onClose, focusAssetId }: Snapsh
                         <Text style={[styles.prevVal, { color: theme.textMuted }]}>이전: {krwShort(asset.value)}</Text>
                       </View>
                       <View style={styles.inputWrap}>
-                        <TextInput
-                          style={[styles.input, { borderColor: theme.border, color: theme.text, backgroundColor: theme.bg }]}
-                          keyboardType="numeric"
+                        <TextField
+                          variant="line"
                           placeholder="금액 입력"
-                          placeholderTextColor={theme.textMuted}
+                          keyboardType="numeric"
                           value={values[asset.id] ?? ''}
                           onChangeText={(t) => setValues((prev) => ({ ...prev, [asset.id]: formatAmount(t) }))}
+                          style={styles.tfInput}
                         />
                         {diff !== null && (
                           <Text style={[styles.diffText, { color: diff >= 0 ? theme.brand : theme.danger }]}>
@@ -131,13 +165,17 @@ export default function SnapshotSheet({ visible, onClose, focusAssetId }: Snapsh
               </ScrollView>
 
               <View style={[styles.footer, { borderTopColor: theme.border, paddingBottom: insets.bottom + 12 }]}>
-                <TouchableOpacity
-                  style={[styles.saveBtn, { backgroundColor: hasInput ? theme.brand : theme.border }]}
-                  onPress={handleSave}
+                {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
+                <Button
+                  display="full"
+                  size="big"
+                  type="primary"
                   disabled={!hasInput}
+                  loading={isPending}
+                  onPress={handleSave}
                 >
-                  <Text style={[styles.saveBtnText, { color: hasInput ? '#fff' : theme.textMuted }]}>저장하기</Text>
-                </TouchableOpacity>
+                  저장하기
+                </Button>
               </View>
             </>
           )}
@@ -163,13 +201,12 @@ const styles = StyleSheet.create({
   assetInfo: { flex: 1 },
   assetName: { fontSize: 14, fontWeight: '600' },
   prevVal: { fontSize: 12, marginTop: 2 },
-  inputWrap: { alignItems: 'flex-end', gap: 4 },
-  input: { width: 140, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, fontSize: 14, textAlign: 'right' },
+  inputWrap: { alignItems: 'flex-end', gap: 4, width: 140 },
+  tfInput: { width: 140 },
   diffText: { fontSize: 12, fontWeight: '600' },
   footer: { padding: 20, borderTopWidth: 1 },
-  saveBtn: { borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
-  saveBtnText: { fontSize: 16, fontWeight: '700' },
   confirmBox: { paddingVertical: 60, alignItems: 'center', gap: 12 },
   confirmTitle: { fontSize: 22, fontWeight: '800' },
   confirmSub: { fontSize: 14 },
+  errorText: { fontSize: 13, textAlign: 'center', marginBottom: 8 },
 });

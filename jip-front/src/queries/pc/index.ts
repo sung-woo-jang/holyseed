@@ -1,4 +1,5 @@
 import { api } from '@/lib/api'
+import type { ReviewItem, FaqItem, TrustBadgeItem, InstallStepItem } from '@/types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -43,6 +44,21 @@ export interface PcProductImage {
   label?: string
 }
 
+export interface PcProductFeature {
+  id: number
+  productId: number
+  label: string
+  description?: string
+  sortOrder: number
+}
+
+export interface PcProductColor {
+  id: number
+  productId: number
+  label: string
+  sortOrder: number
+}
+
 export interface PcProduct {
   id: number
   modelCode: string
@@ -61,8 +77,16 @@ export interface PcProduct {
   sortOrder?: number
   representativePrice?: number | null
   category?: { id: number; name: string }
+  intro?: string
+  tagline?: string
+  reviews?: ReviewItem[]
+  faqs?: FaqItem[]
+  trustBadges?: TrustBadgeItem[]
+  installSteps?: InstallStepItem[]
   prices?: PcProductPrice[]
   images?: PcProductImage[]
+  features?: PcProductFeature[]
+  colors?: PcProductColor[]
 }
 
 export interface PcImportResult {
@@ -144,6 +168,12 @@ export const pcProductsApi = {
   recomputePrice: (productId: number) =>
     api.post(`/pc/products/${productId}/recompute-price`, {}),
 
+  setFeatures: (productId: number, features: { label: string; description?: string }[]) =>
+    api.post(`/pc/products/${productId}/features`, { features }).then(wrap<PcProductFeature[]>),
+
+  setColors: (productId: number, labels: string[]) =>
+    api.post(`/pc/products/${productId}/colors`, { labels }).then(wrap<PcProductColor[]>),
+
   import: (payload: {
     options?: { autoCreateCategory?: boolean; autoCreateVendor?: boolean; atomic?: boolean }
     items: Array<{
@@ -156,17 +186,22 @@ export const pcProductsApi = {
     }>
   }) => api.post('/pc/products/import', payload).then(wrap<PcImportResult>),
 
-  uploadImage: (productId: number, file: File, isPrimary = false, sortOrder = 0) => {
+  uploadImage: (productId: number, file: File, isPrimary = false, sortOrder = 0, role?: string, label?: string) => {
     const fd = new FormData()
     fd.append('file', file)
     fd.append('isPrimary', String(isPrimary))
     fd.append('sortOrder', String(sortOrder))
+    if (role) fd.append('role', role)
+    if (label) fd.append('label', label)
     return api
       .post(`/pc/products/${productId}/images/upload`, fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       .then(wrap<PcProductImage>)
   },
+
+  updateImageMeta: (productId: number, imageId: number, data: { role?: string; label?: string; sortOrder?: number }) =>
+    api.post(`/pc/products/${productId}/images/${imageId}/update`, data),
 
   setPrimaryImage: (productId: number, imageId: number) =>
     api.post(`/pc/products/${productId}/images/${imageId}/set-primary`),

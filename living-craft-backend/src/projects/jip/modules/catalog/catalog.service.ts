@@ -67,11 +67,14 @@ export class CatalogService {
       `SELECT p.id, p.code, p.model_code AS "modelCode",
               p.display_name AS name, p.primary_image_url AS "imageUrl",
               p.representative_price AS price, p.spec, p.brand,
-              p.description, p.illust_kind AS "illustKind",
+              p.description, p.intro, p.tagline,
+              p.reviews, p.faqs,
+              p.trust_badges AS "trustBadges", p.install_steps AS "installSteps",
+              p.illust_kind AS "illustKind",
               p.sort_order AS "sortOrder", p.is_active AS "isActive",
               p.service_item_id AS "serviceItemId"
        FROM jip.pc_products p
-       WHERE p.code = $1 AND p.is_active = true`,
+       WHERE (p.code = $1 OR p.model_code = $1) AND p.is_active = true`,
       [code],
     );
 
@@ -85,7 +88,7 @@ export class CatalogService {
         [p.id],
       ),
       this.dataSource.query(
-        `SELECT label, sort_order AS "sortOrder" FROM jip.pc_product_features WHERE product_id = $1 ORDER BY sort_order ASC`,
+        `SELECT label, description, sort_order AS "sortOrder" FROM jip.pc_product_features WHERE product_id = $1 ORDER BY sort_order ASC`,
         [p.id],
       ),
       this.dataSource.query(
@@ -273,6 +276,60 @@ export class CatalogService {
     await this.itemRepo.save(item);
   }
 
+  async hardDeleteItem(code: string) {
+    const item = await this.itemRepo.findOne({ where: { code } });
+    if (!item) throw new NotFoundException(`서비스 항목 '${code}'를 찾을 수 없어요.`);
+    await this.dataSource.query(
+      `UPDATE jip.pc_products SET service_item_id = NULL WHERE service_item_id = $1`,
+      [item.id],
+    );
+    await this.itemRepo.delete({ id: item.id });
+  }
+
+  async attachProducts(itemCode: string, productIds: number[]): Promise<void> {
+    const item = await this.itemRepo.findOne({ where: { code: itemCode } });
+    if (!item) throw new NotFoundException(`서비스 항목 '${itemCode}'를 찾을 수 없어요.`);
+
+    for (const productId of productIds) {
+      const rows = await this.dataSource.query(
+        `SELECT id, code, model_code AS "modelCode" FROM jip.pc_products WHERE id = $1`,
+        [productId],
+      );
+      if (rows.length === 0) continue;
+      const product = rows[0];
+
+      let urlCode: string = product.code;
+      if (!urlCode) {
+        const base = (product.modelCode as string)
+          .toLowerCase()
+          .replace(/[^a-z0-9가-힣]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+        urlCode = base;
+        let suffix = 2;
+        while (true) {
+          const dup = await this.dataSource.query(
+            `SELECT 1 FROM jip.pc_products WHERE code = $1 AND id != $2`,
+            [urlCode, productId],
+          );
+          if (dup.length === 0) break;
+          urlCode = `${base}-${suffix++}`;
+        }
+      }
+
+      await this.dataSource.query(
+        `UPDATE jip.pc_products SET service_item_id = $1, code = $2 WHERE id = $3`,
+        [item.id, urlCode, productId],
+      );
+    }
+  }
+
+  async detachProduct(productId: number): Promise<void> {
+    await this.dataSource.query(
+      `UPDATE jip.pc_products SET service_item_id = NULL WHERE id = $1`,
+      [productId],
+    );
+  }
+
   // ──────────────── Admin PC Product (view via catalog) ────────────────
 
   async adminListProducts(dto: { itemCode?: string; search?: string }) {
@@ -335,7 +392,7 @@ export class CatalogService {
         [p.id],
       ),
       this.dataSource.query(
-        `SELECT id, label, sort_order AS "sortOrder" FROM jip.pc_product_features WHERE product_id = $1 ORDER BY sort_order ASC`,
+        `SELECT id, label, description, sort_order AS "sortOrder" FROM jip.pc_product_features WHERE product_id = $1 ORDER BY sort_order ASC`,
         [p.id],
       ),
       this.dataSource.query(

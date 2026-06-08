@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Button, TextFieldBig } from '@toss/tds-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../lib/theme';
 import { useDataSource } from '../../lib/data-source';
@@ -20,6 +21,7 @@ import PickerSheet from './PickerSheet';
 import { CATEGORY_DEFS, getCategoryDef } from '../../lib/category-meta';
 import { TE } from '../../lib/toss-emoji';
 import { Icon } from '../common/Icon';
+import { useCreateTx } from '../../queries/mutations';
 
 type TxType = 'EXPENSE' | 'INCOME' | 'TRANSFER';
 
@@ -45,15 +47,18 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
   const insets = useSafeAreaInsets();
   const [type, setType] = useState<TxType>('EXPENSE');
   const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('');
-  const [fromAsset, setFromAsset] = useState('');
-  const [toAsset, setToAsset] = useState('');
+  // { id, name } 형태로 저장 — id를 API에 전달, name은 표시용
+  const [category, setCategory] = useState<{ id: number; name: string } | null>(null);
+  const [fromAsset, setFromAsset] = useState<{ id: string; name: string } | null>(null);
+  const [toAsset, setToAsset] = useState<{ id: string; name: string } | null>(null);
   const [title, setTitle] = useState('');
   const [memo, setMemo] = useState('');
   const [catPicker, setCatPicker] = useState(false);
   const [fromPicker, setFromPicker] = useState(false);
   const [toPicker, setToPicker] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+  const createTx = useCreateTx();
 
   const catOptions = Object.entries(CATEGORY_DEFS)
     .filter(([, def]) => def.type === type || type === 'TRANSFER')
@@ -65,23 +70,39 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
   function reset() {
     setType('EXPENSE');
     setAmount('');
-    setCategory('');
-    setFromAsset('');
-    setToAsset('');
+    setCategory(null);
+    setFromAsset(null);
+    setToAsset(null);
     setTitle('');
     setMemo('');
+    setError('');
   }
 
-  function handleSave() {
-    setSaved(true);
-    setTimeout(() => {
-      setSaved(false);
-      reset();
-      onClose();
-    }, 700);
+  async function handleSave() {
+    setError('');
+    const today = new Date().toISOString().split('T')[0]!;
+    const rawAmount = Number(amount.replace(/[^0-9]/g, ''));
+    try {
+      await createTx.mutateAsync({
+        date: today,
+        type,
+        amount: rawAmount,
+        ...(category ? { categoryId: category.id } : {}),
+        ...(fromAsset ? { fromAssetId: Number(fromAsset.id) } : {}),
+        ...(toAsset ? { toAssetId: Number(toAsset.id) } : {}),
+        memo: memo || title || undefined,
+      });
+      setSaved(true);
+      setTimeout(() => {
+        setSaved(false);
+        reset();
+        onClose();
+      }, 700);
+    } catch (e: any) {
+      setError(e?.message ?? '저장에 실패했어요. 다시 시도해 주세요.');
+    }
   }
 
-  const typeColor = TYPE_OPTIONS.find((t) => t.key === type)?.color ?? theme.brand;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -112,7 +133,7 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
                     <TouchableOpacity
                       key={opt.key}
                       style={[styles.typeBtn, type === opt.key && { backgroundColor: theme.card, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 2 }]}
-                      onPress={() => { setType(opt.key); setCategory(''); }}
+                      onPress={() => { setType(opt.key); setCategory(null); }}
                     >
                       <Text style={[styles.typeBtnText, { color: type === opt.key ? opt.color : theme.textMuted }]}>
                         {opt.label}
@@ -123,16 +144,15 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
 
                 {/* 금액 입력 */}
                 <View style={styles.amountWrap}>
-                  <TextInput
-                    style={[styles.amountInput, { color: typeColor }]}
-                    keyboardType="numeric"
+                  <TextFieldBig
                     placeholder="0"
-                    placeholderTextColor={theme.border}
+                    keyboardType="numeric"
                     value={amount}
                     onChangeText={(t) => setAmount(formatNum(t))}
+                    suffix="원"
                     autoFocus
+                    style={styles.amountField}
                   />
-                  <Text style={[styles.amountUnit, { color: theme.textMuted }]}>원</Text>
                 </View>
 
                 {/* 필드 카드 */}
@@ -140,21 +160,21 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
                   {type !== 'TRANSFER' && (
                     <FormRow
                       label="카테고리"
-                      value={category || '선택'}
+                      value={category?.name || '선택'}
                       onPress={() => setCatPicker(true)}
                     />
                   )}
                   {(type === 'EXPENSE' || type === 'TRANSFER') && (
                     <FormRow
                       label={type === 'TRANSFER' ? '보내는 자산' : '출금 자산'}
-                      value={fromAsset || '선택'}
+                      value={fromAsset?.name || '선택'}
                       onPress={() => setFromPicker(true)}
                     />
                   )}
                   {(type === 'INCOME' || type === 'TRANSFER') && (
                     <FormRow
                       label={type === 'TRANSFER' ? '받는 자산' : '입금 자산'}
-                      value={toAsset || '선택'}
+                      value={toAsset?.name || '선택'}
                       onPress={() => setToPicker(true)}
                     />
                   )}
@@ -177,16 +197,21 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
                   value={memo}
                   onChangeText={setMemo}
                 />
+
               </ScrollView>
 
               <View style={[styles.footer, { borderTopColor: theme.border, paddingBottom: insets.bottom + 12 }]}>
-                <TouchableOpacity
-                  style={[styles.saveBtn, { backgroundColor: isValid ? theme.brand : theme.border }]}
-                  onPress={handleSave}
+                {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
+                <Button
+                  display="full"
+                  size="big"
+                  type="primary"
                   disabled={!isValid}
+                  loading={createTx.isPending}
+                  onPress={handleSave}
                 >
-                  <Text style={[styles.saveBtnText, { color: isValid ? '#fff' : theme.textMuted }]}>저장하기</Text>
-                </TouchableOpacity>
+                  저장하기
+                </Button>
               </View>
             </>
           )}
@@ -194,22 +219,40 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
         </KeyboardAvoidingView>
       </Pressable>
 
-      {/* 카테고리 피커 */}
+      {/* 카테고리 피커 — API 카테고리가 있으면 그걸, 없으면 로컬 CATEGORY_DEFS 폴백 */}
       <PickerSheet visible={catPicker} title="카테고리 선택" onClose={() => setCatPicker(false)}>
-        {catOptions.map((name) => {
-          const def = getCategoryDef(name);
-          return (
-            <TouchableOpacity
-              key={name}
-              style={[styles.pickerItem, { borderBottomColor: theme.border }]}
-              onPress={() => { setCategory(name); setCatPicker(false); }}
-            >
-              <TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />
-              <Text style={[styles.pickerItemText, { color: theme.text }]}>{name}</Text>
-              {category === name && Icon.check(theme.brand, 16)}
-            </TouchableOpacity>
-          );
-        })}
+        {data.categories.filter((c) => c.type === type || type === 'TRANSFER').length > 0
+          ? data.categories
+              .filter((c) => c.type === type || type === 'TRANSFER')
+              .map((c) => {
+                const def = getCategoryDef(c.name);
+                return (
+                  <TouchableOpacity
+                    key={c.id}
+                    style={[styles.pickerItem, { borderBottomColor: theme.border }]}
+                    onPress={() => { setCategory({ id: c.id, name: c.name }); setCatPicker(false); }}
+                  >
+                    <TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />
+                    <Text style={[styles.pickerItemText, { color: theme.text }]}>{c.name}</Text>
+                    {category?.id === c.id && Icon.check(theme.brand, 16)}
+                  </TouchableOpacity>
+                );
+              })
+          : catOptions.map((name) => {
+              const def = getCategoryDef(name);
+              return (
+                <TouchableOpacity
+                  key={name}
+                  style={[styles.pickerItem, { borderBottomColor: theme.border }]}
+                  onPress={() => { setCategory({ id: 0, name }); setCatPicker(false); }}
+                >
+                  <TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />
+                  <Text style={[styles.pickerItemText, { color: theme.text }]}>{name}</Text>
+                  {category?.name === name && Icon.check(theme.brand, 16)}
+                </TouchableOpacity>
+              );
+            })
+        }
       </PickerSheet>
 
       {/* 출금 자산 피커 */}
@@ -218,10 +261,10 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
           <TouchableOpacity
             key={a.id}
             style={[styles.pickerItem, { borderBottomColor: theme.border }]}
-            onPress={() => { setFromAsset(a.name); setFromPicker(false); }}
+            onPress={() => { setFromAsset({ id: a.id, name: a.name }); setFromPicker(false); }}
           >
             <Text style={[styles.pickerItemText, { color: theme.text }]}>{a.name}</Text>
-            {fromAsset === a.name && Icon.check(theme.brand, 16)}
+            {fromAsset?.id === a.id && Icon.check(theme.brand, 16)}
           </TouchableOpacity>
         ))}
       </PickerSheet>
@@ -232,10 +275,10 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
           <TouchableOpacity
             key={a.id}
             style={[styles.pickerItem, { borderBottomColor: theme.border }]}
-            onPress={() => { setToAsset(a.name); setToPicker(false); }}
+            onPress={() => { setToAsset({ id: a.id, name: a.name }); setToPicker(false); }}
           >
             <Text style={[styles.pickerItemText, { color: theme.text }]}>{a.name}</Text>
-            {toAsset === a.name && Icon.check(theme.brand, 16)}
+            {toAsset?.id === a.id && Icon.check(theme.brand, 16)}
           </TouchableOpacity>
         ))}
       </PickerSheet>
@@ -253,9 +296,8 @@ const styles = StyleSheet.create({
   typeRow: { flexDirection: 'row', borderRadius: 12, borderWidth: 1, padding: 4, marginBottom: 20 },
   typeBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 9 },
   typeBtnText: { fontSize: 14, fontWeight: '700' },
-  amountWrap: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', marginBottom: 20 },
-  amountInput: { fontSize: 36, fontWeight: '800', textAlign: 'center', minWidth: 80 },
-  amountUnit: { fontSize: 20, fontWeight: '700', marginLeft: 6 },
+  amountWrap: { alignItems: 'center', marginBottom: 20 },
+  amountField: { width: '100%' },
   fieldsCard: { borderRadius: 14, borderWidth: 1, marginBottom: 12, overflow: 'hidden' },
   titleInput: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, marginBottom: 8 },
   memoInput: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, textAlignVertical: 'top' },
@@ -266,4 +308,5 @@ const styles = StyleSheet.create({
   confirmTitle: { fontSize: 22, fontWeight: '800' },
   pickerItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1 },
   pickerItemText: { flex: 1, fontSize: 15, fontWeight: '500' },
+  errorText: { fontSize: 13, textAlign: 'center', marginBottom: 8 },
 });

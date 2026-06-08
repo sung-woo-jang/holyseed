@@ -6,11 +6,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Button } from '@toss/tds-react-native';
 import { useDataSource, useMockRole } from '../lib/data-source';
 import { useTheme } from '../lib/theme';
 import { krw, krwShort, pct } from '../lib/format';
 import { getCategoryDef } from '../lib/category-meta';
-import { TE } from '../lib/toss-emoji';
 import Segmented from '../components/common/Segmented';
 import AutoBadge from '../components/common/AutoBadge';
 import TossEmoji from '../components/common/TossEmoji';
@@ -64,16 +64,14 @@ export default function HomeScreen() {
       {/* Snapshot CTA */}
       {!isViewer && (
         <View style={styles.sectionPad}>
-          <TouchableOpacity
-            style={[styles.ctaBtn, { backgroundColor: theme.brand }]}
+          <Button
+            display="full"
+            size="big"
+            type="primary"
             onPress={() => setSnapshotVisible(true)}
           >
-            <View style={styles.ctaLeft}>
-              <TossEmoji code={TE.camera} size={20} />
-              <Text style={styles.ctaBtnText}>이번 달 자산 스냅샷 입력하기</Text>
-            </View>
-            {Icon.chevronRight('#fff')}
-          </TouchableOpacity>
+            📸 이번 달 자산 스냅샷 입력하기
+          </Button>
           <Text style={[styles.ctaCaption, { color: theme.textMuted }]}>마지막 입력 후 32일 지났어요</Text>
         </View>
       )}

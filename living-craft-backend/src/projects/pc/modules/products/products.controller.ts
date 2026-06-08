@@ -62,6 +62,21 @@ export class ProductsController {
     return { success: true, message: '제품 삭제 성공', data: null, timestamp: new Date().toISOString() };
   }
 
+  @Post(':id/features')
+  @ApiOperation({ summary: '제품 특징 일괄 저장 (기존 전체 교체)' })
+  async setFeatures(@Param('id', ParseIntPipe) id: number, @Body() body: { features?: { label: string; description?: string }[]; labels?: string[] }) {
+    const features = body.features ?? (body.labels ?? []).map((label) => ({ label }));
+    const data = await this.productsService.setFeatures(id, features);
+    return { success: true, message: '특징이 저장됐어요', data, timestamp: new Date().toISOString() };
+  }
+
+  @Post(':id/colors')
+  @ApiOperation({ summary: '제품 색상/옵션 일괄 저장 (기존 전체 교체)' })
+  async setColors(@Param('id', ParseIntPipe) id: number, @Body() body: { labels: string[] }) {
+    const data = await this.productsService.setColors(id, body.labels ?? []);
+    return { success: true, message: '색상이 저장됐어요', data, timestamp: new Date().toISOString() };
+  }
+
   @Post(':id/link-service-item')
   @ApiOperation({ summary: 'ServiceItem 연결 (고객 사이트 노출 설정)' })
   async linkServiceItem(@Param('id', ParseIntPipe) id: number, @Body() dto: LinkServiceItemDto) {

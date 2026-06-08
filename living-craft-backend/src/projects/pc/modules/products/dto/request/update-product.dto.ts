@@ -1,6 +1,29 @@
-import { IsString, IsInt, IsOptional, IsBoolean, MaxLength } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsString, IsInt, IsOptional, IsBoolean, MaxLength, IsArray, ValidateNested, IsNumber, Min, Max } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+
+export class ReviewItemDto {
+  @IsString() @MaxLength(60) name: string;
+  @IsString() @MaxLength(60) area: string;
+  @IsNumber() @Min(1) @Max(5) stars: number;
+  @IsString() @MaxLength(500) text: string;
+}
+
+export class FaqItemDto {
+  @IsString() @MaxLength(200) q: string;
+  @IsString() @MaxLength(1000) a: string;
+}
+
+export class TrustBadgeItemDto {
+  @IsString() @MaxLength(10) icon: string;
+  @IsString() @MaxLength(60) title: string;
+  @IsString() @MaxLength(200) desc: string;
+}
+
+export class InstallStepItemDto {
+  @IsString() @MaxLength(60) title: string;
+  @IsString() @MaxLength(300) desc: string;
+}
 
 export class UpdateProductDto {
   @ApiPropertyOptional({ description: '모델코드', example: 'G60AL' })
@@ -44,6 +67,45 @@ export class UpdateProductDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiPropertyOptional({ description: '고객 노출 소개문' })
+  @IsOptional()
+  @IsString()
+  intro?: string;
+
+  @ApiPropertyOptional({ description: '태그라인' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  tagline?: string;
+
+  @ApiPropertyOptional({ description: '후기 목록' })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ReviewItemDto)
+  reviews?: ReviewItemDto[];
+
+  @ApiPropertyOptional({ description: 'FAQ 목록' })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => FaqItemDto)
+  faqs?: FaqItemDto[];
+
+  @ApiPropertyOptional({ description: '신뢰 배지 목록' })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TrustBadgeItemDto)
+  trustBadges?: TrustBadgeItemDto[];
+
+  @ApiPropertyOptional({ description: '시공 단계 목록' })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => InstallStepItemDto)
+  installSteps?: InstallStepItemDto[];
 
   @ApiPropertyOptional({ description: '비고' })
   @IsOptional()

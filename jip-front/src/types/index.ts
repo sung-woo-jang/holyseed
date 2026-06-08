@@ -11,9 +11,15 @@ export interface Category {
   isActive: boolean
 }
 
+export interface ReviewItem { name: string; area: string; stars: number; text: string }
+export interface FaqItem { q: string; a: string }
+export interface TrustBadgeItem { icon: string; title: string; desc: string }
+export interface InstallStepItem { title: string; desc: string }
+
 export interface ProductFeature {
   id: number
   label: string
+  description?: string
   sortOrder: number
 }
 
@@ -43,8 +49,14 @@ export interface Product {
   illustKind: string
   imageUrl?: string | null
   description: string
+  intro?: string
+  tagline?: string
   sortOrder: number
   isActive: boolean
+  reviews?: ReviewItem[]
+  faqs?: FaqItem[]
+  trustBadges?: TrustBadgeItem[]
+  installSteps?: InstallStepItem[]
   serviceItemId?: number | null
   serviceItem?: {
     id: number

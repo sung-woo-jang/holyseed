@@ -1,15 +1,29 @@
 import React, { useState } from 'react';
 import { createRoute } from '@granite-js/react-native';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { Button } from '@toss/tds-react-native';
+import { useQuery } from '@tanstack/react-query';
 import ScreenHeader from '../../components/common/ScreenHeader';
 import { useTheme } from '../../lib/theme';
 import { useDataSource, useMockRole } from '../../lib/data-source';
 import TossEmoji from '../../components/common/TossEmoji';
 import Segmented from '../../components/common/Segmented';
 import LineChart from '../../components/charts/LineChart';
+import SnapshotSheet from '../../components/sheets/SnapshotSheet';
 import { ASSET_CATEGORY_META } from '../../lib/category-meta';
 import { krw, krwShort, pct } from '../../lib/format';
 import { Icon } from '../../components/common/Icon';
+import { snapshotsApi } from '../../api';
+import { qk } from '../../queries/keys';
+import { useUpdateAsset, useDeleteAsset } from '../../queries/mutations';
 import type { AssetCategory } from '../../types/api';
 
 function AssetDetailScreen({ navigation, params }: { navigation: any; params: { id: string } }) {
@@ -17,11 +31,36 @@ function AssetDetailScreen({ navigation, params }: { navigation: any; params: { 
   const data = useDataSource();
   const role = useMockRole();
   const [unit, setUnit] = useState<'KRW' | 'USD'>('KRW');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [snapshotOpen, setSnapshotOpen] = useState(false);
+  const updateAsset = useUpdateAsset();
+  const deleteAsset = useDeleteAsset();
 
   const asset = data.assets.find((a) => a.id === params.id) ?? data.assets[0]!;
-  const snapshots = (data.snapshots[asset?.id ?? ''] ?? []).slice().reverse();
   const meta = ASSET_CATEGORY_META[(asset?.category ?? 'CASH') as AssetCategory];
   const isFx = (asset?.currency ?? 'KRW') !== 'KRW';
+
+  // 실제 스냅샷 쿼리 — useHouseholdData의 snapshots:{} 는 항상 빈 객체
+  const snapshotsQ = useQuery({
+    queryKey: qk.assetSnapshots(Number(params.id)),
+    queryFn: () => snapshotsApi.list(Number(params.id)),
+    enabled: !!params.id && !isNaN(Number(params.id)),
+    staleTime: 30_000,
+  });
+
+  const rawSnapshots = Array.isArray(snapshotsQ.data) ? snapshotsQ.data : [];
+  const snapshots = rawSnapshots
+    .map((s: any) => ({
+      date: s.date,
+      value: s.value,
+      fxRate: s.fxRateToKRW ?? 0,
+      valueKRW: s.valueKRW ?? s.value,
+    }))
+    .slice()
+    .reverse();
 
   if (!asset) {
     return <View style={[styles.root, { backgroundColor: theme.bg }]}><ScreenHeader title="자산 상세" onBack={() => navigation?.goBack?.()} /></View>;
@@ -36,9 +75,56 @@ function AssetDetailScreen({ navigation, params }: { navigation: any; params: { 
     .filter((t) => t.from === asset.id || t.to === asset.id)
     .slice(0, 4);
 
+  async function handleRename() {
+    if (!nameInput.trim()) return;
+    await updateAsset.mutateAsync({ id: Number(asset.id), dto: { name: nameInput.trim() } });
+    setEditingName(false);
+    setNameInput('');
+    setMenuOpen(false);
+  }
+
+  async function handleDelete() {
+    await deleteAsset.mutateAsync(Number(asset.id));
+    navigation?.goBack?.();
+  }
+
+  const kebabMenu = (
+    <View style={styles.kebabWrap}>
+      <TouchableOpacity onPress={() => setMenuOpen(v => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <Text style={[styles.kebabIcon, { color: theme.textMuted }]}>⋯</Text>
+      </TouchableOpacity>
+      {menuOpen && (
+        <>
+          {/* 뒤 딤 클릭 시 닫기 */}
+          <TouchableOpacity style={styles.menuBackdrop} onPress={() => setMenuOpen(false)} />
+          <View style={[styles.menuDropdown, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <TouchableOpacity
+              style={[styles.menuItem, { borderBottomColor: theme.border }]}
+              onPress={() => { setNameInput(asset.name); setEditingName(true); setMenuOpen(false); }}
+            >
+              <Text style={styles.menuItemIcon}>✏️</Text>
+              <Text style={[styles.menuItemText, { color: theme.text }]}>자산명 수정</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => { setConfirmDelete(true); setMenuOpen(false); }}
+            >
+              <Text style={styles.menuItemIcon}>🗑️</Text>
+              <Text style={[styles.menuItemText, { color: theme.danger }]}>자산 삭제</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+    </View>
+  );
+
   return (
     <View style={[styles.root, { backgroundColor: theme.bg }]}>
-      <ScreenHeader title="자산 상세" onBack={() => navigation?.goBack?.()} />
+      <ScreenHeader
+        title="자산 상세"
+        onBack={() => navigation?.goBack?.()}
+        right={role !== 'VIEWER' ? kebabMenu : undefined}
+      />
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* 자산 요약 */}
         <View style={[styles.summaryCard, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
@@ -46,7 +132,28 @@ function AssetDetailScreen({ navigation, params }: { navigation: any; params: { 
             <TossEmoji code={meta.iconCode} size={48} bg={meta.color + '22'} />
             <View style={styles.summaryTopText}>
               <Text style={[styles.catLabel, { color: theme.textMuted }]}>{meta.label}</Text>
-              <Text style={[styles.assetName, { color: theme.text }]}>{asset.name}</Text>
+              {editingName ? (
+                <View style={styles.renameRow}>
+                  <TextInput
+                    style={[styles.renameInput, { borderColor: theme.brand, color: theme.text, backgroundColor: theme.bg }]}
+                    value={nameInput}
+                    onChangeText={setNameInput}
+                    autoFocus
+                  />
+                  <TouchableOpacity
+                    style={[styles.renameConfirmBtn, { backgroundColor: theme.brand }]}
+                    onPress={handleRename}
+                    disabled={updateAsset.isPending}
+                  >
+                    {updateAsset.isPending
+                      ? <ActivityIndicator color="#fff" size="small" />
+                      : <Text style={styles.renameConfirmText}>확인</Text>
+                    }
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <Text style={[styles.assetName, { color: theme.text }]}>{asset.name}</Text>
+              )}
             </View>
           </View>
           {isFx ? (
@@ -72,9 +179,44 @@ function AssetDetailScreen({ navigation, params }: { navigation: any; params: { 
             </View>
           </View>
           {role !== 'VIEWER' && (
-            <TouchableOpacity style={[styles.snapshotBtn, { backgroundColor: theme.brandSoft }]} activeOpacity={0.7}>
-              <Text style={[styles.snapshotBtnText, { color: theme.brand }]}>이 자산만 스냅샷 입력</Text>
-            </TouchableOpacity>
+            <Button
+              display="full"
+              size="big"
+              type="primary"
+              style="weak"
+              onPress={() => setSnapshotOpen(true)}
+            >
+              📸 이 자산만 스냅샷 입력
+            </Button>
+          )}
+
+          {/* 삭제 확인 배너 */}
+          {confirmDelete && (
+            <View style={[styles.confirmBanner, { backgroundColor: '#FEE2E2', borderColor: theme.danger }]}>
+              <Text style={[styles.confirmText, { color: theme.danger }]}>
+                ⚠️ 이 자산과 모든 스냅샷 기록이 삭제돼요. 계속할까요?
+              </Text>
+              <View style={styles.confirmBtns}>
+                <Button
+                  display="full"
+                  size="big"
+                  type="primary"
+                  style="weak"
+                  onPress={() => setConfirmDelete(false)}
+                >
+                  취소
+                </Button>
+                <Button
+                  display="full"
+                  size="big"
+                  type="danger"
+                  loading={deleteAsset.isPending}
+                  onPress={handleDelete}
+                >
+                  삭제하기
+                </Button>
+              </View>
+            </View>
           )}
         </View>
 
@@ -105,13 +247,15 @@ function AssetDetailScreen({ navigation, params }: { navigation: any; params: { 
         {/* 스냅샷 히스토리 */}
         <View style={[styles.section, { backgroundColor: theme.card, marginTop: 8 }]}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>스냅샷 히스토리</Text>
-          {snapshots.length === 0 ? (
+          {snapshotsQ.isLoading ? (
+            <View style={styles.emptyRow}><ActivityIndicator /></View>
+          ) : snapshots.length === 0 ? (
             <View style={styles.emptyRow}>
               <Text style={[styles.emptyText, { color: theme.textMuted }]}>스냅샷이 없어요</Text>
             </View>
           ) : (
             snapshots.map((s, idx) => (
-              <View key={s.date} style={[styles.snapRow, { borderBottomColor: theme.border, borderBottomWidth: idx < snapshots.length - 1 ? 1 : 0 }]}>
+              <View key={s.date + idx} style={[styles.snapRow, { borderBottomColor: theme.border, borderBottomWidth: idx < snapshots.length - 1 ? 1 : 0 }]}>
                 <Text style={[styles.snapDate, { color: theme.textMuted }]}>{s.date}</Text>
                 {isFx ? (
                   <View style={{ alignItems: 'flex-end' }}>
@@ -153,6 +297,12 @@ function AssetDetailScreen({ navigation, params }: { navigation: any; params: { 
           </View>
         )}
       </ScrollView>
+
+      <SnapshotSheet
+        visible={snapshotOpen}
+        focusAssetId={asset.id}
+        onClose={() => setSnapshotOpen(false)}
+      />
     </View>
   );
 }
@@ -164,6 +314,10 @@ const styles = StyleSheet.create({
   summaryTopText: { flex: 1 },
   catLabel: { fontSize: 12, marginBottom: 2 },
   assetName: { fontSize: 22, fontWeight: '800' },
+  renameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  renameInput: { flex: 1, borderWidth: 1.5, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, fontSize: 16 },
+  renameConfirmBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
+  renameConfirmText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   fxBlock: { marginBottom: 8 },
   fxMain: { fontSize: 28, fontWeight: '800' },
   fxSub: { fontSize: 13, marginTop: 2 },
@@ -173,6 +327,13 @@ const styles = StyleSheet.create({
   deltaText: { fontSize: 13, fontWeight: '600' },
   snapshotBtn: { borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
   snapshotBtnText: { fontSize: 14, fontWeight: '700' },
+  confirmBanner: { marginTop: 12, borderRadius: 12, borderWidth: 1, padding: 14 },
+  confirmText: { fontSize: 13, lineHeight: 18, marginBottom: 12 },
+  confirmBtns: { flexDirection: 'row', gap: 10 },
+  confirmCancelBtn: { flex: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.05)' },
+  confirmCancelText: { fontSize: 14, fontWeight: '600' },
+  confirmDeleteBtn: { flex: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
+  confirmDeleteText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   section: { paddingHorizontal: 20, paddingVertical: 16 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   sectionTitle: { fontSize: 15, fontWeight: '700' },
@@ -189,6 +350,13 @@ const styles = StyleSheet.create({
   txTitle: { fontSize: 14, fontWeight: '600' },
   txMeta: { fontSize: 11, marginTop: 2 },
   txAmount: { fontSize: 14, fontWeight: '700' },
+  kebabWrap: { position: 'relative' },
+  kebabIcon: { fontSize: 22, fontWeight: '700', paddingHorizontal: 4 },
+  menuBackdrop: { position: 'absolute', top: -200, left: -300, right: -20, bottom: -600, zIndex: 10 },
+  menuDropdown: { position: 'absolute', top: 32, right: 0, width: 150, borderRadius: 12, borderWidth: 1, overflow: 'hidden', zIndex: 20, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 8 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1 },
+  menuItemIcon: { fontSize: 16 },
+  menuItemText: { fontSize: 14, fontWeight: '600' },
 });
 
 export const Route = createRoute('/assets/detail', {

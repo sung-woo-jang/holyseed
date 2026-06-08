@@ -1,4 +1,4 @@
-import type { AssetCategory, MemberRole } from '../types/api';
+import type { AssetCategory, Category, MemberRole } from '../types/api';
 
 export interface MockAsset {
   id: string;
@@ -71,6 +71,7 @@ export interface MockPersona {
   recurring: MockRecurring[];
   members: MockMember[];
   pendingInvites: { id: string; code: string; role: MemberRole; from: string; household: string; expiresAt: string }[];
+  categories: Category[];
 }
 
 function genMonthly(startVal: number, endVal: number, startYearMonth = '2021-05') {
@@ -242,5 +243,22 @@ export const MOCK_PERSONA: MockPersona = {
   ],
   pendingInvites: [
     { id: 'inv1', code: 'TOSS-MK7P92', role: 'EDITOR', from: '박엄마', household: '엄마집', expiresAt: '2026-05-08' },
+  ],
+  categories: [
+    { id: 1,  householdId: null, type: 'INCOME',   name: '급여',    icon: '💼', isBuiltin: true },
+    { id: 2,  householdId: null, type: 'INCOME',   name: '투자수익', icon: '📈', isBuiltin: true },
+    { id: 3,  householdId: null, type: 'INCOME',   name: '사업소득', icon: '🧾', isBuiltin: true },
+    { id: 4,  householdId: null, type: 'INCOME',   name: '기타수입', icon: '✨', isBuiltin: true },
+    { id: 5,  householdId: null, type: 'EXPENSE',  name: '주거',    icon: '🏠', isBuiltin: true },
+    { id: 6,  householdId: null, type: 'EXPENSE',  name: '식비',    icon: '🍰', isBuiltin: true },
+    { id: 7,  householdId: null, type: 'EXPENSE',  name: '교통',    icon: '🚗', isBuiltin: true },
+    { id: 8,  householdId: null, type: 'EXPENSE',  name: '의료',    icon: '💡', isBuiltin: true },
+    { id: 9,  householdId: null, type: 'EXPENSE',  name: '쇼핑',    icon: '🛍️', isBuiltin: true },
+    { id: 10, householdId: null, type: 'EXPENSE',  name: '여가',    icon: '🎬', isBuiltin: true },
+    { id: 11, householdId: null, type: 'EXPENSE',  name: '교육',    icon: '📚', isBuiltin: true },
+    { id: 12, householdId: null, type: 'EXPENSE',  name: '보험료',  icon: '🛡️', isBuiltin: true },
+    { id: 13, householdId: null, type: 'EXPENSE',  name: '구독',    icon: '📺', isBuiltin: true },
+    { id: 14, householdId: null, type: 'EXPENSE',  name: '기타',    icon: '🌀', isBuiltin: true },
+    { id: 15, householdId: null, type: 'TRANSFER', name: '이체',    icon: '🔄', isBuiltin: true },
   ],
 };

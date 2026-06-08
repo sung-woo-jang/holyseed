@@ -41,6 +41,16 @@ export default function AdminLayout() {
         <NavLink to="/admin/pc" className={({ isActive }) => (isActive ? 'on' : undefined)}>
           단가표
         </NavLink>
+        <h6>유틸리티</h6>
+        <NavLink to="/admin/utils/watermark" className={({ isActive }) => (isActive ? 'on' : undefined)}>
+          워터마크
+        </NavLink>
+        <NavLink to="/admin/utils/qrcode" className={({ isActive }) => (isActive ? 'on' : undefined)}>
+          QR 코드
+        </NavLink>
+        <NavLink to="/admin/utils/resize" className={({ isActive }) => (isActive ? 'on' : undefined)}>
+          이미지 리사이즈
+        </NavLink>
         <h6>설정</h6>
         <a onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
           고객 사이트로 →

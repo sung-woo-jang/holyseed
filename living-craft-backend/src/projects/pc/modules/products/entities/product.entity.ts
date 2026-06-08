@@ -53,6 +53,30 @@ export class Product extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   description: string;
 
+  @ApiPropertyOptional({ description: '고객 노출 소개문' })
+  @Column({ type: 'text', nullable: true })
+  intro: string;
+
+  @ApiPropertyOptional({ description: '고객 상세 태그라인', example: '매일 쓰는 주방, 작은 것부터 바꿔봐요.' })
+  @Column({ length: 200, nullable: true })
+  tagline: string;
+
+  @ApiPropertyOptional({ description: '고객 후기 목록 (JSON)' })
+  @Column({ type: 'jsonb', nullable: true })
+  reviews: Array<{ name: string; area: string; stars: number; text: string }>;
+
+  @ApiPropertyOptional({ description: 'FAQ 목록 (JSON)' })
+  @Column({ type: 'jsonb', nullable: true })
+  faqs: Array<{ q: string; a: string }>;
+
+  @ApiPropertyOptional({ description: '신뢰 배지 목록 (JSON)' })
+  @Column({ name: 'trust_badges', type: 'jsonb', nullable: true })
+  trustBadges: Array<{ icon: string; title: string; desc: string }>;
+
+  @ApiPropertyOptional({ description: '시공 단계 목록 (JSON)' })
+  @Column({ name: 'install_steps', type: 'jsonb', nullable: true })
+  installSteps: Array<{ title: string; desc: string }>;
+
   @ApiPropertyOptional({ description: '비고' })
   @Column({ type: 'text', nullable: true })
   note: string;

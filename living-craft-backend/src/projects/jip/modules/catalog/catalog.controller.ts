@@ -142,6 +142,27 @@ export class CatalogController {
     return { success: true, message: '서비스 아이템이 비활성화됐어요', data: null, timestamp: new Date().toISOString() };
   }
 
+  @Post('admin/items/:code/hard-delete')
+  @ApiOperation({ summary: '[관리자] 서비스 아이템 완전 삭제 (연결된 PC 제품은 연결만 해제)' })
+  async hardDeleteItem(@Param('code') code: string) {
+    await this.catalogService.hardDeleteItem(code);
+    return { success: true, message: '서비스 아이템이 삭제됐어요', data: null, timestamp: new Date().toISOString() };
+  }
+
+  @Post('admin/items/:code/attach-products')
+  @ApiOperation({ summary: '[관리자] PC 제품 일괄 연결 (code 없으면 자동 생성)' })
+  async attachProducts(@Param('code') code: string, @Body() body: { productIds: number[] }) {
+    await this.catalogService.attachProducts(code, body.productIds);
+    return { success: true, message: `${body.productIds.length}개 제품이 연결됐어요`, data: null, timestamp: new Date().toISOString() };
+  }
+
+  @Post('admin/items/:code/detach-product')
+  @ApiOperation({ summary: '[관리자] PC 제품 연결 해제 (제품·단가는 보존)' })
+  async detachProduct(@Param('code') code: string, @Body() body: { productId: number }) {
+    await this.catalogService.detachProduct(body.productId);
+    return { success: true, message: '제품 연결이 해제됐어요', data: null, timestamp: new Date().toISOString() };
+  }
+
   // ──────────────── Admin PC Product (catalog view) ────────────────
 
   @Post('admin/products/list')

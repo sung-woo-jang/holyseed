@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { ItemIllust, CatIllust } from '@/components/common/Illustration'
+import { CatIllust, ItemIllust } from '@/components/common/Illustration'
 import { useRecentCases } from '@/queries/cases'
 import { useCategories, useFeaturedItems } from '@/queries/catalog'
 import { useSiteAssets } from '@/queries/siteAssets'
@@ -81,9 +81,16 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-          <div className="hero-art" style={{ overflow: 'hidden', borderRadius: 'var(--radius-xl)', background: 'var(--bg-deep)' }}>
+          <div
+            className="hero-art"
+            style={{ overflow: 'hidden', borderRadius: 'var(--radius-xl)', background: 'var(--bg-deep)' }}
+          >
             {assets?.['home.hero']?.imageUrl && (
-              <img src={assets['home.hero'].imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img
+                src={assets['home.hero'].imageUrl}
+                alt=""
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
             )}
             <div className="hero-art-badge">오늘 견적 가능</div>
           </div>
@@ -220,35 +227,35 @@ export default function HomePage() {
       </section>
 
       {/* About CTA */}
-      <section className="section">
-        <div className="container">
-          <div className="about-cta">
-            <div>
-              <div className="eyebrow">ABOUT</div>
-              <h2 className="h2 mt-16">
-                한 사람이
-                <br />
-                처음부터 끝까지.
-              </h2>
-              <p className="lead mt-16">
-                견적·시공·마무리까지 모두 김장인이 직접.
-                <br />
-                중간에 사람이 바뀌지 않아요.
-              </p>
-              <div className="mt-32">
-                <button className="btn ink lg" onClick={() => navigate('/about')}>
-                  시공자 더 알아보기 →
-                </button>
-              </div>
-            </div>
-            <div className="about-art" style={{ overflow: 'hidden', borderRadius: 'var(--radius-xl)', background: 'var(--bg-deep)' }}>
-              {assets?.['home.about_cta']?.imageUrl && (
-                <img src={assets['home.about_cta'].imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
+      {/*<section className="section">*/}
+      {/*  <div className="container">*/}
+      {/*    <div className="about-cta">*/}
+      {/*      <div>*/}
+      {/*        <div className="eyebrow">ABOUT</div>*/}
+      {/*        <h2 className="h2 mt-16">*/}
+      {/*          한 사람이*/}
+      {/*          <br />*/}
+      {/*          처음부터 끝까지.*/}
+      {/*        </h2>*/}
+      {/*        <p className="lead mt-16">*/}
+      {/*          견적·시공·마무리까지 모두 김장인이 직접.*/}
+      {/*          <br />*/}
+      {/*          중간에 사람이 바뀌지 않아요.*/}
+      {/*        </p>*/}
+      {/*        <div className="mt-32">*/}
+      {/*          <button className="btn ink lg" onClick={() => navigate('/about')}>*/}
+      {/*            시공자 더 알아보기 →*/}
+      {/*          </button>*/}
+      {/*        </div>*/}
+      {/*      </div>*/}
+      {/*      <div className="about-art" style={{ overflow: 'hidden', borderRadius: 'var(--radius-xl)', background: 'var(--bg-deep)' }}>*/}
+      {/*        {assets?.['home.about_cta']?.imageUrl && (*/}
+      {/*          <img src={assets['home.about_cta'].imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />*/}
+      {/*        )}*/}
+      {/*      </div>*/}
+      {/*    </div>*/}
+      {/*  </div>*/}
+      {/*</section>*/}
     </>
   )
 }

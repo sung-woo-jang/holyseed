@@ -29,14 +29,28 @@ export class ProductImagesController {
     @UploadedFile() file: Express.Multer.File,
     @Body('isPrimary') isPrimary?: string,
     @Body('sortOrder') sortOrder?: string,
+    @Body('role') role?: string,
+    @Body('label') label?: string,
   ) {
     const data = await this.productImagesService.upload(
       productId,
       file,
       isPrimary === 'true',
       sortOrder ? parseInt(sortOrder, 10) : 0,
+      role || 'main',
+      label || undefined,
     );
     return { success: true, message: '이미지 업로드 성공', data, timestamp: new Date().toISOString() };
+  }
+
+  @Post(':productId/images/:imageId/update')
+  @ApiOperation({ summary: '이미지 role/label/sortOrder 변경' })
+  async updateMeta(
+    @Param('imageId', ParseIntPipe) imageId: number,
+    @Body() body: { role?: string; label?: string; sortOrder?: number },
+  ) {
+    await this.productImagesService.updateMeta(imageId, body);
+    return { success: true, message: '이미지 정보 변경 성공', data: null, timestamp: new Date().toISOString() };
   }
 
   @Post(':productId/images/:imageId/set-primary')

@@ -6,15 +6,19 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Button, TextField } from '@toss/tds-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '../../lib/theme';
+import { useAuthStore } from '../../stores/auth.store';
+import { api } from '../../lib/api';
 import TossEmoji from '../common/TossEmoji';
 import { TE } from '../../lib/toss-emoji';
 import { Icon } from '../common/Icon';
+import { qk } from '../../queries/keys';
 
 interface JoinSheetProps {
   visible: boolean;
@@ -22,47 +26,71 @@ interface JoinSheetProps {
   initialCode?: string;
 }
 
-const MOCK_PREVIEW = {
-  ownerName: '김토스',
-  householdName: '토스네 가족',
-  memberCount: 2,
-  assetCount: 8,
-};
-
 export default function JoinSheet({ visible, onClose, initialCode }: JoinSheetProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const qc = useQueryClient();
+  const { setHouseholds, currentHousehold } = useAuthStore();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [code, setCode] = useState(initialCode ?? '');
+  const [preview, setPreview] = useState<{ householdName: string; role: string; memberCount?: number } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (initialCode) {
       setCode(initialCode);
-      setStep(2);
+      handlePreview(initialCode);
     }
   }, [initialCode]);
 
-  function handlePreview() {
+  async function handlePreview(inviteCode?: string) {
+    const c = inviteCode ?? code;
+    setError('');
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const { data } = await api.post(`/invitations/${c}/preview`);
+      setPreview(data.data ?? data);
       setStep(2);
-    }, 600);
+    } catch (e: any) {
+      setError('유효하지 않은 초대 코드예요.');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function handleJoin() {
-    setStep(3);
-    setTimeout(() => {
-      setStep(1);
-      setCode('');
-      onClose();
-    }, 1200);
+  async function handleJoin() {
+    setError('');
+    setJoining(true);
+    try {
+      await api.post(`/invitations/${code}/accept`);
+      const { data } = await api.get('/households');
+      setHouseholds(data.data ?? data);
+      // 멤버/초대 쿼리 갱신
+      if (currentHousehold?.id) {
+        qc.invalidateQueries({ queryKey: qk.members(currentHousehold.id) });
+        qc.invalidateQueries({ queryKey: qk.invitations(currentHousehold.id) });
+      }
+      setStep(3);
+      setTimeout(() => {
+        setStep(1);
+        setCode('');
+        setPreview(null);
+        onClose();
+      }, 1200);
+    } catch (e: any) {
+      setError(e?.message ?? '합류에 실패했어요. 다시 시도해 주세요.');
+    } finally {
+      setJoining(false);
+    }
   }
 
   function handleClose() {
     setStep(1);
     setCode('');
+    setPreview(null);
+    setError('');
     onClose();
   }
 
@@ -85,39 +113,47 @@ export default function JoinSheet({ visible, onClose, initialCode }: JoinSheetPr
               <Text style={[styles.desc, { color: theme.textMuted }]}>
                 초대받은 코드를 입력하면 가구에 합류할 수 있어요
               </Text>
-              <TextInput
-                style={[styles.codeInput, { borderColor: theme.border, color: theme.brand, backgroundColor: theme.bg }]}
+              <TextField
+                variant="box"
                 placeholder="TOSS-XXXXXX"
-                placeholderTextColor={theme.border}
                 value={code}
                 onChangeText={setCode}
                 autoCapitalize="characters"
                 autoCorrect={false}
               />
-              <TouchableOpacity
-                style={[styles.nextBtn, { backgroundColor: code.length >= 8 ? theme.brand : theme.border }]}
-                onPress={handlePreview}
-                disabled={code.length < 8 || loading}
+              {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
+              <Button
+                display="full"
+                size="big"
+                type="primary"
+                disabled={code.length < 8}
+                loading={loading}
+                onPress={() => handlePreview()}
               >
-                <Text style={[styles.nextBtnText, { color: code.length >= 8 ? '#fff' : theme.textMuted }]}>
-                  {loading ? '확인 중...' : '확인'}
-                </Text>
-              </TouchableOpacity>
+                확인
+              </Button>
             </View>
           )}
 
-          {step === 2 && (
+          {step === 2 && preview && (
             <View style={[styles.body, { paddingBottom: insets.bottom + 20 }]}>
               <Text style={[styles.desc, { color: theme.textMuted }]}>이 가구에 합류할까요?</Text>
               <View style={[styles.previewCard, { backgroundColor: theme.bg, borderColor: theme.border }]}>
-                <Text style={[styles.previewHousehold, { color: theme.text }]}>{MOCK_PREVIEW.householdName}</Text>
+                <Text style={[styles.previewHousehold, { color: theme.text }]}>{preview.householdName}</Text>
                 <Text style={[styles.previewMeta, { color: theme.textMuted }]}>
-                  {MOCK_PREVIEW.ownerName}님의 가구 · 멤버 {MOCK_PREVIEW.memberCount}명 · 자산 {MOCK_PREVIEW.assetCount}건
+                  {preview.role} 권한으로 참여{preview.memberCount ? ` · 멤버 ${preview.memberCount}명` : ''}
                 </Text>
               </View>
-              <TouchableOpacity style={[styles.nextBtn, { backgroundColor: theme.brand }]} onPress={handleJoin}>
-                <Text style={styles.nextBtnText}>합류하기</Text>
-              </TouchableOpacity>
+              {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
+              <Button
+                display="full"
+                size="big"
+                type="primary"
+                loading={joining}
+                onPress={handleJoin}
+              >
+                합류하기
+              </Button>
             </View>
           )}
 
@@ -125,7 +161,7 @@ export default function JoinSheet({ visible, onClose, initialCode }: JoinSheetPr
             <View style={styles.confirmBox}>
               <TossEmoji code={TE.party} size={80} />
               <Text style={[styles.confirmTitle, { color: theme.text }]}>합류 완료!</Text>
-              <Text style={[styles.confirmSub, { color: theme.textMuted }]}>{MOCK_PREVIEW.householdName}에 합류했어요</Text>
+              <Text style={[styles.confirmSub, { color: theme.textMuted }]}>{preview?.householdName ?? '가구'}에 합류했어요</Text>
             </View>
           )}
         </Pressable>
@@ -152,4 +188,5 @@ const styles = StyleSheet.create({
   confirmBox: { paddingVertical: 60, alignItems: 'center', gap: 12 },
   confirmTitle: { fontSize: 24, fontWeight: '800' },
   confirmSub: { fontSize: 14 },
+  errorText: { fontSize: 13, textAlign: 'center' },
 });

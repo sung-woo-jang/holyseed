@@ -1845,7 +1845,7 @@ section.section {
 /* ── 관리자 ── */
 .admin-shell {
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 260px 1fr;
   min-height: calc(100vh - 64px);
 }
 @media (max-width: 880px) {
@@ -1898,7 +1898,7 @@ section.section {
 
 .admin-main {
   padding: 40px 48px;
-  max-width: 1200px;
+  min-width: 0;
 }
 @media (max-width: 720px) {
   .admin-main {

@@ -1,16 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
-import { dashboardApi, assetsApi, txApi, recurringApi, householdsApi } from '../api';
+import { dashboardApi, assetsApi, txApi, recurringApi, householdsApi, categoriesApi } from '../api';
 import { useAuthStore } from '../stores/auth.store';
 import type { MockPersona } from '../lib/mock-data';
+import { ASSET_CATEGORY_META } from '../lib/category-meta';
 import { qk } from './keys';
 
+// ASSET_CATEGORY_META를 단일 소스로 — 도넛/자산 리스트와 일치
 const CATEGORY_LABEL: Record<string, string> = {
-  CASH: '예적금',
-  INVESTMENT: '주식·ETF',
-  CRYPTO: '코인',
-  REAL_ESTATE: '부동산',
-  PENSION: '연금',
-  LIABILITY: '부채상환',
+  CASH:        ASSET_CATEGORY_META.CASH.label,
+  INVESTMENT:  ASSET_CATEGORY_META.INVESTMENT.label,
+  CRYPTO:      ASSET_CATEGORY_META.CRYPTO.label,
+  REAL_ESTATE: ASSET_CATEGORY_META.REAL_ESTATE.label,
+  PENSION:     ASSET_CATEGORY_META.PENSION.label,
+  LIABILITY:   ASSET_CATEGORY_META.LIABILITY.label,
 };
 
 const CATEGORY_COLOR: Record<string, string> = {
@@ -32,6 +34,7 @@ const EMPTY: MockPersona = {
   recurring: [],
   members: [],
   pendingInvites: [],
+  categories: [],
 };
 
 function computeNextDate(dayOfMonth: number): string {
@@ -88,6 +91,13 @@ export function useHouseholdData(): MockPersona {
     staleTime: 60_000,
   });
 
+  const categoriesQ = useQuery({
+    queryKey: qk.categories(hid ?? 0),
+    queryFn: () => categoriesApi.list(hid!),
+    enabled,
+    staleTime: 300_000,
+  });
+
   if (!hid || useMock) return EMPTY;
 
   const dash = dashQ.data as any;
@@ -96,6 +106,7 @@ export function useHouseholdData(): MockPersona {
   const rawRecurring: any[] = Array.isArray(recurringQ.data) ? recurringQ.data : [];
   const rawMembers: any[] = Array.isArray(membersQ.data) ? membersQ.data : [];
   const rawInvitations: any[] = Array.isArray(invitationsQ.data) ? invitationsQ.data : [];
+  const rawCategories: any[] = Array.isArray(categoriesQ.data) ? categoriesQ.data : [];
 
   // 순자산 시계열
   const timeseries: { month: string; netWorth: number }[] = dash?.timeseries ?? [];
@@ -163,6 +174,16 @@ export function useHouseholdData(): MockPersona {
     joined: '',
   }));
 
+  // 카테고리
+  const categories = rawCategories.map((c: any) => ({
+    id: c.id,
+    householdId: c.householdId ?? null,
+    type: c.type,
+    name: c.name,
+    icon: c.icon,
+    isBuiltin: c.isBuiltin ?? false,
+  }));
+
   // 초대 (받은 것)
   const pendingInvites = rawInvitations.map((inv: any) => ({
     id: String(inv.id),
@@ -189,5 +210,6 @@ export function useHouseholdData(): MockPersona {
     recurring,
     members,
     pendingInvites,
+    categories,
   };
 }

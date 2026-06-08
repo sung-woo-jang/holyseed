@@ -45,7 +45,18 @@ export class PricesService {
         note: dto.note,
         quotedAt: dto.quotedAt ? new Date(dto.quotedAt) : null,
       });
-      saved = await this.repo.save(price);
+      try {
+        saved = await this.repo.save(price);
+      } catch (err) {
+        if (err?.code === '23505' && err?.constraint?.startsWith('PK_')) {
+          await this.dataSource.query(
+            `SELECT setval('jip.pc_product_prices_id_seq', (SELECT MAX(id) FROM jip.pc_product_prices))`,
+          );
+          saved = await this.repo.save(price);
+        } else {
+          throw err;
+        }
+      }
     }
 
     await this.recomputeRepresentativePrice(dto.productId);

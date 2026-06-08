@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import {
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheet, Button, TextFieldBig, ListRow, SegmentedControl } from '@toss/tds-react-native';
 import { useTheme } from '../../lib/theme';
 import { useDataSource } from '../../lib/data-source';
@@ -39,7 +37,6 @@ interface AddTxSheetProps {
 export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
   const theme = useTheme();
   const data = useDataSource();
-  const insets = useSafeAreaInsets();
   const [type, setType] = useState<TxType>('EXPENSE');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<{ id: number; name: string } | null>(null);
@@ -95,102 +92,90 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
 
   return (
     <>
-      <BottomSheet.Root
-        open={visible}
-        onClose={onClose}
-        header={<BottomSheet.Header>거래 추가</BottomSheet.Header>}
-      >
-        {saved ? (
+      {saved ? (
+        <BottomSheet.Root open={visible} onClose={onClose}>
           <View style={styles.confirmBox}>
             <TossEmoji code={TE.check} size={64} />
             <Text style={[styles.confirmTitle, { color: theme.text }]}>저장 완료!</Text>
           </View>
-        ) : (
-          <>
-            <ScrollView contentContainerStyle={styles.body}>
-              {/* 타입 SegmentedControl */}
-              <View style={styles.segWrap}>
-                <SegmentedControl.Root
-                  value={type}
-                  onChange={(v) => { setType(v as TxType); setCategory(null); }}
-                  name="txType"
-                  size="large"
-                  alignment="fixed"
-                >
-                  {TYPE_OPTIONS.map((opt) => (
-                    <SegmentedControl.Item key={opt.key} value={opt.key}>
-                      {opt.label}
-                    </SegmentedControl.Item>
-                  ))}
-                </SegmentedControl.Root>
-              </View>
-
-              {/* 금액 */}
-              <View style={styles.amountWrap}>
-                <TextFieldBig
-                  placeholder="0"
-                  keyboardType="numeric"
-                  value={amount}
-                  onChangeText={(t) => setAmount(formatNum(t))}
-                  suffix="원"
-                  autoFocus
-                  style={styles.amountField}
-                />
-              </View>
-
-              {/* 필드 카드 */}
-              <View style={[styles.fieldsCard, { borderColor: theme.border }]}>
-                {type !== 'TRANSFER' && (
-                  <FormRow
-                    label="카테고리"
-                    value={category?.name || ''}
-                    onPress={() => setCatPicker(true)}
-                  />
-                )}
-                {(type === 'EXPENSE' || type === 'TRANSFER') && (
-                  <FormRow
-                    label={type === 'TRANSFER' ? '보내는 자산' : '출금 자산'}
-                    value={fromAsset?.name || ''}
-                    onPress={() => setFromPicker(true)}
-                  />
-                )}
-                {(type === 'INCOME' || type === 'TRANSFER') && (
-                  <FormRow
-                    label={type === 'TRANSFER' ? '받는 자산' : '입금 자산'}
-                    value={toAsset?.name || ''}
-                    onPress={() => setToPicker(true)}
-                  />
-                )}
-              </View>
-
-              {/* 제목 / 메모 */}
-              <TextInput
-                style={[styles.titleInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.bg }]}
-                placeholder="제목 (선택)"
-                placeholderTextColor={theme.textMuted}
-                value={title}
-                onChangeText={setTitle}
-              />
-              <TextInput
-                style={[styles.memoInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.bg }]}
-                placeholder="메모 (선택)"
-                placeholderTextColor={theme.textMuted}
-                multiline
-                numberOfLines={3}
-                value={memo}
-                onChangeText={setMemo}
-              />
-            </ScrollView>
-
-            <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
+        </BottomSheet.Root>
+      ) : (
+        <BottomSheet.Root
+          open={visible}
+          onClose={onClose}
+          header={<BottomSheet.Header>거래 추가</BottomSheet.Header>}
+          cta={
+            <View style={styles.cta}>
               {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
               <Button display="full" size="big" type="primary" disabled={!isValid} loading={createTx.isPending} onPress={handleSave}>
                 저장하기
               </Button>
             </View>
-          </>
-        )}
-      </BottomSheet.Root>
+          }
+        >
+          <View style={styles.body}>
+            {/* 타입 SegmentedControl */}
+            <View style={styles.segWrap}>
+              <SegmentedControl.Root
+                value={type}
+                onChange={(v) => { setType(v as TxType); setCategory(null); }}
+                name="txType"
+                size="large"
+                alignment="fixed"
+              >
+                {TYPE_OPTIONS.map((opt) => (
+                  <SegmentedControl.Item key={opt.key} value={opt.key}>
+                    {opt.label}
+                  </SegmentedControl.Item>
+                ))}
+              </SegmentedControl.Root>
+            </View>
+
+            {/* 금액 */}
+            <View style={styles.amountWrap}>
+              <TextFieldBig
+                placeholder="0"
+                keyboardType="numeric"
+                value={amount}
+                onChangeText={(t) => setAmount(formatNum(t))}
+                suffix="원"
+                style={styles.amountField}
+              />
+            </View>
+
+            {/* 필드 카드 */}
+            <View style={[styles.fieldsCard, { borderColor: theme.border }]}>
+              {type !== 'TRANSFER' && (
+                <FormRow label="카테고리" value={category?.name || ''} onPress={() => setCatPicker(true)} />
+              )}
+              {(type === 'EXPENSE' || type === 'TRANSFER') && (
+                <FormRow label={type === 'TRANSFER' ? '보내는 자산' : '출금 자산'} value={fromAsset?.name || ''} onPress={() => setFromPicker(true)} />
+              )}
+              {(type === 'INCOME' || type === 'TRANSFER') && (
+                <FormRow label={type === 'TRANSFER' ? '받는 자산' : '입금 자산'} value={toAsset?.name || ''} onPress={() => setToPicker(true)} />
+              )}
+            </View>
+
+            {/* 제목 / 메모 */}
+            <TextInput
+              style={[styles.titleInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.bg }]}
+              placeholder="제목 (선택)"
+              placeholderTextColor={theme.textMuted}
+              value={title}
+              onChangeText={setTitle}
+            />
+            <TextInput
+              style={[styles.memoInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.bg }]}
+              placeholder="메모 (선택)"
+              placeholderTextColor={theme.textMuted}
+              multiline
+              numberOfLines={3}
+              value={memo}
+              onChangeText={setMemo}
+            />
+          </View>
+        </BottomSheet.Root>
+      )}
 
       {/* 카테고리 피커 */}
       <PickerSheet visible={catPicker} title="카테고리 선택" onClose={() => setCatPicker(false)}>
@@ -257,13 +242,13 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
 const styles = StyleSheet.create({
   confirmBox: { paddingVertical: 60, alignItems: 'center', gap: 12 },
   confirmTitle: { fontSize: 22, fontWeight: '800' },
-  body: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  body: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12 },
   segWrap: { marginBottom: 20 },
   amountWrap: { alignItems: 'center', marginBottom: 20 },
   amountField: { width: '100%' },
   fieldsCard: { borderRadius: 14, borderWidth: 1, marginBottom: 12, overflow: 'hidden' },
   titleInput: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, marginBottom: 8 },
   memoInput: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, textAlignVertical: 'top' },
-  footer: { paddingHorizontal: 20, paddingTop: 12 },
+  cta: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8 },
   errorText: { fontSize: 13, textAlign: 'center', marginBottom: 8 },
 });

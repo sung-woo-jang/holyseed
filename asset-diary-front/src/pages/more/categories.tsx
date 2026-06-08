@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { BottomSheet, Border, Button, ListHeader, ListRow, TextField } from '@toss/tds-react-native';
+// 주: AddCategorySheet 내부에서는 BottomSheet가 스크롤을 자동 처리하므로 ScrollView를 쓰지 않음
 import ScreenHeader from '../../components/common/ScreenHeader';
 import TossEmoji from '../../components/common/TossEmoji';
 import Segmented from '../../components/common/Segmented';
@@ -58,8 +59,15 @@ function AddCategorySheet({
       open={visible}
       onClose={onClose}
       header={<BottomSheet.Header>카테고리 추가</BottomSheet.Header>}
+      cta={
+        <View style={styles.sheetCta}>
+          <Button display="full" size="big" type="primary" disabled={!name.trim()} loading={saving} onPress={handleAdd}>
+            추가하기
+          </Button>
+        </View>
+      }
     >
-      <ScrollView contentContainerStyle={styles.sheetBody}>
+      <View style={styles.sheetBody}>
         <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>이름</Text>
         <TextField variant="box" placeholder="카테고리 이름" value={name} onChangeText={setName} />
 
@@ -96,13 +104,7 @@ function AddCategorySheet({
             />
           ))}
         </View>
-
-        <View style={{ marginTop: 24 }}>
-          <Button display="full" size="big" type="primary" disabled={!name.trim()} loading={saving} onPress={handleAdd}>
-            추가하기
-          </Button>
-        </View>
-      </ScrollView>
+      </View>
     </BottomSheet.Root>
   );
 }
@@ -227,7 +229,8 @@ const styles = StyleSheet.create({
   colorDot: { width: 12, height: 12, borderRadius: 6 },
   deleteText: { fontSize: 13, fontWeight: '500' },
   addCatBtnWrap: { marginHorizontal: 20, marginTop: 4 },
-  sheetBody: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  sheetBody: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12 },
+  sheetCta: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8 },
   fieldLabel: { fontSize: 12, fontWeight: '600', marginBottom: 8, marginTop: 16 },
   iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   iconCell: { width: 56, height: 56, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },

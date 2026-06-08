@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import {
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheet, Button, ListRow, Switch, TextFieldBig, TextField } from '@toss/tds-react-native';
 import { useTheme } from '../../lib/theme';
 import { useDataSource } from '../../lib/data-source';
@@ -34,7 +32,6 @@ const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 export default function AddRecurringSheet({ visible, onClose }: AddRecurringSheetProps) {
   const theme = useTheme();
   const data = useDataSource();
-  const insets = useSafeAreaInsets();
   const [amount, setAmount] = useState('');
   const [name, setName] = useState('');
   const [category, setCategory] = useState<{ id: number; name: string } | null>(null);
@@ -84,83 +81,84 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
 
   return (
     <>
-      <BottomSheet.Root
-        open={visible}
-        onClose={onClose}
-        header={<BottomSheet.Header>정기지출 추가</BottomSheet.Header>}
-      >
-        {saved ? (
+      {saved ? (
+        <BottomSheet.Root open={visible} onClose={onClose}>
           <View style={styles.confirmBox}>
             <TossEmoji code={TE.check} size={64} />
             <Text style={[styles.confirmTitle, { color: theme.text }]}>저장 완료!</Text>
           </View>
-        ) : (
-          <>
-            <ScrollView contentContainerStyle={styles.body}>
-              {/* 안내 박스 */}
-              <View style={[styles.infoBox, { backgroundColor: theme.brandSoft }]}>
-                <TossEmoji code={TE.repeat} size={20} />
-                <Text style={[styles.infoText, { color: theme.brand }]}>
-                  매월 같은 날 자동으로 기록되는 지출만 등록할 수 있어요
-                </Text>
-              </View>
-
-              {/* 금액 */}
-              <View style={styles.amountWrap}>
-                <TextFieldBig
-                  placeholder="0"
-                  keyboardType="numeric"
-                  value={amount}
-                  onChangeText={(t) => setAmount(formatNum(t))}
-                  suffix="원"
-                  style={styles.amountField}
-                />
-              </View>
-
-              {/* 이름 */}
-              <TextField
-                variant="box"
-                placeholder="항목 이름 (예: 넷플릭스)"
-                value={name}
-                onChangeText={setName}
-                style={styles.nameField}
-              />
-
-              {/* 필드 카드 */}
-              <View style={[styles.fieldsCard, { borderColor: theme.border }]}>
-                <FormRow label="카테고리" value={category?.name || ''} onPress={() => setCatPicker(true)} />
-                <FormRow label="결제일" value={`매월 ${dayOfMonth}일`} onPress={() => setDayPicker(true)} />
-                <FormRow label="출금 자산" value={fromAsset?.name || ''} onPress={() => setAssetPicker(true)} />
-              </View>
-
-              {/* 자동 생성 토글 */}
-              <ListRow
-                contents="자동 생성 활성화"
-                right={<Switch checked={autoGenerate} onCheckedChange={setAutoGenerate} />}
-                verticalPadding="small"
-              />
-
-              {/* 미리보기 */}
-              {isValid && autoGenerate && (
-                <View style={[styles.previewCard, { borderColor: theme.brand }]}>
-                  <Text style={[styles.previewText, { color: theme.text }]}>
-                    <Text style={{ fontWeight: '700' }}>{nextDateStr}</Text>에{' '}
-                    <Text style={{ fontWeight: '700' }}>{fromAsset?.name || '선택한 자산'}</Text>에서{' '}
-                    <Text style={{ fontWeight: '700', color: theme.danger }}>-{krw(amtNum)}</Text>이 자동으로 기록돼요
-                  </Text>
-                </View>
-              )}
-            </ScrollView>
-
-            <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
+        </BottomSheet.Root>
+      ) : (
+        <BottomSheet.Root
+          open={visible}
+          onClose={onClose}
+          header={<BottomSheet.Header>정기지출 추가</BottomSheet.Header>}
+          cta={
+            <View style={styles.cta}>
               {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
               <Button display="full" size="big" type="primary" disabled={!isValid} loading={createRecurring.isPending} onPress={handleSave}>
                 저장하기
               </Button>
             </View>
-          </>
-        )}
-      </BottomSheet.Root>
+          }
+        >
+          <View style={styles.body}>
+            {/* 안내 박스 */}
+            <View style={[styles.infoBox, { backgroundColor: theme.brandSoft }]}>
+              <TossEmoji code={TE.repeat} size={20} />
+              <Text style={[styles.infoText, { color: theme.brand }]}>
+                매월 같은 날 자동으로 기록되는 지출만 등록할 수 있어요
+              </Text>
+            </View>
+
+            {/* 금액 */}
+            <View style={styles.amountWrap}>
+              <TextFieldBig
+                placeholder="0"
+                keyboardType="numeric"
+                value={amount}
+                onChangeText={(t) => setAmount(formatNum(t))}
+                suffix="원"
+                style={styles.amountField}
+              />
+            </View>
+
+            {/* 이름 */}
+            <TextField
+              variant="box"
+              placeholder="항목 이름 (예: 넷플릭스)"
+              value={name}
+              onChangeText={setName}
+              style={styles.nameField}
+            />
+
+            {/* 필드 카드 */}
+            <View style={[styles.fieldsCard, { borderColor: theme.border }]}>
+              <FormRow label="카테고리" value={category?.name || ''} onPress={() => setCatPicker(true)} />
+              <FormRow label="결제일" value={`매월 ${dayOfMonth}일`} onPress={() => setDayPicker(true)} />
+              <FormRow label="출금 자산" value={fromAsset?.name || ''} onPress={() => setAssetPicker(true)} />
+            </View>
+
+            {/* 자동 생성 토글 */}
+            <ListRow
+              contents="자동 생성 활성화"
+              right={<Switch checked={autoGenerate} onCheckedChange={setAutoGenerate} />}
+              verticalPadding="small"
+            />
+
+            {/* 미리보기 */}
+            {isValid && autoGenerate && (
+              <View style={[styles.previewCard, { borderColor: theme.brand }]}>
+                <Text style={[styles.previewText, { color: theme.text }]}>
+                  <Text style={{ fontWeight: '700' }}>{nextDateStr}</Text>에{' '}
+                  <Text style={{ fontWeight: '700' }}>{fromAsset?.name || '선택한 자산'}</Text>에서{' '}
+                  <Text style={{ fontWeight: '700', color: theme.danger }}>-{krw(amtNum)}</Text>이 자동으로 기록돼요
+                </Text>
+              </View>
+            )}
+          </View>
+        </BottomSheet.Root>
+      )}
 
       {/* 카테고리 피커 */}
       <PickerSheet visible={catPicker} title="카테고리 선택" onClose={() => setCatPicker(false)}>
@@ -213,7 +211,7 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
 const styles = StyleSheet.create({
   confirmBox: { paddingVertical: 60, alignItems: 'center', gap: 12 },
   confirmTitle: { fontSize: 22, fontWeight: '800' },
-  body: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  body: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12 },
   infoBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 20 },
   infoText: { flex: 1, fontSize: 13, lineHeight: 18 },
   amountWrap: { alignItems: 'center', marginBottom: 16 },
@@ -222,7 +220,7 @@ const styles = StyleSheet.create({
   fieldsCard: { borderRadius: 14, borderWidth: 1, marginBottom: 12, overflow: 'hidden' },
   previewCard: { borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, marginTop: 12 },
   previewText: { fontSize: 14, lineHeight: 20 },
-  footer: { paddingHorizontal: 20, paddingTop: 12 },
+  cta: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8 },
   errorText: { fontSize: 13, textAlign: 'center', marginBottom: 8 },
   dayGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingBottom: 12 },
   dayCell: { width: 42, height: 42, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },

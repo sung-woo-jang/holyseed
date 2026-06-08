@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import {
   Clipboard,
-  Modal,
-  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Button } from '@toss/tds-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BottomSheet, Button, ListRow } from '@toss/tds-react-native';
 import { useTheme } from '../../lib/theme';
 import { Icon } from '../common/Icon';
 import { useInvite } from '../../queries/mutations';
@@ -54,102 +52,64 @@ export default function InviteSheet({ visible, onClose }: InviteSheetProps) {
   }
 
   function handleClose() {
-    setStep(1);
-    setCode('');
-    setError('');
-    onClose();
+    setStep(1); setCode(''); setError(''); onClose();
   }
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
-      <Pressable style={styles.overlay} onPress={handleClose}>
-        <Pressable style={[styles.sheet, { backgroundColor: theme.card }]} onPress={() => {}}>
-          <View style={[styles.handle, { backgroundColor: theme.border }]} />
-          <View style={[styles.header, { borderBottomColor: theme.border }]}>
-            <TouchableOpacity onPress={handleClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              {Icon.close(theme.textMuted, 20)}
-            </TouchableOpacity>
-            <Text style={[styles.title, { color: theme.text }]}>멤버 초대</Text>
-            <View style={{ width: 20 }} />
+    <BottomSheet.Root
+      open={visible}
+      onClose={handleClose}
+      header={<BottomSheet.Header>멤버 초대</BottomSheet.Header>}
+    >
+      {step === 1 ? (
+        <View style={[styles.body, { paddingBottom: insets.bottom + 20 }]}>
+          <Text style={[styles.stepLabel, { color: theme.textMuted }]}>권한 선택</Text>
+          {(['EDITOR', 'VIEWER'] as InviteRole[]).map((r) => (
+            <ListRow
+              key={r}
+              contents={ROLE_INFO[r].label}
+              right={role === r ? Icon.check(theme.brand, 18) : undefined}
+              onPress={() => setRole(r)}
+              verticalPadding="small"
+            />
+          ))}
+          {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
+          <Button display="full" size="big" type="primary" loading={invite.isPending} onPress={handleNext}>
+            초대 코드 생성
+          </Button>
+        </View>
+      ) : (
+        <View style={[styles.body, { paddingBottom: insets.bottom + 20 }]}>
+          <Text style={[styles.stepLabel, { color: theme.textMuted }]}>초대 코드</Text>
+          <View style={[styles.codeBox, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+            <Text style={[styles.codeText, { color: theme.brand }]}>{code}</Text>
+            <Text style={[styles.expireText, { color: theme.textMuted }]}>7일 후 만료</Text>
           </View>
-
-          {step === 1 ? (
-            <View style={[styles.body, { paddingBottom: insets.bottom + 20 }]}>
-              <Text style={[styles.stepLabel, { color: theme.textMuted }]}>권한 선택</Text>
-              {(['EDITOR', 'VIEWER'] as InviteRole[]).map((r) => (
-                <TouchableOpacity
-                  key={r}
-                  style={[
-                    styles.roleCard,
-                    { borderColor: role === r ? theme.brand : theme.border, backgroundColor: role === r ? theme.brandSoft : theme.bg },
-                  ]}
-                  onPress={() => setRole(r)}
-                >
-                  <View style={styles.roleMain}>
-                    <Text style={[styles.roleLabel, { color: role === r ? theme.brand : theme.text }]}>
-                      {ROLE_INFO[r].label}
-                    </Text>
-                    <Text style={[styles.roleDesc, { color: theme.textMuted }]}>{ROLE_INFO[r].desc}</Text>
-                  </View>
-                  {role === r && Icon.check(theme.brand, 18)}
-                </TouchableOpacity>
-              ))}
-              {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
-              <Button
-                display="full"
-                size="big"
-                type="primary"
-                loading={invite.isPending}
-                onPress={handleNext}
-              >
-                초대 코드 생성
-              </Button>
-            </View>
-          ) : (
-            <View style={[styles.body, { paddingBottom: insets.bottom + 20 }]}>
-              <Text style={[styles.stepLabel, { color: theme.textMuted }]}>초대 코드</Text>
-              <View style={[styles.codeBox, { backgroundColor: theme.bg, borderColor: theme.border }]}>
-                <Text style={[styles.codeText, { color: theme.brand }]}>{code}</Text>
-                <Text style={[styles.expireText, { color: theme.textMuted }]}>7일 후 만료</Text>
-              </View>
-              <Text style={[styles.roleInfo, { color: theme.textMuted }]}>
-                {ROLE_INFO[role].label} 권한으로 초대합니다
+          <Text style={[styles.roleInfo, { color: theme.textMuted }]}>
+            {ROLE_INFO[role].label} 권한으로 초대합니다
+          </Text>
+          <View style={styles.btnRow}>
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: copied ? theme.brandSoft : theme.bg, borderColor: theme.border }]}
+              onPress={handleCopy}
+            >
+              <Text style={[styles.actionBtnText, { color: copied ? theme.brand : theme.text }]}>
+                {copied ? '복사됨!' : '코드 복사'}
               </Text>
-              <View style={styles.btnRow}>
-                <TouchableOpacity
-                  style={[styles.actionBtn, { backgroundColor: copied ? theme.brandSoft : theme.bg, borderColor: theme.border }]}
-                  onPress={handleCopy}
-                >
-                  <Text style={[styles.actionBtnText, { color: copied ? theme.brand : theme.text }]}>
-                    {copied ? '복사됨!' : '코드 복사'}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.brand }]} onPress={handleClose}>
-                  <Text style={[styles.actionBtnText, { color: '#fff' }]}>닫기</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-        </Pressable>
-      </Pressable>
-    </Modal>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.brand }]} onPress={handleClose}>
+              <Text style={[styles.actionBtnText, { color: '#fff' }]}>닫기</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+    </BottomSheet.Root>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  sheet: { borderTopLeftRadius: 20, borderTopRightRadius: 20 },
-  handle: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: 10, marginBottom: 4 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1 },
-  title: { fontSize: 16, fontWeight: '700' },
-  body: { padding: 20, gap: 12, paddingBottom: 20 },
+  body: { paddingHorizontal: 20, paddingTop: 8, gap: 12 },
   stepLabel: { fontSize: 12, fontWeight: '600', marginBottom: 4 },
-  roleCard: { borderWidth: 2, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center' },
-  roleMain: { flex: 1 },
-  roleLabel: { fontSize: 15, fontWeight: '700' },
-  roleDesc: { fontSize: 12, marginTop: 3 },
-  nextBtn: { borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
-  nextBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
   codeBox: { borderWidth: 1, borderRadius: 16, paddingVertical: 24, alignItems: 'center' },
   codeText: { fontSize: 26, fontWeight: '800', letterSpacing: 3 },
   expireText: { fontSize: 12, marginTop: 8 },

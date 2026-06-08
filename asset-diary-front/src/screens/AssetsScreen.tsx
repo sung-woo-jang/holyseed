@@ -6,13 +6,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Badge, Border, ListRow } from '@toss/tds-react-native';
 import { useDataSource, useMockRole } from '../lib/data-source';
 import { useTheme } from '../lib/theme';
 import { krw, krwShort, pct } from '../lib/format';
 import { ASSET_CATEGORY_META } from '../lib/category-meta';
 import { TE } from '../lib/toss-emoji';
 import TossEmoji from '../components/common/TossEmoji';
-import { Icon } from '../components/common/Icon';
 import SnapshotSheet from '../components/sheets/SnapshotSheet';
 import AddAssetSheet from '../components/sheets/AddAssetSheet';
 import type { AssetCategory } from '../types/api';
@@ -102,31 +102,35 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
               </View>
               <View style={[styles.groupCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 {items.map((a, i) => (
-                  <TouchableOpacity
-                    key={a.id}
-                    style={[styles.assetRow, i < items.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.border }]}
-                    onPress={() => pickingAsset ? handlePickAsset(a.id) : onAssetPress?.(a)}
-                  >
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={[styles.assetName, { color: theme.text }]} numberOfLines={1}>{a.name}</Text>
-                      <Text style={[styles.assetMeta, { color: theme.textMuted }]}>
-                        {a.currency !== 'KRW' && `$${a.currencyValue?.toLocaleString()} · 1${a.currency}=${a.fxRate}원 · `}
-                        <Text style={{ color: a.delta >= 0 ? theme.brand : theme.danger, fontWeight: '600' }}>
-                          {a.delta > 0 ? '+' : ''}{krwShort(a.delta)} ({pct(a.deltaPct)})
-                        </Text>
-                      </Text>
-                    </View>
-                    <Text style={[styles.assetValue, { color: a.isLiability ? theme.danger : theme.text }]}>
-                      {krw(a.value)}
-                    </Text>
-                    {pickingAsset ? (
-                      <View style={[styles.selectChip, { backgroundColor: theme.brandSoft, borderColor: theme.brand }]}>
-                        <Text style={[styles.selectChipText, { color: theme.brand }]}>선택</Text>
-                      </View>
-                    ) : (
-                      Icon.chevronRight(theme.textMuted)
-                    )}
-                  </TouchableOpacity>
+                  <React.Fragment key={a.id}>
+                    <ListRow
+                      contents={
+                        <View style={{ minWidth: 0 }}>
+                          <Text style={[styles.assetName, { color: theme.text }]} numberOfLines={1}>{a.name}</Text>
+                          <Text style={[styles.assetMeta, { color: theme.textMuted }]}>
+                            {a.currency !== 'KRW' && `$${a.currencyValue?.toLocaleString()} · 1${a.currency}=${a.fxRate}원 · `}
+                            <Text style={{ color: a.delta >= 0 ? theme.brand : theme.danger, fontWeight: '600' }}>
+                              {a.delta > 0 ? '+' : ''}{krwShort(a.delta)} ({pct(a.deltaPct)})
+                            </Text>
+                          </Text>
+                        </View>
+                      }
+                      right={
+                        <View style={styles.assetRight}>
+                          <Text style={[styles.assetValue, { color: a.isLiability ? theme.danger : theme.text }]}>
+                            {krw(a.value)}
+                          </Text>
+                          {pickingAsset && (
+                            <Badge type="blue" badgeStyle="weak" size="small">선택</Badge>
+                          )}
+                        </View>
+                      }
+                      withArrow={!pickingAsset}
+                      onPress={() => pickingAsset ? handlePickAsset(a.id) : onAssetPress?.(a)}
+                      verticalPadding="small"
+                    />
+                    {i < items.length - 1 && <Border type="full" />}
+                  </React.Fragment>
                 ))}
               </View>
             </View>
@@ -176,12 +180,10 @@ const styles = StyleSheet.create({
   groupCount: { fontSize: 11 },
   groupSum: { fontSize: 12, fontWeight: '600' },
   groupCard: { borderRadius: 14, borderWidth: 1 },
-  assetRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14 },
   assetName: { fontSize: 14, fontWeight: '600', marginBottom: 3 },
   assetMeta: { fontSize: 11 },
+  assetRight: { alignItems: 'flex-end', gap: 4 },
   assetValue: { fontSize: 14, fontWeight: '700', textAlign: 'right' },
-  selectChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1 },
-  selectChipText: { fontSize: 12, fontWeight: '700' },
   fab: {
     position: 'absolute',
     bottom: 20,

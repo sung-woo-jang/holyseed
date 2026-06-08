@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Button } from '@toss/tds-react-native';
+import { Badge, Border, Button, ListRow, TextButton } from '@toss/tds-react-native';
 import { useDataSource, useMockRole } from '../lib/data-source';
 import { useTheme } from '../lib/theme';
 import { krw, krwShort, pct } from '../lib/format';
@@ -28,7 +28,7 @@ export default function HomeScreen() {
 
   const nw = data.netWorth;
   const change = nw.current - nw.lastYear;
-  const changePct = (change / nw.lastYear) * 100;
+  const changePct = nw.lastYear > 0 ? (change / nw.lastYear) * 100 : 0;
   const isViewer = role === 'VIEWER';
 
   const all = nw.monthlyHistory;
@@ -53,10 +53,7 @@ export default function HomeScreen() {
         <Text style={[styles.heroLabel, { color: theme.textMuted }]}>우리집 순자산</Text>
         <Text style={[styles.heroValue, { color: theme.text }]}>{krw(nw.current)}</Text>
         <View style={styles.changeRow}>
-          <View style={[styles.changePill, { backgroundColor: theme.brandSoft }]}>
-            {Icon.arrowUp(theme.brand)}
-            <Text style={[styles.changePillText, { color: theme.brand }]}>{pct(changePct)}</Text>
-          </View>
+          <Badge type="blue" badgeStyle="weak" size="small">{pct(changePct)}</Badge>
           <Text style={[styles.changeAbs, { color: theme.text }]}>{krw(change)}</Text>
         </View>
       </View>
@@ -149,35 +146,40 @@ export default function HomeScreen() {
       <View style={styles.sectionPad}>
         <View style={styles.sectionHeader}>
           <Text style={[styles.cardTitle, { color: theme.text }]}>최근 거래</Text>
-          <TouchableOpacity>
-            <Text style={[styles.seeAll, { color: theme.textMuted }]}>모두 보기</Text>
-          </TouchableOpacity>
+          <TextButton typography="t5" variant="clear" color={theme.textMuted}>모두 보기</TextButton>
         </View>
-        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          {recentTxs.map((tx, i) => {
-            const catDef = getCategoryDef(tx.category);
-            return (
-              <View key={tx.id} style={[styles.txRow, i < recentTxs.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.border }]}>
-                <View style={[styles.txIcon, { backgroundColor: theme.bg }]}>
-                  <TossEmoji code={catDef.iconCode} size={22} />
-                </View>
-                <View style={styles.txInfo}>
-                  <View style={styles.txTitleRow}>
-                    <Text style={[styles.txTitle, { color: theme.text }]} numberOfLines={1}>{tx.title}</Text>
-                    {tx.auto && <AutoBadge />}
+        {recentTxs.map((tx, i) => {
+          const catDef = getCategoryDef(tx.category);
+          return (
+            <React.Fragment key={tx.id}>
+              <ListRow
+                left={
+                  <View style={[styles.txIcon, { backgroundColor: theme.bg }]}>
+                    <TossEmoji code={catDef.iconCode} size={22} />
                   </View>
-                  <Text style={[styles.txMeta, { color: theme.textMuted }]}>
-                    {tx.category} · {tx.date.slice(5).replace('-', '/')}
+                }
+                contents={
+                  <View>
+                    <View style={styles.txTitleRow}>
+                      <Text style={[styles.txTitle, { color: theme.text }]} numberOfLines={1}>{tx.title}</Text>
+                      {tx.auto && <AutoBadge />}
+                    </View>
+                    <Text style={[styles.txMeta, { color: theme.textMuted }]}>
+                      {tx.category} · {tx.date.slice(5).replace('-', '/')}
+                    </Text>
+                  </View>
+                }
+                right={
+                  <Text style={[styles.txAmount, { color: tx.type === 'INCOME' ? theme.brand : tx.type === 'TRANSFER' ? theme.textMuted : theme.text }]}>
+                    {tx.type === 'INCOME' ? '+' : tx.type === 'EXPENSE' ? '-' : ''}{krwShort(tx.amount)}원
                   </Text>
-                </View>
-                <Text style={[styles.txAmount, { color: tx.type === 'INCOME' ? theme.brand : tx.type === 'TRANSFER' ? theme.textMuted : theme.text }]}>
-                  {tx.type === 'INCOME' ? '+' : tx.type === 'EXPENSE' ? '-' : ''}
-                  {krwShort(tx.amount)}원
-                </Text>
-              </View>
-            );
-          })}
-        </View>
+                }
+                verticalPadding="small"
+              />
+              {i < recentTxs.length - 1 && <Border type="full" />}
+            </React.Fragment>
+          );
+        })}
       </View>
 
       <SnapshotSheet

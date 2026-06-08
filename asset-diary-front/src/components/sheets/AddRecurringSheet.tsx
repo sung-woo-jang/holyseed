@@ -5,7 +5,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { BottomSheet, Button, ListRow, Switch, TextFieldBig, TextField } from '@toss/tds-react-native';
+import { Button, ListRow, Switch, TextFieldBig, TextField } from '@toss/tds-react-native';
+import SheetModal from './SheetModal';
 import { useTheme } from '../../lib/theme';
 import { useDataSource } from '../../lib/data-source';
 import TossEmoji from '../common/TossEmoji';
@@ -82,17 +83,17 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
   return (
     <>
       {saved ? (
-        <BottomSheet.Root open={visible} onClose={onClose}>
+        <SheetModal visible={visible} onClose={onClose}>
           <View style={styles.confirmBox}>
             <TossEmoji code={TE.check} size={64} />
             <Text style={[styles.confirmTitle, { color: theme.text }]}>저장 완료!</Text>
           </View>
-        </BottomSheet.Root>
+        </SheetModal>
       ) : (
-        <BottomSheet.Root
-          open={visible}
+        <SheetModal
+          visible={visible}
           onClose={onClose}
-          header={<BottomSheet.Header>정기지출 추가</BottomSheet.Header>}
+          header="정기지출 추가"
           cta={
             <View style={styles.cta}>
               {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
@@ -157,7 +158,7 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
               </View>
             )}
           </View>
-        </BottomSheet.Root>
+        </SheetModal>
       )}
 
       {/* 카테고리 피커 */}

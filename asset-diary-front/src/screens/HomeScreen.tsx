@@ -41,7 +41,6 @@ export default function HomeScreen() {
   const recentTxs = data.transactions.slice(0, 3);
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.bg }}>
     <ScrollView style={{ flex: 1, backgroundColor: theme.bg }} contentContainerStyle={styles.content}>
       {/* Period label */}
       <View style={styles.periodRow}>
@@ -182,13 +181,12 @@ export default function HomeScreen() {
           );
         })}
       </View>
-    </ScrollView>
 
       <SnapshotSheet
         visible={snapshotVisible}
         onClose={() => setSnapshotVisible(false)}
       />
-    </View>
+    </ScrollView>
   );
 }
 

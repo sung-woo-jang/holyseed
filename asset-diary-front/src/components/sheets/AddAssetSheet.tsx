@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { BottomSheet, Button, ListRow, Switch, TextField } from '@toss/tds-react-native';
+import { Button, ListRow, Switch, TextField } from '@toss/tds-react-native';
+import SheetModal from './SheetModal';
 import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
 import TossEmoji from '../common/TossEmoji';
@@ -87,22 +88,22 @@ export default function AddAssetSheet({ visible, onClose }: AddAssetSheetProps) 
 
   if (saved) {
     return (
-      <BottomSheet.Root open={visible} onClose={handleClose}>
+      <SheetModal visible={visible} onClose={handleClose}>
         <View style={styles.confirmBox}>
           <TossEmoji code={TE.check} size={64} />
           <Text style={[styles.confirmTitle, { color: theme.text }]}>자산이 추가됐어요!</Text>
           <Text style={[styles.confirmSub, { color: theme.textMuted }]}>스냅샷을 입력하면 순자산에 반영돼요</Text>
         </View>
-      </BottomSheet.Root>
+      </SheetModal>
     );
   }
 
   if (step === 1) {
     return (
-      <BottomSheet.Root
-        open={visible}
+      <SheetModal
+        visible={visible}
         onClose={handleClose}
-        header={<BottomSheet.Header>{headerTitle}</BottomSheet.Header>}
+        header={headerTitle}
         cta={
           <View style={styles.cta}>
             <Button display="full" size="big" type="primary" disabled={!step1Valid} onPress={() => setStep(2)}>
@@ -144,15 +145,15 @@ export default function AddAssetSheet({ visible, onClose }: AddAssetSheetProps) 
             })}
           </View>
         </View>
-      </BottomSheet.Root>
+      </SheetModal>
     );
   }
 
   return (
-    <BottomSheet.Root
-      open={visible}
+    <SheetModal
+      visible={visible}
       onClose={handleClose}
-      header={<BottomSheet.Header>{headerTitle}</BottomSheet.Header>}
+      header={headerTitle}
       cta={
         <View style={styles.cta}>
           {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
@@ -203,7 +204,7 @@ export default function AddAssetSheet({ visible, onClose }: AddAssetSheetProps) 
           <Text style={[styles.skipText, { color: theme.textMuted }]}>건너뛰기 (나중에 입력)</Text>
         </TouchableOpacity>
       </View>
-    </BottomSheet.Root>
+    </SheetModal>
   );
 }
 

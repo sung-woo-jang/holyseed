@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { BottomSheet } from '@toss/tds-react-native';
+import SheetModal from './SheetModal';
 
 interface PickerSheetProps {
   visible: boolean;
@@ -11,13 +11,9 @@ interface PickerSheetProps {
 
 export default function PickerSheet({ visible, title, onClose, children }: PickerSheetProps) {
   return (
-    <BottomSheet.Root
-      open={visible}
-      onClose={onClose}
-      header={<BottomSheet.Header>{title}</BottomSheet.Header>}
-    >
+    <SheetModal visible={visible} onClose={onClose} header={title}>
       <View style={styles.body}>{children}</View>
-    </BottomSheet.Root>
+    </SheetModal>
   );
 }
 

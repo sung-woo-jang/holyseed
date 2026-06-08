@@ -14,7 +14,8 @@ import { qk } from '../../queries/keys';
 import { krw, krwShort } from '../../lib/format';
 import { ASSET_CATEGORY_META } from '../../lib/category-meta';
 
-function CompareScreen({ navigation }: { navigation: any }) {
+function CompareScreen() {
+  const navigation = Route.useNavigation();
   const theme = useTheme();
   const data = useDataSource();
   const { currentHousehold, useMock } = useAuthStore();

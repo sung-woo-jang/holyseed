@@ -6,7 +6,8 @@ import ScreenHeader from '../../components/common/ScreenHeader';
 import { useTheme } from '../../lib/theme';
 import { useAuthStore } from '../../stores/auth.store';
 
-function SettingsScreen({ navigation }: { navigation: any }) {
+function SettingsScreen() {
+  const navigation = Route.useNavigation();
   const theme = useTheme();
   const { useMock, setUseMock } = useAuthStore();
 

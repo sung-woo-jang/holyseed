@@ -21,7 +21,8 @@ const ROLE_OPTIONS: { key: MemberRole; label: string }[] = [
   { key: 'VIEWER', label: '조회자' },
 ];
 
-function MembersScreen({ navigation }: { navigation: any }) {
+function MembersScreen() {
+  const navigation = Route.useNavigation();
   const theme = useTheme();
   const data = useDataSource();
   const myRole = useMockRole();

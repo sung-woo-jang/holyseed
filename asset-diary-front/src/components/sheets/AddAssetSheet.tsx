@@ -115,7 +115,7 @@ export default function AddAssetSheet({ visible, onClose }: AddAssetSheetProps) 
         <View style={styles.body}>
           <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>자산 이름</Text>
           <TextField
-            variant="box"
+            variant="line"
             placeholder="예: 토스뱅크 파킹통장"
             value={assetName}
             onChangeText={setAssetName}

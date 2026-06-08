@@ -126,7 +126,7 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
 
             {/* 이름 */}
             <TextField
-              variant="box"
+              variant="line"
               placeholder="항목 이름 (예: 넷플릭스)"
               value={name}
               onChangeText={setName}

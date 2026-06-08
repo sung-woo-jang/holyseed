@@ -1,6 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { useTheme } from '../../lib/theme';
+import { Badge } from '@toss/tds-react-native';
 import type { MemberRole } from '../../types/api';
 
 const ROLE_LABEL: Record<MemberRole, string> = {
@@ -9,18 +8,17 @@ const ROLE_LABEL: Record<MemberRole, string> = {
   VIEWER: '조회자',
 };
 
+type BadgeType = 'blue' | 'teal' | 'elephant';
+const ROLE_TYPE: Record<MemberRole, BadgeType> = {
+  OWNER: 'blue',
+  EDITOR: 'teal',
+  VIEWER: 'elephant',
+};
+
 export default function RoleBadge({ role }: { role: MemberRole }) {
-  const theme = useTheme();
-  const bgColor = role === 'OWNER' ? theme.brandSoft : theme.bg;
-  const textColor = role === 'OWNER' ? theme.brand : role === 'EDITOR' ? theme.text : theme.textMuted;
   return (
-    <View style={[styles.badge, { backgroundColor: bgColor }]}>
-      <Text style={[styles.text, { color: textColor }]}>{ROLE_LABEL[role]}</Text>
-    </View>
+    <Badge size="small" type={ROLE_TYPE[role]} badgeStyle="weak">
+      {ROLE_LABEL[role]}
+    </Badge>
   );
 }
-
-const styles = StyleSheet.create({
-  badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  text: { fontSize: 11, fontWeight: '600' },
-});

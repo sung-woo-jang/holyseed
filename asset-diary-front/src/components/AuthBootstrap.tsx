@@ -4,6 +4,8 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { api } from '../lib/api';
 import { saveTokens } from '../lib/storage';
 import { useAuthStore } from '../stores/auth.store';
+import TossEmoji from './common/TossEmoji';
+import { TE } from '../lib/toss-emoji';
 
 interface AuthBootstrapProps {
   children: React.ReactNode;
@@ -91,7 +93,7 @@ export default function AuthBootstrap({ children }: AuthBootstrapProps) {
       <View style={styles.screen}>
         <View style={styles.logoArea}>
           <View style={styles.logoBox}>
-            <Text style={styles.logoEmoji}>📒</Text>
+            <TossEmoji code={TE.ledger} size={44} />
           </View>
           <Text style={styles.appName}>자산일기</Text>
           <Text style={styles.appDesc}>
@@ -156,7 +158,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 4,
   },
-  logoEmoji: { fontSize: 38 },
   appName: {
     fontSize: 28,
     fontWeight: '800',

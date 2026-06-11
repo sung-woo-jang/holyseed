@@ -116,7 +116,7 @@ export default function SnapshotSheet({ visible, onClose, focusAssetId }: Snapsh
         }
       >
         <EmptyState
-          icon="📭"
+          iconCode={TE.mailbox}
           title="아직 등록된 자산이 없어요"
           desc="자산을 먼저 추가하면 스냅샷을 입력할 수 있어요"
         />

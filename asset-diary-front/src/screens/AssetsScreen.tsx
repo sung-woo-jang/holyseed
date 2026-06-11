@@ -90,7 +90,7 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
         {/* 빈 상태 */}
         {data.assets.length === 0 && (
           <EmptyState
-            icon="💰"
+            iconCode={TE.piggy}
             title="아직 등록된 자산이 없어요"
             desc={isViewer ? '소유자가 자산을 추가하면 여기에 표시돼요' : '아래 + 버튼으로 첫 자산을 추가해보세요'}
           />

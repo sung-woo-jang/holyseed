@@ -113,8 +113,8 @@ function MembersScreen() {
             <Button display="full" size="big" type="primary" onPress={() => setInviteOpen(true)}>
               + 멤버 초대하기
             </Button>
-            <Button display="full" size="big" type="primary" style="weak" onPress={() => setJoinOpen(true)}>
-              🔗 초대 코드로 합류하기
+            <Button display="full" size="big" type="primary" style="weak" leftAccessory={<TossEmoji code={TE.link} size={16} />} onPress={() => setJoinOpen(true)}>
+              초대 코드로 합류하기
             </Button>
             <Text style={[styles.helperText, { color: theme.textMuted }]}>
               초대장은 7일간 유효해요. 만료 전에 합류해야 해요.

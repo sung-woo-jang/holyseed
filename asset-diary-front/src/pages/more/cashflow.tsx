@@ -76,7 +76,7 @@ function CashflowScreen() {
 
         {!hasData && (
           <EmptyState
-            icon="🧾"
+            iconCode={TE.receipt}
             title="이 기간에는 거래가 없어요"
             desc="다른 기간을 선택하거나 가계부에서 거래를 추가해보세요"
           />

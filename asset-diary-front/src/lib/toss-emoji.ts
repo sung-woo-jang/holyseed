@@ -48,6 +48,11 @@ export const TE = {
   books:       '1F4DA',
   tvSet:       '1F4FA',
   cyclone:     '1F300',
+  mailbox:     '1F4ED',
+  search:      '1F50D',
+  bank:        '1F3E6',
+  trash:       '1F5D1',
+  link:        '1F517',
 };
 
 export const CATEGORY_ICON_CHOICES = [

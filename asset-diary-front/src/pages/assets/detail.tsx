@@ -19,6 +19,7 @@ import LineChart from '../../components/charts/LineChart';
 import SnapshotSheet from '../../components/sheets/SnapshotSheet';
 import { ASSET_CATEGORY_META } from '../../lib/category-meta';
 import { krw, krwShort, pct } from '../../lib/format';
+import { TE } from '../../lib/toss-emoji';
 import { Icon } from '../../components/common/Icon';
 import { snapshotsApi } from '../../api';
 import { qk } from '../../queries/keys';
@@ -68,7 +69,7 @@ function AssetDetailScreen() {
       <View style={[styles.root, { backgroundColor: theme.bg }]}>
         <ScreenHeader title="자산 상세" onBack={() => navigation?.goBack?.()} />
         <EmptyState
-          icon="🔍"
+          iconCode={TE.search}
           title="자산을 찾을 수 없어요"
           desc="삭제되었거나 접근할 수 없는 자산이에요"
         />
@@ -116,14 +117,14 @@ function AssetDetailScreen() {
               style={[styles.menuItem, { borderBottomColor: theme.border }]}
               onPress={() => { setNameInput(asset.name); setEditingName(true); setMenuOpen(false); }}
             >
-              <Text style={styles.menuItemIcon}>✏️</Text>
+              <TossEmoji code={TE.pencil} size={16} />
               <Text style={[styles.menuItemText, { color: theme.text }]}>자산명 수정</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => { setConfirmDelete(true); setMenuOpen(false); }}
             >
-              <Text style={styles.menuItemIcon}>🗑️</Text>
+              <TossEmoji code={TE.trash} size={16} />
               <Text style={[styles.menuItemText, { color: theme.danger }]}>자산 삭제</Text>
             </TouchableOpacity>
           </View>
@@ -199,9 +200,10 @@ function AssetDetailScreen() {
               size="big"
               type="primary"
               style="weak"
+              leftAccessory={<TossEmoji code={TE.camera} size={18} />}
               onPress={() => setSnapshotOpen(true)}
             >
-              📸 이 자산만 스냅샷 입력
+              이 자산만 스냅샷 입력
             </Button>
           )}
 
@@ -380,7 +382,6 @@ const styles = StyleSheet.create({
   menuBackdrop: { position: 'absolute', top: -200, left: -300, right: -20, bottom: -600, zIndex: 10 },
   menuDropdown: { position: 'absolute', top: 32, right: 0, width: 150, borderRadius: 12, borderWidth: 1, overflow: 'hidden', zIndex: 20, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 8 },
   menuItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1 },
-  menuItemIcon: { fontSize: 16 },
   menuItemText: { fontSize: 14, fontWeight: '600' },
 });
 

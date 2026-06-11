@@ -10,6 +10,7 @@ import { Badge, Border, Button, ListRow, TextButton } from '@toss/tds-react-nati
 import { useDataSource, useMockRole } from '../lib/data-source';
 import { useTheme } from '../lib/theme';
 import { krw, krwShort, pct } from '../lib/format';
+import { TE } from '../lib/toss-emoji';
 import { getCategoryDef } from '../lib/category-meta';
 import Segmented from '../components/common/Segmented';
 import AutoBadge from '../components/common/AutoBadge';
@@ -66,9 +67,10 @@ export default function HomeScreen() {
             display="full"
             size="big"
             type="primary"
+            leftAccessory={<TossEmoji code={TE.camera} size={18} />}
             onPress={() => setSnapshotVisible(true)}
           >
-            📸 이번 달 자산 스냅샷 입력하기
+            이번 달 자산 스냅샷 입력하기
           </Button>
           <Text style={[styles.ctaCaption, { color: theme.textMuted }]}>마지막 입력 후 32일 지났어요</Text>
         </View>
@@ -114,7 +116,7 @@ export default function HomeScreen() {
           {data.contributions.length === 0 ? (
             <EmptyState
               compact
-              icon="📊"
+              iconCode={TE.chartBar}
               title="아직 기여도 데이터가 없어요"
               desc="스냅샷을 입력하면 자산군별 기여도가 표시돼요"
             />
@@ -165,7 +167,7 @@ export default function HomeScreen() {
           )}
         </View>
         {recentTxs.length === 0 && (
-          <EmptyState compact icon="🧾" title="아직 거래 내역이 없어요" desc="가계부에서 첫 거래를 기록해보세요" />
+          <EmptyState compact iconCode={TE.receipt} title="아직 거래 내역이 없어요" desc="가계부에서 첫 거래를 기록해보세요" />
         )}
         {recentTxs.map((tx, i) => {
           const catDef = getCategoryDef(tx.category);

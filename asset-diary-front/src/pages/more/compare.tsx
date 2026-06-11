@@ -12,6 +12,7 @@ import { useAuthStore } from '../../stores/auth.store';
 import { comparisonApi } from '../../api';
 import { qk } from '../../queries/keys';
 import { krw, krwShort } from '../../lib/format';
+import { TE } from '../../lib/toss-emoji';
 import { ASSET_CATEGORY_META } from '../../lib/category-meta';
 
 function CompareScreen() {
@@ -87,7 +88,7 @@ function CompareScreen() {
       <View style={[styles.root, { backgroundColor: theme.bg }]}>
         <ScreenHeader title="연간 비교" onBack={() => navigation?.goBack?.()} />
         <EmptyState
-          icon="📈"
+          iconCode={TE.chartUp}
           title="비교할 데이터가 아직 부족해요"
           desc="2년 이상 자산 스냅샷이 쌓이면 연도별 증감을 비교할 수 있어요"
         />

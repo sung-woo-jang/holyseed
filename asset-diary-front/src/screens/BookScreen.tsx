@@ -11,6 +11,7 @@ import { Border, ListRow, SegmentedControl, Switch } from '@toss/tds-react-nativ
 import { useDataSource, useMockRole } from '../lib/data-source';
 import { useTheme } from '../lib/theme';
 import { krwShort, monthDayWeek } from '../lib/format';
+import { TE } from '../lib/toss-emoji';
 import { getCategoryDef } from '../lib/category-meta';
 import TossEmoji from '../components/common/TossEmoji';
 import AutoBadge from '../components/common/AutoBadge';
@@ -189,7 +190,7 @@ export default function BookScreen() {
             {/* 빈 상태 */}
             {recurring.length === 0 && (
               <EmptyState
-                icon="🔁"
+                iconCode={TE.repeat}
                 title="등록된 정기지출이 없어요"
                 desc={isViewer ? '소유자가 정기지출을 추가하면 표시돼요' : '아래 + 버튼으로 매월 고정 지출을 등록해보세요'}
               />

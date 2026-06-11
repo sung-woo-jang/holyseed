@@ -215,7 +215,7 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
       {/* 출금 자산 피커 */}
       <PickerSheet visible={fromPicker} title="자산 선택" onClose={() => setFromPicker(false)}>
         {assetOptions.length === 0 ? (
-          <EmptyState compact icon="💰" title="선택할 자산이 없어요" desc="자산 탭에서 먼저 자산을 추가해주세요" />
+          <EmptyState compact iconCode={TE.piggy} title="선택할 자산이 없어요" desc="자산 탭에서 먼저 자산을 추가해주세요" />
         ) : assetOptions.map((a) => (
           <ListRow
             key={a.id}
@@ -230,7 +230,7 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
       {/* 입금 자산 피커 */}
       <PickerSheet visible={toPicker} title="자산 선택" onClose={() => setToPicker(false)}>
         {assetOptions.length === 0 ? (
-          <EmptyState compact icon="💰" title="선택할 자산이 없어요" desc="자산 탭에서 먼저 자산을 추가해주세요" />
+          <EmptyState compact iconCode={TE.piggy} title="선택할 자산이 없어요" desc="자산 탭에서 먼저 자산을 추가해주세요" />
         ) : assetOptions.map((a) => (
           <ListRow
             key={a.id}

@@ -11,6 +11,7 @@ import SheetModal from './SheetModal';
 import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
 import TossEmoji from '../common/TossEmoji';
+import { ASSET_CATEGORY_META } from '../../lib/category-meta';
 import { useCreateAsset, useUpsertSnapshot } from '../../queries/mutations';
 import type { AssetCategory } from '../../types/api';
 
@@ -20,12 +21,12 @@ function formatNum(raw: string): string {
 }
 
 const CATEGORY_OPTIONS: { key: AssetCategory; label: string }[] = [
-  { key: 'CASH',        label: '💰 예적금' },
-  { key: 'INVESTMENT',  label: '📈 주식·ETF' },
-  { key: 'CRYPTO',      label: '🪙 코인' },
-  { key: 'REAL_ESTATE', label: '🏠 부동산' },
-  { key: 'PENSION',     label: '🏦 연금' },
-  { key: 'LIABILITY',   label: '💳 부채' },
+  { key: 'CASH',        label: '예적금' },
+  { key: 'INVESTMENT',  label: '주식·ETF' },
+  { key: 'CRYPTO',      label: '코인' },
+  { key: 'REAL_ESTATE', label: '부동산' },
+  { key: 'PENSION',     label: '연금' },
+  { key: 'LIABILITY',   label: '부채' },
 ];
 
 const CURRENCIES = ['USD', 'EUR', 'JPY', 'CNY'];
@@ -137,6 +138,7 @@ export default function AddAssetSheet({ visible, onClose }: AddAssetSheetProps) 
                   ]}
                   onPress={() => setCategory(opt.key)}
                 >
+                  <TossEmoji code={ASSET_CATEGORY_META[opt.key].iconCode} size={20} />
                   <Text style={[styles.categoryCellText, { color: selected ? (isLiab ? theme.danger : theme.brand) : theme.text }]}>
                     {opt.label}
                   </Text>
@@ -212,7 +214,7 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12 },
   fieldLabel: { fontSize: 12, fontWeight: '600', marginBottom: 8 },
   categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  categoryCell: { width: '47%', paddingVertical: 16, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  categoryCell: { width: '47%', paddingVertical: 16, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   categoryCellText: { fontSize: 14, fontWeight: '700' },
   amountWrap: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', marginTop: 16, marginBottom: 20 },
   amountInput: { fontSize: 36, fontWeight: '800', textAlign: 'center', minWidth: 80, letterSpacing: -1 },

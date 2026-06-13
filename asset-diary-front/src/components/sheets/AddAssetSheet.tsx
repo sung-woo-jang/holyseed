@@ -224,7 +224,7 @@ export default function AddAssetSheet({ visible, onClose, editAsset, onSaved }: 
         </View>
 
         <ListRow
-          contents="외화 자산이에요"
+          contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "600" }}>외화 자산이에요</Text>}
           right={<Switch checked={isFx} onCheckedChange={(v) => { setIsFx(v); if (!v) setCurrency('USD'); }} />}
           verticalPadding="small"
         />

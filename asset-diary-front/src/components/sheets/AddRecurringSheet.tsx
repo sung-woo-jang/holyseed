@@ -142,7 +142,7 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
 
             {/* 자동 생성 토글 */}
             <ListRow
-              contents="자동 생성 활성화"
+              contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "600" }}>자동 생성 활성화</Text>}
               right={<Switch checked={autoGenerate} onCheckedChange={setAutoGenerate} />}
               verticalPadding="small"
             />
@@ -169,7 +169,7 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
             <ListRow
               key={c.id || c.name}
               left={<TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />}
-              contents={c.name}
+              contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{c.name}</Text>}
               right={category?.name === c.name ? Icon.check(theme.brand, 16) : undefined}
               onPress={() => { setCategory({ id: c.id, name: c.name }); setCatPicker(false); }}
               verticalPadding="small"
@@ -183,7 +183,7 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
         {assetOptions.map((a) => (
           <ListRow
             key={a.id}
-            contents={a.name}
+            contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{a.name}</Text>}
             right={fromAsset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
             onPress={() => { setFromAsset({ id: a.id, name: a.name }); setAssetPicker(false); }}
             verticalPadding="small"

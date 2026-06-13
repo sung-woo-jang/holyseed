@@ -20,7 +20,7 @@ function SettingsScreen() {
       {/* 개발자 옵션 */}
       <ListHeader title={<ListHeader.TitleParagraph typography="t5">개발자 옵션</ListHeader.TitleParagraph>} />
       <ListRow
-        contents="목업 데이터 사용"
+        contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "600" }}>목업 데이터 사용</Text>}
         right={<Switch checked={useMock} onCheckedChange={setUseMock} />}
         verticalPadding="small"
       />
@@ -30,13 +30,13 @@ function SettingsScreen() {
       {/* 알림 */}
       <ListHeader title={<ListHeader.TitleParagraph typography="t5">알림</ListHeader.TitleParagraph>} />
       <ListRow
-        contents="스냅샷 리마인더"
+        contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "600" }}>스냅샷 리마인더</Text>}
         right={<Switch checked={false} onCheckedChange={() => {}} disabled />}
         verticalPadding="small"
       />
       <Border type="full" />
       <ListRow
-        contents="정기지출 알림"
+        contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "600" }}>정기지출 알림</Text>}
         right={<Switch checked={false} onCheckedChange={() => {}} disabled />}
         verticalPadding="small"
       />
@@ -46,7 +46,7 @@ function SettingsScreen() {
       {/* 통화 */}
       <ListHeader title={<ListHeader.TitleParagraph typography="t5">통화</ListHeader.TitleParagraph>} />
       <ListRow
-        contents="기본 통화"
+        contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "600" }}>기본 통화</Text>}
         right={<Text style={[styles.valueText, { color: theme.textMuted }]}>KRW</Text>}
         verticalPadding="small"
       />

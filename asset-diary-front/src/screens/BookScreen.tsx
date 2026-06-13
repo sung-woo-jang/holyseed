@@ -18,6 +18,7 @@ import AutoBadge from '../components/common/AutoBadge';
 import { Icon } from '../components/common/Icon';
 import AddTxSheet from '../components/sheets/AddTxSheet';
 import AddRecurringSheet from '../components/sheets/AddRecurringSheet';
+import WorkScreen from './WorkScreen';
 import EmptyState from '../components/common/EmptyState';
 import ActionSheet from '../components/common/ActionSheet';
 import ConfirmDialog from '../components/common/ConfirmDialog';
@@ -25,7 +26,7 @@ import AppToast from '../components/common/AppToast';
 import { useToggleRecurring, useDeleteRecurring } from '../queries/mutations';
 import type { MockRecurring } from '../lib/mock-data';
 
-type BookTab = 'tx' | 'rec';
+type BookTab = 'tx' | 'rec' | 'work';
 
 export default function BookScreen() {
   const theme = useTheme();
@@ -156,10 +157,14 @@ export default function BookScreen() {
           alignment="fixed"
         >
           <SegmentedControl.Item value="tx">거래</SegmentedControl.Item>
-          <SegmentedControl.Item value="rec">정기지출</SegmentedControl.Item>
+          <SegmentedControl.Item value="rec">정기</SegmentedControl.Item>
+          <SegmentedControl.Item value="work">근무표</SegmentedControl.Item>
         </SegmentedControl.Root>
       </View>
 
+      {tab === 'work' ? (
+        <WorkScreen />
+      ) : (
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
         {tab === 'tx' && (
           <>
@@ -297,9 +302,10 @@ export default function BookScreen() {
           </>
         )}
       </ScrollView>
+      )}
 
-      {/* FAB */}
-      {!isViewer && (
+      {/* FAB — work 탭은 WorkScreen 자체 FAB 사용 */}
+      {!isViewer && tab !== 'work' && (
         <TouchableOpacity
           style={[styles.fab, { backgroundColor: theme.brand, bottom: insets.bottom + 16 }]}
           onPress={() => tab === 'tx' ? setAddTxVisible(true) : setAddRecVisible(true)}
@@ -311,19 +317,19 @@ export default function BookScreen() {
       <AddTxSheet visible={addTxVisible} onClose={() => setAddTxVisible(false)} />
       <AddRecurringSheet visible={addRecVisible} onClose={() => setAddRecVisible(false)} />
 
-      {/* 정기지출 행 액션 */}
+      {/* 정기 항목 행 액션 */}
       <ActionSheet
         visible={!!actionRec}
         title={actionRec?.title}
         items={[
-          { iconCode: TE.trash, label: '정기지출 삭제', value: 'delete', danger: true },
+          { iconCode: TE.trash, label: '정기 항목 삭제', value: 'delete', danger: true },
         ]}
         onSelect={handleRecAction}
         onClose={() => setActionRec(null)}
       />
       <ConfirmDialog
         visible={!!deleteRec}
-        title="정기지출을 삭제할까요?"
+        title="정기 항목을 삭제할까요?"
         description="더 이상 자동으로 기록되지 않아요."
         confirmText="삭제하기"
         danger

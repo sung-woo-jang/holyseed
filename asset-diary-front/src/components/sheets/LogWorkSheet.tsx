@@ -2,7 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Switch as RNSwitch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Button, ListRow, Switch, TextField, TextFieldBig } from '@toss/tds-react-native';
 import SheetModal from './SheetModal';
+import PickerSheet from './PickerSheet';
+import FormRow from '../common/FormRow';
+import { Icon } from '../common/Icon';
 import { useTheme } from '../../lib/theme';
+import { useDataSource } from '../../lib/data-source';
 import { krw } from '../../lib/format';
 import { WORK_COLORS } from '../../lib/work-meta';
 import { useCreateWorkLog, useUpdateWorkLog } from '../../queries/mutations';
@@ -26,6 +30,7 @@ interface LogWorkSheetProps {
 
 export default function LogWorkSheet({ visible, onClose, date, month, existing, presets = [], onSaved }: LogWorkSheetProps) {
   const theme = useTheme();
+  const data = useDataSource();
   const isEdit = !!existing;
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
@@ -34,10 +39,14 @@ export default function LogWorkSheet({ visible, onClose, date, month, existing, 
   const [rate, setRate] = useState('');
   const [colorLabel, setColorLabel] = useState<string>((WORK_COLORS[0] as string));
   const [settled, setSettled] = useState(false);
+  const [asset, setAsset] = useState<{ id: string; name: string } | null>(null);
+  const [assetPicker, setAssetPicker] = useState(false);
   const [memo, setMemo] = useState('');
   const [error, setError] = useState('');
   const createWorkLog = useCreateWorkLog(month);
   const updateWorkLog = useUpdateWorkLog(month);
+
+  const assetOptions = data.assets.filter((a) => !a.isLiability);
 
   useEffect(() => {
     if (!visible) return;
@@ -56,7 +65,7 @@ export default function LogWorkSheet({ visible, onClose, date, month, existing, 
       }
     } else {
       setTitle(''); setAmount(''); setUseHourly(false); setHours(''); setRate('');
-      setColorLabel((WORK_COLORS[0] as string)); setSettled(false); setMemo(''); setError('');
+      setColorLabel((WORK_COLORS[0] as string)); setSettled(false); setAsset(null); setMemo(''); setError('');
     }
   }, [visible, existing]);
 
@@ -80,7 +89,12 @@ export default function LogWorkSheet({ visible, onClose, date, month, existing, 
       if (isEdit && existing) {
         await updateWorkLog.mutateAsync({ id: existing.id, dto: base });
       } else {
-        await createWorkLog.mutateAsync({ date, settled, ...base });
+        await createWorkLog.mutateAsync({
+          date,
+          settled,
+          ...(settled && asset ? { toAssetId: Number(asset.id) } : {}),
+          ...base,
+        });
       }
       onClose();
       onSaved?.();
@@ -90,6 +104,7 @@ export default function LogWorkSheet({ visible, onClose, date, month, existing, 
   }
 
   return (
+    <>
     <SheetModal
       visible={visible}
       onClose={onClose}
@@ -163,11 +178,18 @@ export default function LogWorkSheet({ visible, onClose, date, month, existing, 
 
         {/* 수령 여부 (신규 생성 시에만 토글; 편집은 별도 액션) */}
         {!isEdit && (
-          <ListRow
-            contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '600' }}>수령함 (자산에 반영)</Text>}
-            right={<Switch checked={settled} onCheckedChange={setSettled} />}
-            verticalPadding="small"
-          />
+          <>
+            <ListRow
+              contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '600' }}>수령함 (자산에 반영)</Text>}
+              right={<Switch checked={settled} onCheckedChange={setSettled} />}
+              verticalPadding="small"
+            />
+            {settled && (
+              <View style={[styles.fieldsCard, { borderColor: theme.border }]}>
+                <FormRow label="입금 자산" value={asset?.name || ''} onPress={() => setAssetPicker(true)} />
+              </View>
+            )}
+          </>
         )}
 
         {/* 메모 */}
@@ -178,8 +200,22 @@ export default function LogWorkSheet({ visible, onClose, date, month, existing, 
           value={memo}
           onChangeText={setMemo}
         />
-      </ScrollView>
-    </SheetModal>
+        </ScrollView>
+      </SheetModal>
+
+      {/* 입금 자산 피커 */}
+      <PickerSheet visible={assetPicker} title="입금 자산 선택" onClose={() => setAssetPicker(false)}>
+        {assetOptions.map((a) => (
+          <ListRow
+            key={a.id}
+            contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{a.name}</Text>}
+            right={asset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
+            onPress={() => { setAsset({ id: a.id, name: a.name }); setAssetPicker(false); }}
+            verticalPadding="small"
+          />
+        ))}
+      </PickerSheet>
+    </>
   );
 }
 
@@ -196,6 +232,7 @@ const styles = StyleSheet.create({
   computed: { fontSize: 14, fontWeight: '700', textAlign: 'right', marginTop: 6 },
   colorRow: { flexDirection: 'row', gap: 12, marginTop: 4 },
   colorCircle: { width: 32, height: 32, borderRadius: 16 },
+  fieldsCard: { borderRadius: 14, borderWidth: 1, overflow: 'hidden', marginTop: 8 },
   memoInput: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, marginTop: 16 },
   cta: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8 },
   errorText: { fontSize: 13, textAlign: 'center', marginBottom: 8 },

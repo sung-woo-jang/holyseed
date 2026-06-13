@@ -12,12 +12,13 @@ import { krw, krwShort } from '../lib/format';
 import { Icon } from '../components/common/Icon';
 import WorkCalendar from '../components/WorkCalendar';
 import LogWorkSheet from '../components/sheets/LogWorkSheet';
+import SettleWorkSheet from '../components/sheets/SettleWorkSheet';
 import ActionSheet from '../components/common/ActionSheet';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import AppToast from '../components/common/AppToast';
 import EmptyState from '../components/common/EmptyState';
 import { TE } from '../lib/toss-emoji';
-import { useSettleWorkLog, useDeleteWorkLog } from '../queries/mutations';
+import { useDeleteWorkLog } from '../queries/mutations';
 import type { WorkLog } from '../types/api';
 import type { MockWorkLog } from '../lib/mock-data';
 
@@ -69,9 +70,9 @@ export default function WorkScreen() {
   const [editLog, setEditLog] = useState<WorkLog | null>(null);
   const [actionLog, setActionLog] = useState<WorkLog | null>(null);
   const [deleteLog, setDeleteLog] = useState<WorkLog | null>(null);
+  const [settleTarget, setSettleTarget] = useState<WorkLog | null>(null);
   const [toast, setToast] = useState('');
 
-  const settleWorkLog = useSettleWorkLog(month);
   const deleteWorkLog = useDeleteWorkLog(month);
 
   const workQ = useQuery({
@@ -121,9 +122,7 @@ export default function WorkScreen() {
     setActionLog(null);
     if (!l) return;
     if (value === 'edit') { setEditLog(l); setLogSheetOpen(true); }
-    else if (value === 'settle') {
-      settleWorkLog.mutate({ id: l.id }, { onSuccess: () => setToast('수령 처리했어요') });
-    }
+    else if (value === 'settle') { setSettleTarget(l); }
     else if (value === 'delete') setDeleteLog(l);
   }
   async function confirmDelete() {
@@ -235,6 +234,14 @@ export default function WorkScreen() {
         presets={presets}
         onClose={() => { setLogSheetOpen(false); setEditLog(null); }}
         onSaved={() => setToast(editLog ? '근무 기록을 수정했어요' : '근무 기록을 추가했어요')}
+      />
+
+      <SettleWorkSheet
+        visible={!!settleTarget}
+        month={month}
+        workLog={settleTarget}
+        onClose={() => setSettleTarget(null)}
+        onSettled={() => setToast('수령 처리했어요')}
       />
 
       <ActionSheet

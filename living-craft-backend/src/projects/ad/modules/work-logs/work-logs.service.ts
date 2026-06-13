@@ -18,8 +18,12 @@ export class WorkLogsService {
   /** 월(YYYY-MM) 단위 근무 기록 조회 */
   async findByHouseholdMonth(householdId: number, month?: string): Promise<WorkLog[]> {
     if (month) {
+      const [y, m] = month.split('-').map(Number);
+      // JS Date는 0-base 월이므로 new Date(y, m, 0)은 "m월(1-base)의 말일"
+      const lastDay = new Date(y, m, 0).getDate();
+      const end = `${month}-${String(lastDay).padStart(2, '0')}`;
       return this.workLogRepo.find({
-        where: { householdId, date: Between(`${month}-01`, `${month}-31`) },
+        where: { householdId, date: Between(`${month}-01`, end) },
         order: { date: 'ASC', createdAt: 'ASC' },
       });
     }

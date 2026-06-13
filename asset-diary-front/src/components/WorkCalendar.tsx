@@ -70,10 +70,12 @@ export default function WorkCalendar({ month, logs, selectedDate, onSelectDay }:
                 onPress={() => onSelectDay(dateStr)}
                 activeOpacity={0.6}
               >
-                <View style={[styles.dayInner, isSelected && { backgroundColor: theme.brandSoft, borderRadius: 8 }]}>
-                  <Text style={[styles.dayNum, { color: di === 0 ? theme.danger : di === 6 ? theme.brand : theme.text }]}>
-                    {day}
-                  </Text>
+                <View style={styles.dayInner}>
+                  <View style={[styles.dayBox, isSelected && { backgroundColor: theme.brandSoft }]}>
+                    <Text style={[styles.dayNum, { color: di === 0 ? theme.danger : di === 6 ? theme.brand : theme.text }]}>
+                      {day}
+                    </Text>
+                  </View>
                   <View style={styles.dots}>
                     {dayLogs.slice(0, 3).map((l) => (
                       <View
@@ -103,9 +105,10 @@ const styles = StyleSheet.create({
   weekRow: { flexDirection: 'row' },
   cell: { flex: 1, alignItems: 'center' },
   weekday: { fontSize: 11, fontWeight: '600', paddingVertical: 6 },
-  dayInner: { width: '100%', minHeight: 44, alignItems: 'center', paddingVertical: 4, gap: 3 },
+  dayInner: { alignItems: 'center', paddingVertical: 3 },
+  dayBox: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   dayNum: { fontSize: 13, fontWeight: '500' },
-  dots: { flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: 8 },
+  dots: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 2, height: 10, marginTop: 1 },
   dot: { width: 6, height: 6, borderRadius: 3 },
   moreDot: { fontSize: 8, fontWeight: '600' },
 });

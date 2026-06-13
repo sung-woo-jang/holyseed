@@ -189,7 +189,7 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
                   <ListRow
                     key={c.id}
                     left={<TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />}
-                    contents={c.name}
+                    contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{c.name}</Text>}
                     right={category?.id === c.id ? Icon.check(theme.brand, 16) : undefined}
                     onPress={() => { setCategory({ id: c.id, name: c.name }); setCatPicker(false); }}
                     verticalPadding="small"
@@ -202,7 +202,7 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
                 <ListRow
                   key={name}
                   left={<TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />}
-                  contents={name}
+                  contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{name}</Text>}
                   right={category?.name === name ? Icon.check(theme.brand, 16) : undefined}
                   onPress={() => { setCategory({ id: 0, name }); setCatPicker(false); }}
                   verticalPadding="small"
@@ -219,7 +219,7 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
         ) : assetOptions.map((a) => (
           <ListRow
             key={a.id}
-            contents={a.name}
+            contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{a.name}</Text>}
             right={fromAsset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
             onPress={() => { setFromAsset({ id: a.id, name: a.name }); setFromPicker(false); }}
             verticalPadding="small"
@@ -234,7 +234,7 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
         ) : assetOptions.map((a) => (
           <ListRow
             key={a.id}
-            contents={a.name}
+            contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{a.name}</Text>}
             right={toAsset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
             onPress={() => { setToAsset({ id: a.id, name: a.name }); setToPicker(false); }}
             verticalPadding="small"

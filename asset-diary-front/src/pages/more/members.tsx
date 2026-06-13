@@ -147,7 +147,7 @@ function MembersScreen() {
         {ROLE_OPTIONS.filter((o) => o.key !== 'OWNER').map((opt) => (
           <ListRow
             key={opt.key}
-            contents={opt.label}
+            contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{opt.label}</Text>}
             right={rolePicker?.currentRole === opt.key ? Icon.check(theme.brand, 16) : undefined}
             onPress={() => handleRoleChange(opt.key)}
             verticalPadding="small"

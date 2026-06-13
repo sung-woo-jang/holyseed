@@ -64,7 +64,7 @@ export default function InviteSheet({ visible, onClose }: InviteSheetProps) {
           {(['EDITOR', 'VIEWER'] as InviteRole[]).map((r) => (
             <ListRow
               key={r}
-              contents={ROLE_INFO[r].label}
+              contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{ROLE_INFO[r].label}</Text>}
               right={role === r ? Icon.check(theme.brand, 18) : undefined}
               onPress={() => setRole(r)}
               verticalPadding="small"

@@ -69,6 +69,22 @@ export interface RecurringTransaction {
   lastRunDate: string | null;
 }
 
+export interface WorkLog {
+  id: number;
+  householdId: number;
+  date: string;
+  title: string;
+  amount: number;
+  colorLabel: string | null;
+  settled: boolean;
+  settledTransactionId: number | null;
+  workMinutes: number | null;
+  hourlyRate: number | null;
+  toAssetId: number | null;
+  categoryId: number | null;
+  memo: string | null;
+}
+
 export interface Member {
   id: number;
   userId: number;

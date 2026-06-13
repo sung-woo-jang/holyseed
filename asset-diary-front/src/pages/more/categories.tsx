@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { createRoute } from '@granite-js/react-native';
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +10,8 @@ import {
 import { Border, Button, ListHeader, ListRow, TextField } from '@toss/tds-react-native';
 import SheetModal from '../../components/sheets/SheetModal';
 import ScreenHeader from '../../components/common/ScreenHeader';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
+import AppToast from '../../components/common/AppToast';
 import TossEmoji from '../../components/common/TossEmoji';
 import Segmented from '../../components/common/Segmented';
 import { useTheme } from '../../lib/theme';
@@ -116,6 +117,8 @@ function CategoriesPage() {
   const data = useDataSource();
   const canEdit = role !== 'VIEWER';
   const [addVisible, setAddVisible] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
+  const [toast, setToast] = useState('');
   const createCategory = useCreateCategory();
   const deleteCategory = useDeleteCategory();
 
@@ -123,16 +126,19 @@ function CategoriesPage() {
 
   async function handleAdd(dto: { type: CategoryType; name: string; icon: string }) {
     await createCategory.mutateAsync(dto);
+    setToast('카테고리를 추가했어요');
   }
 
-  async function handleDelete(id: number, name: string) {
-    Alert.alert('카테고리 삭제', `"${name}"을(를) 삭제할까요?`, [
-      { text: '취소', style: 'cancel' },
-      { text: '삭제', style: 'destructive', onPress: async () => {
-        try { await deleteCategory.mutateAsync(id); }
-        catch (e: any) { Alert.alert('오류', e?.message ?? '삭제에 실패했어요.'); }
-      }},
-    ]);
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    try {
+      await deleteCategory.mutateAsync(deleteTarget.id);
+      setToast('카테고리를 삭제했어요');
+    } catch {
+      setToast('삭제에 실패했어요');
+    } finally {
+      setDeleteTarget(null);
+    }
   }
 
   const hasApiCategories = data.categories.length > 0;
@@ -185,11 +191,10 @@ function CategoriesPage() {
                         <View style={[styles.colorDot, { backgroundColor: item.color }]} />
                         {!item.isBuiltin && canEdit && item.id > 0 && (
                           <TouchableOpacity
-                            onPress={() => handleDelete(item.id, item.name)}
+                            onPress={() => setDeleteTarget({ id: item.id, name: item.name })}
                             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                            disabled={deleteCategory.isPending}
                           >
-                            <Text style={[styles.deleteText, { color: deleteCategory.isPending ? theme.textMuted : theme.danger }]}>삭제</Text>
+                            <Text style={[styles.deleteText, { color: theme.danger }]}>삭제</Text>
                           </TouchableOpacity>
                         )}
                       </View>
@@ -216,6 +221,18 @@ function CategoriesPage() {
       </ScrollView>
 
       <AddCategorySheet visible={addVisible} onClose={() => setAddVisible(false)} onAdd={handleAdd} />
+
+      <ConfirmDialog
+        visible={!!deleteTarget}
+        title="카테고리를 삭제할까요?"
+        description={deleteTarget ? `"${deleteTarget.name}" 카테고리가 삭제돼요.` : undefined}
+        confirmText="삭제하기"
+        danger
+        loading={deleteCategory.isPending}
+        onConfirm={confirmDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
+      <AppToast open={!!toast} text={toast} onClose={() => setToast('')} />
     </View>
   );
 }

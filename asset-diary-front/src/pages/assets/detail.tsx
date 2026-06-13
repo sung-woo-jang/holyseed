@@ -11,6 +11,7 @@ import { Border, Button, ListRow, Loader, TextField } from '@toss/tds-react-nati
 import { useQuery } from '@tanstack/react-query';
 import ScreenHeader from '../../components/common/ScreenHeader';
 import EmptyState from '../../components/common/EmptyState';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { useTheme } from '../../lib/theme';
 import { useDataSource, useMockRole } from '../../lib/data-source';
 import TossEmoji from '../../components/common/TossEmoji';
@@ -206,35 +207,6 @@ function AssetDetailScreen() {
               이 자산만 스냅샷 입력
             </Button>
           )}
-
-          {/* 삭제 확인 배너 */}
-          {confirmDelete && (
-            <View style={[styles.confirmBanner, { backgroundColor: '#FEE2E2', borderColor: theme.danger }]}>
-              <Text style={[styles.confirmText, { color: theme.danger }]}>
-                ⚠️ 이 자산과 모든 스냅샷 기록이 삭제돼요. 계속할까요?
-              </Text>
-              <View style={styles.confirmBtns}>
-                <Button
-                  display="full"
-                  size="big"
-                  type="primary"
-                  style="weak"
-                  onPress={() => setConfirmDelete(false)}
-                >
-                  취소
-                </Button>
-                <Button
-                  display="full"
-                  size="big"
-                  type="danger"
-                  loading={deleteAsset.isPending}
-                  onPress={handleDelete}
-                >
-                  삭제하기
-                </Button>
-              </View>
-            </View>
-          )}
         </View>
 
         {/* 평가액 추이 */}
@@ -330,6 +302,17 @@ function AssetDetailScreen() {
         focusAssetId={asset.id}
         onClose={() => setSnapshotOpen(false)}
       />
+
+      <ConfirmDialog
+        visible={confirmDelete}
+        title="자산을 삭제할까요?"
+        description="이 자산과 모든 스냅샷 기록이 함께 삭제돼요."
+        confirmText="삭제하기"
+        danger
+        loading={deleteAsset.isPending}
+        onConfirm={handleDelete}
+        onClose={() => setConfirmDelete(false)}
+      />
     </View>
   );
 }
@@ -354,13 +337,6 @@ const styles = StyleSheet.create({
   deltaText: { fontSize: 13, fontWeight: '600' },
   snapshotBtn: { borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
   snapshotBtnText: { fontSize: 14, fontWeight: '700' },
-  confirmBanner: { marginTop: 12, borderRadius: 12, borderWidth: 1, padding: 14 },
-  confirmText: { fontSize: 13, lineHeight: 18, marginBottom: 12 },
-  confirmBtns: { flexDirection: 'row', gap: 10 },
-  confirmCancelBtn: { flex: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.05)' },
-  confirmCancelText: { fontSize: 14, fontWeight: '600' },
-  confirmDeleteBtn: { flex: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
-  confirmDeleteText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   section: { paddingHorizontal: 20, paddingVertical: 16 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   sectionTitle: { fontSize: 15, fontWeight: '700' },

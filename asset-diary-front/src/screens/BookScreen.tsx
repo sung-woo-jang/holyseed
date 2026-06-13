@@ -89,9 +89,60 @@ export default function BookScreen() {
   const monthLabel = `${parseInt(month.slice(5))}월 (${month.slice(0, 4)})`;
 
   const recurring = data.recurring;
-  const activeRec = recurring.filter(r => r.active);
-  const inactiveRec = recurring.filter(r => !r.active);
-  const totalRec = activeRec.reduce((s, r) => s + r.amount, 0);
+  const incomeRec = recurring.filter(r => r.type === 'INCOME');
+  const expenseRec = recurring.filter(r => r.type !== 'INCOME');
+  const totalRecIncome = incomeRec.filter(r => r.active).reduce((s, r) => s + r.amount, 0);
+  const totalRecExpense = expenseRec.filter(r => r.active).reduce((s, r) => s + r.amount, 0);
+
+  function renderRecRow(r: typeof recurring[number], i: number, total: number) {
+    const catDef = getCategoryDef(r.category);
+    const isInc = r.type === 'INCOME';
+    return (
+      <React.Fragment key={r.id}>
+        <ListRow
+          left={
+            <View style={[styles.recIcon, { backgroundColor: theme.bg }]}>
+              <TossEmoji code={catDef.iconCode} size={22} />
+            </View>
+          }
+          contents={
+            <View>
+              <Text style={[styles.txTitle, { color: theme.text }]}>{r.title}</Text>
+              <Text style={[styles.txMeta, { color: theme.textMuted }]}>매월 {r.dayOfMonth}일 · 다음: {r.nextDate}</Text>
+            </View>
+          }
+          right={
+            <View style={styles.recRight}>
+              <Text style={[styles.recAmount, { color: isInc ? theme.brand : theme.text }]}>
+                {isInc ? '+' : '-'}{krwShort(r.amount)}원
+              </Text>
+              {!isViewer ? (
+                <>
+                  <Switch
+                    checked={r.active}
+                    onCheckedChange={() => toggleRecurring.mutate(Number(r.id))}
+                    disabled={toggleRecurring.isPending}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setActionRec(r)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Text style={[styles.kebabIcon, { color: theme.textMuted }]}>⋯</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <View style={[styles.toggleChip, { backgroundColor: r.active ? theme.brand : theme.bg }]}>
+                  <Text style={[styles.toggleText, { color: r.active ? '#fff' : theme.textMuted }]}>{r.active ? '활성' : '중지'}</Text>
+                </View>
+              )}
+            </View>
+          }
+          verticalPadding="small"
+        />
+        {i < total - 1 && <Border type="full" />}
+      </React.Fragment>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
@@ -203,13 +254,18 @@ export default function BookScreen() {
 
         {tab === 'rec' && (
           <>
-            {/* Summary card — 정기지출이 있을 때만 */}
+            {/* Summary card */}
             {recurring.length > 0 && (
               <View style={styles.sectionPad}>
                 <View style={[styles.recSummary, { backgroundColor: theme.brandSoft }]}>
-                  <Text style={[styles.recSummaryLabel, { color: theme.textMuted }]}>매월 고정으로 나가는 돈</Text>
-                  <Text style={[styles.recSummaryValue, { color: theme.brand }]}>-{krwShort(totalRec)}원</Text>
-                  <Text style={[styles.recSummaryMeta, { color: theme.textMuted }]}>활성 {activeRec.length}건 · 일시중지 {inactiveRec.length}건</Text>
+                  <View style={styles.recSummaryRow}>
+                    <Text style={[styles.recSummaryLabel, { color: theme.textMuted }]}>매월 고정 수입</Text>
+                    <Text style={[styles.recSummaryValue, { color: theme.brand }]}>+{krwShort(totalRecIncome)}원</Text>
+                  </View>
+                  <View style={styles.recSummaryRow}>
+                    <Text style={[styles.recSummaryLabel, { color: theme.textMuted }]}>매월 고정 지출</Text>
+                    <Text style={[styles.recSummaryValue, { color: theme.danger }]}>-{krwShort(totalRecExpense)}원</Text>
+                  </View>
                 </View>
               </View>
             )}
@@ -218,58 +274,26 @@ export default function BookScreen() {
             {recurring.length === 0 && (
               <EmptyState
                 iconCode={TE.repeat}
-                title="등록된 정기지출이 없어요"
-                desc={isViewer ? '소유자가 정기지출을 추가하면 표시돼요' : '아래 + 버튼으로 매월 고정 지출을 등록해보세요'}
+                title="등록된 정기 항목이 없어요"
+                desc={isViewer ? '소유자가 정기 항목을 추가하면 표시돼요' : '아래 + 버튼으로 매월 고정 수입·지출을 등록해보세요'}
               />
             )}
 
-            {/* Recurring items */}
-            {recurring.map((r, i) => {
-              const catDef = getCategoryDef(r.category);
-              return (
-                <React.Fragment key={r.id}>
-                  <ListRow
-                    left={
-                      <View style={[styles.recIcon, { backgroundColor: theme.bg }]}>
-                        <TossEmoji code={catDef.iconCode} size={22} />
-                      </View>
-                    }
-                    contents={
-                      <View>
-                        <Text style={[styles.txTitle, { color: theme.text }]}>{r.title}</Text>
-                        <Text style={[styles.txMeta, { color: theme.textMuted }]}>매월 {r.dayOfMonth}일 · 다음: {r.nextDate}</Text>
-                      </View>
-                    }
-                    right={
-                      <View style={styles.recRight}>
-                        <Text style={[styles.recAmount, { color: theme.text }]}>-{krwShort(r.amount)}원</Text>
-                        {!isViewer ? (
-                          <>
-                            <Switch
-                              checked={r.active}
-                              onCheckedChange={() => toggleRecurring.mutate(Number(r.id))}
-                              disabled={toggleRecurring.isPending}
-                            />
-                            <TouchableOpacity
-                              onPress={() => setActionRec(r)}
-                              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            >
-                              <Text style={[styles.kebabIcon, { color: theme.textMuted }]}>⋯</Text>
-                            </TouchableOpacity>
-                          </>
-                        ) : (
-                          <View style={[styles.toggleChip, { backgroundColor: r.active ? theme.brand : theme.bg }]}>
-                            <Text style={[styles.toggleText, { color: r.active ? '#fff' : theme.textMuted }]}>{r.active ? '활성' : '중지'}</Text>
-                          </View>
-                        )}
-                      </View>
-                    }
-                    verticalPadding="small"
-                  />
-                  {i < recurring.length - 1 && <Border type="full" />}
-                </React.Fragment>
-              );
-            })}
+            {/* 수입 섹션 */}
+            {incomeRec.length > 0 && (
+              <>
+                <Text style={[styles.recSectionTitle, { color: theme.textMuted }]}>정기수입</Text>
+                {incomeRec.map((r, i) => renderRecRow(r, i, incomeRec.length))}
+              </>
+            )}
+
+            {/* 지출 섹션 */}
+            {expenseRec.length > 0 && (
+              <>
+                <Text style={[styles.recSectionTitle, { color: theme.textMuted }]}>정기지출</Text>
+                {expenseRec.map((r, i) => renderRecRow(r, i, expenseRec.length))}
+              </>
+            )}
           </>
         )}
       </ScrollView>
@@ -333,10 +357,12 @@ const styles = StyleSheet.create({
   txMeta: { fontSize: 11, marginTop: 2 },
   txAmount: { fontSize: 14, fontWeight: '700' },
   sectionPad: { paddingHorizontal: 20, paddingBottom: 12 },
-  recSummary: { padding: 16, borderRadius: 14 },
-  recSummaryLabel: { fontSize: 12, marginBottom: 4 },
-  recSummaryValue: { fontSize: 20, fontWeight: '700', marginBottom: 4 },
+  recSummary: { padding: 16, borderRadius: 14, gap: 8 },
+  recSummaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  recSummaryLabel: { fontSize: 13 },
+  recSummaryValue: { fontSize: 18, fontWeight: '700' },
   recSummaryMeta: { fontSize: 12 },
+  recSectionTitle: { fontSize: 12, fontWeight: '600', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 },
   recIcon: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   recRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   kebabIcon: { fontSize: 20, fontWeight: '700' },

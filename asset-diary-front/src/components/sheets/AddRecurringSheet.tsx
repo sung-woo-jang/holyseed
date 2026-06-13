@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Button, ListRow, Switch, TextFieldBig, TextField } from '@toss/tds-react-native';
+import { Button, ListRow, SegmentedControl, Switch, TextFieldBig, TextField } from '@toss/tds-react-native';
 import SheetModal from './SheetModal';
 import { useTheme } from '../../lib/theme';
 import { useDataSource } from '../../lib/data-source';
@@ -30,14 +30,17 @@ interface AddRecurringSheetProps {
 
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 
+type RecType = 'EXPENSE' | 'INCOME';
+
 export default function AddRecurringSheet({ visible, onClose }: AddRecurringSheetProps) {
   const theme = useTheme();
   const data = useDataSource();
+  const [type, setType] = useState<RecType>('EXPENSE');
   const [amount, setAmount] = useState('');
   const [name, setName] = useState('');
   const [category, setCategory] = useState<{ id: number; name: string } | null>(null);
   const [dayOfMonth, setDayOfMonth] = useState(25);
-  const [fromAsset, setFromAsset] = useState<{ id: string; name: string } | null>(null);
+  const [asset, setAsset] = useState<{ id: string; name: string } | null>(null);
   const [autoGenerate, setAutoGenerate] = useState(true);
   const [catPicker, setCatPicker] = useState(false);
   const [assetPicker, setAssetPicker] = useState(false);
@@ -46,10 +49,11 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
   const [error, setError] = useState('');
   const createRecurring = useCreateRecurring();
 
-  const expenseCategories = Object.entries(CATEGORY_DEFS)
-    .filter(([, def]) => def.type === 'EXPENSE')
+  const isIncome = type === 'INCOME';
+  const localCategories = Object.entries(CATEGORY_DEFS)
+    .filter(([, def]) => def.type === type)
     .map(([n]) => n);
-  const apiExpenseCategories = data.categories.filter((c) => c.type === 'EXPENSE');
+  const apiCategories = data.categories.filter((c) => c.type === type);
   const assetOptions = data.assets.filter((a) => !a.isLiability);
   const amtNum = Number(amount.replace(/[^0-9]/g, ''));
   const isValid = amtNum > 0 && name.length > 0;
@@ -59,8 +63,8 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
   const nextDateStr = `${nextDate.getFullYear()}년 ${nextDate.getMonth() + 1}월 ${nextDate.getDate()}일`;
 
   function reset() {
-    setAmount(''); setName(''); setCategory(null);
-    setDayOfMonth(25); setFromAsset(null); setAutoGenerate(true); setError('');
+    setType('EXPENSE'); setAmount(''); setName(''); setCategory(null);
+    setDayOfMonth(25); setAsset(null); setAutoGenerate(true); setError('');
   }
 
   async function handleSave() {
@@ -68,9 +72,9 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
     const todayStr = new Date().toISOString().split('T')[0]!;
     try {
       await createRecurring.mutateAsync({
-        name, type: 'EXPENSE', amount: amtNum,
+        name, type, amount: amtNum,
         ...(category && category.id > 0 ? { categoryId: category.id } : {}),
-        ...(fromAsset ? { fromAssetId: Number(fromAsset.id) } : {}),
+        ...(asset ? (isIncome ? { toAssetId: Number(asset.id) } : { fromAssetId: Number(asset.id) }) : {}),
         frequency: 'MONTHLY', dayOfMonth, startDate: todayStr,
       });
       setSaved(true);
@@ -93,7 +97,7 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
         <SheetModal
           visible={visible}
           onClose={onClose}
-          header="정기지출 추가"
+          header={isIncome ? '정기수입 추가' : '정기지출 추가'}
           cta={
             <View style={styles.cta}>
               {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
@@ -104,11 +108,25 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
           }
         >
           <View style={styles.body}>
+            {/* 수입/지출 타입 */}
+            <View style={styles.segWrap}>
+              <SegmentedControl.Root
+                value={type}
+                onChange={(v) => { setType(v as RecType); setCategory(null); }}
+                name="recType"
+                size="large"
+                alignment="fixed"
+              >
+                <SegmentedControl.Item value="EXPENSE">지출</SegmentedControl.Item>
+                <SegmentedControl.Item value="INCOME">수입</SegmentedControl.Item>
+              </SegmentedControl.Root>
+            </View>
+
             {/* 안내 박스 */}
             <View style={[styles.infoBox, { backgroundColor: theme.brandSoft }]}>
               <TossEmoji code={TE.repeat} size={20} />
               <Text style={[styles.infoText, { color: theme.brand }]}>
-                매월 같은 날 자동으로 기록되는 지출만 등록할 수 있어요
+                {isIncome ? '매월 같은 날 자동으로 들어오는 수입을 등록해요' : '매월 같은 날 자동으로 나가는 지출을 등록해요'}
               </Text>
             </View>
 
@@ -127,7 +145,7 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
             {/* 이름 */}
             <TextField
               variant="line"
-              placeholder="항목 이름 (예: 넷플릭스)"
+              placeholder={isIncome ? '항목 이름 (예: 급여)' : '항목 이름 (예: 넷플릭스)'}
               value={name}
               onChangeText={setName}
               style={styles.nameField}
@@ -137,7 +155,7 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
             <View style={[styles.fieldsCard, { borderColor: theme.border }]}>
               <FormRow label="카테고리" value={category?.name || ''} onPress={() => setCatPicker(true)} />
               <FormRow label="결제일" value={`매월 ${dayOfMonth}일`} onPress={() => setDayPicker(true)} />
-              <FormRow label="출금 자산" value={fromAsset?.name || ''} onPress={() => setAssetPicker(true)} />
+              <FormRow label={isIncome ? '입금 자산' : '출금 자산'} value={asset?.name || ''} onPress={() => setAssetPicker(true)} />
             </View>
 
             {/* 자동 생성 토글 */}
@@ -152,8 +170,8 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
               <View style={[styles.previewCard, { borderColor: theme.brand }]}>
                 <Text style={[styles.previewText, { color: theme.text }]}>
                   <Text style={{ fontWeight: '700' }}>{nextDateStr}</Text>에{' '}
-                  <Text style={{ fontWeight: '700' }}>{fromAsset?.name || '선택한 자산'}</Text>에서{' '}
-                  <Text style={{ fontWeight: '700', color: theme.danger }}>-{krw(amtNum)}</Text>이 자동으로 기록돼요
+                  <Text style={{ fontWeight: '700' }}>{asset?.name || '선택한 자산'}</Text>{isIncome ? '으로 ' : '에서 '}
+                  <Text style={{ fontWeight: '700', color: isIncome ? theme.brand : theme.danger }}>{isIncome ? '+' : '-'}{krw(amtNum)}</Text>이 자동으로 기록돼요
                 </Text>
               </View>
             )}
@@ -163,7 +181,7 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
 
       {/* 카테고리 피커 */}
       <PickerSheet visible={catPicker} title="카테고리 선택" onClose={() => setCatPicker(false)}>
-        {(apiExpenseCategories.length > 0 ? apiExpenseCategories : expenseCategories.map(n => ({ id: 0, name: n, type: 'EXPENSE' as const, isBuiltin: true, householdId: null, icon: '' }))).map((c) => {
+        {(apiCategories.length > 0 ? apiCategories : localCategories.map(n => ({ id: 0, name: n, type, isBuiltin: true, householdId: null, icon: '' }))).map((c) => {
           const def = getCategoryDef(c.name);
           return (
             <ListRow
@@ -184,8 +202,8 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
           <ListRow
             key={a.id}
             contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{a.name}</Text>}
-            right={fromAsset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
-            onPress={() => { setFromAsset({ id: a.id, name: a.name }); setAssetPicker(false); }}
+            right={asset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
+            onPress={() => { setAsset({ id: a.id, name: a.name }); setAssetPicker(false); }}
             verticalPadding="small"
           />
         ))}
@@ -213,6 +231,7 @@ const styles = StyleSheet.create({
   confirmBox: { paddingVertical: 60, alignItems: 'center', gap: 12 },
   confirmTitle: { fontSize: 22, fontWeight: '800' },
   body: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12 },
+  segWrap: { marginBottom: 16 },
   infoBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 20 },
   infoText: { flex: 1, fontSize: 13, lineHeight: 18 },
   amountWrap: { alignItems: 'center', marginBottom: 16 },

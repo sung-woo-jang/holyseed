@@ -35,6 +35,7 @@ const EMPTY: MockPersona = {
   members: [],
   pendingInvites: [],
   categories: [],
+  workLogs: [],
 };
 
 function computeNextDate(dayOfMonth: number): string {
@@ -155,13 +156,14 @@ export function useHouseholdData(): MockPersona {
   // 정기 거래
   const recurring = rawRecurring.map((r: any) => ({
     id: String(r.id),
-    title: r.name,
+    title: r.title ?? r.name ?? '항목',
     amount: r.amount,
     category: r.category?.name ?? '기타',
     dayOfMonth: r.dayOfMonth,
     from: r.fromAssetId != null ? String(r.fromAssetId) : '',
     active: r.active,
     nextDate: r.active ? computeNextDate(r.dayOfMonth) : '—',
+    type: (r.type === 'INCOME' ? 'INCOME' : 'EXPENSE') as 'INCOME' | 'EXPENSE',
   }));
 
   // 멤버
@@ -211,5 +213,6 @@ export function useHouseholdData(): MockPersona {
     members,
     pendingInvites,
     categories,
+    workLogs: [],
   };
 }

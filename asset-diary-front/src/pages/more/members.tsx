@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { createRoute } from '@granite-js/react-native';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Button, ListRow, Border } from '@toss/tds-react-native';
 import ScreenHeader from '../../components/common/ScreenHeader';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
+import AppToast from '../../components/common/AppToast';
 import RoleBadge from '../../components/common/RoleBadge';
 import InviteSheet from '../../components/sheets/InviteSheet';
 import JoinSheet from '../../components/sheets/JoinSheet';
@@ -29,6 +31,8 @@ function MembersScreen() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
   const [rolePicker, setRolePicker] = useState<{ memberId: string; currentRole: MemberRole } | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null);
+  const [toast, setToast] = useState('');
   const updateRole = useUpdateRole();
   const removeMember = useRemoveMember();
   const isOwner = myRole === 'OWNER';
@@ -37,19 +41,20 @@ function MembersScreen() {
     if (!rolePicker) return;
     try {
       await updateRole.mutateAsync({ userId: Number(rolePicker.memberId), role });
-    } catch (e: any) {
-      Alert.alert('오류', e?.message ?? '역할 변경에 실패했어요.');
+      setToast('역할을 변경했어요');
+    } catch {
+      setToast('역할 변경에 실패했어요');
     } finally { setRolePicker(null); }
   }
 
-  async function handleRemove(memberId: string, name: string) {
-    Alert.alert('멤버 내보내기', `${name}님을 내보낼까요?`, [
-      { text: '취소', style: 'cancel' },
-      { text: '내보내기', style: 'destructive', onPress: async () => {
-        try { await removeMember.mutateAsync(Number(memberId)); }
-        catch (e: any) { Alert.alert('오류', e?.message ?? '내보내기에 실패했어요.'); }
-      }},
-    ]);
+  async function confirmRemove() {
+    if (!removeTarget) return;
+    try {
+      await removeMember.mutateAsync(Number(removeTarget.id));
+      setToast(`${removeTarget.name}님을 내보냈어요`);
+    } catch {
+      setToast('내보내기에 실패했어요');
+    } finally { setRemoveTarget(null); }
   }
 
   return (
@@ -88,11 +93,10 @@ function MembersScreen() {
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[styles.removeBtn, { borderColor: theme.danger }]}
-                        onPress={() => handleRemove(m.id, m.name)}
-                        disabled={removeMember.isPending}
+                        onPress={() => setRemoveTarget({ id: m.id, name: m.name })}
                       >
-                        <Text style={[styles.removeBtnText, { color: removeMember.isPending ? theme.textMuted : theme.danger }]}>
-                          {removeMember.isPending ? '...' : '내보내기'}
+                        <Text style={[styles.removeBtnText, { color: theme.danger }]}>
+                          내보내기
                         </Text>
                       </TouchableOpacity>
                     </View>
@@ -151,6 +155,18 @@ function MembersScreen() {
           />
         ))}
       </PickerSheet>
+
+      <ConfirmDialog
+        visible={!!removeTarget}
+        title="멤버를 내보낼까요?"
+        description={removeTarget ? `${removeTarget.name}님이 이 가구에서 제외돼요.` : undefined}
+        confirmText="내보내기"
+        danger
+        loading={removeMember.isPending}
+        onConfirm={confirmRemove}
+        onClose={() => setRemoveTarget(null)}
+      />
+      <AppToast open={!!toast} text={toast} onClose={() => setToast('')} />
     </View>
   );
 }

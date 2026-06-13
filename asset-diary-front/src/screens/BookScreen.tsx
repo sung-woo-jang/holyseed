@@ -19,7 +19,11 @@ import { Icon } from '../components/common/Icon';
 import AddTxSheet from '../components/sheets/AddTxSheet';
 import AddRecurringSheet from '../components/sheets/AddRecurringSheet';
 import EmptyState from '../components/common/EmptyState';
-import { useToggleRecurring } from '../queries/mutations';
+import ActionSheet from '../components/common/ActionSheet';
+import ConfirmDialog from '../components/common/ConfirmDialog';
+import AppToast from '../components/common/AppToast';
+import { useToggleRecurring, useDeleteRecurring } from '../queries/mutations';
+import type { MockRecurring } from '../lib/mock-data';
 
 type BookTab = 'tx' | 'rec';
 
@@ -33,6 +37,29 @@ export default function BookScreen() {
   const [addRecVisible, setAddRecVisible] = useState(false);
   const isViewer = role === 'VIEWER';
   const toggleRecurring = useToggleRecurring();
+  const deleteRecurring = useDeleteRecurring();
+  const [actionRec, setActionRec] = useState<MockRecurring | null>(null);
+  const [deleteRec, setDeleteRec] = useState<MockRecurring | null>(null);
+  const [toast, setToast] = useState('');
+
+  function handleRecAction(value: string) {
+    const r = actionRec;
+    setActionRec(null);
+    if (!r) return;
+    if (value === 'delete') setDeleteRec(r);
+  }
+
+  async function confirmDeleteRec() {
+    if (!deleteRec) return;
+    try {
+      await deleteRecurring.mutateAsync(Number(deleteRec.id));
+      setToast('정기지출을 삭제했어요');
+    } catch {
+      setToast('삭제에 실패했어요');
+    } finally {
+      setDeleteRec(null);
+    }
+  }
 
   const months = useMemo(() => {
     const set = new Set(data.transactions.map(t => t.date.slice(0, 7)));
@@ -217,11 +244,19 @@ export default function BookScreen() {
                       <View style={styles.recRight}>
                         <Text style={[styles.recAmount, { color: theme.text }]}>-{krwShort(r.amount)}원</Text>
                         {!isViewer ? (
-                          <Switch
-                            checked={r.active}
-                            onCheckedChange={() => toggleRecurring.mutate(Number(r.id))}
-                            disabled={toggleRecurring.isPending}
-                          />
+                          <>
+                            <Switch
+                              checked={r.active}
+                              onCheckedChange={() => toggleRecurring.mutate(Number(r.id))}
+                              disabled={toggleRecurring.isPending}
+                            />
+                            <TouchableOpacity
+                              onPress={() => setActionRec(r)}
+                              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                              <Text style={[styles.kebabIcon, { color: theme.textMuted }]}>⋯</Text>
+                            </TouchableOpacity>
+                          </>
                         ) : (
                           <View style={[styles.toggleChip, { backgroundColor: r.active ? theme.brand : theme.bg }]}>
                             <Text style={[styles.toggleText, { color: r.active ? '#fff' : theme.textMuted }]}>{r.active ? '활성' : '중지'}</Text>
@@ -251,6 +286,28 @@ export default function BookScreen() {
 
       <AddTxSheet visible={addTxVisible} onClose={() => setAddTxVisible(false)} />
       <AddRecurringSheet visible={addRecVisible} onClose={() => setAddRecVisible(false)} />
+
+      {/* 정기지출 행 액션 */}
+      <ActionSheet
+        visible={!!actionRec}
+        title={actionRec?.title}
+        items={[
+          { iconCode: TE.trash, label: '정기지출 삭제', value: 'delete', danger: true },
+        ]}
+        onSelect={handleRecAction}
+        onClose={() => setActionRec(null)}
+      />
+      <ConfirmDialog
+        visible={!!deleteRec}
+        title="정기지출을 삭제할까요?"
+        description="더 이상 자동으로 기록되지 않아요."
+        confirmText="삭제하기"
+        danger
+        loading={deleteRecurring.isPending}
+        onConfirm={confirmDeleteRec}
+        onClose={() => setDeleteRec(null)}
+      />
+      <AppToast open={!!toast} text={toast} onClose={() => setToast('')} />
     </View>
   );
 }
@@ -281,7 +338,8 @@ const styles = StyleSheet.create({
   recSummaryValue: { fontSize: 20, fontWeight: '700', marginBottom: 4 },
   recSummaryMeta: { fontSize: 12 },
   recIcon: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  recRight: { alignItems: 'flex-end', gap: 4 },
+  recRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  kebabIcon: { fontSize: 20, fontWeight: '700' },
   recAmount: { fontSize: 14, fontWeight: '700' },
   toggleChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   toggleText: { fontSize: 11, fontWeight: '600' },

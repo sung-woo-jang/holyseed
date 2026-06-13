@@ -12,7 +12,8 @@ import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
 import TossEmoji from '../common/TossEmoji';
 import { ASSET_CATEGORY_META } from '../../lib/category-meta';
-import { useCreateAsset, useUpsertSnapshot } from '../../queries/mutations';
+import { useCreateAsset, useUpdateAsset, useUpsertSnapshot } from '../../queries/mutations';
+import type { MockAsset } from '../../lib/mock-data';
 import type { AssetCategory } from '../../types/api';
 
 function formatNum(raw: string): string {
@@ -34,10 +35,15 @@ const CURRENCIES = ['USD', 'EUR', 'JPY', 'CNY'];
 interface AddAssetSheetProps {
   visible: boolean;
   onClose: () => void;
+  /** 지정 시 편집 모드 — 이름/카테고리/통화 수정 */
+  editAsset?: MockAsset | null;
+  /** 저장/수정 성공 콜백 (Toast 등) */
+  onSaved?: (mode: 'create' | 'edit') => void;
 }
 
-export default function AddAssetSheet({ visible, onClose }: AddAssetSheetProps) {
+export default function AddAssetSheet({ visible, onClose, editAsset, onSaved }: AddAssetSheetProps) {
   const theme = useTheme();
+  const isEdit = !!editAsset;
   const [step, setStep] = useState<1 | 2>(1);
   const [assetName, setAssetName] = useState('');
   const [category, setCategory] = useState<AssetCategory | null>(null);
@@ -47,12 +53,25 @@ export default function AddAssetSheet({ visible, onClose }: AddAssetSheetProps) 
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const createAsset = useCreateAsset();
+  const updateAsset = useUpdateAsset();
   const upsertSnapshot = useUpsertSnapshot();
+
+  // 편집 모드 진입 시 폼 프리필
+  React.useEffect(() => {
+    if (visible && editAsset) {
+      setAssetName(editAsset.name);
+      setCategory(editAsset.category);
+      const fx = editAsset.currency !== 'KRW';
+      setIsFx(fx);
+      setCurrency(fx ? editAsset.currency : 'USD');
+      setStep(1);
+    }
+  }, [visible, editAsset]);
 
   const isLiability = category === 'LIABILITY';
   const amtNum = Number(amount.replace(/[^0-9]/g, ''));
   const step1Valid = assetName.trim().length > 0 && category !== null;
-  const isPending = createAsset.isPending || upsertSnapshot.isPending;
+  const isPending = createAsset.isPending || updateAsset.isPending || upsertSnapshot.isPending;
 
   function reset() {
     setStep(1); setAssetName(''); setCategory(null);
@@ -60,6 +79,21 @@ export default function AddAssetSheet({ visible, onClose }: AddAssetSheetProps) 
   }
 
   function handleClose() { reset(); onClose(); }
+
+  async function handleEditSave() {
+    setError('');
+    try {
+      await updateAsset.mutateAsync({
+        id: Number(editAsset!.id),
+        dto: { name: assetName.trim(), category: category!, currency: isFx ? currency : 'KRW' },
+      });
+      reset();
+      onClose();
+      onSaved?.('edit');
+    } catch (e: any) {
+      setError(e?.message ?? '수정에 실패했어요. 다시 시도해 주세요.');
+    }
+  }
 
   async function handleSave(skipAmount = false) {
     setError('');
@@ -79,13 +113,13 @@ export default function AddAssetSheet({ visible, onClose }: AddAssetSheetProps) 
         });
       }
       setSaved(true);
-      setTimeout(() => { setSaved(false); reset(); onClose(); }, 700);
+      setTimeout(() => { setSaved(false); reset(); onClose(); onSaved?.('create'); }, 700);
     } catch (e: any) {
       setError(e?.message ?? '저장에 실패했어요. 다시 시도해 주세요.');
     }
   }
 
-  const headerTitle = `자산 추가 · ${step}/2`;
+  const headerTitle = isEdit ? '자산 수정' : `자산 추가 · ${step}/2`;
 
   if (saved) {
     return (
@@ -107,9 +141,16 @@ export default function AddAssetSheet({ visible, onClose }: AddAssetSheetProps) 
         header={headerTitle}
         cta={
           <View style={styles.cta}>
-            <Button display="full" size="big" type="primary" disabled={!step1Valid} onPress={() => setStep(2)}>
-              다음
-            </Button>
+            {isEdit && error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
+            {isEdit ? (
+              <Button display="full" size="big" type="primary" disabled={!step1Valid} loading={isPending} onPress={handleEditSave}>
+                수정하기
+              </Button>
+            ) : (
+              <Button display="full" size="big" type="primary" disabled={!step1Valid} onPress={() => setStep(2)}>
+                다음
+              </Button>
+            )}
           </View>
         }
       >

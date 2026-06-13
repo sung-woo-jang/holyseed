@@ -16,6 +16,10 @@ import TossEmoji from '../components/common/TossEmoji';
 import SnapshotSheet from '../components/sheets/SnapshotSheet';
 import AddAssetSheet from '../components/sheets/AddAssetSheet';
 import EmptyState from '../components/common/EmptyState';
+import ActionSheet from '../components/common/ActionSheet';
+import ConfirmDialog from '../components/common/ConfirmDialog';
+import AppToast from '../components/common/AppToast';
+import { useDeleteAsset } from '../queries/mutations';
 import type { AssetCategory } from '../types/api';
 import type { MockAsset } from '../lib/mock-data';
 
@@ -31,7 +35,33 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
   const [snapshotFocusId, setSnapshotFocusId] = useState<string | undefined>(undefined);
   const [pickingAsset, setPickingAsset] = useState(false);
   const [addAssetOpen, setAddAssetOpen] = useState(false);
+  const [actionAsset, setActionAsset] = useState<MockAsset | null>(null);
+  const [editAsset, setEditAsset] = useState<MockAsset | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MockAsset | null>(null);
+  const [toast, setToast] = useState('');
+  const deleteAsset = useDeleteAsset();
   const isViewer = role === 'VIEWER';
+
+  function handleAction(value: string) {
+    const a = actionAsset;
+    setActionAsset(null);
+    if (!a) return;
+    if (value === 'snapshot') { setSnapshotFocusId(a.id); setSnapshotOpen(true); }
+    else if (value === 'edit') { setEditAsset(a); }
+    else if (value === 'delete') { setDeleteTarget(a); }
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    try {
+      await deleteAsset.mutateAsync(Number(deleteTarget.id));
+      setToast('자산을 삭제했어요');
+    } catch {
+      setToast('삭제에 실패했어요');
+    } finally {
+      setDeleteTarget(null);
+    }
+  }
 
   const grouped: Partial<Record<AssetCategory, MockAsset[]>> = {};
   data.assets.forEach(a => {
@@ -130,12 +160,20 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
                           <Text style={[styles.assetValue, { color: a.isLiability ? theme.danger : theme.text }]}>
                             {krw(a.value)}
                           </Text>
-                          {pickingAsset && (
+                          {pickingAsset ? (
                             <Badge type="blue" badgeStyle="weak" size="small">선택</Badge>
-                          )}
+                          ) : !isViewer ? (
+                            <TouchableOpacity
+                              onPress={() => setActionAsset(a)}
+                              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                              style={styles.kebabBtn}
+                            >
+                              <Text style={[styles.kebabIcon, { color: theme.textMuted }]}>⋯</Text>
+                            </TouchableOpacity>
+                          ) : null}
                         </View>
                       }
-                      withArrow={!pickingAsset}
+                      withArrow={pickingAsset}
                       onPress={() => pickingAsset ? handlePickAsset(a.id) : onAssetPress?.(a)}
                       verticalPadding="small"
                     />
@@ -166,7 +204,41 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
       <AddAssetSheet
         visible={addAssetOpen}
         onClose={() => setAddAssetOpen(false)}
+        onSaved={() => setToast('자산을 추가했어요')}
       />
+      <AddAssetSheet
+        visible={!!editAsset}
+        editAsset={editAsset}
+        onClose={() => setEditAsset(null)}
+        onSaved={() => setToast('자산을 수정했어요')}
+      />
+
+      {/* 행 액션 메뉴 */}
+      <ActionSheet
+        visible={!!actionAsset}
+        title={actionAsset?.name}
+        items={[
+          { iconCode: TE.camera, label: '스냅샷 입력', value: 'snapshot' },
+          { iconCode: TE.pencil, label: '자산 수정', value: 'edit' },
+          { iconCode: TE.trash, label: '자산 삭제', value: 'delete', danger: true },
+        ]}
+        onSelect={handleAction}
+        onClose={() => setActionAsset(null)}
+      />
+
+      {/* 삭제 확인 */}
+      <ConfirmDialog
+        visible={!!deleteTarget}
+        title="자산을 삭제할까요?"
+        description="이 자산과 모든 스냅샷 기록이 함께 삭제돼요."
+        confirmText="삭제하기"
+        danger
+        loading={deleteAsset.isPending}
+        onConfirm={confirmDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
+
+      <AppToast open={!!toast} text={toast} onClose={() => setToast('')} />
     </View>
   );
 }
@@ -192,8 +264,10 @@ const styles = StyleSheet.create({
   groupCard: { borderRadius: 14, borderWidth: 1 },
   assetName: { fontSize: 14, fontWeight: '600', marginBottom: 3 },
   assetMeta: { fontSize: 11 },
-  assetRight: { alignItems: 'flex-end', gap: 4 },
+  assetRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   assetValue: { fontSize: 14, fontWeight: '700', textAlign: 'right' },
+  kebabBtn: { paddingHorizontal: 2 },
+  kebabIcon: { fontSize: 20, fontWeight: '700' },
   fab: {
     position: 'absolute',
     bottom: 20,

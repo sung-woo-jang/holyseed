@@ -55,6 +55,7 @@ export interface RecurringTransaction {
   name: string;
   type: TxType;
   amount: number;
+  isVariable: boolean;
   currency: string;
   categoryId: number | null;
   category?: Category;

@@ -5,6 +5,7 @@ import { MembershipGuard } from '../../common/guards/membership.guard';
 import { RequireMembership } from '../../common/decorators/require-membership.decorator';
 import { MemberRole } from '../memberships/entities/membership.entity';
 import { CreateRecurringDto } from './dto/request/create-recurring.dto';
+import { RunRecurringDto } from './dto/request/run-recurring.dto';
 
 @ApiTags('AD 정기거래')
 @Controller('ad')
@@ -50,9 +51,9 @@ export class RecurringTransactionsController {
   }
 
   @Post('recurring/:id/run-now')
-  @ApiOperation({ summary: '정기거래 즉시 실행' })
-  async runNow(@Param('id', ParseIntPipe) id: number) {
-    const data = await this.recurringService.runNow(id);
+  @ApiOperation({ summary: '정기거래 즉시 실행 (변동형: amount로 이번 달 금액 입력)' })
+  async runNow(@Param('id', ParseIntPipe) id: number, @Body() dto: RunRecurringDto) {
+    const data = await this.recurringService.runNow(id, dto.amount, dto.date);
     return { success: true, message: '즉시 실행 성공', data, timestamp: new Date().toISOString() };
   }
 }

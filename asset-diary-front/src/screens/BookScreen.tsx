@@ -18,12 +18,14 @@ import AutoBadge from '../components/common/AutoBadge';
 import { Icon } from '../components/common/Icon';
 import AddTxSheet from '../components/sheets/AddTxSheet';
 import AddRecurringSheet from '../components/sheets/AddRecurringSheet';
+import RecordRecurringSheet from '../components/sheets/RecordRecurringSheet';
 import WorkScreen from './WorkScreen';
 import EmptyState from '../components/common/EmptyState';
 import ActionSheet from '../components/common/ActionSheet';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import AppToast from '../components/common/AppToast';
 import { useToggleRecurring, useDeleteRecurring } from '../queries/mutations';
+import { recurringNeedsInput } from '../lib/recurring';
 import type { MockRecurring } from '../lib/mock-data';
 
 type BookTab = 'tx' | 'rec' | 'work';
@@ -41,6 +43,7 @@ export default function BookScreen() {
   const deleteRecurring = useDeleteRecurring();
   const [actionRec, setActionRec] = useState<MockRecurring | null>(null);
   const [deleteRec, setDeleteRec] = useState<MockRecurring | null>(null);
+  const [recordRec, setRecordRec] = useState<MockRecurring | null>(null);
   const [toast, setToast] = useState('');
 
   function handleRecAction(value: string) {
@@ -98,6 +101,7 @@ export default function BookScreen() {
   function renderRecRow(r: typeof recurring[number], i: number, total: number) {
     const catDef = getCategoryDef(r.category);
     const isInc = r.type === 'INCOME';
+    const needsInput = recurringNeedsInput(r);
     return (
       <React.Fragment key={r.id}>
         <ListRow
@@ -108,15 +112,32 @@ export default function BookScreen() {
           }
           contents={
             <View>
-              <Text style={[styles.txTitle, { color: theme.text }]}>{r.title}</Text>
+              <View style={styles.recTitleRow}>
+                <Text style={[styles.txTitle, { color: theme.text, flex: 0 }]}>{r.title}</Text>
+                {r.isVariable ? (
+                  <View style={[styles.varBadge, { backgroundColor: theme.brandSoft }]}>
+                    <Text style={[styles.varBadgeText, { color: theme.brand }]}>변동</Text>
+                  </View>
+                ) : null}
+              </View>
               <Text style={[styles.txMeta, { color: theme.textMuted }]}>매월 {r.dayOfMonth}일 · 다음: {r.nextDate}</Text>
             </View>
           }
           right={
             <View style={styles.recRight}>
-              <Text style={[styles.recAmount, { color: isInc ? theme.brand : theme.text }]}>
-                {isInc ? '+' : '-'}{krwShort(r.amount)}원
-              </Text>
+              {needsInput && !isViewer ? (
+                <TouchableOpacity
+                  style={[styles.inputBtn, { backgroundColor: theme.brand }]}
+                  onPress={() => setRecordRec(r)}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                >
+                  <Text style={styles.inputBtnText}>이번 달 금액 입력</Text>
+                </TouchableOpacity>
+              ) : (
+                <Text style={[styles.recAmount, { color: isInc ? theme.brand : theme.text }]}>
+                  {r.isVariable && r.amount <= 0 ? '—' : `${isInc ? '+' : '-'}${krwShort(r.amount)}원`}
+                </Text>
+              )}
               {!isViewer ? (
                 <>
                   <Switch
@@ -337,6 +358,12 @@ export default function BookScreen() {
         onConfirm={confirmDeleteRec}
         onClose={() => setDeleteRec(null)}
       />
+      <RecordRecurringSheet
+        visible={!!recordRec}
+        recurring={recordRec}
+        onClose={() => setRecordRec(null)}
+        onRecorded={() => setToast('이번 달 금액을 기록했어요')}
+      />
       <AppToast open={!!toast} text={toast} onClose={() => setToast('')} />
     </View>
   );
@@ -370,6 +397,11 @@ const styles = StyleSheet.create({
   recSummaryMeta: { fontSize: 12 },
   recSectionTitle: { fontSize: 12, fontWeight: '600', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 },
   recIcon: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  recTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  varBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  varBadgeText: { fontSize: 10, fontWeight: '700' },
+  inputBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8 },
+  inputBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
   recRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   kebabIcon: { fontSize: 20, fontWeight: '700' },
   recAmount: { fontSize: 14, fontWeight: '700' },

@@ -91,9 +91,10 @@ export const recurringApi = {
   create: (
     householdId: number,
     dto: {
-      name: string;
+      title: string;
       type: TxType;
-      amount: number;
+      amount?: number;
+      isVariable?: boolean;
       currency?: string;
       categoryId?: number;
       fromAssetId?: number;
@@ -110,7 +111,11 @@ export const recurringApi = {
 
   toggle: (id: number) => api.post(`/recurring/${id}/toggle`).then((r) => r.data),
   delete: (id: number) => api.post(`/recurring/${id}/delete`).then((r) => r.data),
-  runNow: (id: number) => api.post(`/recurring/${id}/run-now`).then((r) => r.data),
+  runNow: (id: number, amount?: number, date?: string) =>
+    api.post(`/recurring/${id}/run-now`, {
+      ...(amount != null ? { amount } : {}),
+      ...(date ? { date } : {}),
+    }).then((r) => r.data),
 };
 
 // ─── Work Logs (근무표) ─────────────────────────────────────────────────────────

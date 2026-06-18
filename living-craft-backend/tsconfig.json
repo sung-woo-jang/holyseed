@@ -26,7 +26,8 @@
       "@zc/*": ["src/projects/zc/*"],
       "@ad/*": ["src/projects/ad/*"],
       "@pc/*": ["src/projects/pc/*"],
-      "@shared/*": ["src/shared/*"]
+      "@shared/*": ["src/shared/*"],
+      "@wedding/*": ["src/projects/wedding/*"]
     }
   }
 }

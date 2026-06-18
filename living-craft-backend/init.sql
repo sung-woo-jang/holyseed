@@ -13,6 +13,7 @@ SET timezone = 'Asia/Seoul';
 CREATE SCHEMA IF NOT EXISTS ad;
 CREATE SCHEMA IF NOT EXISTS pc;
 CREATE SCHEMA IF NOT EXISTS iv;
+CREATE SCHEMA IF NOT EXISTS wedding;
 
 -- 초기 설정 완료 로그
 SELECT 'Database initialization completed' as status;

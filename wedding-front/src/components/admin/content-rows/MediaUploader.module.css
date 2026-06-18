@@ -1,0 +1,130 @@
+.container {
+  padding: 1rem 0;
+}
+
+.dropZone {
+  position: relative;
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  padding: 3rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.dropZone:hover {
+  border-color: #1976d2;
+  background: #f5f9ff;
+}
+
+.dropZone.dragging {
+  border-color: #1976d2;
+  background: #e3f2fd;
+}
+
+.dropZoneText {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.dropZoneHint {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.fileInput {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.uploadList {
+  margin-top: 2rem;
+}
+
+.uploadList h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.uploadItem {
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+}
+
+.uploadInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.fileName {
+  font-size: 0.875rem;
+  color: #1a1a1a;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.statuspending {
+  background: #e0e0e0;
+  color: #666;
+}
+
+.statusuploading {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.statusprocessing {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.statuscomplete {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.statuserror {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.progressBar {
+  height: 4px;
+  background: #e0e0e0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: #1976d2;
+  transition: width 0.3s;
+}
+
+.error {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.875rem;
+  color: #c62828;
+}

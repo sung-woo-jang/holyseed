@@ -1,0 +1,52 @@
+/* ============================================
+   NETFLIX-THEMED LIGHTBOX
+   ============================================ */
+
+.lightboxContainer :global(.yarl__root) {
+  --yarl__color_backdrop: rgba(0, 0, 0, 0.98);
+  --yarl__button_filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+}
+
+.lightboxContainer :global(.yarl__slide_image) {
+  border-radius: 4px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+}
+
+.lightboxContainer :global(.yarl__slide_title) {
+  font-family: var(--netflix-font, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  font-size: var(--font-size-lg);
+  color: white;
+  margin-bottom: 4px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.lightboxContainer :global(.yarl__slide_description) {
+  font-size: var(--font-size-sm);
+  color: var(--netflix-text-muted, #b3b3b3);
+}
+
+/* Netflix red accent for navigation buttons */
+.lightboxContainer :global(.yarl__button) {
+  background: rgba(20, 20, 20, 0.8) !important;
+  border: 2px solid var(--netflix-red, #e50914) !important;
+  color: var(--netflix-red) !important;
+  transition: all 0.3s ease !important;
+}
+
+.lightboxContainer :global(.yarl__button:hover) {
+  background: var(--netflix-red, #e50914) !important;
+  color: white !important;
+  transform: scale(1.1) !important;
+}
+
+/* Close button */
+.lightboxContainer :global(.yarl__button_close) {
+  border-radius: 50% !important;
+}
+
+/* Navigation arrows */
+.lightboxContainer :global(.yarl__navigation_prev),
+.lightboxContainer :global(.yarl__navigation_next) {
+  border-radius: 50% !important;
+}

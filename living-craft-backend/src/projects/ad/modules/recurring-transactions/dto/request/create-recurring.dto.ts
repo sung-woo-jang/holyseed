@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsEnum, IsNumber, IsOptional, IsPositive, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsBoolean, IsDateString, IsEnum, IsNumber, IsOptional, IsPositive, IsString, Max, MaxLength, Min, ValidateIf } from 'class-validator';
 import { TransactionType } from '../../../transactions/entities/transaction.entity';
 import { RecurringFrequency } from '../../entities/recurring-transaction.entity';
 
@@ -8,10 +8,26 @@ export class CreateRecurringDto {
   @IsEnum(TransactionType)
   type: TransactionType;
 
-  @ApiProperty({ description: '금액', example: 50000 })
+  @ApiPropertyOptional({ description: '변동형 여부 (매월 금액이 다름)', default: false })
+  @IsOptional()
+  @IsBoolean()
+  isVariable?: boolean;
+
+  @ApiPropertyOptional({ description: '금액 (고정형 필수, 변동형은 선택/예상치)', example: 50000 })
+  @ValidateIf((o) => !o.isVariable)
   @IsNumber()
   @IsPositive()
-  amount: number;
+  @ValidateIf((o) => o.isVariable)
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  amount?: number;
+
+  @ApiPropertyOptional({ description: '제목', maxLength: 200 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  title?: string;
 
   @ApiPropertyOptional({ description: '카테고리 ID' })
   @IsOptional()
@@ -27,12 +43,6 @@ export class CreateRecurringDto {
   @IsOptional()
   @IsNumber()
   toAssetId?: number;
-
-  @ApiPropertyOptional({ description: '제목', maxLength: 200 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(200)
-  title?: string;
 
   @ApiPropertyOptional({ description: '메모' })
   @IsOptional()

@@ -157,13 +157,15 @@ export function useHouseholdData(): MockPersona {
   const recurring = rawRecurring.map((r: any) => ({
     id: String(r.id),
     title: r.title ?? r.name ?? '항목',
-    amount: r.amount,
+    amount: Number(r.amount) || 0,
     category: r.category?.name ?? '기타',
     dayOfMonth: r.dayOfMonth,
     from: r.fromAssetId != null ? String(r.fromAssetId) : '',
     active: r.active,
     nextDate: r.active ? computeNextDate(r.dayOfMonth) : '—',
     type: (r.type === 'INCOME' ? 'INCOME' : 'EXPENSE') as 'INCOME' | 'EXPENSE',
+    isVariable: r.isVariable ?? false,
+    lastRunDate: r.lastRunDate ?? null,
   }));
 
   // 멤버

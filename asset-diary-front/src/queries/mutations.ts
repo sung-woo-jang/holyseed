@@ -117,9 +117,10 @@ export function useCreateRecurring() {
   const hid = useHid();
   return useMutation({
     mutationFn: (dto: {
-      name: string;
+      title: string;
       type: 'INCOME' | 'EXPENSE' | 'TRANSFER';
-      amount: number;
+      amount?: number;
+      isVariable?: boolean;
       currency?: string;
       categoryId?: number;
       fromAssetId?: number;
@@ -160,11 +161,12 @@ export function useRunRecurring() {
   const qc = useQueryClient();
   const hid = useHid();
   return useMutation({
-    mutationFn: (id: number) => recurringApi.runNow(id),
+    mutationFn: ({ id, amount }: { id: number; amount?: number }) => recurringApi.runNow(id, amount),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.recurring(hid!) });
       qc.invalidateQueries({ queryKey: qk.transactions(hid!) });
       qc.invalidateQueries({ queryKey: qk.dashboard(hid!) });
+      qc.invalidateQueries({ queryKey: qk.assets(hid!) });
     },
   });
 }

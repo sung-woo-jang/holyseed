@@ -43,6 +43,8 @@ export interface MockRecurring {
   active: boolean;
   nextDate: string;
   type: 'INCOME' | 'EXPENSE';
+  isVariable?: boolean;
+  lastRunDate?: string | null;
 }
 
 export interface MockWorkLog {
@@ -245,7 +247,7 @@ export const MOCK_PERSONA: MockPersona = {
     { id: 'r2', title: '월세', amount: 850000, category: '주거', dayOfMonth: 15, from: 'a1', active: true, nextDate: '2026-05-15', type: 'EXPENSE' },
     { id: 'r3', title: 'Spotify Family', amount: 13900, category: '구독', dayOfMonth: 1, from: 'a1', active: true, nextDate: '2026-05-01', type: 'EXPENSE' },
     { id: 'r4', title: '실손보험', amount: 95000, category: '보험료', dayOfMonth: 5, from: 'a1', active: true, nextDate: '2026-05-05', type: 'EXPENSE' },
-    { id: 'r5', title: '관리비', amount: 320000, category: '주거', dayOfMonth: 25, from: 'a1', active: true, nextDate: '2026-05-25', type: 'EXPENSE' },
+    { id: 'r5', title: '관리비', amount: 0, category: '주거', dayOfMonth: 25, from: 'a1', active: true, nextDate: '2026-05-25', type: 'EXPENSE', isVariable: true, lastRunDate: null },
     { id: 'r6', title: '쿠팡 와우', amount: 7890, category: '구독', dayOfMonth: 23, from: 'a1', active: false, nextDate: '—', type: 'EXPENSE' },
     { id: 'r7', title: 'YouTube Premium', amount: 14900, category: '구독', dayOfMonth: 8, from: 'a1', active: true, nextDate: '2026-05-08', type: 'EXPENSE' },
     { id: 'r8', title: '운동센터 회비', amount: 130000, category: '여가', dayOfMonth: 1, from: 'a1', active: true, nextDate: '2026-05-01', type: 'EXPENSE' },

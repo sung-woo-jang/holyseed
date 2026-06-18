@@ -42,6 +42,7 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
   const [dayOfMonth, setDayOfMonth] = useState(25);
   const [asset, setAsset] = useState<{ id: string; name: string } | null>(null);
   const [autoGenerate, setAutoGenerate] = useState(true);
+  const [isVariable, setIsVariable] = useState(false);
   const [catPicker, setCatPicker] = useState(false);
   const [assetPicker, setAssetPicker] = useState(false);
   const [dayPicker, setDayPicker] = useState(false);
@@ -56,7 +57,7 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
   const apiCategories = data.categories.filter((c) => c.type === type);
   const assetOptions = data.assets.filter((a) => !a.isLiability);
   const amtNum = Number(amount.replace(/[^0-9]/g, ''));
-  const isValid = amtNum > 0 && name.length > 0;
+  const isValid = name.length > 0 && (isVariable || amtNum > 0);
 
   const today = new Date();
   const nextDate = new Date(today.getFullYear(), today.getMonth() + (today.getDate() >= dayOfMonth ? 1 : 0), dayOfMonth);
@@ -64,7 +65,7 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
 
   function reset() {
     setType('EXPENSE'); setAmount(''); setName(''); setCategory(null);
-    setDayOfMonth(25); setAsset(null); setAutoGenerate(true); setError('');
+    setDayOfMonth(25); setAsset(null); setAutoGenerate(true); setIsVariable(false); setError('');
   }
 
   async function handleSave() {
@@ -72,7 +73,7 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
     const todayStr = new Date().toISOString().split('T')[0]!;
     try {
       await createRecurring.mutateAsync({
-        name, type, amount: amtNum,
+        title: name, type, amount: isVariable ? (amtNum || 0) : amtNum, isVariable,
         ...(category && category.id > 0 ? { categoryId: category.id } : {}),
         ...(asset ? (isIncome ? { toAssetId: Number(asset.id) } : { fromAssetId: Number(asset.id) }) : {}),
         frequency: 'MONTHLY', dayOfMonth, startDate: todayStr,
@@ -126,9 +127,18 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
             <View style={[styles.infoBox, { backgroundColor: theme.brandSoft }]}>
               <TossEmoji code={TE.repeat} size={20} />
               <Text style={[styles.infoText, { color: theme.brand }]}>
-                {isIncome ? '매월 같은 날 자동으로 들어오는 수입을 등록해요' : '매월 같은 날 자동으로 나가는 지출을 등록해요'}
+                {isVariable
+                  ? '매월 결제일에 직접 금액을 입력해요 (전기세처럼 금액이 달라질 때)'
+                  : isIncome ? '매월 같은 날 자동으로 들어오는 수입을 등록해요' : '매월 같은 날 자동으로 나가는 지출을 등록해요'}
               </Text>
             </View>
+
+            {/* 변동형 토글 */}
+            <ListRow
+              contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "600" }}>금액이 매번 달라요</Text>}
+              right={<Switch checked={isVariable} onCheckedChange={setIsVariable} />}
+              verticalPadding="small"
+            />
 
             {/* 금액 */}
             <View style={styles.amountWrap}>
@@ -140,6 +150,9 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
                 suffix="원"
                 style={styles.amountField}
               />
+              {isVariable && (
+                <Text style={[styles.variableHint, { color: theme.textMuted }]}>예상 금액 (선택) — 실제 금액은 매달 입력해요</Text>
+              )}
             </View>
 
             {/* 이름 */}
@@ -158,15 +171,17 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
               <FormRow label={isIncome ? '입금 자산' : '출금 자산'} value={asset?.name || ''} onPress={() => setAssetPicker(true)} />
             </View>
 
-            {/* 자동 생성 토글 */}
-            <ListRow
-              contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "600" }}>자동 생성 활성화</Text>}
-              right={<Switch checked={autoGenerate} onCheckedChange={setAutoGenerate} />}
-              verticalPadding="small"
-            />
+            {/* 자동 생성 토글 (고정형만) */}
+            {!isVariable && (
+              <ListRow
+                contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "600" }}>자동 생성 활성화</Text>}
+                right={<Switch checked={autoGenerate} onCheckedChange={setAutoGenerate} />}
+                verticalPadding="small"
+              />
+            )}
 
-            {/* 미리보기 */}
-            {isValid && autoGenerate && (
+            {/* 미리보기 (고정형만) */}
+            {!isVariable && isValid && autoGenerate && (
               <View style={[styles.previewCard, { borderColor: theme.brand }]}>
                 <Text style={[styles.previewText, { color: theme.text }]}>
                   <Text style={{ fontWeight: '700' }}>{nextDateStr}</Text>에{' '}
@@ -236,6 +251,7 @@ const styles = StyleSheet.create({
   infoText: { flex: 1, fontSize: 13, lineHeight: 18 },
   amountWrap: { alignItems: 'center', marginBottom: 16 },
   amountField: { width: '100%' },
+  variableHint: { fontSize: 12, marginTop: 6, textAlign: 'center' },
   nameField: { marginBottom: 12 },
   fieldsCard: { borderRadius: 14, borderWidth: 1, marginBottom: 12, overflow: 'hidden' },
   previewCard: { borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, marginTop: 12 },

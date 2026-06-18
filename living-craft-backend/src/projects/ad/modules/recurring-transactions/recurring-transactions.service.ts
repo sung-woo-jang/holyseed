@@ -46,9 +46,13 @@ export class RecurringTransactionsService {
     await this.recurringRepo.remove(r);
   }
 
-  async runNow(id: number): Promise<Transaction> {
+  async runNow(id: number, amount?: number, date?: string): Promise<Transaction> {
     const r = await this.findOne(id);
-    return this.generateTransaction(r);
+    const tx = await this.generateTransaction(r, amount, date);
+    // 이번 달 입력 완료 표시 (변동형 재프롬프트 억제)
+    r.lastRunDate = new Date().toISOString().split('T')[0];
+    await this.recurringRepo.save(r);
+    return tx;
   }
 
   async runDailyAll(): Promise<void> {
@@ -61,6 +65,8 @@ export class RecurringTransactionsService {
 
     for (const r of actives) {
       try {
+        // 변동형은 자동 생성하지 않음 (사용자가 직접 금액 입력)
+        if (r.isVariable) continue;
         if (r.lastRunDate === todayStr) continue;
         if (r.endDate && r.endDate < todayStr) continue;
         if (r.startDate > todayStr) continue;
@@ -81,13 +87,13 @@ export class RecurringTransactionsService {
     }
   }
 
-  private async generateTransaction(r: RecurringTransaction): Promise<Transaction> {
+  private async generateTransaction(r: RecurringTransaction, amountOverride?: number, dateOverride?: string): Promise<Transaction> {
     const today = new Date().toISOString().split('T')[0];
     const tx = this.txRepo.create({
       householdId: r.householdId,
-      date: today,
+      date: dateOverride ?? today,
       type: r.type,
-      amount: r.amount,
+      amount: amountOverride ?? r.amount,
       categoryId: r.categoryId,
       fromAssetId: r.fromAssetId,
       toAssetId: r.toAssetId,

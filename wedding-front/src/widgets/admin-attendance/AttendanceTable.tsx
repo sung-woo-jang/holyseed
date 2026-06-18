@@ -1,6 +1,6 @@
 
 
-import type { Attendance } ;
+import type { Attendance } from '@/shared/types';
 import styles from './AttendanceTable.module.css';
 import cn from 'classnames';
 

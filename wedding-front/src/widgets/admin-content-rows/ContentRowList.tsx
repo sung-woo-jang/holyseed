@@ -1,4 +1,4 @@
-import { ContentRow } ;
+import type { ContentRow } from '@/shared/types';
 import { ContentRowCard } from './ContentRowCard';
 import styles from './ContentRowList.module.css';
 

@@ -12,7 +12,7 @@ import { useTheme } from '../../lib/theme';
 import { useDataSource } from '../../lib/data-source';
 import TossEmoji from '../common/TossEmoji';
 import FormRow from '../common/FormRow';
-import PickerSheet from './PickerSheet';
+import PickerOverlay from './PickerOverlay';
 import { CATEGORY_DEFS, getCategoryDef } from '../../lib/category-meta';
 import { TE } from '../../lib/toss-emoji';
 import { Icon } from '../common/Icon';
@@ -114,6 +114,72 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
               </Button>
             </View>
           }
+          overlay={
+            <>
+              {/* 카테고리 피커 */}
+              <PickerOverlay visible={catPicker} title="카테고리 선택" onClose={() => setCatPicker(false)}>
+                {(data.categories.filter((c) => c.type === type || type === 'TRANSFER').length > 0
+                  ? data.categories.filter((c) => c.type === type || type === 'TRANSFER')
+                      .map((c) => {
+                        const def = getCategoryDef(c.name);
+                        return (
+                          <ListRow
+                            key={c.id}
+                            left={<TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />}
+                            contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{c.name}</Text>}
+                            right={category?.id === c.id ? Icon.check(theme.brand, 16) : undefined}
+                            onPress={() => { setCategory({ id: c.id, name: c.name }); setCatPicker(false); }}
+                            verticalPadding="small"
+                          />
+                        );
+                      })
+                  : catOptions.map((name) => {
+                      const def = getCategoryDef(name);
+                      return (
+                        <ListRow
+                          key={name}
+                          left={<TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />}
+                          contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{name}</Text>}
+                          right={category?.name === name ? Icon.check(theme.brand, 16) : undefined}
+                          onPress={() => { setCategory({ id: 0, name }); setCatPicker(false); }}
+                          verticalPadding="small"
+                        />
+                      );
+                    })
+                )}
+              </PickerOverlay>
+
+              {/* 출금 자산 피커 */}
+              <PickerOverlay visible={fromPicker} title="자산 선택" onClose={() => setFromPicker(false)}>
+                {assetOptions.length === 0 ? (
+                  <EmptyState compact iconCode={TE.piggy} title="선택할 자산이 없어요" desc="자산 탭에서 먼저 자산을 추가해주세요" />
+                ) : assetOptions.map((a) => (
+                  <ListRow
+                    key={a.id}
+                    contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{a.name}</Text>}
+                    right={fromAsset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
+                    onPress={() => { setFromAsset({ id: a.id, name: a.name }); setFromPicker(false); }}
+                    verticalPadding="small"
+                  />
+                ))}
+              </PickerOverlay>
+
+              {/* 입금 자산 피커 */}
+              <PickerOverlay visible={toPicker} title="자산 선택" onClose={() => setToPicker(false)}>
+                {assetOptions.length === 0 ? (
+                  <EmptyState compact iconCode={TE.piggy} title="선택할 자산이 없어요" desc="자산 탭에서 먼저 자산을 추가해주세요" />
+                ) : assetOptions.map((a) => (
+                  <ListRow
+                    key={a.id}
+                    contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{a.name}</Text>}
+                    right={toAsset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
+                    onPress={() => { setToAsset({ id: a.id, name: a.name }); setToPicker(false); }}
+                    verticalPadding="small"
+                  />
+                ))}
+              </PickerOverlay>
+            </>
+          }
         >
           <View style={styles.body}>
             {/* 타입 SegmentedControl */}
@@ -178,69 +244,6 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
           </View>
         </SheetModal>
       )}
-
-      {/* 카테고리 피커 */}
-      <PickerSheet visible={catPicker} title="카테고리 선택" onClose={() => setCatPicker(false)}>
-        {(data.categories.filter((c) => c.type === type || type === 'TRANSFER').length > 0
-          ? data.categories.filter((c) => c.type === type || type === 'TRANSFER')
-              .map((c) => {
-                const def = getCategoryDef(c.name);
-                return (
-                  <ListRow
-                    key={c.id}
-                    left={<TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />}
-                    contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{c.name}</Text>}
-                    right={category?.id === c.id ? Icon.check(theme.brand, 16) : undefined}
-                    onPress={() => { setCategory({ id: c.id, name: c.name }); setCatPicker(false); }}
-                    verticalPadding="small"
-                  />
-                );
-              })
-          : catOptions.map((name) => {
-              const def = getCategoryDef(name);
-              return (
-                <ListRow
-                  key={name}
-                  left={<TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />}
-                  contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{name}</Text>}
-                  right={category?.name === name ? Icon.check(theme.brand, 16) : undefined}
-                  onPress={() => { setCategory({ id: 0, name }); setCatPicker(false); }}
-                  verticalPadding="small"
-                />
-              );
-            })
-        )}
-      </PickerSheet>
-
-      {/* 출금 자산 피커 */}
-      <PickerSheet visible={fromPicker} title="자산 선택" onClose={() => setFromPicker(false)}>
-        {assetOptions.length === 0 ? (
-          <EmptyState compact iconCode={TE.piggy} title="선택할 자산이 없어요" desc="자산 탭에서 먼저 자산을 추가해주세요" />
-        ) : assetOptions.map((a) => (
-          <ListRow
-            key={a.id}
-            contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{a.name}</Text>}
-            right={fromAsset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
-            onPress={() => { setFromAsset({ id: a.id, name: a.name }); setFromPicker(false); }}
-            verticalPadding="small"
-          />
-        ))}
-      </PickerSheet>
-
-      {/* 입금 자산 피커 */}
-      <PickerSheet visible={toPicker} title="자산 선택" onClose={() => setToPicker(false)}>
-        {assetOptions.length === 0 ? (
-          <EmptyState compact iconCode={TE.piggy} title="선택할 자산이 없어요" desc="자산 탭에서 먼저 자산을 추가해주세요" />
-        ) : assetOptions.map((a) => (
-          <ListRow
-            key={a.id}
-            contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{a.name}</Text>}
-            right={toAsset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
-            onPress={() => { setToAsset({ id: a.id, name: a.name }); setToPicker(false); }}
-            verticalPadding="small"
-          />
-        ))}
-      </PickerSheet>
     </>
   );
 }

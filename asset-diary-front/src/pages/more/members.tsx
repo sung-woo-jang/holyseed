@@ -8,7 +8,7 @@ import AppToast from '../../components/common/AppToast';
 import RoleBadge from '../../components/common/RoleBadge';
 import InviteSheet from '../../components/sheets/InviteSheet';
 import JoinSheet from '../../components/sheets/JoinSheet';
-import PickerSheet from '../../components/sheets/PickerSheet';
+import SheetModal from '../../components/sheets/SheetModal';
 import TossEmoji from '../../components/common/TossEmoji';
 import { useTheme } from '../../lib/theme';
 import { useDataSource, useMockRole } from '../../lib/data-source';
@@ -143,18 +143,20 @@ function MembersScreen() {
       <JoinSheet visible={joinOpen} onClose={() => setJoinOpen(false)} />
 
       {/* 역할 변경 피커 */}
-      <PickerSheet visible={!!rolePicker} title="역할 변경" onClose={() => setRolePicker(null)}>
-        {ROLE_OPTIONS.filter((o) => o.key !== 'OWNER').map((opt) => (
-          <ListRow
-            key={opt.key}
-            contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{opt.label}</Text>}
-            right={rolePicker?.currentRole === opt.key ? Icon.check(theme.brand, 16) : undefined}
-            onPress={() => handleRoleChange(opt.key)}
-            verticalPadding="small"
-            disabled={updateRole.isPending}
-          />
-        ))}
-      </PickerSheet>
+      <SheetModal visible={!!rolePicker} onClose={() => setRolePicker(null)} header="역할 변경">
+        <View style={{ paddingHorizontal: 20, paddingBottom: 24 }}>
+          {ROLE_OPTIONS.filter((o) => o.key !== 'OWNER').map((opt) => (
+            <ListRow
+              key={opt.key}
+              contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{opt.label}</Text>}
+              right={rolePicker?.currentRole === opt.key ? Icon.check(theme.brand, 16) : undefined}
+              onPress={() => handleRoleChange(opt.key)}
+              verticalPadding="small"
+              disabled={updateRole.isPending}
+            />
+          ))}
+        </View>
+      </SheetModal>
 
       <ConfirmDialog
         visible={!!removeTarget}

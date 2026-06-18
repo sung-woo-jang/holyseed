@@ -11,7 +11,7 @@ import { useTheme } from '../../lib/theme';
 import { useDataSource } from '../../lib/data-source';
 import TossEmoji from '../common/TossEmoji';
 import FormRow from '../common/FormRow';
-import PickerSheet from './PickerSheet';
+import PickerOverlay from './PickerOverlay';
 import { CATEGORY_DEFS, getCategoryDef } from '../../lib/category-meta';
 import { TE } from '../../lib/toss-emoji';
 import { Icon } from '../common/Icon';
@@ -107,6 +107,54 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
               </Button>
             </View>
           }
+          overlay={
+            <>
+              {/* 카테고리 피커 */}
+              <PickerOverlay visible={catPicker} title="카테고리 선택" onClose={() => setCatPicker(false)}>
+                {(apiCategories.length > 0 ? apiCategories : localCategories.map(n => ({ id: 0, name: n, type, isBuiltin: true, householdId: null, icon: '' }))).map((c) => {
+                  const def = getCategoryDef(c.name);
+                  return (
+                    <ListRow
+                      key={c.id || c.name}
+                      left={<TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />}
+                      contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{c.name}</Text>}
+                      right={category?.name === c.name ? Icon.check(theme.brand, 16) : undefined}
+                      onPress={() => { setCategory({ id: c.id, name: c.name }); setCatPicker(false); }}
+                      verticalPadding="small"
+                    />
+                  );
+                })}
+              </PickerOverlay>
+
+              {/* 자산 피커 */}
+              <PickerOverlay visible={assetPicker} title="자산 선택" onClose={() => setAssetPicker(false)}>
+                {assetOptions.map((a) => (
+                  <ListRow
+                    key={a.id}
+                    contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{a.name}</Text>}
+                    right={asset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
+                    onPress={() => { setAsset({ id: a.id, name: a.name }); setAssetPicker(false); }}
+                    verticalPadding="small"
+                  />
+                ))}
+              </PickerOverlay>
+
+              {/* 결제일 피커 */}
+              <PickerOverlay visible={dayPicker} title="결제일 선택" onClose={() => setDayPicker(false)}>
+                <View style={styles.dayGrid}>
+                  {DAYS.map((d) => (
+                    <TouchableOpacity
+                      key={d}
+                      style={[styles.dayCell, { backgroundColor: dayOfMonth === d ? theme.brand : theme.bg, borderColor: theme.border }]}
+                      onPress={() => { setDayOfMonth(d); setDayPicker(false); }}
+                    >
+                      <Text style={[styles.dayCellText, { color: dayOfMonth === d ? '#fff' : theme.text }]}>{d}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </PickerOverlay>
+            </>
+          }
         >
           <View style={styles.body}>
             {/* 수입/지출 타입 */}
@@ -193,51 +241,6 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
           </View>
         </SheetModal>
       )}
-
-      {/* 카테고리 피커 */}
-      <PickerSheet visible={catPicker} title="카테고리 선택" onClose={() => setCatPicker(false)}>
-        {(apiCategories.length > 0 ? apiCategories : localCategories.map(n => ({ id: 0, name: n, type, isBuiltin: true, householdId: null, icon: '' }))).map((c) => {
-          const def = getCategoryDef(c.name);
-          return (
-            <ListRow
-              key={c.id || c.name}
-              left={<TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />}
-              contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{c.name}</Text>}
-              right={category?.name === c.name ? Icon.check(theme.brand, 16) : undefined}
-              onPress={() => { setCategory({ id: c.id, name: c.name }); setCatPicker(false); }}
-              verticalPadding="small"
-            />
-          );
-        })}
-      </PickerSheet>
-
-      {/* 자산 피커 */}
-      <PickerSheet visible={assetPicker} title="자산 선택" onClose={() => setAssetPicker(false)}>
-        {assetOptions.map((a) => (
-          <ListRow
-            key={a.id}
-            contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{a.name}</Text>}
-            right={asset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
-            onPress={() => { setAsset({ id: a.id, name: a.name }); setAssetPicker(false); }}
-            verticalPadding="small"
-          />
-        ))}
-      </PickerSheet>
-
-      {/* 결제일 피커 */}
-      <PickerSheet visible={dayPicker} title="결제일 선택" onClose={() => setDayPicker(false)}>
-        <View style={styles.dayGrid}>
-          {DAYS.map((d) => (
-            <TouchableOpacity
-              key={d}
-              style={[styles.dayCell, { backgroundColor: dayOfMonth === d ? theme.brand : theme.bg, borderColor: theme.border }]}
-              onPress={() => { setDayOfMonth(d); setDayPicker(false); }}
-            >
-              <Text style={[styles.dayCellText, { color: dayOfMonth === d ? '#fff' : theme.text }]}>{d}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </PickerSheet>
     </>
   );
 }

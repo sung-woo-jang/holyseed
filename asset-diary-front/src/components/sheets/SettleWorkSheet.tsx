@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Button, ListRow } from '@toss/tds-react-native';
 import SheetModal from './SheetModal';
-import PickerSheet from './PickerSheet';
+import PickerOverlay from './PickerOverlay';
 import FormRow from '../common/FormRow';
 import TossEmoji from '../common/TossEmoji';
 import { Icon } from '../common/Icon';
@@ -70,6 +70,39 @@ export default function SettleWorkSheet({ visible, month, workLog, onClose, onSe
             </Button>
           </View>
         }
+        overlay={
+          <>
+            {/* 자산 피커 */}
+            <PickerOverlay visible={assetPicker} title="입금 자산 선택" onClose={() => setAssetPicker(false)}>
+              {assetOptions.map((a) => (
+                <ListRow
+                  key={a.id}
+                  contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{a.name}</Text>}
+                  right={asset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
+                  onPress={() => { setAsset({ id: a.id, name: a.name }); setAssetPicker(false); }}
+                  verticalPadding="small"
+                />
+              ))}
+            </PickerOverlay>
+
+            {/* 카테고리 피커 */}
+            <PickerOverlay visible={catPicker} title="카테고리 선택" onClose={() => setCatPicker(false)}>
+              {incomeCategories.map((c) => {
+                const def = getCategoryDef(c.name);
+                return (
+                  <ListRow
+                    key={c.id}
+                    left={<TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />}
+                    contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{c.name}</Text>}
+                    right={category?.id === c.id ? Icon.check(theme.brand, 16) : undefined}
+                    onPress={() => { setCategory({ id: c.id, name: c.name }); setCatPicker(false); }}
+                    verticalPadding="small"
+                  />
+                );
+              })}
+            </PickerOverlay>
+          </>
+        }
       >
         <View style={styles.body}>
           {/* 요약 */}
@@ -88,36 +121,6 @@ export default function SettleWorkSheet({ visible, month, workLog, onClose, onSe
           </View>
         </View>
       </SheetModal>
-
-      {/* 자산 피커 */}
-      <PickerSheet visible={assetPicker} title="입금 자산 선택" onClose={() => setAssetPicker(false)}>
-        {assetOptions.map((a) => (
-          <ListRow
-            key={a.id}
-            contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{a.name}</Text>}
-            right={asset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
-            onPress={() => { setAsset({ id: a.id, name: a.name }); setAssetPicker(false); }}
-            verticalPadding="small"
-          />
-        ))}
-      </PickerSheet>
-
-      {/* 카테고리 피커 */}
-      <PickerSheet visible={catPicker} title="카테고리 선택" onClose={() => setCatPicker(false)}>
-        {incomeCategories.map((c) => {
-          const def = getCategoryDef(c.name);
-          return (
-            <ListRow
-              key={c.id}
-              left={<TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />}
-              contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{c.name}</Text>}
-              right={category?.id === c.id ? Icon.check(theme.brand, 16) : undefined}
-              onPress={() => { setCategory({ id: c.id, name: c.name }); setCatPicker(false); }}
-              verticalPadding="small"
-            />
-          );
-        })}
-      </PickerSheet>
     </>
   );
 }

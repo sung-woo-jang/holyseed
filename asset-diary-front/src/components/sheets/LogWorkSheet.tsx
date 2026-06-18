@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Switch as RNSwitch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Button, ListRow, Switch, TextField, TextFieldBig } from '@toss/tds-react-native';
 import SheetModal from './SheetModal';
-import PickerSheet from './PickerSheet';
+import PickerOverlay from './PickerOverlay';
 import FormRow from '../common/FormRow';
 import { Icon } from '../common/Icon';
 import { useTheme } from '../../lib/theme';
@@ -117,6 +117,19 @@ export default function LogWorkSheet({ visible, onClose, date, month, existing, 
           </Button>
         </View>
       }
+      overlay={
+        <PickerOverlay visible={assetPicker} title="입금 자산 선택" onClose={() => setAssetPicker(false)}>
+          {assetOptions.map((a) => (
+            <ListRow
+              key={a.id}
+              contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{a.name}</Text>}
+              right={asset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
+              onPress={() => { setAsset({ id: a.id, name: a.name }); setAssetPicker(false); }}
+              verticalPadding="small"
+            />
+          ))}
+        </PickerOverlay>
+      }
     >
       <ScrollView contentContainerStyle={styles.body}>
         {/* 제목 + 프리셋 */}
@@ -202,19 +215,6 @@ export default function LogWorkSheet({ visible, onClose, date, month, existing, 
         />
         </ScrollView>
       </SheetModal>
-
-      {/* 입금 자산 피커 */}
-      <PickerSheet visible={assetPicker} title="입금 자산 선택" onClose={() => setAssetPicker(false)}>
-        {assetOptions.map((a) => (
-          <ListRow
-            key={a.id}
-            contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{a.name}</Text>}
-            right={asset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
-            onPress={() => { setAsset({ id: a.id, name: a.name }); setAssetPicker(false); }}
-            verticalPadding="small"
-          />
-        ))}
-      </PickerSheet>
     </>
   );
 }

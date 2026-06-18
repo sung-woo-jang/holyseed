@@ -157,6 +157,37 @@ async function bootstrap() {
 
     console.log('💎 [IV] Swagger UI: http://localhost:8000/iv/docs')
     console.log(`📊 [IV] API 개수: ${Object.keys(filteredIvDocument.paths).length}개`)
+
+    // ========================================
+    // WEDDING (결혼식 아카이브) API 문서
+    // ========================================
+    const weddingConfig = new DocumentBuilder()
+      .setTitle('Wedding Archive API')
+      .setDescription('멀티테넌트 모바일 청첩장 서비스 — 사진/영상 업로드 & 공유')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addTag('Wedding 인증', '이메일/비밀번호 JWT 인증')
+      .addTag('Wedding 커플', '청첩장 커플 관리')
+      .addTag('Wedding 미디어', '사진/영상 업로드 및 검수')
+      .addTag('Wedding 참석 응답', 'RSVP 제출 및 집계')
+      .addTag('Wedding 콘텐츠 행', '청첩장 콘텐츠 행 관리')
+      .build()
+
+    const weddingDocument = SwaggerModule.createDocument(app, weddingConfig, { include: [] })
+
+    const filteredWeddingDocument = {
+      ...weddingDocument,
+      paths: Object.fromEntries(Object.entries(weddingDocument.paths).filter(([path]) => path.startsWith('/api/wedding/'))),
+    }
+
+    SwaggerModule.setup('wedding/docs', app, filteredWeddingDocument, {
+      swaggerOptions: { persistAuthorization: true, tagsSorter: 'alpha', operationsSorter: 'alpha' },
+      customSiteTitle: 'Wedding API - 청첩장 아카이브',
+      jsonDocumentUrl: '/wedding/docs/json',
+    })
+
+    console.log('💎 [Wedding] Swagger UI: http://localhost:8000/wedding/docs')
+    console.log(`📊 [Wedding] API 개수: ${Object.keys(filteredWeddingDocument.paths).length}개`)
   }
 
   await app.listen(port, '0.0.0.0')

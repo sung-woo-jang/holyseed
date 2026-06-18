@@ -1,0 +1,16 @@
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #fef5f8 0%, var(--color-background-alt) 20%, #ffffff 80%, #fef5f8 100%);
+}
+
+.main {
+  padding: 0;
+}
+
+.mainContent {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0;
+}

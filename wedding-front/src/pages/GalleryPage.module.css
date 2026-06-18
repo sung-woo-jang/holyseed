@@ -1,0 +1,165 @@
+/* ============================================
+   NETFLIX-THEMED GALLERY PAGE
+   ============================================ */
+
+.container {
+  max-width: 100%;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--netflix-black, #141414);
+}
+
+.header {
+  background: var(--netflix-dark-gray, #1f1f1f);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: var(--spacing-xl) 0;
+  border-bottom: 3px solid var(--netflix-red, #e50914);
+}
+
+.headerTitle {
+  text-align: center;
+  font-family: var(--netflix-font, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  color: var(--netflix-white, #ffffff);
+  margin-bottom: var(--spacing-sm);
+  letter-spacing: 0.05em;
+}
+
+.headerSubtitle {
+  text-align: center;
+  font-size: var(--font-size-lg);
+  color: var(--netflix-text-muted, #b3b3b3);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.main {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: var(--spacing-lg) 0;
+}
+
+.uploadSection {
+  background: var(--netflix-gray, #2f2f2f);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  padding: var(--spacing-xxl) var(--spacing-xl);
+  margin: 0 4% var(--spacing-xxl);
+  border-top: 4px solid var(--netflix-red, #e50914);
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.uploadTitle {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  font-family: var(--netflix-font);
+  color: var(--netflix-white, #ffffff);
+  margin-bottom: var(--spacing-sm);
+  text-align: center;
+  position: relative;
+}
+
+.uploadDesc {
+  color: var(--netflix-text-muted, #b3b3b3);
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+  font-size: var(--font-size-base);
+  line-height: 1.7;
+  position: relative;
+}
+
+.backButtonContainer {
+  margin-top: var(--spacing-xxl);
+  text-align: center;
+  padding-bottom: var(--spacing-xxl);
+  padding: 0 4%;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-xxl);
+  border: 2px solid var(--netflix-red, #e50914);
+  background: var(--netflix-gray, #2f2f2f);
+  color: var(--netflix-white, #ffffff);
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: var(--font-size-base);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  letter-spacing: 0.05em;
+}
+
+.backButton:hover {
+  background: var(--netflix-red, #e50914);
+  color: white;
+  border-color: var(--netflix-red-hover, #f40612);
+  box-shadow: 0 6px 20px rgba(229, 9, 20, 0.4);
+  transform: scale(1.05);
+}
+
+.backButton:active {
+  transform: scale(1);
+}
+
+/* Gallery Rows */
+.galleryRows {
+  padding: 2rem 0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .header {
+    padding: 1.5rem 1rem;
+  }
+
+  .headerTitle {
+    font-size: 1.8rem;
+  }
+
+  .headerSubtitle {
+    font-size: 1rem;
+  }
+
+  .uploadSection {
+    margin: 0 1rem 2rem;
+    padding: 2rem 1.5rem;
+  }
+
+  .uploadTitle {
+    font-size: 1.5rem;
+  }
+
+  .backButtonContainer {
+    padding: 0 1rem 2rem;
+  }
+
+  .backButton {
+    padding: 1rem 2rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .uploadSection {
+    margin: 0 3% 3rem;
+  }
+}

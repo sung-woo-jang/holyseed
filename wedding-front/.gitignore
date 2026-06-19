@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.env.local
+
+# 대용량 미디어 (영상/사진) - 깃에 커밋하지 않음
+public/wedding/
+public/*.mp4

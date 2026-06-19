@@ -39,7 +39,7 @@ export default function NetflixIntro({ onComplete }: NetflixIntroProps) {
         onEnded={handleVideoEnd}
         className={styles.video}
       >
-        <source src="/Netflix Into 1920x1080.mp4" type="video/mp4" />
+        <source src="/Netflix%20Into%201920x1080.mp4" type="video/mp4" />
       </video>
 
       <button

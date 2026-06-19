@@ -176,6 +176,8 @@ export function useHouseholdData(): MockPersona {
     active: r.active,
     nextDate: r.active ? computeNextDate(r.dayOfMonth) : '—',
     type: (r.type === 'INCOME' ? 'INCOME' : 'EXPENSE') as 'INCOME' | 'EXPENSE',
+    startDate: r.startDate ?? undefined,
+    endDate: r.endDate ?? undefined,
   }));
 
   // 멤버

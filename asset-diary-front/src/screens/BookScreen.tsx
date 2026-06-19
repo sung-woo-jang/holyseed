@@ -17,14 +17,15 @@ import { getCategoryDef } from '../lib/category-meta';
 import TossEmoji from '../components/common/TossEmoji';
 import { Icon } from '../components/common/Icon';
 import WorkCalendar, { type CalLog } from '../components/WorkCalendar';
+import Segmented from '../components/common/Segmented';
 import AddTxSheet from '../components/sheets/AddTxSheet';
 import AddRecurringSheet from '../components/sheets/AddRecurringSheet';
 import EmptyState from '../components/common/EmptyState';
 import ActionSheet from '../components/common/ActionSheet';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import AppToast from '../components/common/AppToast';
-import { useToggleRecurring, useDeleteRecurring } from '../queries/mutations';
-import type { MockRecurring } from '../lib/mock-data';
+import { useToggleRecurring, useDeleteRecurring, useDeleteTx } from '../queries/mutations';
+import type { MockRecurring, MockTransaction } from '../lib/mock-data';
 
 function todayMonth(): string {
   const d = new Date();
@@ -35,6 +36,14 @@ function todayDate(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 const pad = (n: number) => String(n).padStart(2, '0');
+
+/** 정기항목이 해당 날짜에 유효한지 (활성 + 시작≤날≤종료) */
+function recurringActiveOn(r: MockRecurring, dateStr: string): boolean {
+  if (!r.active) return false;
+  if (r.startDate && dateStr < r.startDate) return false;
+  if (r.endDate && dateStr > r.endDate) return false;
+  return true;
+}
 
 /** 통합 선택일 리스트 항목 */
 type DayItem =
@@ -54,10 +63,14 @@ export default function BookScreen() {
     : todayMonth();
   const [month, setMonth] = useState(initialMonth);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [recOpen, setRecOpen] = useState(false);
 
   // 시트 상태
   const [addTxVisible, setAddTxVisible] = useState(false);
+  const [editTx, setEditTx] = useState<MockTransaction | null>(null);
+  const [actionTx, setActionTx] = useState<MockTransaction | null>(null);
+  const [deleteTxState, setDeleteTxState] = useState<MockTransaction | null>(null);
   const [addRecVisible, setAddRecVisible] = useState(false);
   const [actionRec, setActionRec] = useState<MockRecurring | null>(null);
   const [deleteRec, setDeleteRec] = useState<MockRecurring | null>(null);
@@ -66,13 +79,29 @@ export default function BookScreen() {
 
   const toggleRecurring = useToggleRecurring();
   const deleteRecurring = useDeleteRecurring();
+  const deleteTx = useDeleteTx();
+
+  function handleTxAction(value: string) {
+    const t = actionTx;
+    setActionTx(null);
+    if (!t) return;
+    if (value === 'edit') { setEditTx(t); setAddTxVisible(true); }
+    else if (value === 'delete') setDeleteTxState(t);
+  }
+  async function confirmDeleteTx() {
+    if (!deleteTxState) return;
+    try {
+      await deleteTx.mutateAsync(Number(deleteTxState.id));
+      setToast('거래를 삭제했어요');
+    } catch { setToast('삭제에 실패했어요'); }
+    finally { setDeleteTxState(null); }
+  }
 
   // 거래
   const monthTx = useMemo(() => data.transactions.filter((t) => t.date.startsWith(month)), [data.transactions, month]);
 
   // 정기 (월 결제일 → 가상 발생)
   const recurring = data.recurring;
-  const activeRec = recurring.filter((r) => r.active);
   const [y, m] = month.split('-').map(Number);
   const lastDay = new Date(y!, m!, 0).getDate();
   function recDateForMonth(r: MockRecurring): string {
@@ -93,17 +122,41 @@ export default function BookScreen() {
   const monthIncome = monthTx.filter((t) => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
   const monthExpense = monthTx.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
 
+  // 리스트 뷰: 일별 그룹(최신순)
+  const groupedTx = useMemo(() => {
+    const map = new Map<string, MockTransaction[]>();
+    for (const t of monthTx) {
+      const arr = map.get(t.date) ?? [];
+      arr.push(t);
+      map.set(t.date, arr);
+    }
+    return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+  }, [monthTx]);
+
+  // 리스트 뷰: 카테고리별 지출 통계 (top 5)
+  const catBreakdown = useMemo(() => {
+    const map = new Map<string, number>();
+    monthTx.filter((t) => t.type === 'EXPENSE').forEach((t) => map.set(t.category, (map.get(t.category) ?? 0) + t.amount));
+    return [...map.entries()]
+      .map(([name, value]) => ({ name, value, color: getCategoryDef(name).color }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+  }, [monthTx]);
+
   // 캘린더 점
   const calLogs: CalLog[] = useMemo(() => {
     const out: CalLog[] = [];
     for (const t of monthTx) {
       out.push({ id: `t${t.id}`, date: t.date, colorLabel: getCategoryDef(t.category).color, settled: true });
     }
-    for (const r of activeRec) {
-      out.push({ id: `r${r.id}`, date: recDateForMonth(r), colorLabel: theme.textMuted, settled: true });
+    for (const r of recurring) {
+      const d = recDateForMonth(r);
+      if (recurringActiveOn(r, d)) {
+        out.push({ id: `r${r.id}`, date: d, colorLabel: theme.textMuted, settled: true });
+      }
     }
     return out;
-  }, [monthTx, activeRec, month, theme]);
+  }, [monthTx, recurring, month, theme]);
 
   // 선택일 항목 통합
   const dayItems: DayItem[] = useMemo(() => {
@@ -113,11 +166,11 @@ export default function BookScreen() {
       const from = data.assets.find((a) => a.id === t.from);
       items.push({ kind: 'tx', id: t.id, title: t.title, amount: t.amount, type: t.type === 'INCOME' ? 'INCOME' : 'EXPENSE', category: t.category, sub: from ? from.name : undefined });
     });
-    activeRec.filter((r) => recDateForMonth(r) === selectedDate).forEach((r) => {
+    recurring.filter((r) => recDateForMonth(r) === selectedDate && recurringActiveOn(r, selectedDate)).forEach((r) => {
       items.push({ kind: 'rec', id: r.id, title: r.title, amount: r.amount, type: r.type === 'INCOME' ? 'INCOME' : 'EXPENSE', rec: r });
     });
     return items;
-  }, [selectedDate, monthTx, activeRec, data.assets]);
+  }, [selectedDate, monthTx, recurring, data.assets]);
 
   // 정기 섹션 데이터
   const incomeRec = recurring.filter((r) => r.type === 'INCOME');
@@ -158,14 +211,65 @@ export default function BookScreen() {
 
   const selectedLabel = selectedDate ? `${Number(selectedDate.slice(5, 7))}월 ${Number(selectedDate.slice(8, 10))}일` : '';
 
+  function openTxEdit(txId: string) {
+    const tx = data.transactions.find((t) => t.id === txId);
+    if (tx) { setEditTx(tx); setAddTxVisible(true); }
+  }
+
+  // 거래 행 (캘린더 선택일·리스트 뷰 공용)
+  function renderTxRow(tx: MockTransaction, i: number, total: number) {
+    const isInc = tx.type === 'INCOME';
+    const def = getCategoryDef(tx.category);
+    const from = tx.from ? data.assets.find((a) => a.id === tx.from) : undefined;
+    const canEdit = !isViewer && !useMock;
+    return (
+      <React.Fragment key={tx.id}>
+        <ListRow
+          left={<View style={[styles.itemIcon, { backgroundColor: theme.bg }]}><TossEmoji code={def.iconCode} size={18} /></View>}
+          contents={
+            <View>
+              <Text style={[styles.itemTitle, { color: theme.text }]} numberOfLines={1}>{tx.title}</Text>
+              <Text style={[styles.itemSub, { color: theme.textMuted }]} numberOfLines={1}>
+                {tx.category}{from ? ` · ${from.name}` : ''}
+              </Text>
+            </View>
+          }
+          right={
+            <View style={styles.recRight}>
+              <Text style={[styles.itemAmount, { color: isInc ? theme.brand : theme.text }]}>
+                {isInc ? '+' : '-'}{krwShort(tx.amount)}원
+              </Text>
+              {canEdit && (
+                <TouchableOpacity onPress={() => setActionTx(tx)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Text style={[styles.kebab, { color: theme.textMuted }]}>⋯</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          }
+          onPress={canEdit ? () => openTxEdit(tx.id) : undefined}
+          verticalPadding="small"
+        />
+        {i < total - 1 && <Border type="full" />}
+      </React.Fragment>
+    );
+  }
+
   function renderDayItem(item: DayItem, i: number, total: number) {
     const isInc = item.type === 'INCOME';
     const catName = item.kind === 'tx' ? item.category : item.rec.category;
     const def = getCategoryDef(catName);
+    const canEditTx = item.kind === 'tx' && !isViewer && !useMock;
     const right = (
-      <Text style={[styles.itemAmount, { color: isInc ? theme.brand : theme.text }]}>
-        {isInc ? '+' : '-'}{krwShort(item.amount)}원
-      </Text>
+      <View style={styles.recRight}>
+        <Text style={[styles.itemAmount, { color: isInc ? theme.brand : theme.text }]}>
+          {isInc ? '+' : '-'}{krwShort(item.amount)}원
+        </Text>
+        {canEditTx && (
+          <TouchableOpacity onPress={() => { const tx = data.transactions.find((t) => t.id === item.id); if (tx) setActionTx(tx); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Text style={[styles.kebab, { color: theme.textMuted }]}>⋯</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     );
     return (
       <React.Fragment key={`${item.kind}-${item.id}`}>
@@ -181,6 +285,7 @@ export default function BookScreen() {
             </View>
           }
           right={right}
+          onPress={item.kind === 'tx' && canEditTx ? () => openTxEdit(item.id) : item.kind === 'rec' ? () => setActionRec(item.rec) : undefined}
           verticalPadding="small"
         />
         {i < total - 1 && <Border type="full" />}
@@ -198,7 +303,7 @@ export default function BookScreen() {
           contents={
             <View>
               <Text style={[styles.itemTitle, { color: theme.text }]}>{r.title}</Text>
-              <Text style={[styles.itemSub, { color: theme.textMuted }]}>매월 {r.dayOfMonth}일</Text>
+              <Text style={[styles.itemSub, { color: theme.textMuted }]}>매월 {r.dayOfMonth}일{r.endDate ? ` · ~${r.endDate.slice(0, 7)}` : ''}</Text>
             </View>
           }
           right={
@@ -255,30 +360,93 @@ export default function BookScreen() {
           </View>
         </View>
 
-        {/* 캘린더 */}
-        <View style={[styles.calCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          <WorkCalendar month={month} logs={calLogs} selectedDate={selectedDate} onSelectDay={handleSelectDay} />
+        {/* 뷰 토글 */}
+        <View style={styles.sectionPad}>
+          <Segmented
+            options={['캘린더', '리스트']}
+            value={viewMode === 'calendar' ? '캘린더' : '리스트'}
+            onChange={(v) => setViewMode(v === '캘린더' ? 'calendar' : 'list')}
+            small
+          />
         </View>
 
-        {/* 선택일 항목 */}
-        {selectedDate && (
-          <View style={styles.sectionPad}>
-            <View style={styles.dayHeader}>
-              <Text style={[styles.dayTitle, { color: theme.text }]}>{selectedLabel}</Text>
-              {!isViewer && (
-                <TouchableOpacity onPress={openAddForDay} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Text style={[styles.addLink, { color: theme.brand }]}>+ 등록</Text>
-                </TouchableOpacity>
-              )}
+        {viewMode === 'calendar' ? (
+          <>
+            {/* 캘린더 */}
+            <View style={[styles.calCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <WorkCalendar month={month} logs={calLogs} selectedDate={selectedDate} onSelectDay={handleSelectDay} />
             </View>
-            {dayItems.length === 0 ? (
-              <EmptyState compact iconCode={TE.ledger} title="이 날 기록이 없어요" desc={isViewer ? undefined : '+ 등록으로 추가해보세요'} />
-            ) : (
-              <View style={[styles.dayCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                {dayItems.map((it, i) => renderDayItem(it, i, dayItems.length))}
+
+            {/* 선택일 항목 */}
+            {selectedDate && (
+              <View style={styles.sectionPad}>
+                <View style={styles.dayHeader}>
+                  <Text style={[styles.dayTitle, { color: theme.text }]}>{selectedLabel}</Text>
+                  {!isViewer && (
+                    <TouchableOpacity onPress={openAddForDay} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Text style={[styles.addLink, { color: theme.brand }]}>+ 등록</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {dayItems.length === 0 ? (
+                  <EmptyState compact iconCode={TE.ledger} title="이 날 기록이 없어요" desc={isViewer ? undefined : '+ 등록으로 추가해보세요'} />
+                ) : (
+                  <View style={[styles.dayCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    {dayItems.map((it, i) => renderDayItem(it, i, dayItems.length))}
+                  </View>
+                )}
               </View>
             )}
-          </View>
+          </>
+        ) : (
+          <>
+            {/* 카테고리별 지출 통계 */}
+            {catBreakdown.length > 0 && (
+              <View style={styles.sectionPad}>
+                <View style={[styles.dayCard, { backgroundColor: theme.card, borderColor: theme.border, padding: 16, gap: 12 }]}>
+                  <Text style={[styles.statTitle, { color: theme.text }]}>카테고리별 지출</Text>
+                  {catBreakdown.map((c) => {
+                    const pctW = monthExpense > 0 ? Math.round((c.value / monthExpense) * 100) : 0;
+                    return (
+                      <View key={c.name} style={styles.statRow}>
+                        <View style={styles.statRowTop}>
+                          <Text style={[styles.statName, { color: theme.text }]}>{c.name}</Text>
+                          <Text style={[styles.statAmount, { color: theme.textMuted }]}>{krwShort(c.value)}원 · {pctW}%</Text>
+                        </View>
+                        <View style={[styles.statBarBg, { backgroundColor: theme.bg }]}>
+                          <View style={[styles.statBarFill, { backgroundColor: c.color, width: `${pctW}%` }]} />
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            {/* 일별 거래 리스트 */}
+            <View style={styles.sectionPad}>
+              {groupedTx.length === 0 ? (
+                <EmptyState compact iconCode={TE.ledger} title="이 달 거래가 없어요" desc={isViewer ? undefined : 'FAB로 추가해보세요'} />
+              ) : (
+                groupedTx.map(([date, txs]) => {
+                  const dayExp = txs.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
+                  return (
+                    <View key={date} style={{ marginBottom: 12 }}>
+                      <View style={styles.dayHeader}>
+                        <Text style={[styles.listDayTitle, { color: theme.textMuted }]}>
+                          {Number(date.slice(5, 7))}월 {Number(date.slice(8, 10))}일
+                        </Text>
+                        {dayExp > 0 && <Text style={[styles.listDayExp, { color: theme.textMuted }]}>-{krwShort(dayExp)}원</Text>}
+                      </View>
+                      <View style={[styles.dayCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                        {txs.map((t, i) => renderTxRow(t, i, txs.length))}
+                      </View>
+                    </View>
+                  );
+                })
+              )}
+            </View>
+          </>
         )}
 
         {/* 정기 항목 관리 (접이식) */}
@@ -353,8 +521,34 @@ export default function BookScreen() {
         onClose={() => setAddPicker(false)}
       />
 
-      <AddTxSheet visible={addTxVisible} date={selectedDate} onClose={() => setAddTxVisible(false)} />
+      <AddTxSheet
+        visible={addTxVisible}
+        date={editTx ? undefined : selectedDate}
+        editTx={editTx ?? undefined}
+        onClose={() => { setAddTxVisible(false); setEditTx(null); }}
+      />
       <AddRecurringSheet visible={addRecVisible} onClose={() => setAddRecVisible(false)} />
+
+      {/* 거래 액션 */}
+      <ActionSheet
+        visible={!!actionTx}
+        title={actionTx?.title}
+        items={[
+          { iconCode: TE.pencil, label: '거래 수정', value: 'edit' },
+          { iconCode: TE.trash, label: '거래 삭제', value: 'delete', danger: true },
+        ]}
+        onSelect={handleTxAction}
+        onClose={() => setActionTx(null)}
+      />
+      <ConfirmDialog
+        visible={!!deleteTxState}
+        title="거래를 삭제할까요?"
+        confirmText="삭제하기"
+        danger
+        loading={deleteTx.isPending}
+        onConfirm={confirmDeleteTx}
+        onClose={() => setDeleteTxState(null)}
+      />
 
       {/* 정기 액션 */}
       <ActionSheet
@@ -393,6 +587,15 @@ const styles = StyleSheet.create({
   dayTitle: { fontSize: 15, fontWeight: '700' },
   addLink: { fontSize: 14, fontWeight: '700' },
   dayCard: { borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
+  listDayTitle: { fontSize: 13, fontWeight: '700' },
+  listDayExp: { fontSize: 12, fontWeight: '600' },
+  statTitle: { fontSize: 14, fontWeight: '700' },
+  statRow: { gap: 6 },
+  statRowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  statName: { fontSize: 13, fontWeight: '600' },
+  statAmount: { fontSize: 12 },
+  statBarBg: { height: 6, borderRadius: 3, overflow: 'hidden' },
+  statBarFill: { height: 6, borderRadius: 3 },
   itemIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   itemTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   itemTitle: { fontSize: 14, fontWeight: '600' },

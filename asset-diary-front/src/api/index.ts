@@ -76,7 +76,7 @@ export const txApi = {
     },
   ) => api.post<Transaction>(`/households/${householdId}/transactions`, dto).then((r) => r.data),
 
-  update: (id: number, dto: Partial<{ date: string; amount: number; memo: string; categoryId: number }>) =>
+  update: (id: number, dto: Partial<{ date: string; type: TxType; amount: number; categoryId: number; fromAssetId: number; toAssetId: number; memo: string }>) =>
     api.post<Transaction>(`/transactions/${id}/update`, dto).then((r) => r.data),
 
   delete: (id: number) => api.post(`/transactions/${id}/delete`).then((r) => r.data),
@@ -101,6 +101,7 @@ export const recurringApi = {
       dayOfMonth: number;
       monthOfYear?: number;
       startDate: string;
+      endDate?: string;
     },
   ) => api.post<RecurringTransaction>(`/households/${householdId}/recurring`, dto).then((r) => r.data),
 

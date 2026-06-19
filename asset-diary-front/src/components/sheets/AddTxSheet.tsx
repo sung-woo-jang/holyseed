@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -17,7 +17,8 @@ import { CATEGORY_DEFS, getCategoryDef } from '../../lib/category-meta';
 import { TE } from '../../lib/toss-emoji';
 import { Icon } from '../common/Icon';
 import { krw } from '../../lib/format';
-import { useCreateTx } from '../../queries/mutations';
+import { useCreateTx, useUpdateTx } from '../../queries/mutations';
+import type { MockTransaction } from '../../lib/mock-data';
 
 type TxType = 'EXPENSE' | 'INCOME';
 
@@ -36,11 +37,14 @@ interface AddTxSheetProps {
   onClose: () => void;
   /** 거래 날짜 프리필 (YYYY-MM-DD). 없으면 오늘 */
   date?: string;
+  /** 지정 시 편집 모드 */
+  editTx?: MockTransaction;
 }
 
-export default function AddTxSheet({ visible, onClose, date }: AddTxSheetProps) {
+export default function AddTxSheet({ visible, onClose, date, editTx }: AddTxSheetProps) {
   const theme = useTheme();
   const data = useDataSource();
+  const isEdit = !!editTx;
   const [type, setType] = useState<TxType>('EXPENSE');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<{ id: number; name: string } | null>(null);
@@ -54,6 +58,28 @@ export default function AddTxSheet({ visible, onClose, date }: AddTxSheetProps) 
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const createTx = useCreateTx();
+  const updateTx = useUpdateTx();
+
+  // 열릴 때 편집 프리필 / 신규 리셋
+  useEffect(() => {
+    if (!visible) return;
+    if (editTx) {
+      setType(editTx.type === 'INCOME' ? 'INCOME' : 'EXPENSE');
+      setAmount(formatNum(String(editTx.amount)));
+      const c = data.categories.find((x) => x.name === editTx.category);
+      setCategory({ id: c?.id ?? 0, name: editTx.category });
+      const fromA = editTx.from ? data.assets.find((a) => a.id === editTx.from) : undefined;
+      const toA = editTx.to ? data.assets.find((a) => a.id === editTx.to) : undefined;
+      setFromAsset(fromA ? { id: fromA.id, name: fromA.name } : null);
+      setToAsset(toA ? { id: toA.id, name: toA.name } : null);
+      setTitle('');
+      setMemo(editTx.memo ?? editTx.title ?? '');
+      setError('');
+    } else {
+      reset();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, editTx]);
 
   const catOptions = Object.entries(CATEGORY_DEFS)
     .filter(([, def]) => def.type === type)
@@ -76,8 +102,22 @@ export default function AddTxSheet({ visible, onClose, date }: AddTxSheetProps) 
 
   async function handleSave() {
     setError('');
-    const txDate = date ?? new Date().toISOString().split('T')[0]!;
     try {
+      if (isEdit && editTx) {
+        await updateTx.mutateAsync({
+          id: Number(editTx.id),
+          dto: {
+            type,
+            amount: rawAmount,
+            ...(category && category.id > 0 ? { categoryId: category.id } : {}),
+            ...(type === 'EXPENSE' ? { fromAssetId: fromAsset ? Number(fromAsset.id) : undefined } : { toAssetId: toAsset ? Number(toAsset.id) : undefined }),
+            memo: memo || title || undefined,
+          },
+        });
+        onClose();
+        return;
+      }
+      const txDate = date ?? new Date().toISOString().split('T')[0]!;
       await createTx.mutateAsync({
         date: txDate,
         type,
@@ -107,12 +147,12 @@ export default function AddTxSheet({ visible, onClose, date }: AddTxSheetProps) 
         <SheetModal
           visible={visible}
           onClose={onClose}
-          header="거래 추가"
+          header={isEdit ? '거래 수정' : '거래 추가'}
           cta={
             <View style={styles.cta}>
               {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
-              <Button display="full" size="big" type="primary" disabled={!isValid} loading={createTx.isPending} onPress={handleSave}>
-                저장하기
+              <Button display="full" size="big" type="primary" disabled={!isValid} loading={createTx.isPending || updateTx.isPending} onPress={handleSave}>
+                {isEdit ? '수정하기' : '저장하기'}
               </Button>
             </View>
           }

@@ -42,9 +42,12 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
   const [dayOfMonth, setDayOfMonth] = useState(25);
   const [asset, setAsset] = useState<{ id: string; name: string } | null>(null);
   const [autoGenerate, setAutoGenerate] = useState(true);
+  const [hasEnd, setHasEnd] = useState(false);
+  const [endMonths, setEndMonths] = useState(12); // 시작 기준 N개월 후
   const [catPicker, setCatPicker] = useState(false);
   const [assetPicker, setAssetPicker] = useState(false);
   const [dayPicker, setDayPicker] = useState(false);
+  const [endPicker, setEndPicker] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const createRecurring = useCreateRecurring();
@@ -62,9 +65,16 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
   const nextDate = new Date(today.getFullYear(), today.getMonth() + (today.getDate() >= dayOfMonth ? 1 : 0), dayOfMonth);
   const nextDateStr = `${nextDate.getFullYear()}년 ${nextDate.getMonth() + 1}월 ${nextDate.getDate()}일`;
 
+  // 종료일 = 오늘 기준 +endMonths개월의 결제일
+  function computeEndDate(): string {
+    const d = new Date(today.getFullYear(), today.getMonth() + endMonths, dayOfMonth);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  const endDateLabel = `${endMonths}개월 후 (~${computeEndDate().slice(0, 7)})`;
+
   function reset() {
     setType('EXPENSE'); setAmount(''); setName(''); setCategory(null);
-    setDayOfMonth(25); setAsset(null); setAutoGenerate(true); setError('');
+    setDayOfMonth(25); setAsset(null); setAutoGenerate(true); setHasEnd(false); setEndMonths(12); setError('');
   }
 
   async function handleSave() {
@@ -76,6 +86,7 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
         ...(category && category.id > 0 ? { categoryId: category.id } : {}),
         ...(asset ? (isIncome ? { toAssetId: Number(asset.id) } : { fromAssetId: Number(asset.id) }) : {}),
         frequency: 'MONTHLY', dayOfMonth, startDate: todayStr,
+        ...(hasEnd ? { endDate: computeEndDate() } : {}),
       });
       setSaved(true);
       setTimeout(() => { setSaved(false); reset(); onClose(); }, 700);
@@ -152,6 +163,19 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
                   ))}
                 </View>
               </PickerOverlay>
+
+              {/* 종료 시점 피커 */}
+              <PickerOverlay visible={endPicker} title="종료 시점" onClose={() => setEndPicker(false)}>
+                {[3, 6, 12, 24, 36].map((mo) => (
+                  <ListRow
+                    key={mo}
+                    contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{mo}개월 후</Text>}
+                    right={endMonths === mo ? Icon.check(theme.brand, 16) : undefined}
+                    onPress={() => { setEndMonths(mo); setEndPicker(false); }}
+                    verticalPadding="small"
+                  />
+                ))}
+              </PickerOverlay>
             </>
           }
         >
@@ -205,6 +229,18 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
               <FormRow label="결제일" value={`매월 ${dayOfMonth}일`} onPress={() => setDayPicker(true)} />
               <FormRow label={isIncome ? '입금 자산' : '출금 자산'} value={asset?.name || ''} onPress={() => setAssetPicker(true)} />
             </View>
+
+            {/* 종료일 설정 */}
+            <ListRow
+              contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "600" }}>종료일 설정</Text>}
+              right={<Switch checked={hasEnd} onCheckedChange={setHasEnd} />}
+              verticalPadding="small"
+            />
+            {hasEnd && (
+              <View style={[styles.fieldsCard, { borderColor: theme.border }]}>
+                <FormRow label="종료" value={endDateLabel} onPress={() => setEndPicker(true)} />
+              </View>
+            )}
 
             {/* 자동 생성 토글 */}
             <ListRow

@@ -36,7 +36,6 @@ export const ASSET_CATEGORY_LABEL: Record<string, string> = {
 export const TX_TYPE_LABEL: Record<string, string> = {
   INCOME: '수입',
   EXPENSE: '지출',
-  TRANSFER: '이체',
 };
 
 const DAY_KO = ['일', '월', '화', '수', '목', '금', '토'];

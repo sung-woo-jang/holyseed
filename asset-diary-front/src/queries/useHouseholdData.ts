@@ -2,8 +2,18 @@ import { useQuery } from '@tanstack/react-query';
 import { dashboardApi, assetsApi, txApi, recurringApi, householdsApi, categoriesApi } from '../api';
 import { useAuthStore } from '../stores/auth.store';
 import type { MockPersona } from '../lib/mock-data';
+import type { AssetCategory } from '../types/api';
 import { ASSET_CATEGORY_META } from '../lib/category-meta';
 import { qk } from './keys';
+
+// 백엔드 자산 카테고리 enum(REAL_ASSET/DEBT)을 프론트 키(REAL_ESTATE/LIABILITY)로 정규화
+const CATEGORY_ALIAS: Record<string, string> = {
+  REAL_ASSET: 'REAL_ESTATE',
+  DEBT: 'LIABILITY',
+};
+function normalizeAssetCategory(c: string): AssetCategory {
+  return (CATEGORY_ALIAS[c] ?? c) as AssetCategory;
+}
 
 // ASSET_CATEGORY_META를 단일 소스로 — 도넛/자산 리스트와 일치
 const CATEGORY_LABEL: Record<string, string> = {
@@ -35,7 +45,6 @@ const EMPTY: MockPersona = {
   members: [],
   pendingInvites: [],
   categories: [],
-  workLogs: [],
 };
 
 function computeNextDate(dayOfMonth: number): string {
@@ -111,7 +120,7 @@ export function useHouseholdData(): MockPersona {
 
   // 순자산 시계열
   const timeseries: { month: string; netWorth: number }[] = dash?.timeseries ?? [];
-  const monthlyHistory = timeseries.map((t) => ({ date: t.month, value: t.netWorth }));
+  const monthlyHistory = timeseries.map((t) => ({ date: t.month, value: Number(t.netWorth) || 0 }));
   const lastYearEntry = timeseries.length >= 13 ? timeseries[timeseries.length - 13] : null;
   const snapshotDate = timeseries[timeseries.length - 1]?.month ?? '—';
 
@@ -119,21 +128,24 @@ export function useHouseholdData(): MockPersona {
   const donut: { category: string; isLiability: boolean; valueKRW: number }[] = dash?.donut ?? [];
   const contributions = donut
     .filter((d) => !d.isLiability)
-    .map((d) => ({
-      category: CATEGORY_LABEL[d.category] ?? d.category,
-      value: d.valueKRW,
-      color: CATEGORY_COLOR[d.category] ?? '#8B95A1',
-    }));
+    .map((d) => {
+      const key = normalizeAssetCategory(d.category);
+      return {
+        category: CATEGORY_LABEL[key] ?? key,
+        value: Number(d.valueKRW) || 0,
+        color: CATEGORY_COLOR[key] ?? '#8B95A1',
+      };
+    });
 
   // 자산
   const assets = rawAssets.map((a: any) => ({
     id: String(a.id),
     name: a.name,
-    category: a.category,
+    category: normalizeAssetCategory(a.category),
     currency: a.currency ?? 'KRW',
-    currencyValue: a.currency !== 'KRW' ? a.latestSnapshot?.value : undefined,
-    fxRate: a.currency !== 'KRW' ? a.latestSnapshot?.fxRateToKRW : undefined,
-    value: a.latestSnapshot?.valueKRW ?? 0,
+    currencyValue: a.currency !== 'KRW' ? Number(a.latestSnapshot?.value) || 0 : undefined,
+    fxRate: a.currency !== 'KRW' ? Number(a.latestSnapshot?.fxRateToKRW) || 0 : undefined,
+    value: Number(a.latestSnapshot?.valueKRW) || 0,
     isLiability: a.isLiability,
     delta: 0,
     deltaPct: 0,
@@ -144,7 +156,7 @@ export function useHouseholdData(): MockPersona {
     id: String(t.id),
     date: t.date,
     type: t.type,
-    amount: t.amount,
+    amount: Number(t.amount) || 0,
     category: t.category?.name ?? '기타',
     title: t.memo || t.category?.name || '거래',
     memo: t.memo ?? undefined,
@@ -164,8 +176,6 @@ export function useHouseholdData(): MockPersona {
     active: r.active,
     nextDate: r.active ? computeNextDate(r.dayOfMonth) : '—',
     type: (r.type === 'INCOME' ? 'INCOME' : 'EXPENSE') as 'INCOME' | 'EXPENSE',
-    isVariable: r.isVariable ?? false,
-    lastRunDate: r.lastRunDate ?? null,
   }));
 
   // 멤버
@@ -200,8 +210,8 @@ export function useHouseholdData(): MockPersona {
 
   return {
     netWorth: {
-      current: dash?.netWorth ?? 0,
-      lastYear: lastYearEntry?.netWorth ?? 0,
+      current: Number(dash?.netWorth) || 0,
+      lastYear: Number(lastYearEntry?.netWorth) || 0,
       snapshotDate,
       monthlyHistory,
       yearly: [],
@@ -215,6 +225,5 @@ export function useHouseholdData(): MockPersona {
     members,
     pendingInvites,
     categories,
-    workLogs: [],
   };
 }

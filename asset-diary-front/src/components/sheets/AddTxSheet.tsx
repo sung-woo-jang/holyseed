@@ -16,14 +16,14 @@ import PickerOverlay from './PickerOverlay';
 import { CATEGORY_DEFS, getCategoryDef } from '../../lib/category-meta';
 import { TE } from '../../lib/toss-emoji';
 import { Icon } from '../common/Icon';
+import { krw } from '../../lib/format';
 import { useCreateTx } from '../../queries/mutations';
 
-type TxType = 'EXPENSE' | 'INCOME' | 'TRANSFER';
+type TxType = 'EXPENSE' | 'INCOME';
 
 const TYPE_OPTIONS: { key: TxType; label: string }[] = [
   { key: 'EXPENSE', label: '지출' },
   { key: 'INCOME', label: '수입' },
-  { key: 'TRANSFER', label: '이체' },
 ];
 
 function formatNum(raw: string): string {
@@ -34,9 +34,11 @@ function formatNum(raw: string): string {
 interface AddTxSheetProps {
   visible: boolean;
   onClose: () => void;
+  /** 거래 날짜 프리필 (YYYY-MM-DD). 없으면 오늘 */
+  date?: string;
 }
 
-export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
+export default function AddTxSheet({ visible, onClose, date }: AddTxSheetProps) {
   const theme = useTheme();
   const data = useDataSource();
   const [type, setType] = useState<TxType>('EXPENSE');
@@ -54,11 +56,12 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
   const createTx = useCreateTx();
 
   const catOptions = Object.entries(CATEGORY_DEFS)
-    .filter(([, def]) => def.type === type || type === 'TRANSFER')
+    .filter(([, def]) => def.type === type)
     .map(([name]) => name);
 
   const assetOptions = data.assets.filter((a) => !a.isLiability);
-  const isValid = amount.replace(/[^0-9]/g, '') !== '';
+  const rawAmount = Number(amount.replace(/[^0-9]/g, ''));
+  const isValid = rawAmount > 0;
 
   function reset() {
     setType('EXPENSE');
@@ -73,11 +76,10 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
 
   async function handleSave() {
     setError('');
-    const today = new Date().toISOString().split('T')[0]!;
-    const rawAmount = Number(amount.replace(/[^0-9]/g, ''));
+    const txDate = date ?? new Date().toISOString().split('T')[0]!;
     try {
       await createTx.mutateAsync({
-        date: today,
+        date: txDate,
         type,
         amount: rawAmount,
         ...(category ? { categoryId: category.id } : {}),
@@ -118,14 +120,14 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
             <>
               {/* 카테고리 피커 */}
               <PickerOverlay visible={catPicker} title="카테고리 선택" onClose={() => setCatPicker(false)}>
-                {(data.categories.filter((c) => c.type === type || type === 'TRANSFER').length > 0
-                  ? data.categories.filter((c) => c.type === type || type === 'TRANSFER')
+                {(data.categories.filter((c) => c.type === type).length > 0
+                  ? data.categories.filter((c) => c.type === type)
                       .map((c) => {
                         const def = getCategoryDef(c.name);
                         return (
                           <ListRow
                             key={c.id}
-                            left={<TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />}
+                            left={<View style={{ marginRight: 12 }}><TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} /></View>}
                             contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{c.name}</Text>}
                             right={category?.id === c.id ? Icon.check(theme.brand, 16) : undefined}
                             onPress={() => { setCategory({ id: c.id, name: c.name }); setCatPicker(false); }}
@@ -156,7 +158,12 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
                 ) : assetOptions.map((a) => (
                   <ListRow
                     key={a.id}
-                    contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{a.name}</Text>}
+                    contents={
+                      <View>
+                        <Text style={{ color: theme.text, fontSize: 15, fontWeight: "500" }}>{a.name}</Text>
+                        <Text style={{ color: theme.textMuted, fontSize: 12, marginTop: 2 }}>잔액 {krw(a.value)}</Text>
+                      </View>
+                    }
                     right={fromAsset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
                     onPress={() => { setFromAsset({ id: a.id, name: a.name }); setFromPicker(false); }}
                     verticalPadding="small"
@@ -186,7 +193,7 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
             <View style={styles.segWrap}>
               <SegmentedControl.Root
                 value={type}
-                onChange={(v) => { setType(v as TxType); setCategory(null); }}
+                onChange={(v) => { setType(v as TxType); setCategory(null); setFromAsset(null); setToAsset(null); }}
                 name="txType"
                 size="large"
                 alignment="fixed"
@@ -211,16 +218,13 @@ export default function AddTxSheet({ visible, onClose }: AddTxSheetProps) {
               />
             </View>
 
-            {/* 필드 카드 */}
+            {/* 카테고리 / 자산 (모두 선택사항 — 흐름 기록용) */}
             <View style={[styles.fieldsCard, { borderColor: theme.border }]}>
-              {type !== 'TRANSFER' && (
-                <FormRow label="카테고리" value={category?.name || ''} onPress={() => setCatPicker(true)} />
-              )}
-              {(type === 'EXPENSE' || type === 'TRANSFER') && (
-                <FormRow label={type === 'TRANSFER' ? '보내는 자산' : '출금 자산'} value={fromAsset?.name || ''} onPress={() => setFromPicker(true)} />
-              )}
-              {(type === 'INCOME' || type === 'TRANSFER') && (
-                <FormRow label={type === 'TRANSFER' ? '받는 자산' : '입금 자산'} value={toAsset?.name || ''} onPress={() => setToPicker(true)} />
+              <FormRow label="카테고리" value={category?.name || ''} onPress={() => setCatPicker(true)} />
+              {type === 'EXPENSE' ? (
+                <FormRow label="출금 자산" value={fromAsset?.name || ''} onPress={() => setFromPicker(true)} />
+              ) : (
+                <FormRow label="입금 자산" value={toAsset?.name || ''} onPress={() => setToPicker(true)} />
               )}
             </View>
 

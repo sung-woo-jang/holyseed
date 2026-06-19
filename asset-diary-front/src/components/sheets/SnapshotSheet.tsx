@@ -63,7 +63,7 @@ export default function SnapshotSheet({ visible, onClose, focusAssetId }: Snapsh
         if (value === null) return;
         await upsert.mutateAsync({
           assetId: Number(asset.id),
-          dto: { date: today, value, ...(asset.fxRate ? { fxRateToKRW: asset.fxRate } : {}) },
+          dto: { date: today, value },
         });
       } else {
         const items = assets
@@ -73,7 +73,6 @@ export default function SnapshotSheet({ visible, onClose, focusAssetId }: Snapsh
             assetId: Number(a.id),
             date: today,
             value,
-            ...(a.fxRate ? { fxRateToKRW: a.fxRate } : {}),
           }));
         if (items.length === 0) return;
         await batch.mutateAsync(items);

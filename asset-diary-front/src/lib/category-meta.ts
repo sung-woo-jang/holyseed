@@ -16,6 +16,13 @@ export const ASSET_CATEGORY_META: Record<AssetCategory, AssetCategoryMeta> = {
   LIABILITY:   { label: '부채',      color: '#94A3B8', iconCode: TE.creditCard },
 };
 
+const FALLBACK_ASSET_META: AssetCategoryMeta = { label: '기타', color: '#8B95A1', iconCode: TE.piggy };
+
+/** 미지의 카테고리 키여도 크래시 없이 메타를 반환 */
+export function getAssetCategoryMeta(category: string): AssetCategoryMeta {
+  return ASSET_CATEGORY_META[category as AssetCategory] ?? FALLBACK_ASSET_META;
+}
+
 export interface CategoryDef {
   type: CategoryType;
   iconCode: string;
@@ -37,7 +44,6 @@ export const CATEGORY_DEFS: Record<string, CategoryDef> = {
   보험료:   { type: 'EXPENSE',  iconCode: TE.shield,        color: '#64748B' },
   구독:    { type: 'EXPENSE',  iconCode: TE.tvSet,         color: '#3182F6' },
   기타:    { type: 'EXPENSE',  iconCode: TE.cyclone,       color: '#94A3B8' },
-  이체:    { type: 'TRANSFER', iconCode: TE.repeat,        color: '#94A3B8' },
 };
 
 export function getCategoryDef(name: string): CategoryDef {

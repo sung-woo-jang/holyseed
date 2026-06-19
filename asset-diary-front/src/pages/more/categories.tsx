@@ -24,7 +24,6 @@ import type { CategoryType } from '../../types/api';
 const TYPE_LABELS: Record<CategoryType, string> = {
   INCOME: '수입',
   EXPENSE: '지출',
-  TRANSFER: '이체',
 };
 
 const COLORS = ['#3182F6', '#0AB39C', '#F59E0B', '#EF4444', '#A78BFA', '#EC4899', '#06B6D4', '#8B5CF6'];
@@ -74,7 +73,7 @@ function AddCategorySheet({
 
         <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>유형</Text>
         <Segmented
-          options={['수입', '지출', '이체']}
+          options={['수입', '지출']}
           value={TYPE_LABELS[type]}
           onChange={(v) => {
             const t = Object.entries(TYPE_LABELS).find(([, label]) => label === v)?.[0] as CategoryType;
@@ -122,7 +121,7 @@ function CategoriesPage() {
   const createCategory = useCreateCategory();
   const deleteCategory = useDeleteCategory();
 
-  const typeOrder: CategoryType[] = ['INCOME', 'EXPENSE', 'TRANSFER'];
+  const typeOrder: CategoryType[] = ['INCOME', 'EXPENSE'];
 
   async function handleAdd(dto: { type: CategoryType; name: string; icon: string }) {
     await createCategory.mutateAsync(dto);
@@ -145,7 +144,6 @@ function CategoriesPage() {
   const builtinByType: Record<CategoryType, string[]> = {
     INCOME: ['급여', '투자수익', '사업소득', '기타수입'],
     EXPENSE: ['주거', '식비', '교통', '의료', '쇼핑', '여가', '교육', '보험료', '구독', '기타'],
-    TRANSFER: ['이체'],
   };
 
   return (

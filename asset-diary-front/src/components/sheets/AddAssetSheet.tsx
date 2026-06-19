@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Button, ListRow, Switch, TextField } from '@toss/tds-react-native';
+import { Button, TextField } from '@toss/tds-react-native';
 import SheetModal from './SheetModal';
 import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
@@ -30,12 +30,10 @@ const CATEGORY_OPTIONS: { key: AssetCategory; label: string }[] = [
   { key: 'LIABILITY',   label: '부채' },
 ];
 
-const CURRENCIES = ['USD', 'EUR', 'JPY', 'CNY'];
-
 interface AddAssetSheetProps {
   visible: boolean;
   onClose: () => void;
-  /** 지정 시 편집 모드 — 이름/카테고리/통화 수정 */
+  /** 지정 시 편집 모드 — 이름/카테고리 수정 */
   editAsset?: MockAsset | null;
   /** 저장/수정 성공 콜백 (Toast 등) */
   onSaved?: (mode: 'create' | 'edit') => void;
@@ -48,8 +46,6 @@ export default function AddAssetSheet({ visible, onClose, editAsset, onSaved }: 
   const [assetName, setAssetName] = useState('');
   const [category, setCategory] = useState<AssetCategory | null>(null);
   const [amount, setAmount] = useState('');
-  const [isFx, setIsFx] = useState(false);
-  const [currency, setCurrency] = useState('USD');
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const createAsset = useCreateAsset();
@@ -61,9 +57,6 @@ export default function AddAssetSheet({ visible, onClose, editAsset, onSaved }: 
     if (visible && editAsset) {
       setAssetName(editAsset.name);
       setCategory(editAsset.category);
-      const fx = editAsset.currency !== 'KRW';
-      setIsFx(fx);
-      setCurrency(fx ? editAsset.currency : 'USD');
       setStep(1);
     }
   }, [visible, editAsset]);
@@ -75,7 +68,7 @@ export default function AddAssetSheet({ visible, onClose, editAsset, onSaved }: 
 
   function reset() {
     setStep(1); setAssetName(''); setCategory(null);
-    setAmount(''); setIsFx(false); setCurrency('USD'); setError('');
+    setAmount(''); setError('');
   }
 
   function handleClose() { reset(); onClose(); }
@@ -85,7 +78,7 @@ export default function AddAssetSheet({ visible, onClose, editAsset, onSaved }: 
     try {
       await updateAsset.mutateAsync({
         id: Number(editAsset!.id),
-        dto: { name: assetName.trim(), category: category!, currency: isFx ? currency : 'KRW' },
+        dto: { name: assetName.trim(), category: category! },
       });
       reset();
       onClose();
@@ -102,7 +95,7 @@ export default function AddAssetSheet({ visible, onClose, editAsset, onSaved }: 
       const newAsset = await createAsset.mutateAsync({
         name: assetName.trim(),
         category: category!,
-        currency: isFx ? currency : 'KRW',
+        currency: 'KRW',
         isLiability,
       });
       const valueToSave = skipAmount ? 0 : amtNum;
@@ -220,28 +213,8 @@ export default function AddAssetSheet({ visible, onClose, editAsset, onSaved }: 
             onChangeText={(t) => setAmount(formatNum(t))}
             autoFocus
           />
-          <Text style={[styles.amountUnit, { color: theme.textMuted }]}>{isFx ? currency : '원'}</Text>
+          <Text style={[styles.amountUnit, { color: theme.textMuted }]}>원</Text>
         </View>
-
-        <ListRow
-          contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: "600" }}>외화 자산이에요</Text>}
-          right={<Switch checked={isFx} onCheckedChange={(v) => { setIsFx(v); if (!v) setCurrency('USD'); }} />}
-          verticalPadding="small"
-        />
-
-        {isFx && (
-          <View style={styles.currencyRow}>
-            {CURRENCIES.map((c) => (
-              <TouchableOpacity
-                key={c}
-                style={[styles.currencyChip, { backgroundColor: currency === c ? theme.brand : theme.bg, borderColor: currency === c ? theme.brand : theme.border }]}
-                onPress={() => setCurrency(c)}
-              >
-                <Text style={[styles.currencyChipText, { color: currency === c ? '#fff' : theme.text }]}>{c}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
 
         <TouchableOpacity onPress={() => handleSave(true)} disabled={isPending} style={styles.skipBtn}>
           <Text style={[styles.skipText, { color: theme.textMuted }]}>건너뛰기 (나중에 입력)</Text>
@@ -260,9 +233,6 @@ const styles = StyleSheet.create({
   amountWrap: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', marginTop: 16, marginBottom: 20 },
   amountInput: { fontSize: 36, fontWeight: '800', textAlign: 'center', minWidth: 80, letterSpacing: -1 },
   amountUnit: { fontSize: 20, fontWeight: '700', marginLeft: 6 },
-  currencyRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  currencyChip: { paddingVertical: 8, paddingHorizontal: 18, borderRadius: 20, borderWidth: 1 },
-  currencyChipText: { fontSize: 14, fontWeight: '700' },
   skipBtn: { alignItems: 'center', paddingVertical: 12 },
   skipText: { fontSize: 14, textDecorationLine: 'underline' },
   cta: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8 },

@@ -12,7 +12,6 @@ import type {
   RecurringTransaction,
   Transaction,
   TxType,
-  WorkLog,
 } from '../types/api';
 
 // ─── Assets ───────────────────────────────────────────────────────────────────
@@ -94,7 +93,6 @@ export const recurringApi = {
       title: string;
       type: TxType;
       amount?: number;
-      isVariable?: boolean;
       currency?: string;
       categoryId?: number;
       fromAssetId?: number;
@@ -111,43 +109,6 @@ export const recurringApi = {
 
   toggle: (id: number) => api.post(`/recurring/${id}/toggle`).then((r) => r.data),
   delete: (id: number) => api.post(`/recurring/${id}/delete`).then((r) => r.data),
-  runNow: (id: number, amount?: number, date?: string) =>
-    api.post(`/recurring/${id}/run-now`, {
-      ...(amount != null ? { amount } : {}),
-      ...(date ? { date } : {}),
-    }).then((r) => r.data),
-};
-
-// ─── Work Logs (근무표) ─────────────────────────────────────────────────────────
-export const workLogsApi = {
-  list: (householdId: number, month: string) =>
-    api.get<WorkLog[]>(`/households/${householdId}/work-logs?month=${month}`).then((r) => r.data),
-
-  create: (
-    householdId: number,
-    dto: {
-      date: string;
-      title: string;
-      amount?: number;
-      colorLabel?: string;
-      workMinutes?: number;
-      hourlyRate?: number;
-      toAssetId?: number;
-      categoryId?: number;
-      memo?: string;
-      settled?: boolean;
-    },
-  ) => api.post<WorkLog>(`/households/${householdId}/work-logs`, dto).then((r) => r.data),
-
-  update: (id: number, dto: Partial<{ title: string; amount: number; colorLabel: string; workMinutes: number; hourlyRate: number; toAssetId: number; categoryId: number; memo: string }>) =>
-    api.post<WorkLog>(`/work-logs/${id}/update`, dto).then((r) => r.data),
-
-  settle: (id: number, dto: { toAssetId?: number; categoryId?: number } = {}) =>
-    api.post<WorkLog>(`/work-logs/${id}/settle`, dto).then((r) => r.data),
-
-  unsettle: (id: number) => api.post<WorkLog>(`/work-logs/${id}/unsettle`).then((r) => r.data),
-
-  delete: (id: number) => api.post(`/work-logs/${id}/delete`).then((r) => r.data),
 };
 
 // ─── Categories ───────────────────────────────────────────────────────────────

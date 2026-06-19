@@ -18,10 +18,6 @@ export class RecurringTransaction extends BaseEntity {
   @Column({ type: 'decimal', precision: 20, scale: 2, default: 0 })
   amount: number;
 
-  /** 변동형 — 매월 금액이 달라 자동 생성하지 않고 사용자가 직접 입력 */
-  @Column({ name: 'is_variable', default: false })
-  isVariable: boolean;
-
   @Column({ name: 'category_id', nullable: true })
   categoryId: number;
 

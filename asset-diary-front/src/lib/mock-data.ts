@@ -43,6 +43,8 @@ export interface MockRecurring {
   active: boolean;
   nextDate: string;
   type: 'INCOME' | 'EXPENSE';
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface MockMember {

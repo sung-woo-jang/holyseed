@@ -109,6 +109,35 @@ export function useCreateTx() {
   });
 }
 
+export function useUpdateTx() {
+  const qc = useQueryClient();
+  const hid = useHid();
+  return useMutation({
+    mutationFn: ({ id, dto }: {
+      id: number;
+      dto: Partial<{ date: string; type: 'INCOME' | 'EXPENSE'; amount: number; categoryId: number; fromAssetId: number; toAssetId: number; memo: string }>;
+    }) => txApi.update(id, dto),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.transactions(hid!) });
+      qc.invalidateQueries({ queryKey: qk.dashboard(hid!) });
+      qc.invalidateQueries({ queryKey: qk.assets(hid!) });
+    },
+  });
+}
+
+export function useDeleteTx() {
+  const qc = useQueryClient();
+  const hid = useHid();
+  return useMutation({
+    mutationFn: (id: number) => txApi.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.transactions(hid!) });
+      qc.invalidateQueries({ queryKey: qk.dashboard(hid!) });
+      qc.invalidateQueries({ queryKey: qk.assets(hid!) });
+    },
+  });
+}
+
 // ─── Recurring ────────────────────────────────────────────────────────────────
 
 export function useCreateRecurring() {
@@ -126,6 +155,7 @@ export function useCreateRecurring() {
       frequency: 'MONTHLY' | 'YEARLY';
       dayOfMonth: number;
       startDate: string;
+      endDate?: string;
     }) => recurringApi.create(hid!, dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.recurring(hid!) });

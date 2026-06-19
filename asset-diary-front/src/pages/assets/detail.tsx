@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { Border, Button, ListRow, Loader, TextField } from '@toss/tds-react-native';
@@ -15,17 +16,15 @@ import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { useTheme } from '../../lib/theme';
 import { useDataSource, useMockRole } from '../../lib/data-source';
 import TossEmoji from '../../components/common/TossEmoji';
-import Segmented from '../../components/common/Segmented';
 import LineChart from '../../components/charts/LineChart';
 import SnapshotSheet from '../../components/sheets/SnapshotSheet';
-import { ASSET_CATEGORY_META } from '../../lib/category-meta';
+import { getAssetCategoryMeta } from '../../lib/category-meta';
 import { krw, krwShort, pct } from '../../lib/format';
 import { TE } from '../../lib/toss-emoji';
 import { Icon } from '../../components/common/Icon';
 import { snapshotsApi } from '../../api';
 import { qk } from '../../queries/keys';
 import { useUpdateAsset, useDeleteAsset } from '../../queries/mutations';
-import type { AssetCategory } from '../../types/api';
 
 function AssetDetailScreen() {
   const navigation = Route.useNavigation();
@@ -33,7 +32,9 @@ function AssetDetailScreen() {
   const theme = useTheme();
   const data = useDataSource();
   const role = useMockRole();
-  const [unit, setUnit] = useState<'KRW' | 'USD'>('KRW');
+  const { width: screenWidth } = useWindowDimensions();
+  // 섹션 좌우 패딩(20*2)을 뺀 차트 가용 폭
+  const chartWidth = screenWidth - 40;
   const [menuOpen, setMenuOpen] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
@@ -42,8 +43,10 @@ function AssetDetailScreen() {
   const updateAsset = useUpdateAsset();
   const deleteAsset = useDeleteAsset();
 
-  const assetId = params?.id;
-  const asset = assetId ? data.assets.find((a) => a.id === assetId) : undefined;
+  // Granite 라우터가 파라미터에 JSON.parse를 적용해 숫자 문자열 id를 number로 바꾼다.
+  // (예: "42" → 42) 자산 id는 문자열이므로 양쪽을 문자열로 정규화해 비교한다.
+  const assetId = params?.id != null ? String(params.id) : undefined;
+  const asset = assetId ? data.assets.find((a) => String(a.id) === assetId) : undefined;
 
   // 실제 스냅샷 쿼리 — useHouseholdData의 snapshots:{} 는 항상 빈 객체
   const snapshotsQ = useQuery({
@@ -57,8 +60,6 @@ function AssetDetailScreen() {
   const snapshots = rawSnapshots
     .map((s: any) => ({
       date: s.date,
-      value: s.value,
-      fxRate: s.fxRateToKRW ?? 0,
       valueKRW: s.valueKRW ?? s.value,
     }))
     .slice()
@@ -78,12 +79,11 @@ function AssetDetailScreen() {
     );
   }
 
-  const meta = ASSET_CATEGORY_META[asset.category as AssetCategory];
-  const isFx = asset.currency !== 'KRW';
+  const meta = getAssetCategoryMeta(asset.category);
 
   const chartData = snapshots.map((s) => ({
     date: s.date,
-    value: unit === 'USD' ? s.value : s.valueKRW,
+    value: s.valueKRW,
   }));
 
   const relatedTxs = data.transactions
@@ -141,7 +141,7 @@ function AssetDetailScreen() {
         onBack={() => navigation?.goBack?.()}
         right={role !== 'VIEWER' ? kebabMenu : undefined}
       />
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         {/* 자산 요약 */}
         <View style={[styles.summaryCard, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
           <View style={styles.summaryTop}>
@@ -173,20 +173,9 @@ function AssetDetailScreen() {
               )}
             </View>
           </View>
-          {isFx ? (
-            <View style={styles.fxBlock}>
-              <Text style={[styles.fxMain, { color: theme.text }]}>
-                ${asset.currencyValue?.toLocaleString() ?? 0}
-              </Text>
-              <Text style={[styles.fxSub, { color: theme.textMuted }]}>
-                ≈ {krw(asset.value)} · 1 USD = {asset.fxRate?.toLocaleString()}원
-              </Text>
-            </View>
-          ) : (
-            <Text style={[styles.valueText, { color: asset.isLiability ? theme.danger : theme.text }]}>
-              {krw(asset.value)}
-            </Text>
-          )}
+          <Text style={[styles.valueText, { color: asset.isLiability ? theme.danger : theme.text }]}>
+            {krw(asset.value)}
+          </Text>
           <View style={styles.deltaBadge}>
             <View style={[styles.deltaChip, { backgroundColor: asset.delta >= 0 ? theme.brandSoft : '#FEE2E2' }]}>
               <View style={{ marginRight: 4 }}>{Icon.arrowUp(asset.delta >= 0 ? theme.brand : theme.danger, 12)}</View>
@@ -211,16 +200,11 @@ function AssetDetailScreen() {
 
         {/* 평가액 추이 */}
         <View style={[styles.section, { backgroundColor: theme.card, marginTop: 8 }]}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>평가액 추이</Text>
-            {isFx && (
-              <Segmented options={['KRW', 'USD']} value={unit} onChange={(v) => setUnit(v as 'KRW' | 'USD')} small />
-            )}
-          </View>
+          <Text style={[styles.sectionTitle, styles.listTitle, { color: theme.text }]}>평가액 추이</Text>
           {chartData.length > 1 ? (
             <LineChart
               data={chartData}
-              width={327}
+              width={chartWidth}
               height={150}
               color={meta.color}
               dark={theme.dark}
@@ -235,7 +219,7 @@ function AssetDetailScreen() {
 
         {/* 스냅샷 히스토리 */}
         <View style={[styles.section, { backgroundColor: theme.card, marginTop: 8 }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>스냅샷 히스토리</Text>
+          <Text style={[styles.sectionTitle, styles.listTitle, { color: theme.text }]}>스냅샷 히스토리</Text>
           {snapshotsQ.isLoading ? (
             <Loader.Centered size="small" />
           ) : snapshots.length === 0 ? (
@@ -247,14 +231,7 @@ function AssetDetailScreen() {
               <React.Fragment key={s.date + idx}>
                 <ListRow
                   contents={<Text style={[styles.snapDate, { color: theme.textMuted }]}>{s.date}</Text>}
-                  right={isFx ? (
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={[styles.snapValue, { color: theme.text }]}>${s.value.toLocaleString()}</Text>
-                      <Text style={[styles.snapSub, { color: theme.textMuted }]}>≈ {krwShort(s.valueKRW)} · {s.fxRate.toLocaleString()}원</Text>
-                    </View>
-                  ) : (
-                    <Text style={[styles.snapValue, { color: theme.text }]}>{krw(s.valueKRW || s.value)}</Text>
-                  )}
+                  right={<Text style={[styles.snapValue, { color: theme.text }]}>{krw(s.valueKRW)}</Text>}
                   verticalPadding="small"
                 />
                 {idx < snapshots.length - 1 && <Border type="full" />}
@@ -266,7 +243,7 @@ function AssetDetailScreen() {
         {/* 관련 거래 */}
         {relatedTxs.length > 0 && (
           <View style={[styles.section, { backgroundColor: theme.card, marginTop: 8, marginBottom: 32 }]}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>관련 거래</Text>
+            <Text style={[styles.sectionTitle, styles.listTitle, { color: theme.text }]}>관련 거래</Text>
             {relatedTxs.map((tx, idx) => {
               const amtColor = tx.type === 'INCOME' ? theme.brand : tx.type === 'EXPENSE' ? theme.danger : theme.textMuted;
               const sign = tx.type === 'INCOME' ? '+' : tx.type === 'EXPENSE' ? '-' : '';
@@ -274,7 +251,7 @@ function AssetDetailScreen() {
                 <React.Fragment key={tx.id}>
                   <ListRow
                     left={
-                      <View style={[styles.txIcon, { backgroundColor: theme.bg }]}>
+                      <View style={[styles.txIcon, { backgroundColor: theme.bg, marginRight: 12 }]}>
                         <Text style={{ fontSize: 16 }}>{tx.category.slice(0, 1)}</Text>
                       </View>
                     }
@@ -328,9 +305,6 @@ const styles = StyleSheet.create({
   renameInput: { flex: 1, borderWidth: 1.5, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, fontSize: 16 },
   renameConfirmBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
   renameConfirmText: { color: '#fff', fontSize: 13, fontWeight: '700' },
-  fxBlock: { marginBottom: 8 },
-  fxMain: { fontSize: 28, fontWeight: '800' },
-  fxSub: { fontSize: 13, marginTop: 2 },
   valueText: { fontSize: 28, fontWeight: '800', marginBottom: 8 },
   deltaBadge: { flexDirection: 'row', marginBottom: 14 },
   deltaChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
@@ -338,15 +312,14 @@ const styles = StyleSheet.create({
   snapshotBtn: { borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
   snapshotBtnText: { fontSize: 14, fontWeight: '700' },
   section: { paddingHorizontal: 20, paddingVertical: 16 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   sectionTitle: { fontSize: 15, fontWeight: '700' },
+  listTitle: { marginBottom: 8 },
   emptyChart: { height: 80, alignItems: 'center', justifyContent: 'center' },
   emptyRow: { paddingVertical: 20, alignItems: 'center' },
   emptyText: { fontSize: 13 },
   snapRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12 },
   snapDate: { fontSize: 14 },
   snapValue: { fontSize: 15, fontWeight: '700' },
-  snapSub: { fontSize: 11, marginTop: 2 },
   txRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   txIcon: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   txInfo: { flex: 1 },

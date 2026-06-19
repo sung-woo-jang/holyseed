@@ -7,149 +7,210 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Border, ListRow, SegmentedControl, Switch } from '@toss/tds-react-native';
+import { Border, ListRow, Switch } from '@toss/tds-react-native';
 import { useDataSource, useMockRole } from '../lib/data-source';
 import { useTheme } from '../lib/theme';
-import { krwShort, monthDayWeek } from '../lib/format';
+import { useAuthStore } from '../stores/auth.store';
+import { krwShort } from '../lib/format';
 import { TE } from '../lib/toss-emoji';
 import { getCategoryDef } from '../lib/category-meta';
 import TossEmoji from '../components/common/TossEmoji';
-import AutoBadge from '../components/common/AutoBadge';
 import { Icon } from '../components/common/Icon';
+import WorkCalendar, { type CalLog } from '../components/WorkCalendar';
 import AddTxSheet from '../components/sheets/AddTxSheet';
 import AddRecurringSheet from '../components/sheets/AddRecurringSheet';
-import RecordRecurringSheet from '../components/sheets/RecordRecurringSheet';
-import WorkScreen from './WorkScreen';
 import EmptyState from '../components/common/EmptyState';
 import ActionSheet from '../components/common/ActionSheet';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import AppToast from '../components/common/AppToast';
 import { useToggleRecurring, useDeleteRecurring } from '../queries/mutations';
-import { recurringNeedsInput } from '../lib/recurring';
 import type { MockRecurring } from '../lib/mock-data';
 
-type BookTab = 'tx' | 'rec' | 'work';
+function todayMonth(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+function todayDate(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+const pad = (n: number) => String(n).padStart(2, '0');
+
+/** 통합 선택일 리스트 항목 */
+type DayItem =
+  | { kind: 'tx'; id: string; title: string; amount: number; type: 'INCOME' | 'EXPENSE'; category: string; sub?: string }
+  | { kind: 'rec'; id: string; title: string; amount: number; type: 'INCOME' | 'EXPENSE'; rec: MockRecurring };
 
 export default function BookScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const role = useMockRole();
   const data = useDataSource();
-  const [tab, setTab] = useState<BookTab>('tx');
+  const { useMock } = useAuthStore();
+  const isViewer = role === 'VIEWER';
+
+  const initialMonth = useMock && data.transactions[0]?.date
+    ? data.transactions[0].date.slice(0, 7)
+    : todayMonth();
+  const [month, setMonth] = useState(initialMonth);
+  const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
+  const [recOpen, setRecOpen] = useState(false);
+
+  // 시트 상태
   const [addTxVisible, setAddTxVisible] = useState(false);
   const [addRecVisible, setAddRecVisible] = useState(false);
-  const isViewer = role === 'VIEWER';
-  const toggleRecurring = useToggleRecurring();
-  const deleteRecurring = useDeleteRecurring();
   const [actionRec, setActionRec] = useState<MockRecurring | null>(null);
   const [deleteRec, setDeleteRec] = useState<MockRecurring | null>(null);
-  const [recordRec, setRecordRec] = useState<MockRecurring | null>(null);
+  const [addPicker, setAddPicker] = useState(false);
   const [toast, setToast] = useState('');
 
+  const toggleRecurring = useToggleRecurring();
+  const deleteRecurring = useDeleteRecurring();
+
+  // 거래
+  const monthTx = useMemo(() => data.transactions.filter((t) => t.date.startsWith(month)), [data.transactions, month]);
+
+  // 정기 (월 결제일 → 가상 발생)
+  const recurring = data.recurring;
+  const activeRec = recurring.filter((r) => r.active);
+  const [y, m] = month.split('-').map(Number);
+  const lastDay = new Date(y!, m!, 0).getDate();
+  function recDateForMonth(r: MockRecurring): string {
+    return `${month}-${pad(Math.min(r.dayOfMonth, lastDay))}`;
+  }
+
+  // 월 네비
+  function shiftMonth(delta: number) {
+    const yy = y ?? new Date().getFullYear();
+    const mm = m ?? 1;
+    const d = new Date(yy, (mm - 1) + delta, 1);
+    setMonth(`${d.getFullYear()}-${pad(d.getMonth() + 1)}`);
+    setSelectedDate(undefined);
+  }
+  const monthLabel = `${Number(month.slice(5))}월 (${month.slice(0, 4)})`;
+
+  // 요약 (수입/지출)
+  const monthIncome = monthTx.filter((t) => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
+  const monthExpense = monthTx.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
+
+  // 캘린더 점
+  const calLogs: CalLog[] = useMemo(() => {
+    const out: CalLog[] = [];
+    for (const t of monthTx) {
+      out.push({ id: `t${t.id}`, date: t.date, colorLabel: getCategoryDef(t.category).color, settled: true });
+    }
+    for (const r of activeRec) {
+      out.push({ id: `r${r.id}`, date: recDateForMonth(r), colorLabel: theme.textMuted, settled: true });
+    }
+    return out;
+  }, [monthTx, activeRec, month, theme]);
+
+  // 선택일 항목 통합
+  const dayItems: DayItem[] = useMemo(() => {
+    if (!selectedDate) return [];
+    const items: DayItem[] = [];
+    monthTx.filter((t) => t.date === selectedDate).forEach((t) => {
+      const from = data.assets.find((a) => a.id === t.from);
+      items.push({ kind: 'tx', id: t.id, title: t.title, amount: t.amount, type: t.type === 'INCOME' ? 'INCOME' : 'EXPENSE', category: t.category, sub: from ? from.name : undefined });
+    });
+    activeRec.filter((r) => recDateForMonth(r) === selectedDate).forEach((r) => {
+      items.push({ kind: 'rec', id: r.id, title: r.title, amount: r.amount, type: r.type === 'INCOME' ? 'INCOME' : 'EXPENSE', rec: r });
+    });
+    return items;
+  }, [selectedDate, monthTx, activeRec, data.assets]);
+
+  // 정기 섹션 데이터
+  const incomeRec = recurring.filter((r) => r.type === 'INCOME');
+  const expenseRec = recurring.filter((r) => r.type !== 'INCOME');
+  const totalRecIncome = incomeRec.filter((r) => r.active).reduce((s, r) => s + r.amount, 0);
+  const totalRecExpense = expenseRec.filter((r) => r.active).reduce((s, r) => s + r.amount, 0);
+
+  function handleSelectDay(date: string) {
+    setSelectedDate((cur) => (cur === date ? undefined : date));
+  }
+
+  // 선택일 등록
+  function openAddForDay() {
+    if (!selectedDate) setSelectedDate(todayDate());
+    setAddPicker(true);
+  }
+  function handleAddPick(value: string) {
+    setAddPicker(false);
+    if (value === 'tx') setAddTxVisible(true);
+    else if (value === 'rec') setAddRecVisible(true);
+  }
+
+  // 정기 액션
   function handleRecAction(value: string) {
     const r = actionRec;
     setActionRec(null);
     if (!r) return;
     if (value === 'delete') setDeleteRec(r);
   }
-
   async function confirmDeleteRec() {
     if (!deleteRec) return;
     try {
       await deleteRecurring.mutateAsync(Number(deleteRec.id));
-      setToast('정기지출을 삭제했어요');
-    } catch {
-      setToast('삭제에 실패했어요');
-    } finally {
-      setDeleteRec(null);
-    }
+      setToast('정기 항목을 삭제했어요');
+    } catch { setToast('삭제에 실패했어요'); }
+    finally { setDeleteRec(null); }
   }
 
-  const months = useMemo(() => {
-    const set = new Set(data.transactions.map(t => t.date.slice(0, 7)));
-    return [...set].sort().reverse();
-  }, [data.transactions]);
+  const selectedLabel = selectedDate ? `${Number(selectedDate.slice(5, 7))}월 ${Number(selectedDate.slice(8, 10))}일` : '';
 
-  const [month, setMonth] = useState(months[0] ?? '2026-04');
-  const monthIdx = months.indexOf(month);
-  const canPrev = monthIdx < months.length - 1;
-  const canNext = monthIdx > 0;
+  function renderDayItem(item: DayItem, i: number, total: number) {
+    const isInc = item.type === 'INCOME';
+    const catName = item.kind === 'tx' ? item.category : item.rec.category;
+    const def = getCategoryDef(catName);
+    const right = (
+      <Text style={[styles.itemAmount, { color: isInc ? theme.brand : theme.text }]}>
+        {isInc ? '+' : '-'}{krwShort(item.amount)}원
+      </Text>
+    );
+    return (
+      <React.Fragment key={`${item.kind}-${item.id}`}>
+        <ListRow
+          left={<View style={[styles.itemIcon, { backgroundColor: theme.bg }]}><TossEmoji code={def.iconCode} size={18} /></View>}
+          contents={
+            <View>
+              <View style={styles.itemTitleRow}>
+                <Text style={[styles.itemTitle, { color: theme.text }]} numberOfLines={1}>{item.title}</Text>
+                {item.kind === 'rec' && <View style={[styles.tagChip, { backgroundColor: theme.brandSoft }]}><Text style={[styles.tagText, { color: theme.brand }]}>정기</Text></View>}
+              </View>
+              {item.kind === 'tx' && item.sub ? <Text style={[styles.itemSub, { color: theme.textMuted }]} numberOfLines={1}>{item.sub}</Text> : null}
+            </View>
+          }
+          right={right}
+          verticalPadding="small"
+        />
+        {i < total - 1 && <Border type="full" />}
+      </React.Fragment>
+    );
+  }
 
-  const monthTx = useMemo(
-    () => data.transactions.filter(t => t.date.startsWith(month)),
-    [data.transactions, month]
-  );
-
-  const grouped: Record<string, typeof monthTx> = {};
-  monthTx.forEach(t => {
-    if (!grouped[t.date]) grouped[t.date] = [];
-    grouped[t.date]!.push(t);
-  });
-  const dates = Object.keys(grouped).sort().reverse();
-
-  const monthIncome = monthTx.filter(t => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
-  const monthExpense = monthTx.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
-  const savingsRate = monthIncome > 0 ? Math.round(((monthIncome - monthExpense) / monthIncome) * 100) : 0;
-  const monthLabel = `${parseInt(month.slice(5))}월 (${month.slice(0, 4)})`;
-
-  const recurring = data.recurring;
-  const incomeRec = recurring.filter(r => r.type === 'INCOME');
-  const expenseRec = recurring.filter(r => r.type !== 'INCOME');
-  const totalRecIncome = incomeRec.filter(r => r.active).reduce((s, r) => s + r.amount, 0);
-  const totalRecExpense = expenseRec.filter(r => r.active).reduce((s, r) => s + r.amount, 0);
-
-  function renderRecRow(r: typeof recurring[number], i: number, total: number) {
-    const catDef = getCategoryDef(r.category);
+  function renderRecRow(r: MockRecurring, i: number, total: number) {
+    const def = getCategoryDef(r.category);
     const isInc = r.type === 'INCOME';
-    const needsInput = recurringNeedsInput(r);
     return (
       <React.Fragment key={r.id}>
         <ListRow
-          left={
-            <View style={[styles.recIcon, { backgroundColor: theme.bg }]}>
-              <TossEmoji code={catDef.iconCode} size={22} />
-            </View>
-          }
+          left={<View style={[styles.itemIcon, { backgroundColor: theme.bg }]}><TossEmoji code={def.iconCode} size={22} /></View>}
           contents={
             <View>
-              <View style={styles.recTitleRow}>
-                <Text style={[styles.txTitle, { color: theme.text, flex: 0 }]}>{r.title}</Text>
-                {r.isVariable ? (
-                  <View style={[styles.varBadge, { backgroundColor: theme.brandSoft }]}>
-                    <Text style={[styles.varBadgeText, { color: theme.brand }]}>변동</Text>
-                  </View>
-                ) : null}
-              </View>
-              <Text style={[styles.txMeta, { color: theme.textMuted }]}>매월 {r.dayOfMonth}일 · 다음: {r.nextDate}</Text>
+              <Text style={[styles.itemTitle, { color: theme.text }]}>{r.title}</Text>
+              <Text style={[styles.itemSub, { color: theme.textMuted }]}>매월 {r.dayOfMonth}일</Text>
             </View>
           }
           right={
             <View style={styles.recRight}>
-              {needsInput && !isViewer ? (
-                <TouchableOpacity
-                  style={[styles.inputBtn, { backgroundColor: theme.brand }]}
-                  onPress={() => setRecordRec(r)}
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                >
-                  <Text style={styles.inputBtnText}>이번 달 금액 입력</Text>
-                </TouchableOpacity>
-              ) : (
-                <Text style={[styles.recAmount, { color: isInc ? theme.brand : theme.text }]}>
-                  {r.isVariable && r.amount <= 0 ? '—' : `${isInc ? '+' : '-'}${krwShort(r.amount)}원`}
-                </Text>
-              )}
+              <Text style={[styles.itemAmount, { color: isInc ? theme.brand : theme.text }]}>
+                {isInc ? '+' : '-'}{krwShort(r.amount)}원
+              </Text>
               {!isViewer ? (
                 <>
-                  <Switch
-                    checked={r.active}
-                    onCheckedChange={() => toggleRecurring.mutate(Number(r.id))}
-                    disabled={toggleRecurring.isPending}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setActionRec(r)}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Text style={[styles.kebabIcon, { color: theme.textMuted }]}>⋯</Text>
+                  <Switch checked={r.active} onCheckedChange={() => toggleRecurring.mutate(Number(r.id))} disabled={toggleRecurring.isPending} />
+                  <TouchableOpacity onPress={() => setActionRec(r)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <Text style={[styles.kebab, { color: theme.textMuted }]}>⋯</Text>
                   </TouchableOpacity>
                 </>
               ) : (
@@ -168,201 +229,150 @@ export default function BookScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
-      {/* Tab SegmentedControl */}
-      <View style={styles.segWrap}>
-        <SegmentedControl.Root
-          value={tab}
-          onChange={(v) => setTab(v as BookTab)}
-          name="bookTab"
-          size="large"
-          alignment="fixed"
-        >
-          <SegmentedControl.Item value="tx">거래</SegmentedControl.Item>
-          <SegmentedControl.Item value="rec">정기</SegmentedControl.Item>
-          <SegmentedControl.Item value="work">근무표</SegmentedControl.Item>
-        </SegmentedControl.Root>
-      </View>
-
-      {tab === 'work' ? (
-        <WorkScreen />
-      ) : (
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
-        {tab === 'tx' && (
-          <>
-            {/* Month navigation */}
-            <View style={styles.monthNav}>
-              <TouchableOpacity
-                style={[styles.monthBtn, { backgroundColor: theme.card, borderColor: theme.border, opacity: canPrev ? 1 : 0.4 }]}
-                onPress={() => canPrev && setMonth(months[monthIdx + 1]!)}
-                disabled={!canPrev}
-              >
-                <Text style={[styles.monthArrow, { color: theme.text }]}>‹</Text>
-              </TouchableOpacity>
-              <Text style={[styles.monthLabel, { color: theme.text }]}>{monthLabel}</Text>
-              <TouchableOpacity
-                style={[styles.monthBtn, { backgroundColor: theme.card, borderColor: theme.border, opacity: canNext ? 1 : 0.4 }]}
-                onPress={() => canNext && setMonth(months[monthIdx - 1]!)}
-                disabled={!canNext}
-              >
-                <Text style={[styles.monthArrow, { color: theme.text }]}>›</Text>
-              </TouchableOpacity>
-            </View>
+        {/* 월 네비 */}
+        <View style={styles.monthNav}>
+          <TouchableOpacity style={[styles.monthBtn, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={() => shiftMonth(-1)}>
+            <Text style={[styles.monthArrow, { color: theme.text }]}>‹</Text>
+          </TouchableOpacity>
+          <Text style={[styles.monthLabel, { color: theme.text }]}>{monthLabel}</Text>
+          <TouchableOpacity style={[styles.monthBtn, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={() => shiftMonth(1)}>
+            <Text style={[styles.monthArrow, { color: theme.text }]}>›</Text>
+          </TouchableOpacity>
+        </View>
 
-            {/* Cashflow summary */}
-            <View style={styles.cfRow}>
-              <View>
-                <Text style={[styles.cfLabel, { color: theme.textMuted }]}>수입</Text>
-                <Text style={[styles.cfValue, { color: theme.brand }]}>+{krwShort(monthIncome)}원</Text>
-              </View>
-              <View>
-                <Text style={[styles.cfLabel, { color: theme.textMuted }]}>지출</Text>
-                <Text style={[styles.cfValue, { color: theme.danger }]}>-{krwShort(monthExpense)}원</Text>
-              </View>
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={[styles.cfLabel, { color: theme.textMuted }]}>저축률</Text>
-                <Text style={[styles.cfValue, { color: theme.text }]}>{savingsRate}%</Text>
-              </View>
+        {/* 요약 */}
+        <View style={styles.sectionPad}>
+          <View style={[styles.summary, { backgroundColor: theme.brandSoft }]}>
+            <View style={{ alignItems: 'flex-start' }}>
+              <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>수입</Text>
+              <Text style={[styles.summaryValue, { color: theme.brand }]}>+{krwShort(monthIncome)}원</Text>
             </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>지출</Text>
+              <Text style={[styles.summaryValue, { color: theme.danger }]}>-{krwShort(monthExpense)}원</Text>
+            </View>
+          </View>
+        </View>
 
-            {dates.length === 0 ? (
-              <View style={styles.empty}>
-                <Text style={[styles.emptyText, { color: theme.textMuted }]}>이 달엔 거래가 없어요</Text>
-              </View>
+        {/* 캘린더 */}
+        <View style={[styles.calCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <WorkCalendar month={month} logs={calLogs} selectedDate={selectedDate} onSelectDay={handleSelectDay} />
+        </View>
+
+        {/* 선택일 항목 */}
+        {selectedDate && (
+          <View style={styles.sectionPad}>
+            <View style={styles.dayHeader}>
+              <Text style={[styles.dayTitle, { color: theme.text }]}>{selectedLabel}</Text>
+              {!isViewer && (
+                <TouchableOpacity onPress={openAddForDay} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Text style={[styles.addLink, { color: theme.brand }]}>+ 등록</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            {dayItems.length === 0 ? (
+              <EmptyState compact iconCode={TE.ledger} title="이 날 기록이 없어요" desc={isViewer ? undefined : '+ 등록으로 추가해보세요'} />
             ) : (
-              dates.map(d => {
-                const items = grouped[d] ?? [];
-                const dayExp = items.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
-                return (
-                  <View key={d} style={styles.dayBlock}>
-                    <View style={styles.dayHeader}>
-                      <Text style={[styles.dayTitle, { color: theme.textMuted }]}>{monthDayWeek(d)}</Text>
-                      <Text style={[styles.dayExp, { color: theme.textMuted }]}>-{krwShort(dayExp)}원</Text>
-                    </View>
-                    {items.map((t, i) => {
-                      const catDef = getCategoryDef(t.category);
-                      const fromAsset = data.assets.find(a => a.id === t.from);
-                      return (
-                        <React.Fragment key={t.id}>
-                          <ListRow
-                            left={
-                              <View style={[styles.txIcon, { backgroundColor: theme.bg }]}>
-                                <TossEmoji code={catDef.iconCode} size={18} />
-                              </View>
-                            }
-                            contents={
-                              <View>
-                                <View style={styles.txTitleRow}>
-                                  <Text style={[styles.txTitle, { color: theme.text }]} numberOfLines={1}>{t.title}</Text>
-                                  {t.auto && <AutoBadge />}
-                                </View>
-                                <Text style={[styles.txMeta, { color: theme.textMuted }]} numberOfLines={1}>
-                                  {t.category}{fromAsset ? ` · ${fromAsset.name}` : ''}{t.memo ? ` · ${t.memo}` : ''}
-                                </Text>
-                              </View>
-                            }
-                            right={
-                              <Text style={[styles.txAmount, { color: t.type === 'INCOME' ? theme.brand : t.type === 'TRANSFER' ? theme.textMuted : theme.text }]}>
-                                {t.type === 'INCOME' ? '+' : t.type === 'EXPENSE' ? '-' : ''}{krwShort(t.amount)}원
-                              </Text>
-                            }
-                            verticalPadding="small"
-                          />
-                          {i < items.length - 1 && <Border type="full" />}
-                        </React.Fragment>
-                      );
-                    })}
-                  </View>
-                );
-              })
-            )}
-          </>
-        )}
-
-        {tab === 'rec' && (
-          <>
-            {/* Summary card */}
-            {recurring.length > 0 && (
-              <View style={styles.sectionPad}>
-                <View style={[styles.recSummary, { backgroundColor: theme.brandSoft }]}>
-                  <View style={styles.recSummaryRow}>
-                    <Text style={[styles.recSummaryLabel, { color: theme.textMuted }]}>매월 고정 수입</Text>
-                    <Text style={[styles.recSummaryValue, { color: theme.brand }]}>+{krwShort(totalRecIncome)}원</Text>
-                  </View>
-                  <View style={styles.recSummaryRow}>
-                    <Text style={[styles.recSummaryLabel, { color: theme.textMuted }]}>매월 고정 지출</Text>
-                    <Text style={[styles.recSummaryValue, { color: theme.danger }]}>-{krwShort(totalRecExpense)}원</Text>
-                  </View>
-                </View>
+              <View style={[styles.dayCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                {dayItems.map((it, i) => renderDayItem(it, i, dayItems.length))}
               </View>
             )}
-
-            {/* 빈 상태 */}
-            {recurring.length === 0 && (
-              <EmptyState
-                iconCode={TE.repeat}
-                title="등록된 정기 항목이 없어요"
-                desc={isViewer ? '소유자가 정기 항목을 추가하면 표시돼요' : '아래 + 버튼으로 매월 고정 수입·지출을 등록해보세요'}
-              />
-            )}
-
-            {/* 수입 섹션 */}
-            {incomeRec.length > 0 && (
-              <>
-                <Text style={[styles.recSectionTitle, { color: theme.textMuted }]}>정기수입</Text>
-                {incomeRec.map((r, i) => renderRecRow(r, i, incomeRec.length))}
-              </>
-            )}
-
-            {/* 지출 섹션 */}
-            {expenseRec.length > 0 && (
-              <>
-                <Text style={[styles.recSectionTitle, { color: theme.textMuted }]}>정기지출</Text>
-                {expenseRec.map((r, i) => renderRecRow(r, i, expenseRec.length))}
-              </>
-            )}
-          </>
+          </View>
         )}
-      </ScrollView>
-      )}
 
-      {/* FAB — work 탭은 WorkScreen 자체 FAB 사용 */}
-      {!isViewer && tab !== 'work' && (
+        {/* 정기 항목 관리 (접이식) */}
+        <View style={styles.sectionPad}>
+          <TouchableOpacity
+            style={[styles.recHeader, { backgroundColor: theme.card, borderColor: theme.border }]}
+            onPress={() => setRecOpen((v) => !v)}
+            activeOpacity={0.7}
+          >
+            <View>
+              <Text style={[styles.recHeaderTitle, { color: theme.text }]}>정기 항목 관리</Text>
+              <Text style={[styles.recHeaderSub, { color: theme.textMuted }]}>
+                수입 +{krwShort(totalRecIncome)} · 지출 -{krwShort(totalRecExpense)}
+              </Text>
+            </View>
+            <Text style={[styles.recChevron, { color: theme.textMuted }]}>{recOpen ? '▴' : '▾'}</Text>
+          </TouchableOpacity>
+
+          {recOpen && (
+            <View style={styles.recBody}>
+              {recurring.length === 0 ? (
+                <EmptyState compact iconCode={TE.repeat} title="등록된 정기 항목이 없어요" desc={isViewer ? undefined : '아래 버튼으로 추가해보세요'} />
+              ) : (
+                <>
+                  {incomeRec.length > 0 && (
+                    <>
+                      <Text style={[styles.recSectionTitle, { color: theme.textMuted }]}>정기수입</Text>
+                      <View style={[styles.dayCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                        {incomeRec.map((r, i) => renderRecRow(r, i, incomeRec.length))}
+                      </View>
+                    </>
+                  )}
+                  {expenseRec.length > 0 && (
+                    <>
+                      <Text style={[styles.recSectionTitle, { color: theme.textMuted }]}>정기지출</Text>
+                      <View style={[styles.dayCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                        {expenseRec.map((r, i) => renderRecRow(r, i, expenseRec.length))}
+                      </View>
+                    </>
+                  )}
+                </>
+              )}
+              {!isViewer && (
+                <TouchableOpacity style={[styles.recAddBtn, { borderColor: theme.brand }]} onPress={() => setAddRecVisible(true)}>
+                  <Text style={[styles.recAddText, { color: theme.brand }]}>+ 정기 항목 추가</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* FAB */}
+      {!isViewer && (
         <TouchableOpacity
           style={[styles.fab, { backgroundColor: theme.brand, bottom: insets.bottom + 16 }]}
-          onPress={() => tab === 'tx' ? setAddTxVisible(true) : setAddRecVisible(true)}
+          onPress={openAddForDay}
         >
           {Icon.plus('#fff')}
         </TouchableOpacity>
       )}
 
-      <AddTxSheet visible={addTxVisible} onClose={() => setAddTxVisible(false)} />
+      {/* 등록 종류 선택 */}
+      <ActionSheet
+        visible={addPicker}
+        title={`${selectedLabel || '오늘'} 등록`}
+        items={[
+          { iconCode: TE.ledger, label: '거래 (수입·지출)', value: 'tx' },
+          { iconCode: TE.repeat, label: '정기 항목', value: 'rec' },
+        ]}
+        onSelect={handleAddPick}
+        onClose={() => setAddPicker(false)}
+      />
+
+      <AddTxSheet visible={addTxVisible} date={selectedDate} onClose={() => setAddTxVisible(false)} />
       <AddRecurringSheet visible={addRecVisible} onClose={() => setAddRecVisible(false)} />
 
-      {/* 정기 항목 행 액션 */}
+      {/* 정기 액션 */}
       <ActionSheet
         visible={!!actionRec}
         title={actionRec?.title}
-        items={[
-          { iconCode: TE.trash, label: '정기 항목 삭제', value: 'delete', danger: true },
-        ]}
+        items={[{ iconCode: TE.trash, label: '정기 항목 삭제', value: 'delete', danger: true }]}
         onSelect={handleRecAction}
         onClose={() => setActionRec(null)}
       />
       <ConfirmDialog
         visible={!!deleteRec}
         title="정기 항목을 삭제할까요?"
-        description="더 이상 자동으로 기록되지 않아요."
+        description="더 이상 캘린더에 표시되지 않아요."
         confirmText="삭제하기"
         danger
         loading={deleteRecurring.isPending}
         onConfirm={confirmDeleteRec}
         onClose={() => setDeleteRec(null)}
-      />
-      <RecordRecurringSheet
-        visible={!!recordRec}
-        recurring={recordRec}
-        onClose={() => setRecordRec(null)}
-        onRecorded={() => setToast('이번 달 금액을 기록했어요')}
       />
       <AppToast open={!!toast} text={toast} onClose={() => setToast('')} />
     </View>
@@ -370,42 +380,37 @@ export default function BookScreen() {
 }
 
 const styles = StyleSheet.create({
-  segWrap: { paddingHorizontal: 20, paddingVertical: 8 },
-  monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 14 },
+  monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 8 },
   monthBtn: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   monthArrow: { fontSize: 16, lineHeight: 20 },
   monthLabel: { fontSize: 14, fontWeight: '700' },
-  cfRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 12 },
-  cfLabel: { fontSize: 11, marginBottom: 4 },
-  cfValue: { fontSize: 17, fontWeight: '700' },
-  empty: { padding: 40, alignItems: 'center' },
-  emptyText: { fontSize: 13 },
-  dayBlock: { paddingHorizontal: 20, paddingBottom: 12 },
-  dayHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4, paddingBottom: 6 },
-  dayTitle: { fontSize: 12, fontWeight: '600' },
-  dayExp: { fontSize: 11 },
-  txIcon: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  txTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  txTitle: { fontSize: 13, fontWeight: '600', flex: 1 },
-  txMeta: { fontSize: 11, marginTop: 2 },
-  txAmount: { fontSize: 14, fontWeight: '700' },
   sectionPad: { paddingHorizontal: 20, paddingBottom: 12 },
-  recSummary: { padding: 16, borderRadius: 14, gap: 8 },
-  recSummaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  recSummaryLabel: { fontSize: 13 },
-  recSummaryValue: { fontSize: 18, fontWeight: '700' },
-  recSummaryMeta: { fontSize: 12 },
-  recSectionTitle: { fontSize: 12, fontWeight: '600', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 },
-  recIcon: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  recTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  varBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
-  varBadgeText: { fontSize: 10, fontWeight: '700' },
-  inputBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8 },
-  inputBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
+  summary: { padding: 16, borderRadius: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  summaryLabel: { fontSize: 13, marginBottom: 2 },
+  summaryValue: { fontSize: 18, fontWeight: '700' },
+  calCard: { marginHorizontal: 20, marginBottom: 12, borderRadius: 14, borderWidth: 1, paddingVertical: 12 },
+  dayHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  dayTitle: { fontSize: 15, fontWeight: '700' },
+  addLink: { fontSize: 14, fontWeight: '700' },
+  dayCard: { borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
+  itemIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  itemTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  itemTitle: { fontSize: 14, fontWeight: '600' },
+  itemSub: { fontSize: 11, marginTop: 2 },
+  itemAmount: { fontSize: 14, fontWeight: '700' },
+  tagChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  tagText: { fontSize: 10, fontWeight: '700' },
   recRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  kebabIcon: { fontSize: 20, fontWeight: '700' },
-  recAmount: { fontSize: 14, fontWeight: '700' },
+  kebab: { fontSize: 20, fontWeight: '700' },
   toggleChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   toggleText: { fontSize: 11, fontWeight: '600' },
+  recHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderRadius: 14, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 14 },
+  recHeaderTitle: { fontSize: 15, fontWeight: '700' },
+  recHeaderSub: { fontSize: 12, marginTop: 3 },
+  recChevron: { fontSize: 14 },
+  recBody: { marginTop: 12, gap: 8 },
+  recSectionTitle: { fontSize: 12, fontWeight: '600', marginTop: 4, marginBottom: 4 },
+  recAddBtn: { borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 4 },
+  recAddText: { fontSize: 14, fontWeight: '700' },
   fab: { position: 'absolute', right: 20, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', shadowColor: '#3182F6', shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
 });

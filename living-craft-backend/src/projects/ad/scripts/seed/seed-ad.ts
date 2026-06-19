@@ -27,7 +27,6 @@ const CATEGORY_DEFS: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'househol
   { type: CategoryType.EXPENSE, name: '교육', icon: '📚', color: '#FF6D35', sortOrder: 16 },
   { type: CategoryType.EXPENSE, name: '보험료', icon: '🛡️', color: '#FF6D35', sortOrder: 17 },
   { type: CategoryType.EXPENSE, name: '기타지출', icon: '📦', color: '#FF6D35', sortOrder: 18 },
-  { type: CategoryType.TRANSFER, name: '자산 이동', icon: '🔄', color: '#3182F6', sortOrder: 20 },
 ];
 
 function dateStr(monthsAgo: number, day = 1): string {
@@ -161,7 +160,6 @@ async function seedDemoUserAndHousehold(ds: DataSource) {
     { type: TransactionType.EXPENSE, catName: '문화/여가', amount: 50000, title: '영화/카페' },
     { type: TransactionType.EXPENSE, catName: '교육', amount: 200000, title: '학원비' },
     { type: TransactionType.EXPENSE, catName: '보험료', amount: 150000, title: '생명보험' },
-    { type: TransactionType.TRANSFER, catName: '자산 이동', amount: 500000, title: '저축 이체' },
     { type: TransactionType.EXPENSE, catName: '기타지출', amount: 80000, title: '기타' },
     { type: TransactionType.EXPENSE, catName: '의류', amount: 120000, title: '옷 구매' },
   ];
@@ -170,7 +168,7 @@ async function seedDemoUserAndHousehold(ds: DataSource) {
     for (const def of txDefs) {
       if (Math.random() < 0.85) {
         const fromIdx = def.type === TransactionType.EXPENSE ? 0 : undefined;
-        const toIdx = def.type === TransactionType.INCOME ? 0 : def.type === TransactionType.TRANSFER ? 1 : undefined;
+        const toIdx = def.type === TransactionType.INCOME ? 0 : undefined;
         await txRepo.save(txRepo.create({
           householdId: household.id,
           date: dateStr(mo, Math.ceil(Math.random() * 28)),
@@ -197,12 +195,11 @@ async function seedDemoUserAndHousehold(ds: DataSource) {
     { type: TransactionType.EXPENSE, catName: '보험료', amount: 150000, title: '생명보험료', dayOfMonth: 10 },
     { type: TransactionType.EXPENSE, catName: '교육', amount: 200000, title: '학원비', dayOfMonth: 15 },
     { type: TransactionType.EXPENSE, catName: '교통비', amount: 60000, title: '교통카드 충전', dayOfMonth: 5 },
-    { type: TransactionType.TRANSFER, catName: '자산 이동', amount: 500000, title: '월 저축', dayOfMonth: 26 },
     { type: TransactionType.EXPENSE, catName: '보험료', amount: 200000, title: '자동차보험', frequency: RecurringFrequency.YEARLY, dayOfMonth: 1, monthOfYear: 3 },
   ];
   for (const def of recurringDefs) {
     const fromIdx = def.type === TransactionType.EXPENSE ? 0 : undefined;
-    const toIdx = def.type === TransactionType.INCOME ? 0 : def.type === TransactionType.TRANSFER ? 1 : undefined;
+    const toIdx = def.type === TransactionType.INCOME ? 0 : undefined;
     await recurringRepo.save(recurringRepo.create({
       householdId: household.id,
       type: def.type,

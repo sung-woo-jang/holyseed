@@ -10,7 +10,7 @@ import { Badge, Border, ListRow } from '@toss/tds-react-native';
 import { useDataSource, useMockRole } from '../lib/data-source';
 import { useTheme } from '../lib/theme';
 import { krw, krwShort, pct } from '../lib/format';
-import { ASSET_CATEGORY_META } from '../lib/category-meta';
+import { getAssetCategoryMeta } from '../lib/category-meta';
 import { TE } from '../lib/toss-emoji';
 import TossEmoji from '../components/common/TossEmoji';
 import SnapshotSheet from '../components/sheets/SnapshotSheet';
@@ -128,7 +128,7 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
 
         {/* Asset groups */}
         {(Object.entries(grouped) as [AssetCategory, MockAsset[]][]).map(([cat, items]) => {
-          const meta = ASSET_CATEGORY_META[cat];
+          const meta = getAssetCategoryMeta(cat);
           const sum = items.reduce((s, a) => s + (a.isLiability ? -a.value : a.value), 0);
           return (
             <View key={cat} style={styles.groupBlock}>
@@ -148,7 +148,6 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
                         <View style={{ minWidth: 0 }}>
                           <Text style={[styles.assetName, { color: theme.text }]} numberOfLines={1}>{a.name}</Text>
                           <Text style={[styles.assetMeta, { color: theme.textMuted }]}>
-                            {a.currency !== 'KRW' && `$${a.currencyValue?.toLocaleString()} · 1${a.currency}=${a.fxRate}원 · `}
                             <Text style={{ color: a.delta >= 0 ? theme.brand : theme.danger, fontWeight: '600' }}>
                               {a.delta > 0 ? '+' : ''}{krwShort(a.delta)} ({pct(a.deltaPct)})
                             </Text>

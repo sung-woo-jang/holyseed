@@ -32,7 +32,7 @@ export default function PickerOverlay({ visible, title, onClose, children }: Pic
         <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 24 }}
+          contentContainerStyle={{ paddingLeft: 0, paddingRight: 20, paddingTop: 4, paddingBottom: insets.bottom + 32 }}
         >
           {children}
         </ScrollView>
@@ -54,6 +54,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     elevation: 25,
   },
-  handle: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: 10, marginBottom: 8 },
-  title: { fontSize: 16, fontWeight: '700', paddingHorizontal: 20, paddingBottom: 12 },
+  handle: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: 12, marginBottom: 16 },
+  title: { fontSize: 17, fontWeight: '700', paddingHorizontal: 20, paddingBottom: 16 },
 });

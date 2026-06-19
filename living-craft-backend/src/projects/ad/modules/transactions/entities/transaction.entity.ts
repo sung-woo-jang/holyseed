@@ -4,7 +4,6 @@ import { BaseEntity } from '@common/entities/base.entity';
 export enum TransactionType {
   INCOME = 'INCOME',
   EXPENSE = 'EXPENSE',
-  TRANSFER = 'TRANSFER',
 }
 
 @Entity('transactions', { schema: 'ad' })

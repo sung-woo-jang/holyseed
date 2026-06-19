@@ -191,8 +191,8 @@ export default function HomeScreen() {
                   </View>
                 }
                 right={
-                  <Text style={[styles.txAmount, { color: tx.type === 'INCOME' ? theme.brand : tx.type === 'TRANSFER' ? theme.textMuted : theme.text }]}>
-                    {tx.type === 'INCOME' ? '+' : tx.type === 'EXPENSE' ? '-' : ''}{krwShort(tx.amount)}원
+                  <Text style={[styles.txAmount, { color: tx.type === 'INCOME' ? theme.brand : theme.text }]}>
+                    {tx.type === 'INCOME' ? '+' : '-'}{krwShort(tx.amount)}원
                   </Text>
                 }
                 verticalPadding="small"

@@ -6,7 +6,6 @@ import {
   recurringApi,
   categoriesApi,
   householdsApi,
-  workLogsApi,
 } from '../api';
 import { useAuthStore } from '../stores/auth.store';
 import type { AssetCategory, CategoryType, MemberRole } from '../types/api';
@@ -94,7 +93,7 @@ export function useCreateTx() {
   return useMutation({
     mutationFn: (dto: {
       date: string;
-      type: 'INCOME' | 'EXPENSE' | 'TRANSFER';
+      type: 'INCOME' | 'EXPENSE';
       amount: number;
       currency?: string;
       memo?: string;
@@ -118,9 +117,8 @@ export function useCreateRecurring() {
   return useMutation({
     mutationFn: (dto: {
       title: string;
-      type: 'INCOME' | 'EXPENSE' | 'TRANSFER';
+      type: 'INCOME' | 'EXPENSE';
       amount?: number;
-      isVariable?: boolean;
       currency?: string;
       categoryId?: number;
       fromAssetId?: number;
@@ -153,20 +151,6 @@ export function useDeleteRecurring() {
     mutationFn: (id: number) => recurringApi.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.recurring(hid!) });
-    },
-  });
-}
-
-export function useRunRecurring() {
-  const qc = useQueryClient();
-  const hid = useHid();
-  return useMutation({
-    mutationFn: ({ id, amount }: { id: number; amount?: number }) => recurringApi.runNow(id, amount),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.recurring(hid!) });
-      qc.invalidateQueries({ queryKey: qk.transactions(hid!) });
-      qc.invalidateQueries({ queryKey: qk.dashboard(hid!) });
-      qc.invalidateQueries({ queryKey: qk.assets(hid!) });
     },
   });
 }
@@ -255,74 +239,3 @@ export function useRevokeInvite() {
   });
 }
 
-// ─── Work Logs (근무표) ─────────────────────────────────────────────────────────
-
-export function useCreateWorkLog(month: string) {
-  const qc = useQueryClient();
-  const hid = useHid();
-  return useMutation({
-    mutationFn: (dto: Parameters<typeof workLogsApi.create>[1]) => workLogsApi.create(hid!, dto),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.workLogs(hid!, month) });
-      // 생성 시 settled면 거래도 생성되므로 자산/대시보드도 갱신
-      qc.invalidateQueries({ queryKey: qk.transactions(hid!) });
-      qc.invalidateQueries({ queryKey: qk.dashboard(hid!) });
-      qc.invalidateQueries({ queryKey: qk.assets(hid!) });
-    },
-  });
-}
-
-export function useUpdateWorkLog(month: string) {
-  const qc = useQueryClient();
-  const hid = useHid();
-  return useMutation({
-    mutationFn: ({ id, dto }: { id: number; dto: Parameters<typeof workLogsApi.update>[1] }) =>
-      workLogsApi.update(id, dto),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.workLogs(hid!, month) });
-    },
-  });
-}
-
-export function useSettleWorkLog(month: string) {
-  const qc = useQueryClient();
-  const hid = useHid();
-  return useMutation({
-    mutationFn: ({ id, dto }: { id: number; dto?: { toAssetId?: number; categoryId?: number } }) =>
-      workLogsApi.settle(id, dto),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.workLogs(hid!, month) });
-      qc.invalidateQueries({ queryKey: qk.transactions(hid!) });
-      qc.invalidateQueries({ queryKey: qk.dashboard(hid!) });
-      qc.invalidateQueries({ queryKey: qk.assets(hid!) });
-    },
-  });
-}
-
-export function useUnsettleWorkLog(month: string) {
-  const qc = useQueryClient();
-  const hid = useHid();
-  return useMutation({
-    mutationFn: (id: number) => workLogsApi.unsettle(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.workLogs(hid!, month) });
-      qc.invalidateQueries({ queryKey: qk.transactions(hid!) });
-      qc.invalidateQueries({ queryKey: qk.dashboard(hid!) });
-      qc.invalidateQueries({ queryKey: qk.assets(hid!) });
-    },
-  });
-}
-
-export function useDeleteWorkLog(month: string) {
-  const qc = useQueryClient();
-  const hid = useHid();
-  return useMutation({
-    mutationFn: (id: number) => workLogsApi.delete(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.workLogs(hid!, month) });
-      qc.invalidateQueries({ queryKey: qk.transactions(hid!) });
-      qc.invalidateQueries({ queryKey: qk.dashboard(hid!) });
-      qc.invalidateQueries({ queryKey: qk.assets(hid!) });
-    },
-  });
-}

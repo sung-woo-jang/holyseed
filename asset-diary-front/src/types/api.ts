@@ -1,7 +1,7 @@
 export type MemberRole = 'OWNER' | 'EDITOR' | 'VIEWER';
 export type AssetCategory = 'CASH' | 'INVESTMENT' | 'CRYPTO' | 'REAL_ESTATE' | 'PENSION' | 'LIABILITY';
-export type TxType = 'INCOME' | 'EXPENSE' | 'TRANSFER';
-export type CategoryType = 'INCOME' | 'EXPENSE' | 'TRANSFER';
+export type TxType = 'INCOME' | 'EXPENSE';
+export type CategoryType = 'INCOME' | 'EXPENSE';
 export type RecurringFrequency = 'MONTHLY' | 'YEARLY';
 
 export interface Asset {
@@ -55,7 +55,6 @@ export interface RecurringTransaction {
   name: string;
   type: TxType;
   amount: number;
-  isVariable: boolean;
   currency: string;
   categoryId: number | null;
   category?: Category;
@@ -68,22 +67,6 @@ export interface RecurringTransaction {
   endDate: string | null;
   active: boolean;
   lastRunDate: string | null;
-}
-
-export interface WorkLog {
-  id: number;
-  householdId: number;
-  date: string;
-  title: string;
-  amount: number;
-  colorLabel: string | null;
-  settled: boolean;
-  settledTransactionId: number | null;
-  workMinutes: number | null;
-  hourlyRate: number | null;
-  toAssetId: number | null;
-  categoryId: number | null;
-  memo: string | null;
 }
 
 export interface Member {

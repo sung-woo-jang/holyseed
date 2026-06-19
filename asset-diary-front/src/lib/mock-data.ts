@@ -23,7 +23,7 @@ export interface MockSnapshot {
 export interface MockTransaction {
   id: string;
   date: string;
-  type: 'INCOME' | 'EXPENSE' | 'TRANSFER';
+  type: 'INCOME' | 'EXPENSE';
   amount: number;
   category: string;
   title: string;
@@ -43,20 +43,6 @@ export interface MockRecurring {
   active: boolean;
   nextDate: string;
   type: 'INCOME' | 'EXPENSE';
-  isVariable?: boolean;
-  lastRunDate?: string | null;
-}
-
-export interface MockWorkLog {
-  id: string;
-  date: string;
-  title: string;
-  amount: number;
-  colorLabel?: string;
-  settled: boolean;
-  workMinutes?: number;
-  hourlyRate?: number;
-  memo?: string;
 }
 
 export interface MockMember {
@@ -87,7 +73,6 @@ export interface MockPersona {
   members: MockMember[];
   pendingInvites: { id: string; code: string; role: MemberRole; from: string; household: string; expiresAt: string }[];
   categories: Category[];
-  workLogs: MockWorkLog[];
 }
 
 function genMonthly(startVal: number, endVal: number, startYearMonth = '2021-05') {
@@ -247,7 +232,7 @@ export const MOCK_PERSONA: MockPersona = {
     { id: 'r2', title: '월세', amount: 850000, category: '주거', dayOfMonth: 15, from: 'a1', active: true, nextDate: '2026-05-15', type: 'EXPENSE' },
     { id: 'r3', title: 'Spotify Family', amount: 13900, category: '구독', dayOfMonth: 1, from: 'a1', active: true, nextDate: '2026-05-01', type: 'EXPENSE' },
     { id: 'r4', title: '실손보험', amount: 95000, category: '보험료', dayOfMonth: 5, from: 'a1', active: true, nextDate: '2026-05-05', type: 'EXPENSE' },
-    { id: 'r5', title: '관리비', amount: 0, category: '주거', dayOfMonth: 25, from: 'a1', active: true, nextDate: '2026-05-25', type: 'EXPENSE', isVariable: true, lastRunDate: null },
+    { id: 'r5', title: '관리비', amount: 280000, category: '주거', dayOfMonth: 25, from: 'a1', active: true, nextDate: '2026-05-25', type: 'EXPENSE' },
     { id: 'r6', title: '쿠팡 와우', amount: 7890, category: '구독', dayOfMonth: 23, from: 'a1', active: false, nextDate: '—', type: 'EXPENSE' },
     { id: 'r7', title: 'YouTube Premium', amount: 14900, category: '구독', dayOfMonth: 8, from: 'a1', active: true, nextDate: '2026-05-08', type: 'EXPENSE' },
     { id: 'r8', title: '운동센터 회비', amount: 130000, category: '여가', dayOfMonth: 1, from: 'a1', active: true, nextDate: '2026-05-01', type: 'EXPENSE' },
@@ -277,13 +262,5 @@ export const MOCK_PERSONA: MockPersona = {
     { id: 12, householdId: null, type: 'EXPENSE',  name: '보험료',  icon: '🛡️', isBuiltin: true },
     { id: 13, householdId: null, type: 'EXPENSE',  name: '구독',    icon: '📺', isBuiltin: true },
     { id: 14, householdId: null, type: 'EXPENSE',  name: '기타',    icon: '🌀', isBuiltin: true },
-    { id: 15, householdId: null, type: 'TRANSFER', name: '이체',    icon: '🔄', isBuiltin: true },
-  ],
-  workLogs: [
-    { id: 'w1', date: '2026-05-02', title: '회사출근', amount: 0, colorLabel: '#3182F6', settled: false },
-    { id: 'w2', date: '2026-05-05', title: '알바', amount: 96000, colorLabel: '#0AB39C', settled: true, workMinutes: 480, hourlyRate: 12000 },
-    { id: 'w3', date: '2026-05-09', title: '알바', amount: 60000, colorLabel: '#0AB39C', settled: false, workMinutes: 300, hourlyRate: 12000 },
-    { id: 'w4', date: '2026-05-12', title: '프리랜스 작업', amount: 500000, colorLabel: '#F59E0B', settled: false, memo: 'A사 로고' },
-    { id: 'w5', date: '2026-05-16', title: '알바', amount: 96000, colorLabel: '#0AB39C', settled: true, workMinutes: 480, hourlyRate: 12000 },
   ],
 };

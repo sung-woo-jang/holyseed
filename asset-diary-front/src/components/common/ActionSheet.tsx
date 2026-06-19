@@ -33,14 +33,16 @@ export default function ActionSheet({ visible, title, items, onSelect, onClose }
         {items.map((item) => (
           <ListRow
             key={item.value}
-            left={<TossEmoji code={item.iconCode} size={20} />}
+            left={
+              <View style={styles.iconWrap}>
+                <TossEmoji code={item.iconCode} size={22} />
+              </View>
+            }
             contents={
-              <Text style={[styles.label, { color: item.danger ? theme.danger : theme.text }]}>
-                {item.label}
-              </Text>
+              <Text style={[styles.label, { color: item.danger ? theme.danger : theme.text }]}>{item.label}</Text>
             }
             onPress={() => onSelect(item.value)}
-            verticalPadding="small"
+            verticalPadding="medium"
           />
         ))}
       </View>
@@ -49,6 +51,7 @@ export default function ActionSheet({ visible, title, items, onSelect, onClose }
 }
 
 const styles = StyleSheet.create({
-  body: { paddingHorizontal: 20, paddingBottom: 12 },
+  body: { paddingHorizontal: 10, paddingTop: 4, paddingBottom: 20 },
+  iconWrap: { marginRight: 12 },
   label: { fontSize: 15, fontWeight: '600' },
 });

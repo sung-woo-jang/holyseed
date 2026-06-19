@@ -36,7 +36,8 @@
     "seed:icons": "ts-node -r tsconfig-paths/register scripts/seed-icons.ts",
     "typecheck": "tsc --noEmit",
     "fix:all": "yarn lint:fix && yarn format",
-    "ad:seed": "ts-node -r tsconfig-paths/register src/projects/ad/scripts/seed/seed-ad.ts"
+    "ad:seed": "ts-node -r tsconfig-paths/register src/projects/ad/scripts/seed/seed-ad.ts",
+    "ad:seed:nova": "ts-node -r tsconfig-paths/register src/projects/ad/scripts/seed/seed-nova.ts"
   },
   "dependencies": {
     "@living-craft/shared-types": "*",

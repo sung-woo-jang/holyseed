@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -16,7 +16,8 @@ import { CATEGORY_DEFS, getCategoryDef } from '../../lib/category-meta';
 import { TE } from '../../lib/toss-emoji';
 import { Icon } from '../common/Icon';
 import { krw } from '../../lib/format';
-import { useCreateRecurring } from '../../queries/mutations';
+import { useCreateRecurring, useUpdateRecurring } from '../../queries/mutations';
+import type { MockRecurring } from '../../lib/mock-data';
 
 function formatNum(raw: string): string {
   const n = raw.replace(/[^0-9]/g, '');
@@ -26,15 +27,18 @@ function formatNum(raw: string): string {
 interface AddRecurringSheetProps {
   visible: boolean;
   onClose: () => void;
+  /** 지정 시 편집 모드 */
+  editRec?: MockRecurring;
 }
 
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 
 type RecType = 'EXPENSE' | 'INCOME';
 
-export default function AddRecurringSheet({ visible, onClose }: AddRecurringSheetProps) {
+export default function AddRecurringSheet({ visible, onClose, editRec }: AddRecurringSheetProps) {
   const theme = useTheme();
   const data = useDataSource();
+  const isEdit = !!editRec;
   const [type, setType] = useState<RecType>('EXPENSE');
   const [amount, setAmount] = useState('');
   const [name, setName] = useState('');
@@ -51,6 +55,23 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const createRecurring = useCreateRecurring();
+  const updateRecurring = useUpdateRecurring();
+
+  // 편집 프리필
+  useEffect(() => {
+    if (!visible || !editRec) return;
+    setType(editRec.type === 'INCOME' ? 'INCOME' : 'EXPENSE');
+    setAmount(formatNum(String(editRec.amount)));
+    setName(editRec.title);
+    const c = data.categories.find((x) => x.name === editRec.category);
+    setCategory(c ? { id: c.id, name: c.name } : { id: 0, name: editRec.category });
+    setDayOfMonth(editRec.dayOfMonth);
+    const a = editRec.from ? data.assets.find((x) => x.id === editRec.from) : undefined;
+    setAsset(a ? { id: a.id, name: a.name } : null);
+    setHasEnd(!!editRec.endDate);
+    setError('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, editRec]);
 
   const isIncome = type === 'INCOME';
   const localCategories = Object.entries(CATEGORY_DEFS)
@@ -81,6 +102,19 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
     setError('');
     const todayStr = new Date().toISOString().split('T')[0]!;
     try {
+      if (isEdit && editRec) {
+        await updateRecurring.mutateAsync({
+          id: Number(editRec.id),
+          dto: {
+            title: name, type, amount: amtNum, dayOfMonth,
+            ...(category && category.id > 0 ? { categoryId: category.id } : {}),
+            ...(asset ? (isIncome ? { toAssetId: Number(asset.id) } : { fromAssetId: Number(asset.id) }) : {}),
+            ...(hasEnd ? { endDate: computeEndDate() } : {}),
+          },
+        });
+        onClose();
+        return;
+      }
       await createRecurring.mutateAsync({
         title: name, type, amount: amtNum,
         ...(category && category.id > 0 ? { categoryId: category.id } : {}),
@@ -108,12 +142,12 @@ export default function AddRecurringSheet({ visible, onClose }: AddRecurringShee
         <SheetModal
           visible={visible}
           onClose={onClose}
-          header={isIncome ? '정기수입 추가' : '정기지출 추가'}
+          header={isEdit ? '정기 항목 수정' : isIncome ? '정기수입 추가' : '정기지출 추가'}
           cta={
             <View style={styles.cta}>
               {error ? <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text> : null}
-              <Button display="full" size="big" type="primary" disabled={!isValid} loading={createRecurring.isPending} onPress={handleSave}>
-                저장하기
+              <Button display="full" size="big" type="primary" disabled={!isValid} loading={createRecurring.isPending || updateRecurring.isPending} onPress={handleSave}>
+                {isEdit ? '수정하기' : '저장하기'}
               </Button>
             </View>
           }

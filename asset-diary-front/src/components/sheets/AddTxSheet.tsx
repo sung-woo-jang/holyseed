@@ -3,6 +3,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { Button, TextFieldBig, ListRow, SegmentedControl } from '@toss/tds-react-native';
@@ -32,6 +33,13 @@ function formatNum(raw: string): string {
   return n ? Number(n).toLocaleString() : '';
 }
 
+/** YYYY-MM-DD에 일수 가감 */
+function shiftDay(dateStr: string, delta: number): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y!, (m! - 1), d! + delta);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+
 interface AddTxSheetProps {
   visible: boolean;
   onClose: () => void;
@@ -52,6 +60,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx }: AddTxShee
   const [toAsset, setToAsset] = useState<{ id: string; name: string } | null>(null);
   const [title, setTitle] = useState('');
   const [memo, setMemo] = useState('');
+  const [txDate, setTxDate] = useState<string>(''); // YYYY-MM-DD (편집 시 표시·조정)
   const [catPicker, setCatPicker] = useState(false);
   const [fromPicker, setFromPicker] = useState(false);
   const [toPicker, setToPicker] = useState(false);
@@ -74,9 +83,11 @@ export default function AddTxSheet({ visible, onClose, date, editTx }: AddTxShee
       setToAsset(toA ? { id: toA.id, name: toA.name } : null);
       setTitle('');
       setMemo(editTx.memo ?? editTx.title ?? '');
+      setTxDate(editTx.date);
       setError('');
     } else {
       reset();
+      setTxDate(date ?? new Date().toISOString().split('T')[0]!);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, editTx]);
@@ -107,6 +118,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx }: AddTxShee
         await updateTx.mutateAsync({
           id: Number(editTx.id),
           dto: {
+            date: txDate,
             type,
             amount: rawAmount,
             ...(category && category.id > 0 ? { categoryId: category.id } : {}),
@@ -117,7 +129,6 @@ export default function AddTxSheet({ visible, onClose, date, editTx }: AddTxShee
         onClose();
         return;
       }
-      const txDate = date ?? new Date().toISOString().split('T')[0]!;
       await createTx.mutateAsync({
         date: txDate,
         type,
@@ -258,6 +269,22 @@ export default function AddTxSheet({ visible, onClose, date, editTx }: AddTxShee
               />
             </View>
 
+            {/* 날짜 (편집 시 조정 가능) */}
+            {isEdit && (
+              <View style={[styles.dateRow, { borderColor: theme.border }]}>
+                <Text style={[styles.dateLabel, { color: theme.text }]}>날짜</Text>
+                <View style={styles.dateCtrl}>
+                  <TouchableOpacity onPress={() => setTxDate(shiftDay(txDate, -1))} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Text style={[styles.dateArrow, { color: theme.brand }]}>‹</Text>
+                  </TouchableOpacity>
+                  <Text style={[styles.dateValue, { color: theme.text }]}>{txDate}</Text>
+                  <TouchableOpacity onPress={() => setTxDate(shiftDay(txDate, 1))} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Text style={[styles.dateArrow, { color: theme.brand }]}>›</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
             {/* 카테고리 / 자산 (모두 선택사항 — 흐름 기록용) */}
             <View style={[styles.fieldsCard, { borderColor: theme.border }]}>
               <FormRow label="카테고리" value={category?.name || ''} onPress={() => setCatPicker(true)} />
@@ -300,6 +327,11 @@ const styles = StyleSheet.create({
   amountWrap: { alignItems: 'center', marginBottom: 20 },
   amountField: { width: '100%' },
   fieldsCard: { borderRadius: 14, borderWidth: 1, marginBottom: 12, overflow: 'hidden' },
+  dateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 14, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 12 },
+  dateLabel: { fontSize: 14, fontWeight: '500' },
+  dateCtrl: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  dateArrow: { fontSize: 20, fontWeight: '700' },
+  dateValue: { fontSize: 14, fontWeight: '700' },
   titleInput: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, marginBottom: 8 },
   memoInput: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, textAlignVertical: 'top' },
   cta: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8 },

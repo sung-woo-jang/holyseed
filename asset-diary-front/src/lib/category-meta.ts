@@ -23,6 +23,16 @@ export function getAssetCategoryMeta(category: string): AssetCategoryMeta {
   return ASSET_CATEGORY_META[category as AssetCategory] ?? FALLBACK_ASSET_META;
 }
 
+// 프론트 자산 카테고리 키 → 백엔드 enum (REAL_ESTATE/LIABILITY는 백엔드에 없음)
+const BACKEND_ALIAS: Record<string, string> = {
+  REAL_ESTATE: 'REAL_ASSET',
+  LIABILITY: 'DEBT',
+};
+/** 자산 생성/수정 시 백엔드 enum으로 변환 */
+export function toBackendAssetCategory(category: string): string {
+  return BACKEND_ALIAS[category] ?? category;
+}
+
 export interface CategoryDef {
   type: CategoryType;
   iconCode: string;

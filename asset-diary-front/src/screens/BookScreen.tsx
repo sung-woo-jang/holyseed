@@ -72,6 +72,7 @@ export default function BookScreen() {
   const [actionTx, setActionTx] = useState<MockTransaction | null>(null);
   const [deleteTxState, setDeleteTxState] = useState<MockTransaction | null>(null);
   const [addRecVisible, setAddRecVisible] = useState(false);
+  const [editRec, setEditRec] = useState<MockRecurring | null>(null);
   const [actionRec, setActionRec] = useState<MockRecurring | null>(null);
   const [deleteRec, setDeleteRec] = useState<MockRecurring | null>(null);
   const [addPicker, setAddPicker] = useState(false);
@@ -198,7 +199,8 @@ export default function BookScreen() {
     const r = actionRec;
     setActionRec(null);
     if (!r) return;
-    if (value === 'delete') setDeleteRec(r);
+    if (value === 'edit') { setEditRec(r); setAddRecVisible(true); }
+    else if (value === 'delete') setDeleteRec(r);
   }
   async function confirmDeleteRec() {
     if (!deleteRec) return;
@@ -527,7 +529,7 @@ export default function BookScreen() {
         editTx={editTx ?? undefined}
         onClose={() => { setAddTxVisible(false); setEditTx(null); }}
       />
-      <AddRecurringSheet visible={addRecVisible} onClose={() => setAddRecVisible(false)} />
+      <AddRecurringSheet visible={addRecVisible} editRec={editRec ?? undefined} onClose={() => { setAddRecVisible(false); setEditRec(null); }} />
 
       {/* 거래 액션 */}
       <ActionSheet
@@ -554,7 +556,10 @@ export default function BookScreen() {
       <ActionSheet
         visible={!!actionRec}
         title={actionRec?.title}
-        items={[{ iconCode: TE.trash, label: '정기 항목 삭제', value: 'delete', danger: true }]}
+        items={[
+          { iconCode: TE.pencil, label: '정기 항목 수정', value: 'edit' },
+          { iconCode: TE.trash, label: '정기 항목 삭제', value: 'delete', danger: true },
+        ]}
         onSelect={handleRecAction}
         onClose={() => setActionRec(null)}
       />

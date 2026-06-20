@@ -163,6 +163,20 @@ export function useCreateRecurring() {
   });
 }
 
+export function useUpdateRecurring() {
+  const qc = useQueryClient();
+  const hid = useHid();
+  return useMutation({
+    mutationFn: ({ id, dto }: {
+      id: number;
+      dto: Partial<{ title: string; type: 'INCOME' | 'EXPENSE'; amount: number; categoryId: number; fromAssetId: number; toAssetId: number; dayOfMonth: number; startDate: string; endDate: string }>;
+    }) => recurringApi.update(id, dto as any),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.recurring(hid!) });
+    },
+  });
+}
+
 export function useToggleRecurring() {
   const qc = useQueryClient();
   const hid = useHid();

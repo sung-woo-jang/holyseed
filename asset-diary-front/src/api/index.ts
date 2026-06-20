@@ -1,4 +1,5 @@
 import { api } from '../lib/api';
+import { toBackendAssetCategory } from '../lib/category-meta';
 import type {
   Asset,
   AssetCategory,
@@ -20,15 +21,21 @@ export const assetsApi = {
     api.get<Asset[]>(`/households/${householdId}/assets`).then((r) => r.data),
 
   search: (householdId: number, params: { search?: string; category?: AssetCategory; includeArchived?: boolean }) =>
-    api.post<Asset[]>(`/households/${householdId}/assets/search`, params).then((r) => r.data),
+    api.post<Asset[]>(`/households/${householdId}/assets/search`, {
+      ...params,
+      ...(params.category ? { category: toBackendAssetCategory(params.category) } : {}),
+    }).then((r) => r.data),
 
   get: (id: number) => api.get<Asset>(`/assets/${id}`).then((r) => r.data),
 
   create: (householdId: number, dto: { name: string; category: AssetCategory; currency?: string; isLiability?: boolean }) =>
-    api.post<Asset>(`/households/${householdId}/assets`, dto).then((r) => r.data),
+    api.post<Asset>(`/households/${householdId}/assets`, { ...dto, category: toBackendAssetCategory(dto.category) }).then((r) => r.data),
 
   update: (id: number, dto: Partial<{ name: string; category: AssetCategory; currency: string }>) =>
-    api.post<Asset>(`/assets/${id}/update`, dto).then((r) => r.data),
+    api.post<Asset>(`/assets/${id}/update`, {
+      ...dto,
+      ...(dto.category ? { category: toBackendAssetCategory(dto.category) } : {}),
+    }).then((r) => r.data),
 
   archive: (id: number) => api.post(`/assets/${id}/archive`).then((r) => r.data),
   delete: (id: number) => api.post(`/assets/${id}/delete`).then((r) => r.data),

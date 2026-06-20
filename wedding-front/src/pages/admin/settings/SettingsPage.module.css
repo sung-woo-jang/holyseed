@@ -125,8 +125,88 @@
   cursor: not-allowed;
 }
 
+/* 축의금 계좌 섹션 */
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--w-divider);
+}
+
+.sectionHead .sectionTitle {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.addAccountButton {
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--w-accent);
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.addAccountButton:hover {
+  opacity: 0.92;
+}
+
+.accountEmpty {
+  font-size: 0.85rem;
+  color: var(--w-muted);
+  margin: 0;
+}
+
+.accountRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--w-divider);
+}
+
+.accountRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.accountGrid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.removeAccountButton {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  margin-top: 22px;
+  border-radius: 8px;
+  border: 1px solid var(--w-border);
+  background: #fff;
+  color: var(--w-muted-light);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.removeAccountButton:hover {
+  color: var(--w-rejected-fg);
+  border-color: #e8cfc8;
+}
+
 @media (max-width: 880px) {
   .formGrid {
+    grid-template-columns: 1fr;
+  }
+  .accountGrid {
     grid-template-columns: 1fr;
   }
 }

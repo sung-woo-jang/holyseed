@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { api, TOKEN_KEY } from '@/shared/api'
 import styles from './settingsPage.module.css'
 import adminStyles from '../admin-page.module.css'
+
+const accountSchema = z.object({
+  relation: z.string().optional(),
+  holder: z.string().optional(),
+  bank: z.string().optional(),
+  account: z.string().optional(),
+})
 
 const settingsSchema = z.object({
   groomName: z.string().min(1, '신랑 이름을 입력하세요'),
@@ -14,6 +21,7 @@ const settingsSchema = z.object({
   venueAddress: z.string().optional(),
   venueHall: z.string().optional(),
   venueFloor: z.string().optional(),
+  accountInfo: z.array(accountSchema).optional(),
 })
 
 type SettingsFormData = z.infer<typeof settingsSchema>
@@ -24,7 +32,8 @@ export default function AdminSettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<SettingsFormData>({ resolver: zodResolver(settingsSchema) })
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<SettingsFormData>({ resolver: zodResolver(settingsSchema) })
+  const { fields, append, remove } = useFieldArray({ control, name: 'accountInfo' })
 
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY)
@@ -43,6 +52,7 @@ export default function AdminSettingsPage() {
           venueAddress: c.weddingVenue?.address ?? '',
           venueHall: c.weddingVenue?.hall ?? '',
           venueFloor: c.weddingVenue?.floor ?? '',
+          accountInfo: Array.isArray(c.accountInfo) ? c.accountInfo : [],
         })
       })
       .catch(() => setMessage({ type: 'error', text: '데이터를 불러오는데 실패했습니다.' }))
@@ -53,11 +63,14 @@ export default function AdminSettingsPage() {
     if (!coupleId) return
     setIsSaving(true); setMessage(null)
     try {
+      // 빈 계좌(은행·번호 모두 공백) 제외
+      const accounts = (data.accountInfo ?? []).filter((a) => a.bank?.trim() || a.account?.trim() || a.holder?.trim())
       await api.post(`/couples/${coupleId}/update`, {
         groomName: data.groomName,
         brideName: data.brideName,
         weddingDate: data.weddingDate ? new Date(data.weddingDate).toISOString() : undefined,
         weddingVenue: data.venueName ? { name: data.venueName, address: data.venueAddress ?? '', hall: data.venueHall ?? '', floor: data.venueFloor ?? '' } : undefined,
+        accountInfo: accounts,
       })
       setMessage({ type: 'success', text: '저장되었습니다.' })
     } catch {
@@ -108,6 +121,47 @@ export default function AdminSettingsPage() {
               <div className={styles.formGroup}><label htmlFor="venueHall" className={styles.label}>홀 이름</label><input {...register('venueHall')} type="text" id="venueHall" className={styles.input} /></div>
               <div className={styles.formGroup}><label htmlFor="venueFloor" className={styles.label}>층</label><input {...register('venueFloor')} type="text" id="venueFloor" className={styles.input} /></div>
             </div>
+          </section>
+
+          <section className={styles.section}>
+            <div className={styles.sectionHead}>
+              <h2 className={styles.sectionTitle}>축의금 계좌</h2>
+              <button
+                type="button"
+                className={styles.addAccountButton}
+                onClick={() => append({ relation: '', holder: '', bank: '', account: '' })}
+              >
+                + 계좌 추가
+              </button>
+            </div>
+
+            {fields.length === 0 && (
+              <p className={styles.accountEmpty}>등록된 계좌가 없습니다. "+ 계좌 추가"로 신랑/신부측 계좌를 입력하세요.</p>
+            )}
+
+            {fields.map((field, index) => (
+              <div key={field.id} className={styles.accountRow}>
+                <div className={styles.accountGrid}>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>구분</label>
+                    <input {...register(`accountInfo.${index}.relation`)} type="text" placeholder="신랑측 / 신부측" className={styles.input} />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>예금주</label>
+                    <input {...register(`accountInfo.${index}.holder`)} type="text" placeholder="홍길동" className={styles.input} />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>은행</label>
+                    <input {...register(`accountInfo.${index}.bank`)} type="text" placeholder="국민은행" className={styles.input} />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>계좌번호</label>
+                    <input {...register(`accountInfo.${index}.account`)} type="text" placeholder="123-456-789012" className={styles.input} />
+                  </div>
+                </div>
+                <button type="button" className={styles.removeAccountButton} onClick={() => remove(index)} title="삭제">✕</button>
+              </div>
+            ))}
           </section>
 
           <div className={styles.actions}>

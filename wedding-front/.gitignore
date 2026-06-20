@@ -6,3 +6,6 @@ dist
 # 대용량 미디어 (영상/사진) - 깃에 커밋하지 않음
 public/wedding/
 public/*.mp4
+
+# 빌드 산출물 백업
+src.zip

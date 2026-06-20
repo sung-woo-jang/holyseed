@@ -3,26 +3,28 @@
    ============================================ */
 
 .container {
-  max-width: 100%;
+  max-width: 480px;
   margin: 0 auto;
   min-height: 100vh;
   background: var(--netflix-black, #141414);
+  padding: 1.5rem;
 }
 
 .header {
+  position: relative;
+  text-align: center;
+  margin: 0 auto 2rem;
+  padding: 2rem 1.5rem;
   background: var(--netflix-dark-gray, #1f1f1f);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  padding: var(--spacing-xl) 0;
-  border-bottom: 3px solid var(--netflix-red, #e50914);
+  border-radius: 8px;
+  border-top: 4px solid var(--netflix-red, #e50914);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
 }
 
 .headerTitle {
   text-align: center;
   font-family: var(--netflix-font, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
-  font-size: var(--font-size-3xl);
+  font-size: 1.6rem;
   font-weight: 700;
   color: var(--netflix-white, #ffffff);
   margin-bottom: var(--spacing-sm);
@@ -44,11 +46,11 @@
 }
 
 .uploadSection {
-  background: var(--netflix-gray, #2f2f2f);
+  background: var(--netflix-dark-gray, #1f1f1f);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-  padding: var(--spacing-xxl) var(--spacing-xl);
-  margin: 0 4% var(--spacing-xxl);
+  padding: 2rem;
+  margin: 0 0 2rem;
   border-top: 4px solid var(--netflix-red, #e50914);
   position: relative;
   overflow: hidden;

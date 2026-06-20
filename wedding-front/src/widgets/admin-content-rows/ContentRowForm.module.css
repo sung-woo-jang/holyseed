@@ -1,15 +1,17 @@
 .form {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 2rem;
-  margin-bottom: 2rem;
+  background: var(--w-surface);
+  border: 1px solid var(--w-border);
+  border-radius: 14px;
+  padding: 22px;
+  margin-bottom: 20px;
 }
 
 .formTitle {
-  margin: 0 0 1.5rem 0;
-  font-size: 1.5rem;
+  margin: 0 0 16px 0;
+  font-family: var(--font-family-serif);
+  font-size: 1.1rem;
   font-weight: 600;
+  color: var(--w-ink);
 }
 
 .error {
@@ -44,15 +46,18 @@
 
 .input {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
+  padding: 11px 13px;
+  border: 1px solid var(--w-border-strong);
+  border-radius: 9px;
+  font-size: 0.9rem;
+  background: var(--w-input);
+  color: var(--w-ink);
+  font-family: inherit;
 }
 
 .input:focus {
   outline: none;
-  border-color: #1976d2;
+  border-color: var(--w-accent);
 }
 
 .radioGroup {
@@ -81,7 +86,7 @@
 }
 
 .radioOption input[type="radio"]:checked + div .radioLabel {
-  color: #1976d2;
+  color: var(--w-accent);
   font-weight: 600;
 }
 
@@ -158,18 +163,18 @@
 .addItemButton {
   width: 100%;
   padding: 0.75rem;
-  border: 2px dashed #ddd;
-  background: white;
-  border-radius: 4px;
-  color: #1976d2;
+  border: 2px dashed var(--w-border-strong);
+  background: var(--w-surface);
+  border-radius: 9px;
+  color: var(--w-accent);
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s, border-color 0.2s;
 }
 
 .addItemButton:hover:not(:disabled) {
-  background: #f5f5f5;
-  border-color: #1976d2;
+  background: var(--w-surface-soft);
+  border-color: var(--w-accent);
 }
 
 .addItemButton:disabled {
@@ -211,21 +216,21 @@
 }
 
 .cancelButton {
-  background: #f5f5f5;
-  color: #666;
+  background: #f0ede7;
+  color: #6b6660;
 }
 
 .cancelButton:hover:not(:disabled) {
-  background: #eeeeee;
+  background: #e7e3db;
 }
 
 .submitButton {
-  background: #1976d2;
+  background: var(--w-accent);
   color: white;
 }
 
 .submitButton:hover:not(:disabled) {
-  background: #1565c0;
+  opacity: 0.92;
 }
 
 .cancelButton:disabled,

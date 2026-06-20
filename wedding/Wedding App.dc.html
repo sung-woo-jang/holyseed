@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&family=Noto+Serif+KR:wght@500;600&family=Spectral:wght@500;600&family=Bebas+Neue&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#0a0a0a; }
+  .inv-col { max-width:480px; margin:0 auto; position:relative; }
+  .adm-topbar { display:none; }
+  .adm-overlay { display:none; }
+  @media (max-width:880px){
+    .adm-side { position:fixed !important; top:0; left:0; width:264px !important; height:100vh !important; z-index:300; transform:translateX(-100%); transition:transform .26s ease; box-shadow:0 12px 44px rgba(0,0,0,.24); }
+    .adm-side.open { transform:translateX(0); }
+    .adm-topbar { display:flex !important; }
+    .adm-overlay { display:block !important; }
+    .adm-pad { padding:22px 16px !important; }
+    .adm-grid4 { grid-template-columns:repeat(2,1fr) !important; }
+    .adm-split { grid-template-columns:1fr !important; }
+    .adm-set2 { grid-template-columns:1fr !important; }
+  }
+  @keyframes slowZoom { 0%{transform:scale(1);} 100%{transform:scale(1.08);} }
+  @keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0);} 50%{transform:translateX(-50%) translateY(-10px);} }
+  @keyframes nfFade { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
+  @keyframes introMono { 0%{opacity:0;transform:scale(1.35);letter-spacing:0.5em;} 55%{opacity:1;} 100%{opacity:1;transform:scale(1);letter-spacing:0.12em;} }
+  @keyframes introLine { from{width:0;} to{width:180px;} }
+  @keyframes introSub { 0%,40%{opacity:0;} 100%{opacity:1;} }
+  @keyframes shine { 0%{background-position:-200% 0;} 100%{background-position:200% 0;} }
+  @keyframes scaleIn { from{opacity:0;transform:scale(0.95);} to{opacity:1;transform:scale(1);} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
+  .nf-row::-webkit-scrollbar { display:none; }
+  .ww-app *::-webkit-scrollbar { width:8px; height:8px; }
+  .ww-app *::-webkit-scrollbar-thumb { background:rgba(128,128,128,.4); border-radius:4px; }
+</style>
+</helmet>
+
+<div class="ww-app" style="font-family:'Noto Sans KR',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+
+<!-- ============ INTRO ============ -->
+<sc-if value="{{ isIntro }}" hint-placeholder-val="{{ true }}">
+  <div style="position:fixed; inset:0; z-index:5000; background:#000; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.5rem;">
+    <div style="font-family:'Bebas Neue',sans-serif; font-size:clamp(3rem,11vw,7rem); color:#e50914; letter-spacing:0.12em; animation:introMono 2.4s cubic-bezier(.2,.7,.2,1) both; text-shadow:0 0 40px rgba(229,9,20,.45);">{{ groom }} <span style="color:#fff;">&amp;</span> {{ bride }}</div>
+    <div style="height:3px; background:#e50914; animation:introLine 2.4s ease-out .3s both;"></div>
+    <div style="font-family:'Bebas Neue',sans-serif; letter-spacing:0.6em; font-size:clamp(0.9rem,2.5vw,1.4rem); color:#b3b3b3; animation:introSub 3s ease both; padding-left:0.6em;">WEDDING ARCHIVE</div>
+    <button onClick="{{ skipIntro }}" style="position:absolute; bottom:2rem; right:2rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.5); color:#fff; padding:0.75rem 1.5rem; border-radius:4px; font-size:0.875rem; font-weight:600; backdrop-filter:blur(10px);">Skip Intro ›</button>
+  </div>
+</sc-if>
+
+<!-- ============ INVITATION ============ -->
+<sc-if value="{{ isInvitation }}" hint-placeholder-val="{{ false }}">
+  <div class="inv-col" style="min-height:100vh; background:#141414; color:#fff; overflow-x:hidden; animation:scaleIn .7s ease both;">
+    <!-- NAV -->
+    <nav style="position:sticky; top:0; z-index:1000; padding:0 16px; background:rgba(20,20,20,0.96); backdrop-filter:blur(10px); border-bottom:1px solid rgba(255,255,255,0.06);">
+      <div style="display:flex; align-items:center; justify-content:space-between; height:60px;">
+        <div style="font-size:1.15rem; font-weight:700; color:#e50914; letter-spacing:0.03em; white-space:nowrap;">{{ groom }} ♥ {{ bride }}</div>
+        <div style="display:flex; gap:0.95rem; align-items:center;">
+          <a onClick="{{ goInvitation }}" style="color:#fff; font-size:0.82rem; font-weight:500; cursor:pointer; white-space:nowrap;">홈</a>
+          <a onClick="{{ goGallery }}" style="color:#b3b3b3; font-size:0.82rem; font-weight:500; cursor:pointer; white-space:nowrap;">갤러리</a>
+          <a onClick="{{ goRsvp }}" style="color:#b3b3b3; font-size:0.82rem; font-weight:500; cursor:pointer; white-space:nowrap;">참석응답</a>
+          <a onClick="{{ goLogin }}" style="color:#777; font-size:0.78rem; font-weight:500; cursor:pointer; white-space:nowrap;">관리자</a>
+        </div>
+      </div>
+    </nav>
+    <!-- HERO -->
+    <section style="position:relative; width:100%; height:calc(100vh - 60px); min-height:520px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+      <div role="img" aria-label="hero" style="position:absolute; inset:0; width:100%; height:100%; background:#1a1a1a url('{{ heroImg }}') center/cover no-repeat; animation:slowZoom 20s ease-in-out infinite alternate;"></div>
+      <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(20,20,20,0.6) 0%, rgba(20,20,20,0.3) 50%, rgba(20,20,20,0.85) 100%); z-index:1;"></div>
+      <div style="position:relative; z-index:2; text-align:center; padding:2rem; animation:nfFade 1.5s ease-out;">
+        <h1 style="font-size:clamp(3rem,8vw,5rem); font-weight:700; line-height:1.1; margin:0 0 1.5rem; letter-spacing:0.02em;">{{ groom }}<span style="display:block; font-size:0.7em; margin:0.8rem 0; color:#e50914; font-weight:700;">&amp;</span>{{ bride }}</h1>
+        <time style="font-size:1.5rem; letter-spacing:0.1em; color:#b3b3b3;">{{ weddingDate }}</time>
+        <div style="display:flex; gap:1rem; margin-top:2rem; justify-content:center; flex-wrap:wrap;">
+          <button onClick="{{ scrollToAlbum }}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem 2rem; font-size:1.1rem; font-weight:700; border-radius:4px; background:#fff; color:#000;"><svg style="width:24px;height:24px;" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"></path></svg><span>재생</span></button>
+          <button onClick="{{ scrollToInfo }}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem 2rem; font-size:1.1rem; font-weight:700; border-radius:4px; background:rgba(109,109,110,0.7); color:#fff; backdrop-filter:blur(10px);"><svg style="width:24px;height:24px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" fill="none" stroke-width="2"></circle><text x="12" y="16" text-anchor="middle" fill="currentColor" font-size="14" font-weight="bold">i</text></svg><span>상세 정보</span></button>
+        </div>
+      </div>
+      <div style="position:absolute; bottom:3rem; left:50%; transform:translateX(-50%); z-index:2; display:flex; flex-direction:column; align-items:center; gap:1rem; opacity:0.7; animation:bounce 2s ease-in-out infinite;"><span style="font-size:0.65rem; letter-spacing:0.2em;">SCROLL</span><div style="width:1px; height:40px; background:linear-gradient(to bottom,#fff,transparent);"></div></div>
+    </section>
+    <!-- ROWS -->
+    <div style="padding:3rem 0; display:flex; flex-direction:column; gap:2.5rem;">
+      <!-- TOP 5 -->
+      <div style="padding:2rem 0;">
+        <h2 style="font-size:clamp(1.2rem,2vw,1.5rem); font-weight:700; margin:0 0 1rem; padding:0 4%; letter-spacing:0.05em;">오늘의 TOP 5 추억</h2>
+        <div class="nf-row" style="display:flex; gap:2rem; overflow-x:auto; padding:0 4% 1rem;">
+          <sc-for list="{{ topItems }}" as="t" hint-placeholder-count="4">
+            <div style="flex:0 0 auto; display:flex; align-items:flex-end; height:clamp(250px,35vw,400px);">
+              <svg style="height:100%; width:auto; max-width:clamp(80px,12vw,140px); filter:drop-shadow(3px 3px 0 #141414);" viewBox="0 0 140 200" preserveAspectRatio="xMidYMax meet"><text x="0" y="175" fill="transparent" stroke="#464646" stroke-width="8" stroke-linejoin="round" font-size="200" font-weight="900" font-family="Helvetica Neue,Arial,sans-serif">{{ t.rank }}</text></svg>
+              <div style="width:clamp(150px,22vw,250px); height:85%; margin-left:-15px; border-radius:4px; background:#2f2f2f url('{{ t.url }}') center/cover no-repeat; box-shadow:0 4px 12px rgba(0,0,0,0.5);"></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <!-- 웨딩데이 정보 -->
+      <div id="wedding-info" style="padding:2rem 0;">
+        <h2 style="font-size:clamp(1.2rem,2vw,1.5rem); font-weight:700; margin:0 0 1rem; padding:0 4%; letter-spacing:0.05em;">웨딩데이 정보</h2>
+        <div class="nf-row" style="display:flex; gap:2rem; overflow-x:auto; padding:0 4% 1rem; align-items:stretch;">
+          <div style="flex:0 0 auto; width:clamp(200px,25vw,300px); min-height:320px; background:#2f2f2f; border-radius:8px; padding:2rem 1.5rem; box-shadow:0 4px 12px rgba(0,0,0,0.5); border-top:4px solid #e50914; display:flex; flex-direction:column; gap:0.75rem;">
+            <div style="font-size:2.5rem;">📍</div>
+            <h3 style="font-size:1.3rem; font-weight:700; margin:0;">{{ venueName }}</h3>
+            <p style="font-size:0.95rem; color:#b3b3b3; margin:0;">{{ venueHall }}</p>
+            <p style="font-size:0.9rem; color:#b3b3b3; line-height:1.6; margin:0; flex-grow:1;">{{ venueAddress }}</p>
+            <button onClick="{{ scrollToMap }}" style="background:#e50914; color:#fff; border:none; padding:0.75rem 1.5rem; border-radius:4px; font-size:0.9rem; font-weight:700;">자세히 보기</button>
+          </div>
+          <div style="flex:0 0 auto; width:clamp(200px,25vw,300px); min-height:320px; background:#2f2f2f; border-radius:8px; padding:2rem 1.5rem; box-shadow:0 4px 12px rgba(0,0,0,0.5); border-top:4px solid #e50914; display:flex; flex-direction:column; align-items:center; gap:1rem;">
+            <div style="font-size:1rem; color:#b3b3b3; font-weight:600; text-transform:uppercase; letter-spacing:0.1em;">{{ dateMonth }}</div>
+            <div style="font-size:4rem; font-weight:900; color:#e50914; line-height:1; text-shadow:0 2px 8px rgba(229,9,20,0.3);">{{ dateDay }}</div>
+            <div style="font-size:1.2rem; font-weight:700;">{{ dateYear }}</div>
+            <div style="font-size:1.1rem; font-weight:600;">{{ dateDow }}</div>
+            <div style="font-size:1rem; color:#b3b3b3; margin-top:auto; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.1); width:100%; text-align:center;">{{ dateTime }}</div>
+          </div>
+          <div style="flex:0 0 auto; width:clamp(200px,25vw,300px); min-height:320px; background:#2f2f2f; border-radius:8px; padding:2rem 1.5rem; box-shadow:0 4px 12px rgba(0,0,0,0.5); border-top:4px solid #e50914; display:flex; flex-direction:column; gap:0.75rem;">
+            <div style="font-size:2.5rem;">✉️</div>
+            <h3 style="font-size:1.3rem; font-weight:700; margin:0;">참석 여부</h3>
+            <p style="font-size:0.95rem; color:#b3b3b3; margin:0;">알려주세요</p>
+            <p style="font-size:0.9rem; color:#b3b3b3; line-height:1.6; margin:0; flex-grow:1;">소중한 시간 함께 해주시는 모든 분들께 감사드립니다</p>
+            <button onClick="{{ openRsvp }}" style="background:#e50914; color:#fff; border:none; padding:0.75rem 1.5rem; border-radius:4px; font-size:0.9rem; font-weight:700;">참석 응답하기</button>
+          </div>
+        </div>
+      </div>
+      <!-- 축의금 -->
+      <div style="padding:2rem 0;">
+        <h2 style="font-size:clamp(1.2rem,2vw,1.5rem); font-weight:700; margin:0 0 1rem; padding:0 4%; letter-spacing:0.05em;">축의금 안내</h2>
+        <div class="nf-row" style="display:flex; gap:2rem; overflow-x:auto; padding:0 4% 1rem; align-items:stretch;">
+          <sc-for list="{{ accountCards }}" as="ac" hint-placeholder-count="2">
+            <div style="flex:0 0 auto; width:clamp(220px,28vw,320px); min-height:320px; background:#1f1f1f; border-radius:8px; padding:2rem 1.5rem; box-shadow:0 4px 12px rgba(0,0,0,0.5); border-top:4px solid #e50914; display:flex; flex-direction:column; gap:0.5rem;">
+              <div style="font-size:2.5rem;">🎁</div>
+              <div style="font-size:0.85rem; color:#e50914; font-weight:600; letter-spacing:0.1em;">{{ ac.relation }}</div>
+              <div style="font-size:1.3rem; font-weight:700; margin-bottom:0.5rem;">{{ ac.holder }}</div>
+              <div style="font-size:0.95rem; color:#b3b3b3;">{{ ac.bank }}</div>
+              <div style="font-size:1.1rem; font-family:'Courier New',monospace; letter-spacing:0.05em; margin-bottom:1rem; font-weight:600;">{{ ac.account }}</div>
+              <button onClick="{{ ac.onCopy }}" style="background:#e50914; color:#fff; border:none; padding:0.75rem 1.5rem; border-radius:4px; font-size:0.9rem; font-weight:700; margin-top:auto;">계좌번호 복사</button>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <!-- 함께 만드는 앨범 -->
+      <div id="album-row" style="padding:2rem 0;">
+        <h2 style="font-size:clamp(1.2rem,2vw,1.5rem); font-weight:700; margin:0 0 1rem; padding:0 4%; letter-spacing:0.05em;">함께 만드는 우리의 앨범</h2>
+        <div class="nf-row" style="display:flex; gap:2rem; overflow-x:auto; padding:0 4% 1rem; align-items:stretch;">
+          <div style="flex:0 0 auto; width:clamp(250px,30vw,350px); background:linear-gradient(135deg,#e50914 0%,#c40812 100%); border-radius:8px; padding:2.5rem 2rem; box-shadow:0 4px 12px rgba(229,9,20,0.4); display:flex; flex-direction:column; align-items:center; text-align:center; gap:1rem;">
+            <div style="font-size:3rem;">📸</div>
+            <h3 style="font-size:1.5rem; font-weight:700; margin:0;">사진 업로드</h3>
+            <p style="font-size:1rem; color:rgba(255,255,255,0.9); margin:0;">결혼식의 추억을 공유해주세요</p>
+            <button onClick="{{ goGallery }}" style="background:#fff; color:#e50914; border:none; padding:1rem 2rem; border-radius:4px; font-size:1rem; font-weight:700; margin-top:0.5rem;">사진 업로드하기</button>
+          </div>
+          <sc-for list="{{ invAlbum }}" as="m" hint-placeholder-count="3">
+            <div style="flex:0 0 auto; width:clamp(200px,25vw,320px); aspect-ratio:2/3; border-radius:4px; background:#2f2f2f url('{{ m.url }}') center/cover no-repeat; box-shadow:0 4px 12px rgba(0,0,0,0.5);"></div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    <!-- MAP -->
+    <section id="map-section" style="padding:clamp(3rem,8vw,6rem) 1.5rem; text-align:center; background:#141414;">
+      <h2 style="font-size:clamp(1.5rem,3vw,2rem); font-weight:700; letter-spacing:0.1em; margin:0 0 3rem; display:inline-block; border-bottom:3px solid #e50914; padding-bottom:12px;">오시는 길</h2>
+      <div style="max-width:1000px; margin:0 auto; border-radius:8px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.6); height:360px; background:#2f2f2f; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.5rem; color:#808080;"><div style="font-size:2.5rem;">🗺️</div><div style="font-size:1rem; color:#b3b3b3;">{{ venueName }}</div><div style="font-size:0.85rem;">{{ venueAddress }}</div></div>
+    </section>
+    <!-- FOOTER -->
+    <footer style="padding:4rem 1.5rem 3rem; text-align:center; background:#000; color:rgba(255,255,255,0.5);">
+      <div style="width:60px; height:2px; background:#e50914; margin:0 auto 2rem;"></div>
+      <div style="font-size:1.3rem; color:rgba(255,255,255,0.9); margin-bottom:0.75rem; font-weight:600;">{{ groom }} &amp; {{ bride }}</div>
+      <div style="font-size:1rem; margin-bottom:2rem; letter-spacing:0.1em; color:#b3b3b3;">{{ weddingDate }}</div>
+      <div style="font-size:0.75rem; letter-spacing:0.15em; opacity:0.4; text-transform:uppercase;">Wedding Archive</div>
+    </footer>
+    <!-- RSVP MODAL -->
+    <sc-if value="{{ rsvpOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeRsvp }}" style="position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(5px); z-index:2000; display:flex; align-items:center; justify-content:center; padding:2rem;">
+        <div onClick="{{ stop }}" style="background:#1f1f1f; border-radius:12px; width:100%; max-width:500px; max-height:90vh; overflow-y:auto; position:relative; box-shadow:0 20px 60px rgba(0,0,0,0.8); animation:scaleIn .3s ease;">
+          <button onClick="{{ closeRsvp }}" style="position:absolute; top:1rem; right:1rem; background:rgba(42,42,42,0.8); color:#fff; border:none; width:40px; height:40px; border-radius:50%; font-size:1.3rem; z-index:10;">✕</button>
+          <sc-if value="{{ rsvpDone }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center; padding:3rem 2rem;">
+              <div style="width:80px; height:80px; margin:0 auto 1.5rem; background:linear-gradient(135deg,#e50914,#c40812); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:3rem; color:#fff;">✓</div>
+              <h2 style="font-size:1.5rem; margin:0 0 0.5rem; color:#fff;">참석 의사가 전달되었습니다</h2>
+              <p style="color:#b3b3b3; margin:0;">감사합니다!</p>
+            </div>
+          </sc-if>
+          <sc-if value="{{ rsvpForm }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:2rem;">
+              <div style="text-align:center; margin-bottom:2rem; padding-bottom:1.5rem; border-bottom:1px solid rgba(255,255,255,0.1);">
+                <div style="font-size:3rem; margin-bottom:1rem;">✉️</div>
+                <h2 style="font-size:1.8rem; font-weight:700; color:#fff; margin:0 0 0.5rem;">참석 의사 전달</h2>
+                <p style="font-size:1.1rem; color:#b3b3b3; margin:0;">{{ groom }} ❤️ {{ bride }}</p>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:1.25rem;">
+                <div style="display:flex; flex-direction:column; gap:0.5rem;"><label style="font-size:0.95rem; font-weight:600; color:#fff;">성함 *</label><input id="m-name" type="text" placeholder="홍길동" style="padding:0.875rem 1rem; font-size:1rem; background:#2f2f2f; border:2px solid transparent; border-radius:6px; color:#fff;" /></div>
+                <div style="display:flex; flex-direction:column; gap:0.5rem;"><label style="font-size:0.95rem; font-weight:600; color:#fff;">참석 여부 *</label><select id="m-status" style="padding:0.875rem 1rem; font-size:1rem; background:#2f2f2f; border:2px solid transparent; border-radius:6px; color:#fff;"><option value="ATTENDING">참석</option><option value="NOT_ATTENDING">불참</option><option value="MAYBE">미정</option></select></div>
+                <div style="display:flex; flex-direction:column; gap:0.5rem;"><label style="font-size:0.95rem; font-weight:600; color:#fff;">인원 수 *</label><input id="m-count" type="number" min="1" max="10" placeholder="1" style="padding:0.875rem 1rem; font-size:1rem; background:#2f2f2f; border:2px solid transparent; border-radius:6px; color:#fff;" /></div>
+                <div style="display:flex; flex-direction:column; gap:0.5rem;"><label style="font-size:0.95rem; font-weight:600; color:#fff;">연락처</label><input id="m-phone" type="tel" placeholder="010-1234-5678" style="padding:0.875rem 1rem; font-size:1rem; background:#2f2f2f; border:2px solid transparent; border-radius:6px; color:#fff;" /></div>
+                <div style="display:flex; flex-direction:column; gap:0.5rem;"><label style="font-size:0.95rem; font-weight:600; color:#fff;">축하 메시지</label><textarea id="m-msg" rows="3" placeholder="축하 메시지를 남겨주세요" style="padding:0.875rem 1rem; font-size:1rem; background:#2f2f2f; border:2px solid transparent; border-radius:6px; color:#fff; resize:vertical;"></textarea></div>
+                <div style="display:flex; gap:1rem; margin-top:1rem;">
+                  <button onClick="{{ closeRsvp }}" style="flex:1; padding:1rem; font-weight:700; border-radius:6px; background:#2f2f2f; color:#fff; border:2px solid rgba(255,255,255,0.2);">취소</button>
+                  <button onClick="{{ submitRsvpModal }}" style="flex:1; padding:1rem; font-weight:700; border-radius:6px; background:#e50914; color:#fff; border:none;">전달하기</button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+</sc-if>
+
+<!-- ============ GALLERY ============ -->
+<sc-if value="{{ isGallery }}" hint-placeholder-val="{{ false }}">
+  <div class="inv-col" style="min-height:100vh; background:#141414; color:#fff; padding:1.5rem; animation:scaleIn .5s ease both;">
+    <header style="position:relative; text-align:center; margin:0 auto 2rem; max-width:600px; padding:2rem 1.5rem; background:#1f1f1f; border-radius:8px; border-top:4px solid #e50914; box-shadow:0 8px 24px rgba(0,0,0,0.6);">
+      <h1 style="font-size:1.6rem; font-weight:700; margin:0 0 0.5rem;">우리의 순간</h1>
+      <p style="color:#b3b3b3; margin:0;">{{ groom }} ❤️ {{ bride }}</p>
+    </header>
+    <div style="max-width:900px; margin:0 auto;">
+      <section style="background:#1f1f1f; border-radius:8px; border-top:4px solid #e50914; padding:2rem; text-align:center; margin-bottom:2rem; box-shadow:0 8px 24px rgba(0,0,0,0.6);">
+        <div style="font-size:1.2rem; font-weight:700; margin-bottom:0.5rem;">추억을 공유해주세요</div>
+        <p style="color:#b3b3b3; margin:0 0 1.5rem; font-size:0.95rem;">결혼식 사진이나 영상을 업로드하면 검토 후 갤러리에 표시됩니다</p>
+        <button onClick="{{ doUpload }}" style="background:#e50914; color:#fff; border:none; padding:1rem 2.5rem; border-radius:4px; font-size:1rem; font-weight:700; box-shadow:0 6px 20px rgba(229,9,20,0.4);">📤 사진 업로드</button>
+      </section>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:1rem;">
+        <sc-for list="{{ approvedMedia }}" as="m" hint-placeholder-count="6">
+          <div style="position:relative; aspect-ratio:3/4; border-radius:6px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.5);">
+            <div style="position:absolute; inset:0; background:#2f2f2f url('{{ m.url }}') center/cover no-repeat;"></div>
+            <div style="position:absolute; bottom:0; left:0; right:0; padding:0.75rem; background:linear-gradient(transparent,rgba(0,0,0,0.8)); font-size:0.8rem; color:#fff;">{{ m.uploader }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="text-align:center; margin:2.5rem 0;">
+        <button onClick="{{ goInvitation }}" style="background:#2f2f2f; color:#fff; border:1px solid rgba(255,255,255,0.2); padding:0.9rem 2rem; border-radius:4px; font-weight:600;">← 청첩장으로 돌아가기</button>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<!-- ============ RSVP PAGE ============ -->
+<sc-if value="{{ isRsvp }}" hint-placeholder-val="{{ false }}">
+  <div class="inv-col" style="min-height:100vh; background:#141414; padding:1.5rem; animation:fadeUp .5s ease both;">
+    <header style="text-align:center; margin:0 auto 2rem; max-width:600px; padding:2rem 1.5rem; background:#1f1f1f; border-radius:8px; border-top:4px solid #e50914; box-shadow:0 8px 24px rgba(0,0,0,0.6);">
+      <h1 style="font-size:1.6rem; font-weight:700; color:#fff; margin:0 0 0.5rem;">참석 의사 전달</h1>
+      <p style="color:#b3b3b3; margin:0;">{{ groom }} ❤️ {{ bride }}</p>
+    </header>
+    <div style="max-width:600px; margin:0 auto; background:#1f1f1f; padding:2.5rem; border-radius:8px; border-top:4px solid #e50914; box-shadow:0 8px 24px rgba(0,0,0,0.6); display:flex; flex-direction:column; gap:1.25rem;">
+      <div style="display:flex; flex-direction:column; gap:0.5rem;"><label style="font-size:0.875rem; font-weight:600; color:#b3b3b3;">성함 *</label><input id="a-name" type="text" placeholder="홍길동" style="padding:1rem; background:#2f2f2f; border:1px solid #404040; border-radius:4px; color:#fff; font-size:1rem;" /></div>
+      <div style="display:flex; flex-direction:column; gap:0.5rem;"><label style="font-size:0.875rem; font-weight:600; color:#b3b3b3;">참석 여부 *</label><select id="a-status" style="padding:1rem; background:#2f2f2f; border:1px solid #404040; border-radius:4px; color:#fff; font-size:1rem;"><option value="ATTENDING">참석</option><option value="NOT_ATTENDING">불참</option><option value="MAYBE">미정</option></select></div>
+      <div style="display:flex; flex-direction:column; gap:0.5rem;"><label style="font-size:0.875rem; font-weight:600; color:#b3b3b3;">인원 수 *</label><input id="a-count" type="number" min="1" max="10" placeholder="1" style="padding:1rem; background:#2f2f2f; border:1px solid #404040; border-radius:4px; color:#fff; font-size:1rem;" /></div>
+      <div style="display:flex; flex-direction:column; gap:0.5rem;"><label style="font-size:0.875rem; font-weight:600; color:#b3b3b3;">연락처</label><input id="a-phone" type="tel" placeholder="010-1234-5678" style="padding:1rem; background:#2f2f2f; border:1px solid #404040; border-radius:4px; color:#fff; font-size:1rem;" /></div>
+      <div style="display:flex; flex-direction:column; gap:0.5rem;"><label style="font-size:0.875rem; font-weight:600; color:#b3b3b3;">축하 메시지</label><textarea id="a-msg" rows="4" placeholder="축하 메시지를 남겨주세요" style="padding:1rem; background:#2f2f2f; border:1px solid #404040; border-radius:4px; color:#fff; font-size:1rem; resize:vertical;"></textarea></div>
+      <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:1rem; padding-top:1.5rem; border-top:2px solid rgba(229,9,20,0.2);">
+        <button onClick="{{ submitRsvpPage }}" style="padding:1rem 2rem; border-radius:4px; font-weight:700; background:#e50914; color:#fff; border:none; box-shadow:0 4px 16px rgba(229,9,20,0.4);">전달하기</button>
+        <button onClick="{{ goInvitation }}" style="padding:1rem 2rem; border-radius:4px; font-weight:700; background:#2f2f2f; color:#fff; border:1px solid #404040;">취소</button>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<!-- ============ LOGIN ============ -->
+<sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}">
+  <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; background:#F5F3EF; padding:1rem; animation:fadeUp .5s ease both;">
+    <div style="max-width:400px; width:100%; background:#fff; padding:44px 38px; border-radius:16px; border:1px solid #E7E3DB; box-shadow:0 4px 24px rgba(28,27,25,0.06);">
+      <div style="text-align:center; margin-bottom:34px;">
+        <h2 style="font-family:'Spectral','Noto Serif KR',serif; font-size:1.7rem; font-weight:600; color:#211E1B; margin:0 0 6px; letter-spacing:-0.01em;">Wedding <span style="color:#7C3247;">Archive</span></h2>
+        <p style="color:#8A8378; margin:0; font-size:0.9rem; letter-spacing:0.04em;">관리자 콘솔 로그인</p>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:18px;">
+        <div style="display:flex; flex-direction:column; gap:6px;"><label style="font-size:0.82rem; font-weight:600; color:#4A463F;">이메일</label><input type="email" placeholder="admin@example.com" style="padding:12px 14px; border:1px solid #DDD8CE; border-radius:9px; font-size:0.95rem; background:#FCFBF9;" /></div>
+        <div style="display:flex; flex-direction:column; gap:6px;"><label style="font-size:0.82rem; font-weight:600; color:#4A463F;">비밀번호</label><input type="password" placeholder="••••••••" style="padding:12px 14px; border:1px solid #DDD8CE; border-radius:9px; font-size:0.95rem; background:#FCFBF9;" /></div>
+        <button onClick="{{ goDashboard }}" style="margin-top:8px; padding:13px; background:#211E1B; color:#fff; border-radius:10px; font-size:0.95rem; font-weight:600; border:none; cursor:pointer;">로그인</button>
+        <div style="text-align:center; margin-top:4px;"><p style="font-size:0.85rem; color:#8A8378; margin:0;">아직 계정이 없으신가요? <a onClick="{{ goRegister }}" style="color:#7C3247; font-weight:600; cursor:pointer;">회원가입</a></p></div>
+        <div style="text-align:center;"><a onClick="{{ goInvitation }}" style="font-size:0.8rem; color:#A39C90; cursor:pointer;">← 청첩장 미리보기</a></div>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<!-- ============ REGISTER ============ -->
+<sc-if value="{{ isRegister }}" hint-placeholder-val="{{ false }}">
+  <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; background:#F5F3EF; padding:1rem; animation:fadeUp .5s ease both;">
+    <div style="max-width:400px; width:100%; background:#fff; padding:44px 38px; border-radius:16px; border:1px solid #E7E3DB; box-shadow:0 4px 24px rgba(28,27,25,0.06);">
+      <div style="text-align:center; margin-bottom:30px;">
+        <h2 style="font-family:'Spectral','Noto Serif KR',serif; font-size:1.7rem; font-weight:600; color:#211E1B; margin:0 0 6px; letter-spacing:-0.01em;">회원가입</h2>
+        <p style="color:#8A8378; margin:0; font-size:0.9rem;">새 청첩장을 시작하세요</p>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; flex-direction:column; gap:6px;"><label style="font-size:0.82rem; font-weight:600; color:#4A463F;">이메일</label><input type="email" placeholder="admin@example.com" style="padding:12px 14px; border:1px solid #DDD8CE; border-radius:9px; font-size:0.95rem; background:#FCFBF9;" /></div>
+        <div style="display:flex; gap:12px;">
+          <div style="flex:1; display:flex; flex-direction:column; gap:6px;"><label style="font-size:0.82rem; font-weight:600; color:#4A463F;">신랑</label><input type="text" placeholder="민준" style="padding:12px 14px; border:1px solid #DDD8CE; border-radius:9px; font-size:0.95rem; background:#FCFBF9;" /></div>
+          <div style="flex:1; display:flex; flex-direction:column; gap:6px;"><label style="font-size:0.82rem; font-weight:600; color:#4A463F;">신부</label><input type="text" placeholder="서연" style="padding:12px 14px; border:1px solid #DDD8CE; border-radius:9px; font-size:0.95rem; background:#FCFBF9;" /></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px;"><label style="font-size:0.82rem; font-weight:600; color:#4A463F;">비밀번호</label><input type="password" placeholder="••••••••" style="padding:12px 14px; border:1px solid #DDD8CE; border-radius:9px; font-size:0.95rem; background:#FCFBF9;" /></div>
+        <button onClick="{{ goLogin }}" style="margin-top:6px; padding:13px; background:#211E1B; color:#fff; border-radius:10px; font-size:0.95rem; font-weight:600; border:none; cursor:pointer;">가입하기</button>
+        <div style="text-align:center;"><p style="font-size:0.85rem; color:#8A8378; margin:0;">이미 계정이 있으신가요? <a onClick="{{ goLogin }}" style="color:#7C3247; font-weight:600; cursor:pointer;">로그인</a></p></div>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<!-- ============ ADMIN ============ -->
+<sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+  <div class="adm-shell" style="min-height:100vh; display:flex; background:#F5F3EF; color:#211E1B;">
+    <sc-if value="{{ drawerOpen }}" hint-placeholder-val="{{ false }}"><div class="adm-overlay" onClick="{{ toggleDrawer }}" style="position:fixed; inset:0; background:rgba(0,0,0,0.42); z-index:250;"></div></sc-if>
+    <!-- SIDEBAR -->
+    <aside class="adm-side {{ sideClass }}" style="width:248px; flex:0 0 248px; background:#fff; border-right:1px solid #E7E3DB; min-height:100vh; position:sticky; top:0; height:100vh; display:flex; flex-direction:column;">
+      <div style="padding:30px 26px 22px;">
+        <div style="font-family:'Spectral','Noto Serif KR',serif; font-size:1.4rem; font-weight:600; letter-spacing:-0.01em; color:#211E1B;">Wedding <span style="color:#7C3247;">Archive</span></div>
+        <div style="font-size:0.66rem; color:#A39C90; margin-top:6px; letter-spacing:0.18em; text-transform:uppercase;">Admin Console</div>
+      </div>
+      <nav style="flex:1; padding:6px 14px; display:flex; flex-direction:column; gap:3px;">
+        <a onClick="{{ goDashboard }}" style="display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px; cursor:pointer; font-size:0.92rem; color:{{ nav.dashboard.fg }}; background:{{ nav.dashboard.bg }}; font-weight:{{ nav.dashboard.wt }};"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg><span>대시보드</span></a>
+        <a onClick="{{ goMedia }}" style="display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px; cursor:pointer; font-size:0.92rem; color:{{ nav.media.fg }}; background:{{ nav.media.bg }}; font-weight:{{ nav.media.wt }};"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg><span>미디어 관리</span></a>
+        <a onClick="{{ goContentRows }}" style="display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px; cursor:pointer; font-size:0.92rem; color:{{ nav.contentrows.fg }}; background:{{ nav.contentrows.bg }}; font-weight:{{ nav.contentrows.wt }};"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="6" rx="1"></rect><rect x="3" y="14" width="18" height="6" rx="1"></rect></svg><span>콘텐츠 Row</span></a>
+        <a onClick="{{ goAttendance }}" style="display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px; cursor:pointer; font-size:0.92rem; color:{{ nav.attendance.fg }}; background:{{ nav.attendance.bg }}; font-weight:{{ nav.attendance.wt }};"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9.5" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path></svg><span>참석 응답</span></a>
+        <a onClick="{{ goSettings }}" style="display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px; cursor:pointer; font-size:0.92rem; color:{{ nav.settings.fg }}; background:{{ nav.settings.bg }}; font-weight:{{ nav.settings.wt }};"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg><span>설정</span></a>
+      </nav>
+      <div style="padding:14px 16px; border-top:1px solid #EFECE6;">
+        <a onClick="{{ goInvitation }}" style="display:flex; align-items:center; gap:9px; padding:9px 12px; border-radius:9px; cursor:pointer; font-size:0.82rem; color:#6B6660; font-weight:500;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>청첩장 보기</a>
+        <div style="display:flex; align-items:center; gap:10px; margin-top:6px; padding:8px 12px;">
+          <div style="width:32px; height:32px; border-radius:50%; background:#F3E9EC; color:#7C3247; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:0.8rem; font-family:'Spectral',serif;">W</div>
+          <div style="flex:1; min-width:0;"><div style="font-size:0.8rem; font-weight:600; color:#211E1B;">admin@wedding</div><div style="font-size:0.7rem; color:#A39C90;">관리자</div></div>
+          <a onClick="{{ goLogin }}" title="로그아웃" style="cursor:pointer; color:#A39C90; display:flex;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg></a>
+        </div>
+      </div>
+    </aside>
+    <!-- MAIN -->
+    <main class="adm-main" style="flex:1; min-width:0; min-height:100vh;">
+      <div class="adm-topbar" style="align-items:center; gap:12px; padding:12px 16px; background:#fff; border-bottom:1px solid #E7E3DB; position:sticky; top:0; z-index:60;">
+        <button onClick="{{ toggleDrawer }}" aria-label="메뉴" style="width:40px; height:40px; display:flex; align-items:center; justify-content:center; background:#F5F3EF; border:1px solid #E7E3DB; border-radius:9px; cursor:pointer; color:#211E1B; flex-shrink:0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
+        <span style="font-family:'Spectral','Noto Serif KR',serif; font-size:1.05rem; font-weight:600; color:#211E1B;">Wedding <span style="color:#7C3247;">Archive</span></span>
+      </div>
+
+      <!-- DASHBOARD -->
+      <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ false }}">
+        <div class="adm-pad" style="padding:34px 40px; max-width:1080px;">
+          <div style="margin-bottom:26px;">
+            <h1 style="font-family:'Spectral','Noto Serif KR',serif; font-size:1.85rem; font-weight:600; margin:0 0 6px; color:#211E1B; letter-spacing:-0.01em;">대시보드</h1>
+            <p style="color:#8A8378; margin:0; font-size:0.95rem;">{{ groom }} &amp; {{ bride }}님의 결혼식 관리</p>
+          </div>
+          <div class="adm-grid4" style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px;">
+            <div style="background:#fff; border:1px solid #E7E3DB; border-radius:14px; padding:20px; box-shadow:0 1px 2px rgba(28,27,25,0.04);"><div style="display:flex; align-items:center; gap:7px; margin-bottom:14px;"><span style="width:7px; height:7px; border-radius:50%; background:#7C3247;"></span><span style="font-size:0.7rem; color:#8A8378; text-transform:uppercase; letter-spacing:0.07em; font-weight:600;">전체 미디어</span></div><div style="font-family:'Spectral','Noto Serif KR',serif; font-size:2.2rem; font-weight:600; color:#211E1B; line-height:1;">{{ ms.total }}</div><div style="font-size:0.75rem; color:#A39C90; margin-top:8px;">업로드된 전체 항목</div></div>
+            <div style="background:#fff; border:1px solid #E7E3DB; border-radius:14px; padding:20px; box-shadow:0 1px 2px rgba(28,27,25,0.04);"><div style="display:flex; align-items:center; gap:7px; margin-bottom:14px;"><span style="width:7px; height:7px; border-radius:50%; background:#B8842F;"></span><span style="font-size:0.7rem; color:#8A8378; text-transform:uppercase; letter-spacing:0.07em; font-weight:600;">승인 대기</span></div><div style="font-family:'Spectral','Noto Serif KR',serif; font-size:2.2rem; font-weight:600; color:#211E1B; line-height:1;">{{ ms.pending }}</div><div style="font-size:0.75rem; color:#A39C90; margin-top:8px;">검토가 필요해요</div></div>
+            <div style="background:#fff; border:1px solid #E7E3DB; border-radius:14px; padding:20px; box-shadow:0 1px 2px rgba(28,27,25,0.04);"><div style="display:flex; align-items:center; gap:7px; margin-bottom:14px;"><span style="width:7px; height:7px; border-radius:50%; background:#3C7A57;"></span><span style="font-size:0.7rem; color:#8A8378; text-transform:uppercase; letter-spacing:0.07em; font-weight:600;">승인됨</span></div><div style="font-family:'Spectral','Noto Serif KR',serif; font-size:2.2rem; font-weight:600; color:#211E1B; line-height:1;">{{ ms.approved }}</div><div style="font-size:0.75rem; color:#A39C90; margin-top:8px;">갤러리에 공개됨</div></div>
+            <div style="background:#fff; border:1px solid #E7E3DB; border-radius:14px; padding:20px; box-shadow:0 1px 2px rgba(28,27,25,0.04);"><div style="display:flex; align-items:center; gap:7px; margin-bottom:14px;"><span style="width:7px; height:7px; border-radius:50%; background:#7C3247;"></span><span style="font-size:0.7rem; color:#8A8378; text-transform:uppercase; letter-spacing:0.07em; font-weight:600;">참석 인원</span></div><div style="font-family:'Spectral','Noto Serif KR',serif; font-size:2.2rem; font-weight:600; color:#211E1B; line-height:1;">{{ as.totalGuests }}</div><div style="font-size:0.75rem; color:#A39C90; margin-top:8px;">총 참석 예정</div></div>
+          </div>
+          <div class="adm-split" style="display:grid; grid-template-columns:1.1fr 1fr; gap:20px; align-items:start;">
+            <div>
+              <h2 style="font-family:'Spectral','Noto Serif KR',serif; font-size:1.15rem; font-weight:600; color:#211E1B; margin:0 0 14px;">빠른 작업</h2>
+              <div style="display:flex; flex-direction:column; gap:12px;">
+                <a onClick="{{ goMedia }}" style="background:#fff; border:1px solid #E7E3DB; border-radius:13px; padding:16px 18px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:14px; box-shadow:0 1px 2px rgba(28,27,25,0.04);" style-hover="border-color:#D8CFC4; background:#FCFBF9;"><div><div style="font-weight:600; color:#211E1B; margin-bottom:2px; font-size:0.95rem;">미디어 검수</div><div style="font-size:0.82rem; color:#8A8378;">{{ ms.pending }}개의 미디어가 대기 중</div></div><span style="color:#C3BBAE;">→</span></a>
+                <a onClick="{{ goContentRows }}" style="background:#fff; border:1px solid #E7E3DB; border-radius:13px; padding:16px 18px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:14px; box-shadow:0 1px 2px rgba(28,27,25,0.04);" style-hover="border-color:#D8CFC4; background:#FCFBF9;"><div><div style="font-weight:600; color:#211E1B; margin-bottom:2px; font-size:0.95rem;">콘텐츠 Row 관리</div><div style="font-size:0.82rem; color:#8A8378;">갤러리 섹션 구성하기</div></div><span style="color:#C3BBAE;">→</span></a>
+                <a onClick="{{ goSettings }}" style="background:#fff; border:1px solid #E7E3DB; border-radius:13px; padding:16px 18px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:14px; box-shadow:0 1px 2px rgba(28,27,25,0.04);" style-hover="border-color:#D8CFC4; background:#FCFBF9;"><div><div style="font-weight:600; color:#211E1B; margin-bottom:2px; font-size:0.95rem;">청첩장 설정</div><div style="font-size:0.82rem; color:#8A8378;">정보 및 예식장 관리</div></div><span style="color:#C3BBAE;">→</span></a>
+              </div>
+            </div>
+            <div style="background:#fff; border:1px solid #E7E3DB; border-radius:14px; padding:22px 24px; box-shadow:0 1px 2px rgba(28,27,25,0.04);">
+              <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:18px; gap:10px;"><h2 style="font-family:'Spectral','Noto Serif KR',serif; font-size:1.15rem; font-weight:600; color:#211E1B; margin:0; white-space:nowrap;">참석 현황</h2><span style="font-size:0.8rem; color:#8A8378; white-space:nowrap;">총 {{ as.total }}건</span></div>
+              <div style="display:flex; flex-direction:column; gap:16px;">
+                <sc-for list="{{ dashBars }}" as="b" hint-placeholder-count="3">
+                  <div>
+                    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px;"><span style="font-size:0.88rem; font-weight:600; color:#4A463F;">{{ b.label }}</span><span style="font-size:0.8rem; color:#8A8378;">{{ b.countText }} · {{ b.pctText }}</span></div>
+                    <div style="height:8px; border-radius:99px; background:#EFECE6; overflow:hidden;"><div style="height:100%; width:{{ b.fillPct }}%; background:{{ b.color }}; border-radius:99px;"></div></div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- MEDIA -->
+      <sc-if value="{{ isMedia }}" hint-placeholder-val="{{ false }}">
+        <div class="adm-pad" style="padding:34px 40px; max-width:1080px;">
+          <div style="margin-bottom:24px;">
+            <h1 style="font-family:'Spectral','Noto Serif KR',serif; font-size:1.85rem; font-weight:600; margin:0 0 6px; color:#211E1B; letter-spacing:-0.01em;">미디어 관리</h1>
+            <p style="color:#8A8378; margin:0; font-size:0.95rem;">업로드된 사진과 영상을 검토하고 승인/거부하세요</p>
+          </div>
+          <div class="adm-grid4" style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px;">
+            <div style="background:#fff; border:1px solid #E7E3DB; border-radius:12px; padding:14px 18px;"><div style="font-size:0.7rem; color:#8A8378; text-transform:uppercase; letter-spacing:0.06em; font-weight:600; margin-bottom:6px;">전체</div><div style="font-family:'Spectral',serif; font-size:1.6rem; font-weight:600; color:#211E1B;">{{ ms.total }}</div></div>
+            <div style="background:#fff; border:1px solid #E7E3DB; border-radius:12px; padding:14px 18px;"><div style="font-size:0.7rem; color:#8A8378; text-transform:uppercase; letter-spacing:0.06em; font-weight:600; margin-bottom:6px;">승인 대기</div><div style="font-family:'Spectral',serif; font-size:1.6rem; font-weight:600; color:#B8842F;">{{ ms.pending }}</div></div>
+            <div style="background:#fff; border:1px solid #E7E3DB; border-radius:12px; padding:14px 18px;"><div style="font-size:0.7rem; color:#8A8378; text-transform:uppercase; letter-spacing:0.06em; font-weight:600; margin-bottom:6px;">승인됨</div><div style="font-family:'Spectral',serif; font-size:1.6rem; font-weight:600; color:#3C7A57;">{{ ms.approved }}</div></div>
+            <div style="background:#fff; border:1px solid #E7E3DB; border-radius:12px; padding:14px 18px;"><div style="font-size:0.7rem; color:#8A8378; text-transform:uppercase; letter-spacing:0.06em; font-weight:600; margin-bottom:6px;">거부됨</div><div style="font-family:'Spectral',serif; font-size:1.6rem; font-weight:600; color:#B0432F;">{{ ms.rejected }}</div></div>
+          </div>
+          <div style="display:flex; gap:8px; margin-bottom:22px; flex-wrap:wrap;">
+            <sc-for list="{{ mediaChips }}" as="c" hint-placeholder-count="4">
+              <button onClick="{{ c.onClick }}" style="padding:7px 16px; border-radius:99px; font-size:0.82rem; font-weight:500; white-space:nowrap; border:1px solid {{ c.border }}; background:{{ c.bg }}; color:{{ c.fg }}; cursor:pointer;">{{ c.label }}</button>
+            </sc-for>
+          </div>
+          <sc-if value="{{ mediaEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:48px 1rem; text-align:center; color:#A39C90; background:#fff; border-radius:14px; border:1px solid #E7E3DB;">해당 상태의 미디어가 없습니다</div>
+          </sc-if>
+          <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:18px;">
+            <sc-for list="{{ filteredMedia }}" as="m" hint-placeholder-count="3">
+              <div style="background:#fff; border:1px solid #E7E3DB; border-radius:14px; overflow:hidden; box-shadow:0 1px 2px rgba(28,27,25,0.04);">
+                <div style="position:relative; aspect-ratio:16/10; background:#F0EDE7;">
+                  <div style="position:absolute; inset:0; background:#F0EDE7 url('{{ m.url }}') center/cover no-repeat;"></div>
+                  <span style="position:absolute; top:12px; left:12px; display:inline-flex; align-items:center; gap:6px; padding:5px 11px; font-size:0.72rem; font-weight:600; border-radius:99px; background:{{ m.pillBg }}; color:{{ m.pillFg }};"><span style="width:6px; height:6px; border-radius:50%; background:{{ m.dot }};"></span>{{ m.statusLabel }}</span>
+                </div>
+                <div style="padding:16px 18px;">
+                  <div style="font-size:0.95rem; font-weight:600; color:#211E1B; margin-bottom:5px;">{{ m.uploader }}</div>
+                  <div style="font-size:0.85rem; color:#6B6660; line-height:1.5; min-height:1.3em;">{{ m.message }}</div>
+                  <div style="margin-top:10px; font-size:0.72rem; color:#A39C90;">{{ m.meta }}</div>
+                </div>
+                <div style="display:flex; gap:8px; padding:0 18px 14px;">
+                  <button onClick="{{ m.onApprove }}" style="flex:1; padding:9px; font-size:0.82rem; font-weight:600; border-radius:9px; border:1px solid #CFE0D5; color:#2F6147; background:#EDF4EF; cursor:pointer;">승인</button>
+                  <button onClick="{{ m.onReject }}" style="flex:1; padding:9px; font-size:0.82rem; font-weight:600; border-radius:9px; border:1px solid #E8CFC8; color:#9C3A29; background:#F8EFEC; cursor:pointer;">거부</button>
+                  <button onClick="{{ m.onDelete }}" title="영구 삭제" style="width:40px; padding:9px; font-size:0.82rem; border-radius:9px; border:1px solid #E7E3DB; color:#A39C90; background:#fff; cursor:pointer;">✕</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- CONTENT ROWS -->
+      <sc-if value="{{ isContentRows }}" hint-placeholder-val="{{ false }}">
+        <div class="adm-pad" style="padding:34px 40px; max-width:920px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; flex-wrap:wrap; margin-bottom:24px;">
+            <div><h1 style="font-family:'Spectral','Noto Serif KR',serif; font-size:1.85rem; font-weight:600; margin:0 0 6px; color:#211E1B; letter-spacing:-0.01em;">콘텐츠 Row 관리</h1><p style="color:#8A8378; margin:0; font-size:0.95rem;">청첩장 페이지의 갤러리 섹션을 구성하세요</p></div>
+            <button onClick="{{ toggleContentForm }}" style="padding:10px 18px; font-size:0.88rem; font-weight:600; color:#fff; background:#7C3247; border:none; border-radius:10px; cursor:pointer; white-space:nowrap;">+ 새 Row 추가</button>
+          </div>
+          <sc-if value="{{ showContentForm }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff; border-radius:14px; border:1px solid #E7E3DB; padding:22px; margin-bottom:20px;">
+              <h3 style="font-family:'Spectral',serif; font-size:1.1rem; color:#211E1B; margin:0 0 16px;">새 콘텐츠 Row</h3>
+              <div style="display:flex; flex-direction:column; gap:14px;">
+                <div style="display:flex; flex-direction:column; gap:6px;"><label style="font-size:0.82rem; font-weight:600; color:#4A463F;">제목</label><input id="cr-title" type="text" placeholder="예: 우리의 신혼여행" style="padding:11px 13px; border:1px solid #DDD8CE; border-radius:9px; font-size:0.9rem; background:#FCFBF9;" /></div>
+                <div style="display:flex; flex-direction:column; gap:6px;"><label style="font-size:0.82rem; font-weight:600; color:#4A463F;">타입</label><select id="cr-type" style="padding:11px 13px; border:1px solid #DDD8CE; border-radius:9px; font-size:0.9rem; background:#FCFBF9;"><option value="IMAGE_GALLERY">이미지 갤러리</option><option value="VIDEO_GALLERY">비디오 갤러리</option><option value="TOP_RANKED">TOP 5 랭킹</option></select></div>
+                <div style="display:flex; gap:10px; margin-top:4px;">
+                  <button onClick="{{ addContentRow }}" style="flex:1; padding:11px; font-weight:600; color:#fff; background:#7C3247; border:none; border-radius:9px; cursor:pointer;">추가하기</button>
+                  <button onClick="{{ toggleContentForm }}" style="flex:1; padding:11px; font-weight:600; color:#6B6660; background:#F0EDE7; border:none; border-radius:9px; cursor:pointer;">취소</button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <sc-for list="{{ contentRows }}" as="r" hint-placeholder-count="3">
+              <div style="display:flex; gap:16px; background:#fff; border-radius:13px; padding:14px; border:1px solid #E7E3DB; align-items:center; box-shadow:0 1px 2px rgba(28,27,25,0.04);">
+                <div style="position:relative; width:72px; height:72px; flex-shrink:0; border-radius:10px; overflow:hidden; background:#F0EDE7;">
+                  <div style="position:absolute; inset:0; background:#F0EDE7 url('{{ r.thumb }}') center/cover no-repeat;"></div>
+                  <sc-if value="{{ r.hidden }}" hint-placeholder-val="{{ false }}"><div style="position:absolute; inset:0; background:rgba(33,30,27,0.6); display:flex; align-items:center; justify-content:center; color:#fff; font-size:0.68rem; font-weight:600;">숨김</div></sc-if>
+                </div>
+                <div style="flex:1; min-width:0;">
+                  <h3 style="font-size:1.02rem; font-weight:600; color:#211E1B; margin:0 0 7px;">{{ r.title }}</h3>
+                  <div style="display:flex; gap:10px; flex-wrap:wrap; font-size:0.74rem; color:#8A8378; align-items:center;"><span style="background:#F3E9EC; color:#7C3247; padding:3px 9px; border-radius:99px; font-weight:600;">{{ r.typeLabel }}</span><span>아이템 {{ r.itemCount }}개</span><span>순서 {{ r.order }}</span></div>
+                </div>
+                <div style="display:flex; gap:6px;">
+                  <button onClick="{{ r.onEdit }}" style="padding:7px 14px; font-size:0.8rem; font-weight:500; color:#56524B; background:#F5F3EF; border:1px solid #E7E3DB; border-radius:8px; cursor:pointer;">편집</button>
+                  <button onClick="{{ r.onDelete }}" style="padding:7px 14px; font-size:0.8rem; font-weight:500; color:#9C3A29; background:#F8EFEC; border:1px solid #E8CFC8; border-radius:8px; cursor:pointer;">삭제</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ADMIN ATTENDANCE -->
+      <sc-if value="{{ isAttendance }}" hint-placeholder-val="{{ false }}">
+        <div class="adm-pad" style="padding:34px 40px; max-width:1080px;">
+          <div style="margin-bottom:24px;">
+            <h1 style="font-family:'Spectral','Noto Serif KR',serif; font-size:1.85rem; font-weight:600; margin:0 0 6px; color:#211E1B; letter-spacing:-0.01em;">참석 응답 관리</h1>
+            <p style="color:#8A8378; margin:0; font-size:0.95rem;">하객들의 참석 여부를 확인하고 관리하세요</p>
+          </div>
+          <div class="adm-grid4" style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px;">
+            <div style="background:#fff; border:1px solid #E7E3DB; border-radius:12px; padding:14px 18px;"><div style="font-size:0.7rem; color:#8A8378; text-transform:uppercase; letter-spacing:0.06em; font-weight:600; margin-bottom:6px;">총 응답</div><div style="font-family:'Spectral',serif; font-size:1.6rem; font-weight:600; color:#211E1B;">{{ as.total }}</div></div>
+            <div style="background:#fff; border:1px solid #E7E3DB; border-radius:12px; padding:14px 18px;"><div style="font-size:0.7rem; color:#8A8378; text-transform:uppercase; letter-spacing:0.06em; font-weight:600; margin-bottom:6px;">참석</div><div style="font-family:'Spectral',serif; font-size:1.6rem; font-weight:600; color:#3C7A57;">{{ as.attending }}</div><div style="font-size:0.7rem; color:#A39C90; margin-top:2px;">총 {{ as.totalGuests }}명</div></div>
+            <div style="background:#fff; border:1px solid #E7E3DB; border-radius:12px; padding:14px 18px;"><div style="font-size:0.7rem; color:#8A8378; text-transform:uppercase; letter-spacing:0.06em; font-weight:600; margin-bottom:6px;">불참</div><div style="font-family:'Spectral',serif; font-size:1.6rem; font-weight:600; color:#B0432F;">{{ as.notAttending }}</div></div>
+            <div style="background:#fff; border:1px solid #E7E3DB; border-radius:12px; padding:14px 18px;"><div style="font-size:0.7rem; color:#8A8378; text-transform:uppercase; letter-spacing:0.06em; font-weight:600; margin-bottom:6px;">미정</div><div style="font-family:'Spectral',serif; font-size:1.6rem; font-weight:600; color:#B8842F;">{{ as.maybe }}</div></div>
+          </div>
+          <div style="display:flex; gap:8px; margin-bottom:22px; flex-wrap:wrap;">
+            <sc-for list="{{ attChips }}" as="c" hint-placeholder-count="4">
+              <button onClick="{{ c.onClick }}" style="padding:7px 16px; border-radius:99px; font-size:0.82rem; font-weight:500; white-space:nowrap; border:1px solid {{ c.border }}; background:{{ c.bg }}; color:{{ c.fg }}; cursor:pointer;">{{ c.label }}</button>
+            </sc-for>
+          </div>
+          <div class="adm-tablewrap" style="overflow-x:auto; border:1px solid #E7E3DB; border-radius:14px; box-shadow:0 1px 2px rgba(28,27,25,0.04);">
+          <div style="background:#fff; min-width:560px;">
+            <div style="display:grid; grid-template-columns:1.6fr 1fr 0.7fr 1.2fr 1fr 0.6fr; gap:12px; padding:13px 22px; border-bottom:1px solid #EFECE6; font-size:0.72rem; color:#8A8378; text-transform:uppercase; letter-spacing:0.05em; font-weight:600;">
+              <div>하객</div><div>상태</div><div>인원</div><div>연락처</div><div>등록일</div><div></div>
+            </div>
+            <sc-for list="{{ filteredAtt }}" as="a" hint-placeholder-count="4">
+              <div style="display:grid; grid-template-columns:1.6fr 1fr 0.7fr 1.2fr 1fr 0.6fr; gap:12px; padding:15px 22px; border-bottom:1px solid #F3F0EA; align-items:center;">
+                <div style="display:flex; align-items:center; gap:11px; min-width:0;"><div style="width:34px; height:34px; flex-shrink:0; border-radius:50%; background:#F3E9EC; color:#7C3247; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:0.85rem; font-family:'Spectral',serif;">{{ a.initial }}</div><div style="min-width:0;"><div style="font-size:0.92rem; font-weight:600; color:#211E1B; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ a.name }}</div><sc-if value="{{ a.hasMessage }}" hint-placeholder-val="{{ false }}"><div style="font-size:0.76rem; color:#A39C90; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">“{{ a.message }}”</div></sc-if></div></div>
+                <div><span style="display:inline-flex; align-items:center; gap:6px; padding:4px 11px; font-size:0.76rem; font-weight:600; border-radius:99px; background:{{ a.pillBg }}; color:{{ a.pillFg }};"><span style="width:6px; height:6px; border-radius:50%; background:{{ a.dot }};"></span>{{ a.statusLabel }}</span></div>
+                <div style="font-size:0.88rem; color:#4A463F;">{{ a.count }}명</div>
+                <div style="font-size:0.85rem; color:#6B6660; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ a.phone }}</div>
+                <div style="font-size:0.82rem; color:#8A8378;">{{ a.date }}</div>
+                <div style="text-align:right;"><button onClick="{{ a.onDelete }}" title="삭제" style="width:30px; height:30px; border-radius:8px; border:1px solid #E7E3DB; background:#fff; color:#A39C90; cursor:pointer; font-size:0.8rem;">✕</button></div>
+              </div>
+            </sc-for>
+          </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- SETTINGS -->
+      <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+        <div class="adm-pad" style="padding:34px 40px; max-width:760px;">
+          <div style="margin-bottom:24px;">
+            <h1 style="font-family:'Spectral','Noto Serif KR',serif; font-size:1.85rem; font-weight:600; margin:0 0 6px; color:#211E1B; letter-spacing:-0.01em;">청첩장 설정</h1>
+            <p style="color:#8A8378; margin:0; font-size:0.95rem;">청첩장에 표시될 정보를 관리합니다</p>
+          </div>
+          <sc-if value="{{ settingsSaved }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#EDF4EF; color:#2F6147; border:1px solid #CFE0D5; padding:13px 16px; border-radius:11px; margin-bottom:20px; font-weight:600; font-size:0.9rem; display:flex; align-items:center; gap:8px;"><span style="width:7px; height:7px; border-radius:50%; background:#3C7A57;"></span>설정이 저장되었습니다.</div>
+          </sc-if>
+          <div style="background:#fff; border-radius:14px; border:1px solid #E7E3DB; padding:24px; margin-bottom:18px; box-shadow:0 1px 2px rgba(28,27,25,0.04);">
+            <h2 style="font-family:'Spectral',serif; font-size:1.1rem; color:#211E1B; margin:0 0 18px; padding-bottom:12px; border-bottom:1px solid #EFECE6;">기본 정보</h2>
+            <div class="adm-set2" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+              <div style="display:flex; flex-direction:column; gap:6px;"><label style="font-size:0.82rem; font-weight:600; color:#4A463F;">신랑 이름</label><input id="set-groom" type="text" placeholder="{{ groom }}" style="padding:11px 13px; border:1px solid #DDD8CE; border-radius:9px; font-size:0.9rem; background:#FCFBF9;" /></div>
+              <div style="display:flex; flex-direction:column; gap:6px;"><label style="font-size:0.82rem; font-weight:600; color:#4A463F;">신부 이름</label><input id="set-bride" type="text" placeholder="{{ bride }}" style="padding:11px 13px; border:1px solid #DDD8CE; border-radius:9px; font-size:0.9rem; background:#FCFBF9;" /></div>
+              <div style="grid-column:1/-1; display:flex; flex-direction:column; gap:6px;"><label style="font-size:0.82rem; font-weight:600; color:#4A463F;">결혼식 날짜</label><input id="set-date" type="date" style="padding:11px 13px; border:1px solid #DDD8CE; border-radius:9px; font-size:0.9rem; background:#FCFBF9;" /></div>
+            </div>
+          </div>
+          <div style="background:#fff; border-radius:14px; border:1px solid #E7E3DB; padding:24px; margin-bottom:22px; box-shadow:0 1px 2px rgba(28,27,25,0.04);">
+            <h2 style="font-family:'Spectral',serif; font-size:1.1rem; color:#211E1B; margin:0 0 18px; padding-bottom:12px; border-bottom:1px solid #EFECE6;">예식장 정보</h2>
+            <div class="adm-set2" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+              <div style="grid-column:1/-1; display:flex; flex-direction:column; gap:6px;"><label style="font-size:0.82rem; font-weight:600; color:#4A463F;">예식장 이름</label><input id="set-venue" type="text" placeholder="{{ venueName }}" style="padding:11px 13px; border:1px solid #DDD8CE; border-radius:9px; font-size:0.9rem; background:#FCFBF9;" /></div>
+              <div style="grid-column:1/-1; display:flex; flex-direction:column; gap:6px;"><label style="font-size:0.82rem; font-weight:600; color:#4A463F;">주소</label><input id="set-addr" type="text" placeholder="{{ venueAddress }}" style="padding:11px 13px; border:1px solid #DDD8CE; border-radius:9px; font-size:0.9rem; background:#FCFBF9;" /></div>
+              <div style="display:flex; flex-direction:column; gap:6px;"><label style="font-size:0.82rem; font-weight:600; color:#4A463F;">홀 이름</label><input id="set-hall" type="text" placeholder="{{ venueHall }}" style="padding:11px 13px; border:1px solid #DDD8CE; border-radius:9px; font-size:0.9rem; background:#FCFBF9;" /></div>
+              <div style="display:flex; flex-direction:column; gap:6px;"><label style="font-size:0.82rem; font-weight:600; color:#4A463F;">층</label><input id="set-floor" type="text" placeholder="3층" style="padding:11px 13px; border:1px solid #DDD8CE; border-radius:9px; font-size:0.9rem; background:#FCFBF9;" /></div>
+            </div>
+          </div>
+          <button onClick="{{ saveSettings }}" style="padding:12px 28px; font-size:0.92rem; font-weight:600; color:#fff; background:#211E1B; border:none; border-radius:10px; cursor:pointer;">설정 저장하기</button>
+        </div>
+      </sc-if>
+
+    </main>
+  </div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    route: 'intro',
+    groom: '민준', bride: '서연',
+    weddingDate: '2026. 05. 16', dateMonth: 'MAY', dateDay: '16', dateYear: '2026', dateDow: '토요일', dateTime: '오후 1:00',
+    venueName: '더채플앳청담', venueHall: '3층 그랜드홀', venueAddress: '서울특별시 강남구 청담동 123-45',
+    drawerOpen: false,
+    rsvpOpen: false, rsvpDone: false,
+    mediaFilter: 'PENDING',
+    attFilter: 'all',
+    showContentForm: false,
+    settingsSaved: false,
+    media: [
+      { id: 'm1', uploader: '김하객', message: '두 분 결혼 축하해요! 행복하세요 💕', status: 'APPROVED', url: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=700&q=80', size: '2.4MB', dims: '1600×1067', date: '2026년 4월 2일' },
+      { id: 'm2', uploader: '이친구', message: '예식장에서 찍은 사진이에요', status: 'APPROVED', url: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=700&q=80', size: '1.8MB', dims: '1400×2100', date: '2026년 4월 3일' },
+      { id: 'm3', uploader: '박동료', message: '너무 예쁜 커플 ☺️', status: 'PENDING', url: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=700&q=80', size: '3.1MB', dims: '1800×1200', date: '2026년 4월 5일' },
+      { id: 'm4', uploader: '최선배', message: '', status: 'PENDING', url: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?w=700&q=80', size: '2.0MB', dims: '1500×1000', date: '2026년 4월 5일' },
+      { id: 'm5', uploader: '익명', message: '관련 없는 사진', status: 'REJECTED', url: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=700&q=80', size: '0.9MB', dims: '800×600', date: '2026년 4월 1일' },
+      { id: 'm6', uploader: '정사촌', message: '오래오래 행복하길!', status: 'APPROVED', url: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=700&q=80', size: '2.7MB', dims: '1600×1067', date: '2026년 4월 4일' },
+    ],
+    attendances: [
+      { id: 'a1', name: '김철수', status: 'ATTENDING', count: 2, phone: '010-1234-5678', message: '진심으로 축하드립니다!', date: '2026-04-02' },
+      { id: 'a2', name: '이영희', status: 'MAYBE', count: 1, phone: '', message: '', date: '2026-04-03' },
+      { id: 'a3', name: '박민수', status: 'NOT_ATTENDING', count: 1, phone: '010-9876-5432', message: '그날 출장이라 못 가서 정말 아쉬워요', date: '2026-04-04' },
+      { id: 'a4', name: '정수진', status: 'ATTENDING', count: 4, phone: '010-5555-7777', message: '가족 모두 함께 갈게요!', date: '2026-04-05' },
+    ],
+    contentRows: [
+      { id: 'r1', title: '우리의 데이트', rowType: 'IMAGE_GALLERY', itemCount: 8, order: 1, visible: true, thumb: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=300&q=80' },
+      { id: 'r2', title: '프로포즈 영상', rowType: 'VIDEO_GALLERY', itemCount: 1, order: 2, visible: true, thumb: 'https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=300&q=80' },
+      { id: 'r3', title: 'TOP 5 추억', rowType: 'TOP_RANKED', itemCount: 5, order: 3, visible: false, thumb: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?w=300&q=80' },
+    ],
+  }
+
+  componentDidMount() {
+    this._t = setTimeout(() => { if (this.state.route === 'intro') this.go('invitation') }, 3600)
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t) }
+
+  go(route) {
+    if (this._t) { clearTimeout(this._t); this._t = null }
+    try { window.scrollTo(0, 0) } catch (e) {}
+    this.setState({ route, drawerOpen: false, showContentForm: false, settingsSaved: false })
+  }
+
+  copyAccount(num) {
+    try { navigator.clipboard.writeText(num) } catch (e) {}
+    alert('계좌번호가 복사되었습니다.\n' + num)
+  }
+
+  scrollTo(id) {
+    const el = document.getElementById(id)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  readVal(id) { const el = document.getElementById(id); return el ? el.value : '' }
+
+  submitAtt(prefix, isModal) {
+    const name = (this.readVal(prefix + 'name') || '').trim()
+    if (!name) { alert('이름을 입력해주세요'); return }
+    const rec = {
+      id: 'a' + Date.now(),
+      name,
+      status: this.readVal(prefix + 'status') || 'ATTENDING',
+      count: Number(this.readVal(prefix + 'count')) || 1,
+      phone: this.readVal(prefix + 'phone') || '',
+      message: this.readVal(prefix + 'msg') || '',
+      date: new Date().toISOString().slice(0, 10),
+    }
+    this.setState(s => ({ attendances: [rec, ...s.attendances] }))
+    if (isModal) {
+      this.setState({ rsvpDone: true })
+      setTimeout(() => this.setState({ rsvpOpen: false, rsvpDone: false }), 1800)
+    } else {
+      alert('참석 의사가 전달되었습니다. 감사합니다!')
+      this.go('invitation')
+    }
+  }
+
+  moderate(id, status) {
+    this.setState(s => ({ media: s.media.map(m => m.id === id ? { ...m, status } : m) }))
+  }
+  delMedia(id) {
+    if (!confirm('이 미디어를 영구 삭제하시겠습니까?')) return
+    this.setState(s => ({ media: s.media.filter(m => m.id !== id) }))
+  }
+  delAtt(id) {
+    if (!confirm('정말 삭제하시겠습니까?')) return
+    this.setState(s => ({ attendances: s.attendances.filter(a => a.id !== id) }))
+  }
+  delRow(id) {
+    if (!confirm('이 콘텐츠 Row를 삭제하시겠습니까?')) return
+    this.setState(s => ({ contentRows: s.contentRows.filter(r => r.id !== id) }))
+  }
+  addRow() {
+    const title = (this.readVal('cr-title') || '').trim()
+    if (!title) { alert('제목을 입력해주세요'); return }
+    const type = this.readVal('cr-type') || 'IMAGE_GALLERY'
+    const rec = { id: 'r' + Date.now(), title, rowType: type, itemCount: 0, order: this.state.contentRows.length + 1, visible: true, thumb: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=300&q=80' }
+    this.setState(s => ({ contentRows: [...s.contentRows, rec], showContentForm: false }))
+  }
+
+  doUpload() {
+    const rec = { id: 'm' + Date.now(), uploader: '나 (게스트)', message: '방금 업로드한 사진입니다', status: 'PENDING', url: 'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=700&q=80', size: '2.2MB', dims: '1500×1000', date: '방금 전' }
+    this.setState(s => ({ media: [rec, ...s.media] }))
+    alert('사진이 업로드되었습니다!\n관리자 승인 후 갤러리에 표시됩니다. (관리자 → 미디어 관리에서 승인해보세요)')
+  }
+
+  saveSettings() {
+    const g = (this.readVal('set-groom') || '').trim()
+    const b = (this.readVal('set-bride') || '').trim()
+    const v = (this.readVal('set-venue') || '').trim()
+    const a = (this.readVal('set-addr') || '').trim()
+    const h = (this.readVal('set-hall') || '').trim()
+    this.setState(s => ({
+      groom: g || s.groom, bride: b || s.bride,
+      venueName: v || s.venueName, venueAddress: a || s.venueAddress, venueHall: h || s.venueHall,
+      settingsSaved: true,
+    }))
+    setTimeout(() => this.setState({ settingsSaved: false }), 2600)
+  }
+
+  mediaStats() {
+    const m = this.state.media
+    return { total: m.length, pending: m.filter(x => x.status === 'PENDING').length, approved: m.filter(x => x.status === 'APPROVED').length, rejected: m.filter(x => x.status === 'REJECTED').length }
+  }
+  attStats() {
+    const a = this.state.attendances
+    const attending = a.filter(x => x.status === 'ATTENDING')
+    return { total: a.length, attending: attending.length, notAttending: a.filter(x => x.status === 'NOT_ATTENDING').length, maybe: a.filter(x => x.status === 'MAYBE').length, totalGuests: attending.reduce((s, x) => s + (x.count || 0), 0) }
+  }
+
+  renderVals() {
+    const S = this.state
+    const r = S.route
+    const STATUS_LABEL = { PENDING: '승인 대기', APPROVED: '승인됨', REJECTED: '거부됨' }
+    const STATUS_PILL = { PENDING: { bg: '#F6EDDC', fg: '#8A6516', dot: '#B8842F' }, APPROVED: { bg: '#E7F0EA', fg: '#2F6147', dot: '#3C7A57' }, REJECTED: { bg: '#F7E7E2', fg: '#9C3A29', dot: '#B0432F' } }
+    const ATT_LABEL = { ATTENDING: '참석', NOT_ATTENDING: '불참', MAYBE: '미정' }
+    const ATT_PILL = { ATTENDING: { bg: '#E7F0EA', fg: '#2F6147', dot: '#3C7A57' }, NOT_ATTENDING: { bg: '#F7E7E2', fg: '#9C3A29', dot: '#B0432F' }, MAYBE: { bg: '#F6EDDC', fg: '#8A6516', dot: '#B8842F' } }
+    const ROW_LABEL = { TOP_RANKED: 'TOP 5 랭킹', IMAGE_GALLERY: '이미지 갤러리', VIDEO_GALLERY: '비디오 갤러리' }
+    const ms = this.mediaStats()
+    const as = this.attStats()
+    const approved = S.media.filter(m => m.status === 'APPROVED')
+
+    const filteredMedia = S.media.filter(m => S.mediaFilter === 'ALL' ? true : m.status === S.mediaFilter).map(m => ({
+      url: m.url, uploader: m.uploader, message: m.message || '메시지 없음',
+      meta: m.size + ' • ' + m.dims + ' • ' + m.date,
+      statusLabel: STATUS_LABEL[m.status], pillBg: STATUS_PILL[m.status].bg, pillFg: STATUS_PILL[m.status].fg, dot: STATUS_PILL[m.status].dot,
+      onApprove: () => this.moderate(m.id, 'APPROVED'),
+      onReject: () => this.moderate(m.id, 'REJECTED'),
+      onDelete: () => this.delMedia(m.id),
+    }))
+
+    const filteredAtt = S.attendances.filter(a => S.attFilter === 'all' ? true : a.status === S.attFilter).map(a => ({
+      name: a.name, count: a.count, phone: a.phone || '-', date: a.date,
+      statusLabel: ATT_LABEL[a.status], pillBg: ATT_PILL[a.status].bg, pillFg: ATT_PILL[a.status].fg, dot: ATT_PILL[a.status].dot,
+      initial: (a.name || '').slice(0, 1),
+      hasMessage: !!a.message, message: a.message,
+      onDelete: () => this.delAtt(a.id),
+    }))
+
+    const mkChip = (label, value, cur, setter) => ({
+      label, onClick: setter,
+      bg: cur === value ? '#211E1B' : '#ffffff',
+      fg: cur === value ? '#ffffff' : '#6B6660',
+      border: cur === value ? '#211E1B' : '#E0DAD0',
+    })
+    const mediaChips = [
+      mkChip('전체', 'ALL', S.mediaFilter, () => this.setState({ mediaFilter: 'ALL' })),
+      mkChip('승인 대기', 'PENDING', S.mediaFilter, () => this.setState({ mediaFilter: 'PENDING' })),
+      mkChip('승인됨', 'APPROVED', S.mediaFilter, () => this.setState({ mediaFilter: 'APPROVED' })),
+      mkChip('거부됨', 'REJECTED', S.mediaFilter, () => this.setState({ mediaFilter: 'REJECTED' })),
+    ]
+    const attChips = [
+      mkChip('전체', 'all', S.attFilter, () => this.setState({ attFilter: 'all' })),
+      mkChip('참석', 'ATTENDING', S.attFilter, () => this.setState({ attFilter: 'ATTENDING' })),
+      mkChip('불참', 'NOT_ATTENDING', S.attFilter, () => this.setState({ attFilter: 'NOT_ATTENDING' })),
+      mkChip('미정', 'MAYBE', S.attFilter, () => this.setState({ attFilter: 'MAYBE' })),
+    ]
+
+    const attTotal = as.attending + as.notAttending + as.maybe
+    const pct = n => attTotal > 0 ? Math.round((n / attTotal) * 100) : 0
+    const dashBars = [
+      { label: '참석', countText: as.attending + '명', pctText: pct(as.attending) + '%', fillPct: pct(as.attending), color: '#3C7A57' },
+      { label: '불참', countText: as.notAttending + '명', pctText: pct(as.notAttending) + '%', fillPct: pct(as.notAttending), color: '#B0432F' },
+      { label: '미정', countText: as.maybe + '명', pctText: pct(as.maybe) + '%', fillPct: pct(as.maybe), color: '#C2982F' },
+    ]
+
+    const adminItems = [
+      { label: '대시보드', route: 'dashboard', onClick: () => this.go('dashboard') },
+      { label: '미디어 관리', route: 'media', onClick: () => this.go('media') },
+      { label: '콘텐츠 Row 관리', route: 'contentrows', onClick: () => this.go('contentrows') },
+      { label: '참석 응답 관리', route: 'attendance', onClick: () => this.go('attendance') },
+      { label: '설정', route: 'settings', onClick: () => this.go('settings') },
+    ]
+    const adminMenu = adminItems.map(it => ({
+      label: it.label, onClick: it.onClick,
+      color: r === it.route ? '#e91e63' : '#333',
+      bg: r === it.route ? 'linear-gradient(90deg,rgba(233,30,99,0.1),rgba(254,245,248,0.5))' : 'transparent',
+      border: r === it.route ? '#e91e63' : 'transparent',
+      weight: r === it.route ? '700' : '500',
+    }))
+    const navS = (route) => ({ bg: r === route ? '#F3E9EC' : 'transparent', fg: r === route ? '#7C3247' : '#56524B', wt: r === route ? '600' : '500' })
+    const nav = { dashboard: navS('dashboard'), media: navS('media'), contentrows: navS('contentrows'), attendance: navS('attendance'), settings: navS('settings') }
+
+    const topItems = approved.slice(0, 4).map((m, i) => ({ rank: String(i + 1), url: m.url }))
+    while (topItems.length < 4) { const i = topItems.length; topItems.push({ rank: String(i + 1), url: S.media[i % S.media.length].url }) }
+
+    const accountCards = [
+      { relation: '신랑측', holder: '김' + S.groom, bank: '국민은행', account: '123-456-789012', onCopy: () => this.copyAccount('123-456-789012') },
+      { relation: '신부측', holder: '이' + S.bride, bank: '신한은행', account: '987-654-321098', onCopy: () => this.copyAccount('987-654-321098') },
+    ]
+
+    return {
+      isIntro: r === 'intro', isInvitation: r === 'invitation', isGallery: r === 'gallery', isRsvp: r === 'rsvp',
+      isLogin: r === 'login', isRegister: r === 'register',
+      isAdmin: ['dashboard', 'media', 'contentrows', 'attendance', 'settings'].includes(r),
+      isDashboard: r === 'dashboard', isMedia: r === 'media', isContentRows: r === 'contentrows', isAttendance: r === 'attendance', isSettings: r === 'settings',
+
+      groom: S.groom, bride: S.bride, weddingDate: S.weddingDate,
+      dateMonth: S.dateMonth, dateDay: S.dateDay, dateYear: S.dateYear, dateDow: S.dateDow, dateTime: S.dateTime,
+      venueName: S.venueName, venueHall: S.venueHall, venueAddress: S.venueAddress,
+      heroImg: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=1600&q=80',
+
+      drawerOpen: S.drawerOpen, rsvpOpen: S.rsvpOpen, rsvpDone: S.rsvpDone, rsvpForm: !S.rsvpDone,
+      showContentForm: S.showContentForm, settingsSaved: S.settingsSaved,
+
+      ms, as,
+      topItems, accountCards,
+      invAlbum: approved.slice(0, 6).map(m => ({ url: m.url })),
+      approvedMedia: approved.map(m => ({ url: m.url, uploader: m.uploader })),
+      filteredMedia, mediaEmpty: filteredMedia.length === 0,
+      filteredAtt, attChips, mediaChips, dashBars, adminMenu, nav,
+      sideClass: S.drawerOpen ? 'open' : '',
+      contentRows: S.contentRows.map(r2 => ({
+        title: r2.title, typeLabel: ROW_LABEL[r2.rowType] || r2.rowType, itemCount: r2.itemCount, order: r2.order,
+        hidden: !r2.visible, thumb: r2.thumb,
+        onEdit: () => alert('편집: ' + r2.title + '\n(프로토타입에서는 편집 폼이 생략되었습니다)'),
+        onDelete: () => this.delRow(r2.id),
+      })),
+
+      skipIntro: () => this.go('invitation'),
+      goInvitation: () => this.go('invitation'),
+      goGallery: () => this.go('gallery'),
+      goRsvp: () => this.go('rsvp'),
+      goLogin: () => this.go('login'),
+      goRegister: () => this.go('register'),
+      goDashboard: () => this.go('dashboard'),
+      goMedia: () => this.go('media'),
+      goContentRows: () => this.go('contentrows'),
+      goAttendance: () => this.go('attendance'),
+      goSettings: () => this.go('settings'),
+      toggleDrawer: () => this.setState(s => ({ drawerOpen: !s.drawerOpen })),
+      toggleContentForm: () => this.setState(s => ({ showContentForm: !s.showContentForm })),
+      addContentRow: () => this.addRow(),
+      openRsvp: () => this.setState({ rsvpOpen: true, rsvpDone: false }),
+      closeRsvp: () => this.setState({ rsvpOpen: false, rsvpDone: false }),
+      submitRsvpModal: () => this.submitAtt('m-', true),
+      submitRsvpPage: () => this.submitAtt('a-', false),
+      doUpload: () => this.doUpload(),
+      saveSettings: () => this.saveSettings(),
+      scrollToInfo: () => this.scrollTo('wedding-info'),
+      scrollToAlbum: () => this.scrollTo('album-row'),
+      scrollToMap: () => this.scrollTo('map-section'),
+      stop: (e) => { if (e && e.stopPropagation) e.stopPropagation() },
+    }
+  }
+}
+</script>
+</body>
+</html>

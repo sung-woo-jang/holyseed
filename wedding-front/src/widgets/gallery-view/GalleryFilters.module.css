@@ -8,7 +8,7 @@
   scrollbar-width: none; /* Firefox */
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(254, 245, 248, 0.9) 100%);
   border-radius: 50px;
-  box-shadow: 0 4px 12px rgba(233, 30, 99, 0.08);
+  box-shadow: 0 4px 12px rgba(229, 9, 20, 0.08);
 }
 
 .container::-webkit-scrollbar {
@@ -47,20 +47,20 @@
 }
 
 .buttonActive {
-  background: linear-gradient(135deg, var(--color-accent) 0%, #be185d 100%);
+  background: linear-gradient(135deg, #e50914 0%, #c40812 100%);
   color: white;
-  box-shadow: 0 4px 16px rgba(233, 30, 99, 0.4);
+  box-shadow: 0 4px 16px rgba(229, 9, 20, 0.4);
   transform: scale(1.05);
 }
 
 .buttonInactive {
   background-color: transparent;
   color: var(--color-text);
-  border: 1.5px solid rgba(233, 30, 99, 0.15);
+  border: 1.5px solid rgba(229, 9, 20, 0.15);
 }
 
 .buttonInactive:hover {
-  background-color: rgba(233, 30, 99, 0.05);
-  border-color: rgba(233, 30, 99, 0.3);
+  background-color: rgba(229, 9, 20, 0.05);
+  border-color: rgba(229, 9, 20, 0.3);
   transform: translateY(-1px);
 }

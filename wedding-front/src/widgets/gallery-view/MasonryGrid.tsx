@@ -1,7 +1,7 @@
 
 
 import Masonry from 'react-masonry-css';
-import { MediaCard } from './MediaCard';
+import { MediaCard } from '@/entities/media/MediaCard';
 import type { Media } from '@/shared/types';
 import styles from './MasonryGrid.module.css';
 

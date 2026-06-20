@@ -1,0 +1,276 @@
+/* ============================================
+   NETFLIX-THEMED UPLOAD BUTTON
+   ============================================ */
+
+.container {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.dropzone {
+  position: relative;
+  border: 3px dashed rgba(229, 9, 20, 0.4);
+  border-radius: 8px;
+  padding: var(--spacing-xxl);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--netflix-gray, #2f2f2f);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.dropzone:hover {
+  border-color: var(--netflix-red, #e50914);
+  box-shadow: 0 8px 24px rgba(229, 9, 20, 0.3);
+  transform: translateY(-2px);
+}
+
+.dropzoneActive {
+  border-color: var(--netflix-red, #e50914);
+  background: rgba(229, 9, 20, 0.1);
+  box-shadow: 0 12px 32px rgba(229, 9, 20, 0.4);
+  transform: scale(1.02);
+}
+
+.dropzoneDisabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  position: relative;
+}
+
+.icon {
+  width: 64px;
+  height: 64px;
+  color: var(--netflix-red, #e50914);
+  margin-bottom: var(--spacing-lg);
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 4px 8px rgba(229, 9, 20, 0.3));
+}
+
+.dropzone:hover .icon {
+  transform: scale(1.1) translateY(-4px);
+}
+
+.buttonSelect {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-xxl);
+  border: none;
+  border-radius: 4px;
+  background: var(--netflix-red, #e50914);
+  color: white;
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: var(--spacing-md);
+  box-shadow: 0 4px 16px rgba(229, 9, 20, 0.4);
+  letter-spacing: 0.05em;
+}
+
+.buttonSelect:hover {
+  background: var(--netflix-red-hover, #f40612);
+  box-shadow: 0 6px 24px rgba(229, 9, 20, 0.6);
+  transform: scale(1.05);
+}
+
+.buttonSelect:active {
+  transform: scale(1);
+}
+
+.textMain {
+  font-size: var(--font-size-base);
+  color: var(--netflix-white, #ffffff);
+  margin-top: var(--spacing-sm);
+  font-weight: 600;
+}
+
+.textSub {
+  font-size: var(--font-size-sm);
+  color: var(--netflix-text-muted, #b3b3b3);
+  margin-top: var(--spacing-sm);
+  line-height: 1.6;
+}
+
+/* Uploading State */
+.spinner {
+  animation: spin 1s linear infinite;
+  width: 56px;
+  height: 56px;
+  border: 4px solid rgba(229, 9, 20, 0.2);
+  border-top: 4px solid var(--netflix-red, #e50914);
+  border-right: 4px solid var(--netflix-red, #e50914);
+  border-radius: 50%;
+  margin-bottom: var(--spacing-lg);
+  box-shadow: 0 4px 16px rgba(229, 9, 20, 0.3);
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.fileInfo {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--netflix-white, #ffffff);
+  margin-bottom: var(--spacing-sm);
+}
+
+.progressContainer {
+  width: 100%;
+  height: 12px;
+  background: rgba(229, 9, 20, 0.2);
+  border-radius: 4px;
+  margin-top: var(--spacing-lg);
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.progressBar {
+  height: 100%;
+  background: var(--netflix-red, #e50914);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  box-shadow: 0 2px 8px rgba(229, 9, 20, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.progressBar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.buttonCancel {
+  margin-top: var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  color: var(--netflix-text-muted, #b3b3b3);
+  font-weight: 600;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: 1px solid #404040;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: transparent;
+}
+
+.buttonCancel:hover {
+  background-color: rgba(229, 9, 20, 0.1);
+  border-color: var(--netflix-red, #e50914);
+  color: var(--netflix-red);
+}
+
+/* Success State */
+.iconSuccess {
+  width: 64px;
+  height: 64px;
+  color: #10b981;
+  margin-bottom: var(--spacing-lg);
+  filter: drop-shadow(0 4px 12px rgba(16, 185, 129, 0.5));
+  animation: successPop 0.5s ease-out;
+}
+
+@keyframes successPop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.textSuccess {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: #10b981;
+  margin-top: var(--spacing-md);
+}
+
+/* Error State */
+.errorContainer {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  background: rgba(229, 9, 20, 0.15);
+  border: 2px solid var(--netflix-red, #e50914);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(229, 9, 20, 0.3);
+}
+
+.errorMessage {
+  font-size: var(--font-size-sm);
+  color: var(--netflix-red, #e50914);
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.buttonCloseError {
+  margin-top: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--netflix-red, #e50914);
+  font-weight: 600;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: 1px solid var(--netflix-red);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: transparent;
+}
+
+.buttonCloseError:hover {
+  background-color: var(--netflix-red);
+  color: white;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .dropzone {
+    padding: var(--spacing-xl);
+  }
+
+  .content {
+    min-height: 160px;
+  }
+
+  .icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .buttonSelect {
+    padding: var(--spacing-sm) var(--spacing-xl);
+    font-size: 0.95rem;
+  }
+}

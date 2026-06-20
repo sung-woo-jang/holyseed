@@ -1,42 +1,24 @@
 .card {
   position: relative;
-  background: linear-gradient(135deg, #ffffff 0%, #fef5f8 100%);
-  border-radius: 20px;
+  background: var(--w-surface);
+  border: 1px solid var(--w-border);
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(233, 30, 99, 0.1);
-  border: 1px solid rgba(233, 30, 99, 0.1);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(28, 27, 25, 0.04);
   display: flex;
   flex-direction: column;
-}
-
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--color-accent) 0%, #be185d 100%);
-  opacity: 0;
-  transition: opacity 0.3s;
-  z-index: 1;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(233, 30, 99, 0.2);
-  border-color: rgba(233, 30, 99, 0.2);
-}
-
-.card:hover::before {
-  opacity: 1;
+  border-color: var(--w-border-strong);
+  box-shadow: 0 4px 14px rgba(28, 27, 25, 0.07);
 }
 
 .mediaContainer {
   position: relative;
-  aspect-ratio: 1 / 1;
-  background-color: var(--color-background-alt);
+  aspect-ratio: 16 / 10;
+  background-color: #f0ede7;
 }
 
 .image {
@@ -47,166 +29,132 @@
 
 .badge {
   position: absolute;
-  top: var(--spacing-md);
-  right: var(--spacing-md);
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: 0.7rem;
-  font-weight: 700;
-  border-radius: 50px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  top: 12px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 99px;
   z-index: 2;
 }
 
+.badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.9;
+}
+
 .badgePending {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.95), rgba(249, 115, 22, 0.95));
-  color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: var(--w-pending-bg);
+  color: var(--w-pending-fg);
 }
 
 .badgeApproved {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(5, 150, 105, 0.95));
-  color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: var(--w-approved-bg);
+  color: var(--w-approved-fg);
 }
 
 .badgeRejected {
-  background: linear-gradient(135deg, rgba(220, 38, 38, 0.95), rgba(185, 28, 28, 0.95));
-  color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: var(--w-rejected-bg);
+  color: var(--w-rejected-fg);
 }
 
 .info {
-  padding: var(--spacing-lg);
+  padding: 16px 18px;
   flex: 1;
 }
 
 .uploader {
-  font-size: var(--font-size-base);
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin-bottom: var(--spacing-sm);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--w-ink);
+  margin-bottom: 5px;
 }
 
 .message {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-light);
+  font-size: 0.85rem;
+  color: #6b6660;
   line-height: 1.5;
-  height: 3em;
+  min-height: 1.3em;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  font-weight: 500;
 }
 
 .meta {
-  margin-top: var(--spacing-md);
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: 2px;
 }
 
 .metaItem {
-  font-size: 0.7rem;
-  color: var(--color-text-light);
-  font-weight: 500;
+  font-size: 0.72rem;
+  color: var(--w-muted-light);
 }
 
 .actions {
   display: flex;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md);
-  background: linear-gradient(135deg, rgba(254, 245, 248, 0.5) 0%, rgba(255, 255, 255, 0.5) 100%);
-  border-top: 1px solid rgba(233, 30, 99, 0.1);
+  gap: 8px;
+  padding: 0 18px 14px;
 }
 
 .button {
   flex: 1;
-  padding: var(--spacing-md);
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  border-radius: 12px;
+  padding: 9px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: 9px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-align: center;
-  border: none;
-  position: relative;
-  overflow: hidden;
-}
-
-.button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0));
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.button:hover::before {
-  opacity: 1;
+  border: 1px solid transparent;
+  transition: opacity 0.2s;
 }
 
 .button:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 .buttonApprove {
-  background: linear-gradient(135deg, var(--color-gradient-approved-start), var(--color-gradient-approved-end));
-  color: white;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.buttonApprove:hover:not(:disabled) {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  border-color: #cfe0d5;
+  color: var(--w-approved-fg);
+  background: var(--w-approved-bg);
 }
 
 .buttonReject {
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
-  color: white;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+  border-color: #e8cfc8;
+  color: var(--w-rejected-fg);
+  background: var(--w-rejected-bg);
 }
 
+.buttonApprove:hover:not(:disabled),
 .buttonReject:hover:not(:disabled) {
-  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
+  opacity: 0.85;
 }
 
+/* 삭제 ✕ — actions 한 줄의 작은 버튼 */
 .buttonDelete {
-  width: 100%;
-  padding: var(--spacing-md);
-  background-color: transparent;
-  color: var(--color-text-light);
-  border: 2px solid rgba(233, 30, 99, 0.15);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  border-radius: 12px;
-  margin-top: var(--spacing-sm);
+  flex: 0 0 auto;
+  width: 40px;
+  padding: 9px;
+  font-size: 0.82rem;
+  border-radius: 9px;
+  border: 1px solid var(--w-border);
+  color: var(--w-muted-light);
+  background: #fff;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: color 0.2s, border-color 0.2s;
 }
 
 .buttonDelete:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(220, 38, 38, 0.08), rgba(185, 28, 28, 0.08));
-  color: #dc2626;
-  border-color: rgba(220, 38, 38, 0.4);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
-}
-
-.footer {
-  padding: 0 var(--spacing-lg) var(--spacing-lg);
+  color: var(--w-rejected-fg);
+  border-color: #e8cfc8;
 }

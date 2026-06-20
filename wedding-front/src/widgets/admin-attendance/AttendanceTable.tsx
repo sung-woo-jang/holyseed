@@ -1,5 +1,3 @@
-
-
 import type { Attendance } from '@/shared/types';
 import styles from './AttendanceTable.module.css';
 import cn from 'classnames';
@@ -9,6 +7,12 @@ interface AttendanceTableProps {
   onDelete: (id: string) => void;
   loading?: boolean;
 }
+
+const STATUS_META: Record<string, { label: string; cls: string }> = {
+  ATTENDING: { label: '참석', cls: 'badgeAttending' },
+  NOT_ATTENDING: { label: '불참', cls: 'badgeNotAttending' },
+  MAYBE: { label: '미정', cls: 'badgeMaybe' },
+};
 
 export function AttendanceTable({ attendances, onDelete, loading }: AttendanceTableProps) {
   if (loading) {
@@ -26,75 +30,53 @@ export function AttendanceTable({ attendances, onDelete, loading }: AttendanceTa
     );
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'ATTENDING':
-        return { className: styles.badgeAttending, label: '참석' };
-      case 'NOT_ATTENDING':
-        return { className: styles.badgeNotAttending, label: '불참' };
-      case 'MAYBE':
-        return { className: styles.badgeMaybe, label: '미정' };
-      default:
-        return { className: '', label: status };
-    }
-  };
-
   return (
-    <div className={styles.container}>
-      {attendances.map((attendance) => {
-        const badge = getStatusBadge(attendance.attendanceStatus);
-        return (
-          <div key={attendance.id} className={styles.card}>
-            <div className={styles.cardContent}>
-              <div className={styles.cardHeader}>
-                <div className={styles.guestName}>{attendance.guestName}</div>
-                <span className={cn(styles.badge, badge.className)}>
-                  {badge.label}
+    <div className={styles.tableWrap}>
+      <div className={styles.table}>
+        <div className={styles.headRow}>
+          <div>하객</div>
+          <div>상태</div>
+          <div>인원</div>
+          <div>연락처</div>
+          <div>등록일</div>
+          <div />
+        </div>
+
+        {attendances.map((a) => {
+          const meta = STATUS_META[a.attendanceStatus] ?? { label: a.attendanceStatus, cls: '' };
+          return (
+            <div key={a.id} className={styles.bodyRow}>
+              <div className={styles.guestCell}>
+                <div className={styles.avatar}>{(a.guestName || '').slice(0, 1)}</div>
+                <div className={styles.guestText}>
+                  <div className={styles.guestName}>{a.guestName}</div>
+                  {a.message && <div className={styles.guestMessage}>"{a.message}"</div>}
+                </div>
+              </div>
+              <div>
+                <span className={cn(styles.badge, styles[meta.cls])}>
+                  <span className={styles.badgeDot} />
+                  {meta.label}
                 </span>
               </div>
-
-              <div className={styles.cardBody}>
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>인원</span>
-                  <span className={styles.infoValue}>{attendance.guestCount}명</span>
-                </div>
-
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>전화번호</span>
-                  <span className={styles.infoValue}>{attendance.phoneNumber || '-'}</span>
-                </div>
-
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>등록일</span>
-                  <span className={styles.infoValue}>
-                    {new Date(attendance.createdAt).toLocaleDateString('ko-KR')}
-                  </span>
-                </div>
-
-                {attendance.message && (
-                  <div className={styles.message}>
-                    <div className={styles.messageLabel}>메시지</div>
-                    <div className={styles.messageText}>{attendance.message}</div>
-                  </div>
-                )}
+              <div className={styles.countCell}>{a.guestCount}명</div>
+              <div className={styles.phoneCell}>{a.phoneNumber || '-'}</div>
+              <div className={styles.dateCell}>{new Date(a.createdAt).toLocaleDateString('ko-KR')}</div>
+              <div className={styles.deleteCell}>
+                <button
+                  onClick={() => {
+                    if (confirm('정말 삭제하시겠습니까?')) onDelete(a.id);
+                  }}
+                  className={styles.deleteButton}
+                  title="삭제"
+                >
+                  ✕
+                </button>
               </div>
             </div>
-
-            <div className={styles.cardFooter}>
-              <button
-                onClick={() => {
-                  if (confirm('정말 삭제하시겠습니까?')) {
-                    onDelete(attendance.id);
-                  }
-                }}
-                className={styles.buttonDelete}
-              >
-                삭제
-              </button>
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }

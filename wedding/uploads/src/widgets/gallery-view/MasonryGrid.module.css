@@ -1,0 +1,25 @@
+.masonryGrid {
+  display: flex;
+  margin-left: -12px; /* gutter offset */
+  width: auto;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.masonryColumn {
+  padding-left: 12px; /* gutter size */
+  background-clip: padding-box;
+}
+
+.masonryColumn > div {
+  margin-bottom: 12px; /* vertical gutter */
+  animation: scaleIn 0.4s ease-out;
+  animation-fill-mode: both;
+}
+
+/* Stagger animation for items */
+.masonryColumn > div:nth-child(1) { animation-delay: 0.05s; }
+.masonryColumn > div:nth-child(2) { animation-delay: 0.1s; }
+.masonryColumn > div:nth-child(3) { animation-delay: 0.15s; }
+.masonryColumn > div:nth-child(4) { animation-delay: 0.2s; }
+.masonryColumn > div:nth-child(5) { animation-delay: 0.25s; }
+.masonryColumn > div:nth-child(n+6) { animation-delay: 0.3s; }

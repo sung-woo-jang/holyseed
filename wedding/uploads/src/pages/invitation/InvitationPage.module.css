@@ -1,0 +1,1272 @@
+/* ============================================
+   NETFLIX-THEMED WEDDING INVITATION
+   ============================================ */
+
+/* ============================================
+   BASE CONTAINER
+   ============================================ */
+
+.container {
+  min-height: 100vh;
+  background: var(--netflix-black, #141414);
+  color: var(--netflix-white, #ffffff);
+  position: relative;
+  overflow-x: hidden;
+  padding-top: 70px; /* Navigation bar height */
+}
+
+/* Intro transition animations */
+.zoomInFromIntro {
+  animation: zoomInFromIntro 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transform-origin: center center;
+}
+
+.fadeInNormal {
+  animation: fadeInNormal 0.6s ease-out forwards;
+}
+
+/* ============================================
+   HERO SECTION
+   ============================================ */
+
+.hero {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.heroImage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.heroPhoto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: slowZoom 20s ease-in-out infinite alternate;
+}
+
+@keyframes slowZoom {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.08); }
+}
+
+.heroOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(20, 20, 20, 0.6) 0%,
+    rgba(20, 20, 20, 0.3) 50%,
+    rgba(20, 20, 20, 0.8) 100%
+  );
+  z-index: 1;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  color: white;
+  padding: 2rem;
+}
+
+.heroText {
+  animation: netflixFadeIn 1.5s ease-out;
+}
+
+.saveTheDate {
+  /* Hidden in Netflix theme */
+  display: none;
+}
+
+.heroNames {
+  font-family: var(--netflix-font, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  font-size: var(--netflix-hero-size, clamp(3rem, 8vw, 5rem));
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 0 0 1.5rem 0;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+}
+
+.ampersand {
+  display: block;
+  font-size: 0.7em;
+  margin: 0.8rem 0;
+  color: var(--netflix-red, #e50914);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.heroDate {
+  font-family: var(--netflix-font);
+  font-size: 1.5rem;
+  letter-spacing: 0.1em;
+  font-weight: 400;
+  color: var(--netflix-text-muted, #b3b3b3);
+  animation: netflixFadeIn 1.5s ease-out 0.5s backwards;
+}
+
+.heroButtons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  animation: netflixFadeIn 1.5s ease-out 1s backwards;
+  justify-content: center;
+}
+
+.playButton,
+.moreInfoButton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.05em;
+}
+
+.playButton {
+  background: white;
+  color: #000;
+}
+
+.playButton:hover {
+  background: rgba(255, 255, 255, 0.85);
+  transform: scale(1.05);
+}
+
+.moreInfoButton {
+  background: rgba(109, 109, 110, 0.7);
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.moreInfoButton:hover {
+  background: rgba(109, 109, 110, 0.5);
+  transform: scale(1.05);
+}
+
+.playIcon,
+.infoIcon {
+  width: 24px;
+  height: 24px;
+}
+
+.scrollIndicator {
+  position: absolute;
+  bottom: 3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: white;
+  opacity: 0.7;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+.scrollIndicator span {
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  font-weight: 400;
+}
+
+.scrollLine {
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(to bottom, white, transparent);
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-10px); }
+}
+
+/* ============================================
+   CONTENT ROWS
+   ============================================ */
+
+.contentRows {
+  padding: 3rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+/* ============================================
+   MAP SECTION
+   ============================================ */
+
+.mapSection {
+  padding: var(--netflix-section-padding) 1.5rem;
+  text-align: center;
+  background: var(--netflix-black);
+}
+
+/* ============================================
+   INVITATION MESSAGE
+   ============================================ */
+
+.invitation {
+  padding: var(--netflix-section-padding, 5rem) 1.5rem;
+  text-align: center;
+  background: var(--netflix-dark-gray, #1f1f1f);
+}
+
+.decorativeLine {
+  /* Removed in Netflix theme */
+  display: none;
+}
+
+.invitationContent {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.invitationText {
+  font-family: var(--netflix-font);
+  font-size: clamp(1.1rem, 2.5vw, 1.3rem);
+  line-height: 1.9;
+  color: #ffffff;
+  margin-bottom: 2.5rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.invitationText:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================
+   PHOTO SECTIONS - NETFLIX CARDS
+   ============================================ */
+
+.photoSection {
+  padding: 3rem 1.5rem;
+  background: var(--netflix-black);
+}
+
+.photoFrame {
+  position: relative;
+  max-width: 700px;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.sectionPhoto {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.photoFrame:hover .sectionPhoto {
+  transform: scale(1.05);
+}
+
+/* ============================================
+   COUPLE INTRODUCTION
+   ============================================ */
+
+.coupleIntro {
+  padding: var(--netflix-section-padding) 1.5rem;
+  text-align: center;
+  background: var(--netflix-dark-gray, #1f1f1f);
+}
+
+.sectionTitle {
+  font-family: var(--netflix-font);
+  font-size: var(--netflix-title-size, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #ffffff;
+  margin-bottom: 3rem;
+  position: relative;
+  display: inline-block;
+}
+
+.sectionTitle::after {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: var(--netflix-red, #e50914);
+}
+
+.coupleGrid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.coupleCard {
+  text-align: center;
+}
+
+.coupleRole {
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  color: var(--netflix-text-muted, #b3b3b3);
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.coupleName {
+  font-family: var(--netflix-font);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--netflix-red, #e50914);
+  letter-spacing: 0.05em;
+}
+
+.dividerDot {
+  font-size: 1rem;
+  color: var(--netflix-red);
+}
+
+/* ============================================
+   VENUE SECTION
+   ============================================ */
+
+.venueSection {
+  padding: var(--netflix-section-padding) 1.5rem;
+  text-align: center;
+  background: var(--netflix-black);
+}
+
+.dateBox {
+  background: var(--netflix-gray, #2f2f2f);
+  padding: 3rem 2rem;
+  border-radius: 8px;
+  max-width: 500px;
+  margin: 0 auto 3rem;
+  border-top: 4px solid var(--netflix-red, #e50914);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.dateMonth {
+  font-size: 0.9rem;
+  letter-spacing: 0.2em;
+  color: var(--netflix-text-muted);
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.dateDay {
+  font-family: var(--netflix-font);
+  font-size: 5rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.dateDayOfWeek {
+  font-family: var(--netflix-font);
+  font-size: 1.2rem;
+  color: var(--netflix-text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.dateTime {
+  font-size: 1.1rem;
+  color: #ffffff;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.venueInfo {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.venueName {
+  font-family: var(--netflix-font);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.75rem;
+  letter-spacing: 0.02em;
+}
+
+.venueHall {
+  font-family: var(--netflix-font);
+  font-size: 1.2rem;
+  color: var(--netflix-text-muted);
+  margin-bottom: 1rem;
+}
+
+.venueAddress {
+  font-size: 1rem;
+  color: var(--netflix-text-muted);
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.copyButton {
+  position: relative;
+  background: var(--netflix-red, #e50914);
+  border: none;
+  color: #ffffff;
+  padding: 1rem 2.5rem;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.copyButton:hover {
+  background: var(--netflix-red-hover, #f40612);
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(229, 9, 20, 0.4);
+}
+
+.copyButton:active {
+  transform: scale(1);
+}
+
+.mapContainer {
+  margin-top: 3rem;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  height: 400px;
+}
+
+/* ============================================
+   GALLERY SECTION
+   ============================================ */
+
+.gallerySection {
+  padding: var(--netflix-section-padding) 1.5rem;
+  text-align: center;
+  background: var(--netflix-dark-gray, #1f1f1f);
+}
+
+.gallerySubtitle {
+  font-family: var(--netflix-font);
+  font-size: 1.1rem;
+  color: var(--netflix-text-muted);
+  margin-bottom: 3rem;
+  letter-spacing: 0.02em;
+}
+
+.galleryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  max-width: 1200px;
+  margin: 0 auto 2.5rem;
+  padding: 0 1rem;
+}
+
+.galleryItem {
+  position: relative;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  animation: netflixScaleIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+/* Stagger gallery items */
+.galleryItem:nth-child(1) { animation-delay: 0.05s; }
+.galleryItem:nth-child(2) { animation-delay: 0.1s; }
+.galleryItem:nth-child(3) { animation-delay: 0.15s; }
+.galleryItem:nth-child(4) { animation-delay: 0.2s; }
+.galleryItem:nth-child(5) { animation-delay: 0.25s; }
+.galleryItem:nth-child(6) { animation-delay: 0.3s; }
+.galleryItem:nth-child(7) { animation-delay: 0.35s; }
+.galleryItem:nth-child(8) { animation-delay: 0.4s; }
+.galleryItem:nth-child(9) { animation-delay: 0.45s; }
+
+.galleryImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.galleryItem:hover {
+  transform: scale(1.08);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8);
+  z-index: 10;
+}
+
+.galleryItem:hover .galleryImage {
+  transform: scale(1.1);
+}
+
+/* ============================================
+   LIGHTBOX - NETFLIX STYLE WITH SWIPER
+   ============================================ */
+
+.lightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.98);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.swiperContainer {
+  position: relative;
+  width: 90vw;
+  height: 90vh;
+  animation: netflixScaleIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.swiperContainer:hover .swiperPrev,
+.swiperContainer:hover .swiperNext {
+  opacity: 1;
+}
+
+.swiper {
+  width: 100%;
+  height: 100%;
+}
+
+.swiperSlide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightboxImage {
+  max-width: 100%;
+  max-height: 90vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+  user-select: none;
+}
+
+.lightboxClose {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  background: rgba(20, 20, 20, 0.8);
+  border: 2px solid var(--netflix-red, #e50914);
+  color: var(--netflix-red);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  z-index: 10001;
+  font-weight: 700;
+}
+
+.lightboxClose:hover {
+  background: var(--netflix-red);
+  color: #ffffff;
+  transform: rotate(90deg);
+}
+
+.swiperPrev,
+.swiperNext {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(20, 20, 20, 0.6);
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  font-size: 2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  z-index: 10001;
+  font-weight: 700;
+  opacity: 0;
+}
+
+.swiperPrev {
+  left: 2rem;
+}
+
+.swiperNext {
+  right: 2rem;
+}
+
+.swiperPrev:hover,
+.swiperNext:hover {
+  background: rgba(255, 255, 255, 0.9);
+  color: #000000;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.swiperPrev.swiper-button-disabled,
+.swiperNext.swiper-button-disabled {
+  opacity: 0.35;
+  cursor: auto;
+  pointer-events: none;
+}
+
+.lightboxCounter {
+  position: absolute;
+  bottom: -3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  opacity: 0.9;
+  font-family: var(--netflix-font);
+  font-weight: 600;
+}
+
+/* Mobile lightbox adjustments */
+@media (max-width: 768px) {
+  .lightboxClose {
+    top: 1rem;
+    right: 1rem;
+    width: 44px;
+    height: 44px;
+  }
+
+  .swiperContainer {
+    width: 95vw;
+    height: 85vh;
+  }
+
+  .swiperPrev,
+  .swiperNext {
+    width: 44px;
+    height: 44px;
+    font-size: 1.5rem;
+  }
+
+  .swiperPrev {
+    left: 1rem;
+  }
+
+  .swiperNext {
+    right: 1rem;
+  }
+
+  .lightboxCounter {
+    bottom: -2.5rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* ============================================
+   VIDEO LIGHTBOX - NETFLIX STYLE
+   ============================================ */
+
+.videoLightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.videoLightboxContent {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  width: 100%;
+  aspect-ratio: 16/9;
+  animation: netflixScaleIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.videoLightboxPlayer {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+  background: #000;
+}
+
+@media (max-width: 768px) {
+  .videoLightboxContent {
+    max-width: 95vw;
+    max-height: 80vh;
+  }
+}
+
+/* ============================================
+   UPLOAD SECTION
+   ============================================ */
+
+.uploadSection {
+  padding: var(--netflix-section-padding) 1.5rem;
+  background: var(--netflix-black);
+}
+
+.uploadCard {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+  background: var(--netflix-gray, #2f2f2f);
+  padding: 4rem 3rem;
+  border-radius: 8px;
+  border-top: 4px solid var(--netflix-red);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  position: relative;
+  overflow: hidden;
+  animation: netflixScaleIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s backwards;
+}
+
+.uploadTitle {
+  font-family: var(--netflix-font);
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 1rem;
+  letter-spacing: 0.02em;
+}
+
+.uploadText {
+  font-family: var(--netflix-font);
+  font-size: 1.1rem;
+  color: var(--netflix-text-muted);
+  line-height: 1.8;
+  margin-bottom: 2.5rem;
+}
+
+.uploadButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--netflix-red);
+  color: white;
+  padding: 1.2rem 3rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 6px 20px rgba(229, 9, 20, 0.4);
+}
+
+.uploadButton:hover {
+  background: var(--netflix-red-hover, #f40612);
+  transform: scale(1.05);
+  box-shadow: 0 10px 30px rgba(229, 9, 20, 0.6);
+}
+
+.uploadButton:active {
+  transform: scale(1);
+}
+
+/* ============================================
+   ACCOUNT SECTION
+   ============================================ */
+
+.accountSection {
+  padding: var(--netflix-section-padding) 1.5rem;
+  text-align: center;
+  background: var(--netflix-dark-gray, #1f1f1f);
+}
+
+.accountSubtitle {
+  font-family: var(--netflix-font);
+  font-size: 1.1rem;
+  color: var(--netflix-text-muted);
+  line-height: 1.7;
+  margin-bottom: 3rem;
+}
+
+.accountList {
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.accountItem {
+  background: var(--netflix-gray, #2f2f2f);
+  border: 1px solid rgba(229, 9, 20, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: netflixFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+.accountItem:nth-child(1) { animation-delay: 0.1s; }
+.accountItem:nth-child(2) { animation-delay: 0.2s; }
+.accountItem:nth-child(3) { animation-delay: 0.3s; }
+.accountItem:nth-child(4) { animation-delay: 0.4s; }
+
+.accountItem:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  transform: translateY(-3px);
+  border-color: var(--netflix-red);
+}
+
+.accountItem[open] {
+  border-color: var(--netflix-red);
+  box-shadow: 0 8px 24px rgba(229, 9, 20, 0.3);
+}
+
+.accountSummary {
+  padding: 1.5rem;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1rem;
+  transition: background 0.3s ease;
+}
+
+.accountSummary:hover {
+  background: rgba(229, 9, 20, 0.1);
+}
+
+.accountSummary::-webkit-details-marker {
+  display: none;
+}
+
+.accountRelation {
+  color: var(--netflix-red);
+  font-size: 0.85rem;
+  margin-right: 0.5rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+.accountHolder {
+  font-family: var(--netflix-font);
+  font-size: 1.1rem;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.accountArrow {
+  color: var(--netflix-red);
+  font-size: 1.5rem;
+  transition: transform 0.3s ease;
+  font-weight: 700;
+}
+
+.accountItem[open] .accountArrow {
+  transform: rotate(45deg);
+}
+
+.accountDetails {
+  padding: 0 1.5rem 1.5rem;
+  border-top: 1px solid rgba(229, 9, 20, 0.2);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.accountBank {
+  font-size: 0.95rem;
+  color: var(--netflix-text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.accountNumber {
+  font-family: var(--netflix-font);
+  font-size: 1.2rem;
+  color: #ffffff;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.accountCopyButton {
+  width: 100%;
+  background: var(--netflix-red);
+  border: none;
+  color: #ffffff;
+  padding: 0.9rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+.accountCopyButton:hover {
+  background: var(--netflix-red-hover, #f40612);
+  transform: scale(1.02);
+}
+
+/* ============================================
+   RSVP SECTION
+   ============================================ */
+
+.rsvpSection {
+  padding: var(--netflix-section-padding) 1.5rem;
+  background: var(--netflix-black);
+}
+
+.rsvpCard {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+  background: var(--netflix-gray, #2f2f2f);
+  padding: 4rem 3rem;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  border-top: 4px solid var(--netflix-red);
+  animation: netflixScaleIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s backwards;
+}
+
+.rsvpTitle {
+  font-family: var(--netflix-font);
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 1rem;
+  letter-spacing: 0.02em;
+}
+
+.rsvpText {
+  font-family: var(--netflix-font);
+  font-size: 1.1rem;
+  color: var(--netflix-text-muted);
+  line-height: 1.7;
+  margin-bottom: 2.5rem;
+}
+
+.rsvpButton {
+  display: inline-block;
+  background: var(--netflix-red);
+  color: white;
+  padding: 1.2rem 3.5rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 1.05rem;
+  letter-spacing: 0.05em;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 6px 20px rgba(229, 9, 20, 0.4);
+  font-weight: 700;
+}
+
+.rsvpButton:hover {
+  background: var(--netflix-red-hover, #f40612);
+  transform: scale(1.05);
+  box-shadow: 0 10px 30px rgba(229, 9, 20, 0.6);
+}
+
+.rsvpButton:active {
+  transform: scale(1);
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+
+.footer {
+  padding: 4rem 1.5rem 3rem;
+  text-align: center;
+  background: #000000;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.footerDivider {
+  width: 60px;
+  height: 2px;
+  background: var(--netflix-red);
+  margin: 0 auto 2rem;
+}
+
+.footerNames {
+  font-family: var(--netflix-font);
+  font-size: 1.3rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.75rem;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.footerDate {
+  font-family: var(--netflix-font);
+  font-size: 1rem;
+  margin-bottom: 2rem;
+  letter-spacing: 0.1em;
+  color: var(--netflix-text-muted);
+}
+
+.footerCopyright {
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  opacity: 0.4;
+  text-transform: uppercase;
+}
+
+/* ============================================
+   SHARED SECTION STYLES
+   ============================================ */
+
+.section {
+  position: relative;
+  z-index: 2;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+.fadeIn {
+  opacity: 0;
+  transform: translateY(60px);
+  transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fadeIn.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger animation for multiple elements */
+.fadeIn:nth-child(1) {
+  transition-delay: 0s;
+}
+
+.fadeIn:nth-child(2) {
+  transition-delay: 0.15s;
+}
+
+.fadeIn:nth-child(3) {
+  transition-delay: 0.3s;
+}
+
+.fadeIn:nth-child(4) {
+  transition-delay: 0.45s;
+}
+
+.fadeIn:nth-child(5) {
+  transition-delay: 0.6s;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Disable animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .container :global(*),
+  .container :global(*::before),
+  .container :global(*::after) {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .heroPhoto {
+    animation: none !important;
+  }
+
+  .scrollIndicator {
+    animation: none !important;
+  }
+
+  .fadeIn {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .galleryItem:hover,
+  .accountItem:hover {
+    transform: none;
+  }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+  .container {
+    padding-top: 60px;
+  }
+
+  .heroNames {
+    font-size: clamp(2rem, 10vw, 3rem);
+  }
+
+  .heroDate {
+    font-size: 1.2rem;
+  }
+
+  .heroButtons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .playButton,
+  .moreInfoButton {
+    width: 100%;
+    justify-content: center;
+    font-size: 1rem;
+    padding: 0.875rem 1.5rem;
+  }
+
+  .scrollIndicator {
+    bottom: 2rem;
+  }
+
+  .contentRows {
+    padding: 2rem 0;
+    gap: 2rem;
+  }
+
+  .invitation {
+    padding: 4rem 1rem;
+  }
+
+  .invitationText {
+    font-size: 1rem;
+    line-height: 1.8;
+  }
+
+  .coupleIntro,
+  .venueSection,
+  .accountSection,
+  .rsvpSection {
+    padding: 4rem 1rem;
+  }
+
+  .coupleGrid {
+    gap: 2rem;
+  }
+
+  .coupleName {
+    font-size: 1.5rem;
+  }
+
+  .gallerySection {
+    padding: 4rem 1rem;
+  }
+
+  .galleryGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    padding: 0 0.5rem;
+  }
+
+  .rsvpCard,
+  .uploadCard {
+    padding: 3rem 2rem;
+  }
+
+  .rsvpTitle,
+  .uploadTitle {
+    font-size: 1.6rem;
+  }
+
+  .dateBox {
+    padding: 2.5rem 1.5rem;
+  }
+
+  .dateDay {
+    font-size: 4rem;
+  }
+
+  .sectionTitle {
+    font-size: 1.5rem;
+  }
+
+  .photoSection {
+    padding: 2rem 0.5rem;
+  }
+
+  .uploadButton,
+  .rsvpButton {
+    padding: 1rem 2rem;
+    font-size: 0.95rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .galleryGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1025px) {
+  .galleryGrid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+  }
+
+  .heroNames {
+    font-size: var(--netflix-hero-size);
+  }
+}

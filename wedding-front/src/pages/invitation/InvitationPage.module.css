@@ -8,11 +8,12 @@
 
 .container {
   min-height: 100vh;
+  max-width: 480px;
+  margin: 0 auto;
   background: var(--netflix-black, #141414);
   color: var(--netflix-white, #ffffff);
   position: relative;
   overflow-x: hidden;
-  padding-top: 70px; /* Navigation bar height */
 }
 
 /* Intro transition animations */
@@ -32,7 +33,8 @@
 .hero {
   position: relative;
   width: 100%;
-  height: 100vh;
+  height: calc(100vh - 60px);
+  min-height: 520px;
   overflow: hidden;
   display: flex;
   align-items: center;

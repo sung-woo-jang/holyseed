@@ -1,16 +1,67 @@
-.container {
-  max-width: 480px;
-  margin: 0 auto;
+.shell {
   min-height: 100vh;
-  background: linear-gradient(to bottom, #fef5f8 0%, var(--color-background-alt) 20%, #ffffff 80%, #fef5f8 100%);
+  display: flex;
+  background: var(--w-bg);
+  color: var(--w-ink);
 }
 
 .main {
-  padding: 0;
+  flex: 1;
+  min-width: 0;
+  min-height: 100vh;
 }
 
-.mainContent {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 0;
+/* 모바일 상단 바 — 데스크탑에서 숨김 */
+.topbar {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid var(--w-border);
+  position: sticky;
+  top: 0;
+  z-index: 60;
+}
+
+.topbarTitle {
+  font-family: var(--font-family-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--w-ink);
+}
+
+.topbarAccent {
+  color: var(--w-accent);
+}
+
+.menuButton {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--w-bg);
+  border: 1px solid var(--w-border);
+  border-radius: 9px;
+  cursor: pointer;
+  color: var(--w-ink);
+  flex-shrink: 0;
+}
+
+.overlay {
+  display: none;
+}
+
+@media (max-width: 880px) {
+  .topbar {
+    display: flex;
+  }
+  .overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.42);
+    z-index: 250;
+  }
 }

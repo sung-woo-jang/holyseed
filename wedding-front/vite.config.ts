@@ -19,4 +19,13 @@ export default defineConfig({
       },
     },
   },
+  preview: {
+    port: 4600,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
+  },
 })

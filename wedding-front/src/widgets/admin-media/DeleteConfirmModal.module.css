@@ -32,9 +32,10 @@
 }
 
 .title {
+  font-family: var(--font-family-serif);
   font-size: var(--font-size-lg);
   font-weight: 600;
-  color: var(--color-primary);
+  color: var(--w-ink);
   margin-bottom: var(--spacing-sm);
 }
 
@@ -76,13 +77,13 @@
 }
 
 .buttonDelete {
-  background-color: #f44336; /* Red */
+  background-color: var(--w-rejected);
   color: white;
   border: none;
-  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.2);
+  box-shadow: 0 4px 12px rgba(176, 67, 47, 0.2);
 }
 
 .buttonDelete:hover:not(:disabled) {
-  background-color: #d32f2f;
+  background-color: #9c3a29;
   transform: translateY(-1px);
 }

@@ -37,6 +37,19 @@ export default function AdminDashboardPage() {
   const attendTotal = attendanceStats.attending + attendanceStats.notAttending + attendanceStats.maybe
   const pct = (n: number) => (attendTotal > 0 ? Math.round((n / attendTotal) * 100) : 0)
 
+  const statCards = [
+    { dot: 'total', label: '전체 미디어', value: mediaStats.total, caption: '업로드된 전체 항목' },
+    { dot: 'pending', label: '승인 대기', value: mediaStats.pending, caption: '검토가 필요해요' },
+    { dot: 'approved', label: '승인됨', value: mediaStats.approved, caption: '갤러리에 공개됨' },
+    { dot: 'total', label: '참석 인원', value: attendanceStats.totalGuests, caption: '총 참석 예정' },
+  ]
+
+  const bars = [
+    { type: 'attending', label: '참석', count: attendanceStats.attending },
+    { type: 'not-attending', label: '불참', count: attendanceStats.notAttending },
+    { type: 'maybe', label: '미정', count: attendanceStats.maybe },
+  ]
+
   return (
     <div className={styles.pageContainer}>
       <div className={styles.header}>
@@ -44,54 +57,67 @@ export default function AdminDashboardPage() {
         <p className={styles.subtitle}>{couple.groomName} & {couple.brideName}님의 결혼식 관리</p>
       </div>
 
-      <section className={styles.section}>
-        <div className={styles.statsGrid}>
-          <div className={styles.statCard}><dt className={styles.statLabel}>전체 미디어</dt><dd className={styles.statValue}>{mediaStats.total}</dd></div>
-          <div className={styles.statCard} data-stat-type="pending"><dt className={styles.statLabel}>승인 대기</dt><dd className={styles.statValue}>{mediaStats.pending}</dd></div>
-          <div className={styles.statCard} data-stat-type="approved"><dt className={styles.statLabel}>승인됨</dt><dd className={styles.statValue}>{mediaStats.approved}</dd></div>
-          <div className={styles.statCard} data-stat-type="attention"><dt className={styles.statLabel}>참석 인원</dt><dd className={styles.statValue}>{attendanceStats.totalGuests}</dd></div>
-        </div>
-      </section>
+      <div className={styles.statsGrid}>
+        {statCards.map((s, i) => (
+          <div key={i} className={styles.statCard}>
+            <div className={styles.statHead}>
+              <span className={styles.statDot} data-dot={s.dot} />
+              <span className={styles.statLabel}>{s.label}</span>
+            </div>
+            <div className={styles.statValue}>{s.value}</div>
+            <div className={styles.statCaption}>{s.caption}</div>
+          </div>
+        ))}
+      </div>
 
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>빠른 작업</h2>
-        <div className={styles.actionsGrid}>
-          <Link to="/admin/media" className={styles.actionCard}><p className={styles.actionTitle}>미디어 검수</p><p className={styles.actionDesc}>{mediaStats.pending}개의 미디어가 대기 중</p></Link>
-          <Link to="/admin/content-rows" className={styles.actionCard}><p className={styles.actionTitle}>콘텐츠 Row 관리</p><p className={styles.actionDesc}>갤러리 섹션 구성하기</p></Link>
-          <Link to="/admin/settings" className={styles.actionCard}><p className={styles.actionTitle}>청첩장 설정</p><p className={styles.actionDesc}>정보 및 테마 관리</p></Link>
-          {couple.slug && <a href={`/${couple.slug}`} target="_blank" rel="noreferrer" className={styles.actionCard}><p className={styles.actionTitle}>청첩장 보기</p><p className={styles.actionDesc}>하객용 페이지 확인</p></a>}
+      <div className={styles.split}>
+        <div>
+          <h2 className={styles.sectionTitle}>빠른 작업</h2>
+          <div className={styles.actionsGrid}>
+            <Link to="/admin/media" className={styles.actionCard}>
+              <div>
+                <div className={styles.actionTitle}>미디어 검수</div>
+                <div className={styles.actionDesc}>{mediaStats.pending}개의 미디어가 대기 중</div>
+              </div>
+              <span className={styles.actionArrow}>→</span>
+            </Link>
+            <Link to="/admin/content-rows" className={styles.actionCard}>
+              <div>
+                <div className={styles.actionTitle}>콘텐츠 Row 관리</div>
+                <div className={styles.actionDesc}>갤러리 섹션 구성하기</div>
+              </div>
+              <span className={styles.actionArrow}>→</span>
+            </Link>
+            <Link to="/admin/settings" className={styles.actionCard}>
+              <div>
+                <div className={styles.actionTitle}>청첩장 설정</div>
+                <div className={styles.actionDesc}>정보 및 예식장 관리</div>
+              </div>
+              <span className={styles.actionArrow}>→</span>
+            </Link>
+          </div>
         </div>
-      </section>
 
-      <section className={styles.attendanceSection}>
-        <h2 className={styles.sectionTitle}>참석 현황</h2>
-        <div className={styles.barChartContainer}>
-          <div className={styles.barChart}>
-            {[
-              { type: 'attending', label: '참석', count: attendanceStats.attending, delay: '0s' },
-              { type: 'not-attending', label: '불참', count: attendanceStats.notAttending, delay: '0.2s' },
-              { type: 'maybe', label: '미정', count: attendanceStats.maybe, delay: '0.4s' },
-            ].map(({ type, label, count, delay }) => (
-              <div key={type} className={styles.barSegment} data-type={type} style={{ animationDelay: delay }}>
-                <span className={styles.barLabel}><span>{label}</span><span>{count}명</span></span>
-                <span className={styles.barPercent}>{pct(count)}%</span>
+        <div className={styles.attendanceCard}>
+          <div className={styles.attendanceHead}>
+            <h2 className={styles.sectionTitle}>참석 현황</h2>
+            <span className={styles.attendanceTotal}>총 {attendanceStats.total}건</span>
+          </div>
+          <div className={styles.barList}>
+            {bars.map((b) => (
+              <div key={b.type}>
+                <div className={styles.barLabelRow}>
+                  <span className={styles.barLabel}>{b.label}</span>
+                  <span className={styles.barMeta}>{b.count}명 · {pct(b.count)}%</span>
+                </div>
+                <div className={styles.barTrack}>
+                  <div className={styles.barFill} data-type={b.type} style={{ width: `${pct(b.count)}%` }} />
+                </div>
               </div>
             ))}
           </div>
         </div>
-        <div className={styles.legend}>
-          {[
-            { type: 'attending', label: `참석 (${pct(attendanceStats.attending)}%)` },
-            { type: 'not-attending', label: `불참 (${pct(attendanceStats.notAttending)}%)` },
-            { type: 'maybe', label: `미정 (${pct(attendanceStats.maybe)}%)` },
-          ].map(({ type, label }) => (
-            <div key={type} className={styles.legendItem}>
-              <div className={styles.legendColor} data-type={type} />
-              <span className={styles.legendLabel}>{label}</span>
-            </div>
-          ))}
-        </div>
-      </section>
+      </div>
     </div>
   )
 }

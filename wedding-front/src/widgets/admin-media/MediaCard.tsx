@@ -86,7 +86,7 @@ export function MediaCard({ media, onModerate, onDelete }: MediaCardProps) {
         </div>
       </div>
 
-      {/* Actions */}
+      {/* Actions — 승인 / 거부 / 삭제(✕) 한 줄 */}
       <div className={styles.actions}>
         <button
           onClick={() => handleModerate('APPROVED')}
@@ -102,16 +102,13 @@ export function MediaCard({ media, onModerate, onDelete }: MediaCardProps) {
         >
           거부
         </button>
-      </div>
-
-      {/* Delete Button */}
-      <div className={styles.footer}>
         <button
           onClick={() => setShowDeleteModal(true)}
           disabled={isProcessing}
           className={styles.buttonDelete}
+          title="영구 삭제"
         >
-          영구 삭제
+          ✕
         </button>
       </div>
 

@@ -1,0 +1,99 @@
+/* ============================================
+   NETFLIX-THEMED GALLERY VIEW
+   ============================================ */
+
+.container {
+  padding-bottom: var(--spacing-xxl);
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.emptyState {
+  text-align: center;
+  padding: var(--spacing-xxl) var(--spacing-md);
+  background: var(--netflix-gray, #2f2f2f);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  border-top: 4px solid var(--netflix-red, #e50914);
+  margin: var(--spacing-xl) 4%;
+}
+
+.emptyIcon {
+  width: 120px;
+  height: 120px;
+  color: rgba(229, 9, 20, 0.4);
+  margin: 0 auto;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.emptyTitle {
+  margin-top: var(--spacing-lg);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  font-family: var(--netflix-font, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  color: var(--netflix-white, #ffffff);
+  letter-spacing: 0.05em;
+}
+
+.emptyDesc {
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-base);
+  color: var(--netflix-text-muted, #b3b3b3);
+}
+
+.loadingContainer {
+  padding: var(--spacing-xxl) 0;
+  text-align: center;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(229, 9, 20, 0.2);
+  border-top: 4px solid var(--netflix-red, #e50914);
+  border-right: 4px solid var(--netflix-red, #e50914);
+  border-radius: 50%;
+  margin: 0 auto;
+  box-shadow: 0 4px 12px rgba(229, 9, 20, 0.3);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  .emptyState {
+    margin: var(--spacing-xl) 1rem;
+    padding: 2rem 1.5rem;
+  }
+
+  .emptyIcon {
+    width: 80px;
+    height: 80px;
+  }
+
+  .emptyTitle {
+    font-size: 1.3rem;
+  }
+}

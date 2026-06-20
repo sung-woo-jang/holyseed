@@ -6,14 +6,14 @@
   background-color: white;
   margin-bottom: var(--spacing-md);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(233, 30, 99, 0.08);
-  border: 1px solid rgba(233, 30, 99, 0.05);
+  box-shadow: 0 4px 12px rgba(229, 9, 20, 0.08);
+  border: 1px solid rgba(229, 9, 20, 0.05);
 }
 
 .card:hover {
   transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(233, 30, 99, 0.2);
-  border-color: rgba(233, 30, 99, 0.15);
+  box-shadow: 0 20px 40px rgba(229, 9, 20, 0.2);
+  border-color: rgba(229, 9, 20, 0.15);
 }
 
 .imageContainer {
@@ -41,25 +41,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(233, 30, 99, 0.15) 0%, rgba(190, 24, 93, 0.2) 100%);
+  background: linear-gradient(135deg, rgba(229, 9, 20, 0.15) 0%, rgba(196, 8, 18, 0.2) 100%);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card:hover .videoOverlay {
-  background: linear-gradient(135deg, rgba(233, 30, 99, 0.25) 0%, rgba(190, 24, 93, 0.3) 100%);
+  background: linear-gradient(135deg, rgba(229, 9, 20, 0.25) 0%, rgba(196, 8, 18, 0.3) 100%);
 }
 
 .videoIcon {
   width: 56px;
   height: 56px;
   color: white;
-  filter: drop-shadow(0 4px 12px rgba(233, 30, 99, 0.5));
+  filter: drop-shadow(0 4px 12px rgba(229, 9, 20, 0.5));
   transition: all 0.3s ease;
 }
 
 .card:hover .videoIcon {
   transform: scale(1.1);
-  filter: drop-shadow(0 6px 16px rgba(233, 30, 99, 0.7));
+  filter: drop-shadow(0 6px 16px rgba(229, 9, 20, 0.7));
 }
 
 /* Info Overlay */
@@ -69,7 +69,7 @@
   left: 0;
   right: 0;
   padding: var(--spacing-xl) var(--spacing-md) var(--spacing-md);
-  background: linear-gradient(to top, rgba(233, 30, 99, 0.9) 0%, rgba(233, 30, 99, 0.6) 50%, transparent 100%);
+  background: linear-gradient(to top, rgba(229, 9, 20, 0.9) 0%, rgba(229, 9, 20, 0.6) 50%, transparent 100%);
   opacity: 0;
   transform: translateY(20px);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -103,7 +103,7 @@
 .tint {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(233, 30, 99, 0.03) 0%, rgba(190, 24, 93, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(229, 9, 20, 0.03) 0%, rgba(196, 8, 18, 0.05) 100%);
   opacity: 0;
   transition: opacity 0.4s ease;
 }

@@ -3,10 +3,11 @@
    ============================================ */
 
 .container {
-  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
   min-height: 100vh;
   background: var(--netflix-black, #141414);
-  padding: var(--spacing-lg);
+  padding: 1.5rem;
   animation: fadeIn 0.6s ease-out;
 }
 

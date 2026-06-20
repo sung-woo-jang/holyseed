@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#141414; }
+  @keyframes slowZoom { 0%{transform:scale(1);} 100%{transform:scale(1.08);} }
+  @keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0);} 50%{transform:translateX(-50%) translateY(-10px);} }
+  @keyframes nfFade { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
+  .nf-row::-webkit-scrollbar { display:none; }
+</style>
+</helmet>
+<x-import component-from-global-scope="image-slot" from="./image-slot.js" hint-size="0,0" style="display:none"></x-import>
+
+<div style="min-height:100vh; background:#141414; color:#fff; font-family:'Noto Sans KR',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; position:relative; overflow-x:hidden;">
+
+  <!-- NAV -->
+  <nav style="position:sticky; top:0; z-index:1000; padding:0 4%; background:rgba(20,20,20,0.95); backdrop-filter:blur(10px);">
+    <div style="display:flex; align-items:center; justify-content:space-between; height:70px;">
+      <div style="font-size:1.5rem; font-weight:700; color:#e50914; letter-spacing:0.05em;">민준 ♥ 서연</div>
+      <div style="display:flex; gap:2rem; align-items:center;">
+        <a style="color:#fff; font-size:0.95rem; font-weight:500; letter-spacing:0.02em;" href="#">홈</a>
+        <a style="color:#b3b3b3; font-size:0.95rem; font-weight:500; letter-spacing:0.02em;" href="#">갤러리</a>
+        <a style="color:#b3b3b3; font-size:0.95rem; font-weight:500; letter-spacing:0.02em;" href="#">참석응답</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section style="position:relative; width:100%; height:calc(100vh - 70px); min-height:560px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+    <image-slot id="hero" style="position:absolute; inset:0; width:100%; height:100%; animation:slowZoom 20s ease-in-out infinite alternate;" shape="rect" fit="cover" placeholder="대표 웨딩 사진" src="https://images.unsplash.com/photo-1519741497674-611481863552?w=1600&q=80"></image-slot>
+    <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(20,20,20,0.6) 0%, rgba(20,20,20,0.3) 50%, rgba(20,20,20,0.85) 100%); z-index:1;"></div>
+    <div style="position:relative; z-index:2; text-align:center; padding:2rem; animation:nfFade 1.5s ease-out;">
+      <h1 style="font-size:clamp(3rem,8vw,5rem); font-weight:700; line-height:1.1; margin:0 0 1.5rem; letter-spacing:0.02em; color:#fff;">민준<span style="display:block; font-size:0.7em; margin:0.8rem 0; color:#e50914; font-weight:700;">&amp;</span>서연</h1>
+      <time style="font-size:1.5rem; letter-spacing:0.1em; color:#b3b3b3;">2026. 05. 16</time>
+      <div style="display:flex; gap:1rem; margin-top:2rem; justify-content:center; flex-wrap:wrap;">
+        <button style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem 2rem; font-size:1.1rem; font-weight:700; border-radius:4px; background:#fff; color:#000; letter-spacing:0.05em;">
+          <svg style="width:24px; height:24px;" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"></path></svg><span>재생</span>
+        </button>
+        <button style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem 2rem; font-size:1.1rem; font-weight:700; border-radius:4px; background:rgba(109,109,110,0.7); color:#fff; backdrop-filter:blur(10px); letter-spacing:0.05em;">
+          <svg style="width:24px; height:24px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" fill="none" stroke-width="2"></circle><text x="12" y="16" text-anchor="middle" fill="currentColor" font-size="14" font-weight="bold">i</text></svg><span>상세 정보</span>
+        </button>
+      </div>
+    </div>
+    <div style="position:absolute; bottom:3rem; left:50%; transform:translateX(-50%); z-index:2; display:flex; flex-direction:column; align-items:center; gap:1rem; opacity:0.7; animation:bounce 2s ease-in-out infinite;">
+      <span style="font-size:0.65rem; letter-spacing:0.2em;">SCROLL</span>
+      <div style="width:1px; height:40px; background:linear-gradient(to bottom,#fff,transparent);"></div>
+    </div>
+  </section>
+
+  <!-- CONTENT ROWS -->
+  <div style="padding:3rem 0; display:flex; flex-direction:column; gap:2.5rem;">
+
+    <!-- TOP RANKED -->
+    <div style="padding:2rem 0;">
+      <h2 style="font-size:clamp(1.2rem,2vw,1.5rem); font-weight:700; color:#fff; margin:0 0 1rem; padding:0 4%; letter-spacing:0.05em;">오늘의 TOP 5 추억</h2>
+      <div class="nf-row" style="display:flex; gap:2rem; overflow-x:auto; padding:0 4% 1rem; scrollbar-width:none;">
+        <div style="flex:0 0 auto; display:flex; align-items:flex-end; height:clamp(250px,35vw,400px);">
+          <svg style="height:100%; width:auto; max-width:clamp(80px,12vw,140px); filter:drop-shadow(3px 3px 0 #141414);" viewBox="0 0 140 200" preserveAspectRatio="xMidYMax meet"><text x="0" y="175" fill="transparent" stroke="#464646" stroke-width="8" stroke-linejoin="round" font-size="200" font-weight="900" font-family="Helvetica Neue,Arial,sans-serif">1</text></svg>
+          <image-slot id="top1" style="width:clamp(150px,22vw,250px); height:85%; margin-left:-15px; border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5);" shape="rect" fit="cover" placeholder="TOP 1" src="https://images.unsplash.com/photo-1606800052052-a08af7148866?w=600&q=80"></image-slot>
+        </div>
+        <div style="flex:0 0 auto; display:flex; align-items:flex-end; height:clamp(250px,35vw,400px);">
+          <svg style="height:100%; width:auto; max-width:clamp(80px,12vw,140px); filter:drop-shadow(3px 3px 0 #141414);" viewBox="0 0 140 200" preserveAspectRatio="xMidYMax meet"><text x="0" y="175" fill="transparent" stroke="#464646" stroke-width="8" stroke-linejoin="round" font-size="200" font-weight="900" font-family="Helvetica Neue,Arial,sans-serif">2</text></svg>
+          <image-slot id="top2" style="width:clamp(150px,22vw,250px); height:85%; margin-left:-15px; border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5);" shape="rect" fit="cover" placeholder="TOP 2" src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=600&q=80"></image-slot>
+        </div>
+        <div style="flex:0 0 auto; display:flex; align-items:flex-end; height:clamp(250px,35vw,400px);">
+          <svg style="height:100%; width:auto; max-width:clamp(80px,12vw,140px); filter:drop-shadow(3px 3px 0 #141414);" viewBox="0 0 140 200" preserveAspectRatio="xMidYMax meet"><text x="0" y="175" fill="transparent" stroke="#464646" stroke-width="8" stroke-linejoin="round" font-size="200" font-weight="900" font-family="Helvetica Neue,Arial,sans-serif">3</text></svg>
+          <image-slot id="top3" style="width:clamp(150px,22vw,250px); height:85%; margin-left:-15px; border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5);" shape="rect" fit="cover" placeholder="TOP 3" src="https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=600&q=80"></image-slot>
+        </div>
+        <div style="flex:0 0 auto; display:flex; align-items:flex-end; height:clamp(250px,35vw,400px);">
+          <svg style="height:100%; width:auto; max-width:clamp(80px,12vw,140px); filter:drop-shadow(3px 3px 0 #141414);" viewBox="0 0 140 200" preserveAspectRatio="xMidYMax meet"><text x="0" y="175" fill="transparent" stroke="#464646" stroke-width="8" stroke-linejoin="round" font-size="200" font-weight="900" font-family="Helvetica Neue,Arial,sans-serif">4</text></svg>
+          <image-slot id="top4" style="width:clamp(150px,22vw,250px); height:85%; margin-left:-15px; border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5);" shape="rect" fit="cover" placeholder="TOP 4" src="https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=600&q=80"></image-slot>
+        </div>
+      </div>
+    </div>
+
+    <!-- 웨딩데이 정보 -->
+    <div style="padding:2rem 0;">
+      <h2 style="font-size:clamp(1.2rem,2vw,1.5rem); font-weight:700; color:#fff; margin:0 0 1rem; padding:0 4%; letter-spacing:0.05em;">웨딩데이 정보</h2>
+      <div class="nf-row" style="display:flex; gap:2rem; overflow-x:auto; padding:0 4% 1rem; scrollbar-width:none; align-items:stretch;">
+        <!-- venue info card -->
+        <div style="flex:0 0 auto; width:clamp(200px,25vw,300px); min-height:320px; background:#2f2f2f; border-radius:8px; padding:2rem 1.5rem; box-shadow:0 4px 12px rgba(0,0,0,0.5); border-top:4px solid #e50914; display:flex; flex-direction:column; gap:0.75rem;">
+          <div style="font-size:2.5rem; margin-bottom:0.5rem;">📍</div>
+          <h3 style="font-size:1.3rem; font-weight:700; color:#fff; margin:0;">더채플앳청담</h3>
+          <p style="font-size:0.95rem; color:#b3b3b3; margin:0;">3층 그랜드홀</p>
+          <p style="font-size:0.9rem; color:#b3b3b3; line-height:1.6; margin:0; flex-grow:1;">서울특별시 강남구 청담동 123-45</p>
+          <button style="background:#e50914; color:#fff; border:none; padding:0.75rem 1.5rem; border-radius:4px; font-size:0.9rem; font-weight:700; letter-spacing:0.05em;">자세히 보기</button>
+        </div>
+        <!-- calendar card -->
+        <div style="flex:0 0 auto; width:clamp(200px,25vw,300px); min-height:320px; background:#2f2f2f; border-radius:8px; padding:2rem 1.5rem; box-shadow:0 4px 12px rgba(0,0,0,0.5); border-top:4px solid #e50914; display:flex; flex-direction:column; align-items:center; gap:1rem;">
+          <div style="font-size:1rem; color:#b3b3b3; font-weight:600; text-transform:uppercase; letter-spacing:0.1em;">MAY</div>
+          <div style="font-size:4rem; font-weight:900; color:#e50914; line-height:1; text-shadow:0 2px 8px rgba(229,9,20,0.3);">16</div>
+          <div style="font-size:1.2rem; color:#fff; font-weight:700;">2026</div>
+          <div style="font-size:1.1rem; color:#fff; font-weight:600;">토요일</div>
+          <div style="font-size:1rem; color:#b3b3b3; margin-top:auto; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.1); width:100%; text-align:center;">오후 1:00</div>
+        </div>
+        <!-- rsvp info card -->
+        <div style="flex:0 0 auto; width:clamp(200px,25vw,300px); min-height:320px; background:#2f2f2f; border-radius:8px; padding:2rem 1.5rem; box-shadow:0 4px 12px rgba(0,0,0,0.5); border-top:4px solid #e50914; display:flex; flex-direction:column; gap:0.75rem;">
+          <div style="font-size:2.5rem; margin-bottom:0.5rem;">✉️</div>
+          <h3 style="font-size:1.3rem; font-weight:700; color:#fff; margin:0;">참석 여부</h3>
+          <p style="font-size:0.95rem; color:#b3b3b3; margin:0;">알려주세요</p>
+          <p style="font-size:0.9rem; color:#b3b3b3; line-height:1.6; margin:0; flex-grow:1;">소중한 시간 함께 해주시는 모든 분들께 감사드립니다</p>
+          <button style="background:#e50914; color:#fff; border:none; padding:0.75rem 1.5rem; border-radius:4px; font-size:0.9rem; font-weight:700; letter-spacing:0.05em;">참석 응답하기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 축의금 안내 -->
+    <div style="padding:2rem 0;">
+      <h2 style="font-size:clamp(1.2rem,2vw,1.5rem); font-weight:700; color:#fff; margin:0 0 1rem; padding:0 4%; letter-spacing:0.05em;">축의금 안내</h2>
+      <div class="nf-row" style="display:flex; gap:2rem; overflow-x:auto; padding:0 4% 1rem; scrollbar-width:none; align-items:stretch;">
+        <div style="flex:0 0 auto; width:clamp(220px,28vw,320px); min-height:320px; background:#1f1f1f; border-radius:8px; padding:2rem 1.5rem; box-shadow:0 4px 12px rgba(0,0,0,0.5); border-top:4px solid #e50914; display:flex; flex-direction:column; gap:0.5rem;">
+          <div style="font-size:2.5rem; margin-bottom:0.5rem;">🎁</div>
+          <div style="font-size:0.85rem; color:#e50914; font-weight:600; letter-spacing:0.1em; text-transform:uppercase;">신랑측</div>
+          <div style="font-size:1.3rem; font-weight:700; color:#fff; margin-bottom:0.5rem;">김민준</div>
+          <div style="font-size:0.95rem; color:#b3b3b3;">국민은행</div>
+          <div style="font-size:1.1rem; color:#fff; font-family:'Courier New',monospace; letter-spacing:0.05em; margin-bottom:1rem; font-weight:600;">123-456-789012</div>
+          <button style="background:#e50914; color:#fff; border:none; padding:0.75rem 1.5rem; border-radius:4px; font-size:0.9rem; font-weight:700; letter-spacing:0.05em; margin-top:auto;">계좌번호 복사</button>
+        </div>
+        <div style="flex:0 0 auto; width:clamp(220px,28vw,320px); min-height:320px; background:#1f1f1f; border-radius:8px; padding:2rem 1.5rem; box-shadow:0 4px 12px rgba(0,0,0,0.5); border-top:4px solid #e50914; display:flex; flex-direction:column; gap:0.5rem;">
+          <div style="font-size:2.5rem; margin-bottom:0.5rem;">🎁</div>
+          <div style="font-size:0.85rem; color:#e50914; font-weight:600; letter-spacing:0.1em; text-transform:uppercase;">신부측</div>
+          <div style="font-size:1.3rem; font-weight:700; color:#fff; margin-bottom:0.5rem;">이서연</div>
+          <div style="font-size:0.95rem; color:#b3b3b3;">신한은행</div>
+          <div style="font-size:1.1rem; color:#fff; font-family:'Courier New',monospace; letter-spacing:0.05em; margin-bottom:1rem; font-weight:600;">987-654-321098</div>
+          <button style="background:#e50914; color:#fff; border:none; padding:0.75rem 1.5rem; border-radius:4px; font-size:0.9rem; font-weight:700; letter-spacing:0.05em; margin-top:auto;">계좌번호 복사</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 함께 만드는 우리의 앨범 -->
+    <div style="padding:2rem 0;">
+      <h2 style="font-size:clamp(1.2rem,2vw,1.5rem); font-weight:700; color:#fff; margin:0 0 1rem; padding:0 4%; letter-spacing:0.05em;">함께 만드는 우리의 앨범</h2>
+      <div class="nf-row" style="display:flex; gap:2rem; overflow-x:auto; padding:0 4% 1rem; scrollbar-width:none; align-items:stretch;">
+        <div style="flex:0 0 auto; width:clamp(250px,30vw,350px); background:linear-gradient(135deg,#e50914 0%,#c40812 100%); border-radius:8px; padding:2.5rem 2rem; box-shadow:0 4px 12px rgba(229,9,20,0.4); display:flex; flex-direction:column; align-items:center; text-align:center; gap:1rem;">
+          <div style="font-size:3rem;">📸</div>
+          <h3 style="font-size:1.5rem; font-weight:700; color:#fff; margin:0;">사진 업로드</h3>
+          <p style="font-size:1rem; color:rgba(255,255,255,0.9); margin:0;">결혼식의 추억을 공유해주세요</p>
+          <button style="background:#fff; color:#e50914; border:none; padding:1rem 2rem; border-radius:4px; font-size:1rem; font-weight:700; letter-spacing:0.05em; margin-top:0.5rem;">사진 업로드하기</button>
+        </div>
+        <image-slot id="guest1" style="flex:0 0 auto; width:clamp(200px,25vw,320px); aspect-ratio:2/3; border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5);" shape="rect" fit="cover" placeholder="하객 사진" src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=600&q=80"></image-slot>
+        <image-slot id="guest2" style="flex:0 0 auto; width:clamp(200px,25vw,320px); aspect-ratio:2/3; border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5);" shape="rect" fit="cover" placeholder="하객 사진" src="https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=600&q=80"></image-slot>
+        <image-slot id="guest3" style="flex:0 0 auto; width:clamp(200px,25vw,320px); aspect-ratio:2/3; border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5);" shape="rect" fit="cover" placeholder="하객 사진" src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600&q=80"></image-slot>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <section style="padding:clamp(3rem,8vw,6rem) 1.5rem; text-align:center; background:#141414;">
+    <h2 style="font-size:clamp(1.5rem,3vw,2rem); font-weight:700; letter-spacing:0.1em; color:#fff; margin:0 0 3rem; position:relative; display:inline-block;">오시는 길<span style="content:''; position:absolute; bottom:-12px; left:50%; transform:translateX(-50%); width:60px; height:3px; background:#e50914; display:block;"></span></h2>
+    <div style="max-width:1000px; margin:0 auto; border-radius:8px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.6); height:400px; background:#2f2f2f; display:flex; align-items:center; justify-content:center; color:#808080; font-size:0.95rem;">카카오맵 — 더채플앳청담</div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="padding:4rem 1.5rem 3rem; text-align:center; background:#000; color:rgba(255,255,255,0.5);">
+    <div style="width:60px; height:2px; background:#e50914; margin:0 auto 2rem;"></div>
+    <div style="font-size:1.3rem; color:rgba(255,255,255,0.9); margin-bottom:0.75rem; letter-spacing:0.05em; font-weight:600;">민준 &amp; 서연</div>
+    <div style="font-size:1rem; margin-bottom:2rem; letter-spacing:0.1em; color:#b3b3b3;">2026. 05. 16</div>
+    <div style="font-size:0.75rem; letter-spacing:0.15em; opacity:0.4; text-transform:uppercase;">Wedding Archive</div>
+  </footer>
+</div>
+</x-dc>
+</body>
+</html>

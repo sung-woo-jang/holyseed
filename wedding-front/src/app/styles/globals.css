@@ -1,27 +1,58 @@
 :root {
-  /* Colors */
-  --color-primary: #2c3e50;
-  --color-secondary: #fce4ec;
-  --color-accent: #e91e63;
-  --color-text: #333333;
-  --color-text-light: #666666;
+  /* ============================================
+     ADMIN / AUTH — 베이지·와인 세리프 테마
+     ============================================ */
+  --w-bg: #f5f3ef;
+  --w-surface: #ffffff;
+  --w-surface-soft: #fcfbf9;
+  --w-input: #fcfbf9;
+  --w-border: #e7e3db;
+  --w-border-strong: #ddd8ce;
+  --w-divider: #efece6;
+  --w-accent: #7c3247;
+  --w-accent-tint: #f3e9ec;
+  --w-ink: #211e1b;
+  --w-ink-soft: #4a463f;
+  --w-muted: #8a8378;
+  --w-muted-light: #a39c90;
+  --w-chip-border: #e0dad0;
+
+  /* 상태색 (차분한 톤, Admin 공용) */
+  --w-pending: #b8842f;
+  --w-pending-bg: #f6eddc;
+  --w-pending-fg: #8a6516;
+  --w-approved: #3c7a57;
+  --w-approved-bg: #e7f0ea;
+  --w-approved-fg: #2f6147;
+  --w-rejected: #b0432f;
+  --w-rejected-bg: #f7e7e2;
+  --w-rejected-fg: #9c3a29;
+  --w-success-bg: #edf4ef;
+  --w-success-fg: #2f6147;
+
+  /* Legacy alias (점진 대체용) */
+  --color-primary: #211e1b;
+  --color-secondary: #f3e9ec;
+  --color-accent: #7c3247;
+  --color-text: #211e1b;
+  --color-text-light: #8a8378;
   --color-background: #ffffff;
-  --color-background-alt: #f8f9fa;
-  --color-border: #e0e0e0;
+  --color-background-alt: #f5f3ef;
+  --color-border: #e7e3db;
 
   /* Gradient Colors */
-  --color-gradient-primary-start: #2c3e50;
-  --color-gradient-primary-end: #34495e;
-  --color-gradient-pending-start: #f59e0b;
-  --color-gradient-pending-end: #f97316;
-  --color-gradient-approved-start: #10b981;
-  --color-gradient-approved-end: #059669;
-  --color-gradient-attention-start: #e91e63;
-  --color-gradient-attention-end: #be185d;
+  --color-gradient-primary-start: #211e1b;
+  --color-gradient-primary-end: #4a463f;
+  --color-gradient-pending-start: #b8842f;
+  --color-gradient-pending-end: #8a6516;
+  --color-gradient-approved-start: #3c7a57;
+  --color-gradient-approved-end: #2f6147;
+  --color-gradient-attention-start: #7c3247;
+  --color-gradient-attention-end: #5e2536;
 
   /* Page Background */
-  --page-background: #fafaf9;
-  --card-background: #fffffe;
+  --page-background: #f5f3ef;
+  --card-background: #ffffff;
 
   /* Shadow Scale */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -38,8 +69,9 @@
   --spacing-xxl: 3rem;
 
   /* Typography */
-  --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-family-serif: "Playfair Display", Georgia, serif;
+  --font-family-base: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-family-serif: "Spectral", "Noto Serif KR", Georgia, serif;
+  --font-family-display: "Bebas Neue", "Noto Sans KR", sans-serif;
   --font-family-mono: "SF Mono", Menlo, Monaco, "Courier New", monospace;
 
   --font-size-sm: 0.875rem;
@@ -105,6 +137,13 @@ button {
   max-width: var(--container-width);
   margin: 0 auto;
   padding: 0 var(--spacing-md);
+}
+
+/* 공개(청첩장/갤러리/RSVP) 모바일 단일 컬럼 — 프로토타입 .inv-col */
+.inv-col {
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
 }
 
 .visually-hidden {

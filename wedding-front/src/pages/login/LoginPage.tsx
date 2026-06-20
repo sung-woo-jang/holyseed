@@ -43,8 +43,8 @@ export default function LoginPage() {
     <div className={styles.container}>
       <div className={styles.card}>
         <div className={styles.header}>
-          <h2 className={styles.title}>Wedding Archive</h2>
-          <p className={styles.subtitle}>관리자 로그인</p>
+          <h2 className={styles.title}>Wedding <span className={styles.titleAccent}>Archive</span></h2>
+          <p className={styles.subtitle}>관리자 콘솔 로그인</p>
         </div>
 
         <form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
@@ -75,6 +75,7 @@ export default function LoginPage() {
               아직 계정이 없으신가요?{' '}
               <Link to="/register" className={styles.link}>회원가입</Link>
             </p>
+            <Link to="/" className={styles.previewLink}>← 청첩장 미리보기</Link>
           </div>
         </form>
       </div>

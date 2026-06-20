@@ -1,41 +1,38 @@
 .grid {
   display: grid;
-  grid-template-columns: repeat(1, 1fr);
-  gap: var(--spacing-md);
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
 }
 
 /* Skeleton Loading */
 .skeletonCard {
-  background: linear-gradient(135deg, #ffffff 0%, #fef5f8 100%);
-  border-radius: 20px;
+  background: var(--w-surface);
+  border: 1px solid var(--w-border);
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(233, 30, 99, 0.1);
-  border: 1px solid rgba(233, 30, 99, 0.1);
+  box-shadow: 0 1px 2px rgba(28, 27, 25, 0.04);
 }
 
 .skeletonMedia {
-  aspect-ratio: 1 / 1;
-  background-color: rgba(233, 30, 99, 0.05);
+  aspect-ratio: 16 / 10;
+  background-color: #f0ede7;
   position: relative;
   overflow: hidden;
 }
 
 .skeletonMedia::after {
-  content: "";
+  content: '';
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  inset: 0;
   transform: translateX(-100%);
   background: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0) 0,
-    rgba(233, 30, 99, 0.1) 20%,
-    rgba(233, 30, 99, 0.2) 60%,
+    rgba(124, 50, 71, 0.06) 40%,
+    rgba(124, 50, 71, 0.1) 60%,
     rgba(255, 255, 255, 0)
   );
-  animation: shimmer 2s infinite;
+  animation: shimmer 1.6s infinite;
 }
 
 @keyframes shimmer {
@@ -45,40 +42,40 @@
 }
 
 .skeletonContent {
-  padding: var(--spacing-lg);
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: 8px;
 }
 
 .skeletonLine {
   height: 12px;
-  background-color: rgba(233, 30, 99, 0.1);
+  background-color: #f0ede7;
   border-radius: 50px;
 }
 
 .skeletonTitle {
-  width: 60%;
-  height: 16px;
+  width: 50%;
+  height: 14px;
 }
 
 .skeletonDesc {
-  width: 90%;
+  width: 85%;
 }
 
 /* Empty State */
 .empty {
   text-align: center;
-  padding: var(--spacing-xxl) var(--spacing-md);
+  padding: 48px 16px;
   grid-column: 1 / -1;
-  background: linear-gradient(135deg, #ffffff 0%, #fef5f8 100%);
-  border-radius: 20px;
-  box-shadow: 0 8px 24px rgba(233, 30, 99, 0.1);
-  border: 1px solid rgba(233, 30, 99, 0.1);
+  background: var(--w-surface);
+  border-radius: 14px;
+  border: 1px solid var(--w-border);
 }
 
 .emptyText {
-  color: var(--color-text-light);
-  font-size: var(--font-size-lg);
-  font-weight: 600;
+  color: var(--w-muted-light);
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin: 0;
 }

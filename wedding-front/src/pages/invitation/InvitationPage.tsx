@@ -144,9 +144,9 @@ function InvitationContent() {
     <>
       {showIntro && <NetflixIntro onComplete={(skipped) => { setWasSkipped(skipped); setShowIntro(false) }} />}
       <KakaoMapScript />
-      <NetflixNav coupleSlug={couple.slug} groomName={couple.groomName} brideName={couple.brideName} />
 
       <div className={cn(styles.container, { [styles.zoomInFromIntro]: !showIntro && !wasSkipped, [styles.fadeInNormal]: !showIntro && wasSkipped })}>
+        <NetflixNav coupleSlug={couple.slug} groomName={couple.groomName} brideName={couple.brideName} />
         {/* Hero */}
         <section className={styles.hero}>
           <div className={styles.heroImage}>

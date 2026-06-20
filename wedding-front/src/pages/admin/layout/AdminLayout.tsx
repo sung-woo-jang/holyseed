@@ -8,6 +8,7 @@ export default function AdminLayout() {
   const [email, setEmail] = useState<string>('')
   const [checked, setChecked] = useState(false)
   const [authorized, setAuthorized] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY)
@@ -27,12 +28,31 @@ export default function AdminLayout() {
   if (!authorized) return <Navigate to="/login" replace />
 
   return (
-    <div className={styles.container}>
-      <AdminNavigation userEmail={email} />
+    <div className={styles.shell}>
+      {drawerOpen && <div className={styles.overlay} onClick={() => setDrawerOpen(false)} />}
+
+      <AdminNavigation
+        userEmail={email}
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+      />
+
       <main className={styles.main}>
-        <div className={styles.mainContent}>
-          <Outlet />
+        <div className={styles.topbar}>
+          <button
+            type="button"
+            className={styles.menuButton}
+            onClick={() => setDrawerOpen((v) => !v)}
+            aria-label="메뉴"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <span className={styles.topbarTitle}>Wedding <span className={styles.topbarAccent}>Archive</span></span>
         </div>
+
+        <Outlet />
       </main>
     </div>
   )

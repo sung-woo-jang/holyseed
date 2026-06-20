@@ -60,8 +60,8 @@ export default function RegisterPage() {
     <div className={styles.container}>
       <div className={styles.card}>
         <div className={styles.header}>
-          <h2 className={styles.title}>Wedding Archive</h2>
-          <p className={styles.subtitle}>커플 등록</p>
+          <h2 className={styles.title}>회원가입</h2>
+          <p className={styles.subtitle}>새 청첩장을 시작하세요</p>
         </div>
 
         <form className={styles.form} onSubmit={handleSubmit(onSubmit)}>

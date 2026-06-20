@@ -1,0 +1,229 @@
+/* ============================================
+   NETFLIX-THEMED ATTENDANCE TABLE
+   ============================================ */
+
+.container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.card {
+  position: relative;
+  background: var(--netflix-gray, #2f2f2f);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  border-top: 4px solid var(--netflix-red, #e50914);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+}
+
+.cardContent {
+  padding: var(--spacing-lg);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid rgba(229, 9, 20, 0.2);
+}
+
+.guestName {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--netflix-white, #ffffff);
+}
+
+.badge {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.badgeAttending {
+  background: #10b981;
+  color: white;
+}
+
+.badgeNotAttending {
+  background: #dc2626;
+  color: white;
+}
+
+.badgeMaybe {
+  background: #f59e0b;
+  color: white;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+}
+
+.infoLabel {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--netflix-text-muted, #b3b3b3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.infoValue {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--netflix-white, #ffffff);
+}
+
+.message {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: rgba(229, 9, 20, 0.1);
+  border-radius: 4px;
+  border-left: 3px solid var(--netflix-red, #e50914);
+}
+
+.messageLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--netflix-text-muted, #b3b3b3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--spacing-xs);
+}
+
+.messageText {
+  font-size: var(--font-size-sm);
+  color: var(--netflix-white, #ffffff);
+  line-height: 1.5;
+}
+
+.cardFooter {
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: rgba(20, 20, 20, 0.5);
+  border-top: 1px solid rgba(229, 9, 20, 0.2);
+}
+
+.buttonDelete {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: transparent;
+  color: var(--netflix-text-muted, #b3b3b3);
+  border: 2px solid rgba(220, 38, 38, 0.3);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.05em;
+}
+
+.buttonDelete:hover {
+  background: rgba(220, 38, 38, 0.2);
+  color: #dc2626;
+  border-color: #dc2626;
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+/* Empty State */
+.empty {
+  padding: var(--spacing-xxl) var(--spacing-md);
+  text-align: center;
+  background: var(--netflix-gray, #2f2f2f);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  border-top: 4px solid var(--netflix-red, #e50914);
+}
+
+.emptyIcon {
+  width: 64px;
+  height: 64px;
+  color: rgba(229, 9, 20, 0.4);
+  margin: 0 auto;
+}
+
+.emptyText {
+  margin-top: var(--spacing-md);
+  font-size: var(--font-size-base);
+  color: var(--netflix-text-muted, #b3b3b3);
+  font-weight: 600;
+}
+
+/* Loading */
+.loading {
+  padding: var(--spacing-xxl) var(--spacing-md);
+  text-align: center;
+  color: var(--netflix-text-muted, #b3b3b3);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+}
+
+/* Legacy table styles - keeping for backward compatibility */
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  display: none;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  display: none;
+}
+
+.thead {
+  display: none;
+}
+
+.th {
+  display: none;
+}
+
+.tr {
+  display: none;
+}
+
+.td {
+  display: none;
+}
+
+.truncate {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

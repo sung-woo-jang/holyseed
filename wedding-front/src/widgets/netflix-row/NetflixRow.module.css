@@ -21,6 +21,7 @@
 
 .rowContent {
   display: flex;
+  align-items: flex-start;
   gap: 2rem;
   overflow-x: auto;
   overflow-y: visible;

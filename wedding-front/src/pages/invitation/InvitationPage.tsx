@@ -93,19 +93,34 @@ function InvitationContent() {
   if (error || !couple) return <Navigate to="/login" replace />
 
   const venue = couple.weddingVenue as WeddingVenue | null
-  const accountInfo = couple.accountInfo as AccountInfo[]
+  // accountInfo가 배열이 아닐 수도(빈 객체 {}) 있으니 정규화
+  const rawAccount = couple.accountInfo as unknown
+  const accountInfo: AccountInfo[] = Array.isArray(rawAccount) ? (rawAccount as AccountInfo[]) : []
   const weddingDate = couple.weddingDate ? new Date(couple.weddingDate) : null
+
+  // TOP 5: 승인된 하객 사진 우선, 없으면 기본 웨딩 사진으로 채움
+  const topSources = [
+    ...guestMedia.map((m) => mediaResizedUrl(m.id)),
+    ...GALLERY_IMAGES,
+  ].slice(0, 5)
+  const topItems = topSources.map((src, i) => ({ type: 'top-ranked', src, rank: i + 1, alt: `Top ${i + 1}` }))
 
   const openLightbox = (index: number) => { setLightboxIndex(index); setCurrentSlideIndex(index) }
   const closeLightbox = () => { setLightboxIndex(null); setCurrentSlideIndex(0); swiperRef.current = null }
 
   const systemRows = [
     {
+      id: 'top-ranked',
+      title: '오늘의 TOP 5 추억',
+      type: 'top-ranked-row',
+      items: topItems,
+    },
+    {
       id: 'wedding-info',
       title: '웨딩데이 정보',
       type: 'info-card-row',
       items: [
-        venue ? { type: 'info-card', icon: '📍', title: venue.name, subtitle: venue.hall || '', content: venue.address, action: { label: '자세히 보기', onClick: () => setVenueModalOpen(true) } } : null,
+        venue ? { type: 'info-card', icon: '📍', title: venue.name, subtitle: venue.hall || '', content: venue.address, action: { label: '자세히 보기', onClick: () => { if (venue.lat && venue.lng) setVenueModalOpen(true); else document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth' }) } } } : null,
         weddingDate ? { type: 'calendar-card', year: format(weddingDate, 'yyyy'), month: format(weddingDate, 'MMMM', { locale: ko }).toUpperCase(), day: format(weddingDate, 'd'), dayName: format(weddingDate, 'EEEE', { locale: ko }), time: format(weddingDate, 'a h:mm', { locale: ko }) } : null,
         { type: 'info-card', icon: '✉️', title: '참석 여부', subtitle: '알려주세요', content: '소중한 시간 함께 해주시는 모든 분들께 감사드립니다', action: { label: '참석 응답하기', onClick: () => setAttendanceModalOpen(true) } },
       ].filter(Boolean),
@@ -185,13 +200,21 @@ function InvitationContent() {
         </div>
 
         {/* Map */}
-        {venue?.lat && venue?.lng && (
-          <section className={cn(styles.section, styles.mapSection)}>
+        {venue && (
+          <section id="map-section" className={cn(styles.section, styles.mapSection)}>
             <h2 className={styles.sectionTitle}>오시는 길</h2>
             <div className={styles.mapContainer}>
-              <Suspense fallback={<p>지도 로딩 중...</p>}>
-                <KakaoMap lat={venue.lat} lng={venue.lng} venueName={venue.name} address={venue.address} />
-              </Suspense>
+              {venue.lat && venue.lng ? (
+                <Suspense fallback={<p>지도 로딩 중...</p>}>
+                  <KakaoMap lat={venue.lat} lng={venue.lng} venueName={venue.name} address={venue.address} />
+                </Suspense>
+              ) : (
+                <div className={styles.mapFallback}>
+                  <div className={styles.mapFallbackIcon}>🗺️</div>
+                  <div className={styles.mapFallbackName}>{venue.name}{venue.hall ? ` · ${venue.hall}` : ''}</div>
+                  <div className={styles.mapFallbackAddr}>{venue.address}</div>
+                </div>
+              )}
             </div>
           </section>
         )}

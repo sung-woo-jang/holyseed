@@ -99,6 +99,51 @@
   cursor: default;
 }
 
+.dividerRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dividerLine {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.dividerText {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.googleBtn,
+.naverBtn {
+  border-radius: 14px;
+  padding: 15px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.googleBtn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.naverBtn {
+  background: #03c75a;
+  color: #fff;
+}
+
+.googleBtn:active,
+.naverBtn:active {
+  opacity: 0.85;
+}
+
 .switchText {
   font-size: 14px;
   color: var(--text-muted);

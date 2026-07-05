@@ -3,24 +3,29 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as https from 'https';
-import * as crypto from 'crypto';
-import * as fs from 'fs';
 import axios from 'axios';
 import * as bcrypt from 'bcrypt';
 import { AdUser } from '../users/entities/ad-user.entity';
-import { AppLoginDto } from './dto/request/app-login.dto';
 import { RegisterDto } from './dto/request/register.dto';
 import { LoginDto } from './dto/request/login.dto';
 
+export type OAuthProvider = 'google' | 'naver';
+
+interface OAuthProfile {
+  providerId: string;
+  email: string | null;
+  name: string | null;
+}
+
 @Injectable()
 export class AuthService {
-  private readonly apiHost: string;
-  private readonly sandboxHost: string;
-  private readonly clientId: string;
-  private readonly clientSecret: string;
-  private readonly decryptionKey: Buffer;
-  private readonly aad: Buffer;
+  private readonly googleClientId: string;
+  private readonly googleClientSecret: string;
+  private readonly naverClientId: string;
+  private readonly naverClientSecret: string;
+  /** OAuth redirect_uri 베이스 — 기본은 프론트 dev 프록시 경유 */
+  private readonly oauthCallbackBase: string;
+  readonly frontUrl: string;
 
   constructor(
     private readonly configService: ConfigService,
@@ -28,22 +33,149 @@ export class AuthService {
     @InjectRepository(AdUser)
     private readonly userRepo: Repository<AdUser>,
   ) {
-    this.apiHost = configService.get('AIT_AD_API_HOST') || 'https://apps-in-toss-api.toss.im';
-    this.sandboxHost = configService.get('AIT_AD_SANDBOX_HOST') || 'https://sandbox.apps-in-toss-api.toss.im';
-    this.clientId = configService.get('AIT_AD_CLIENT_ID') || '';
-    this.clientSecret = configService.get('AIT_AD_CLIENT_SECRET') || '';
-    this.decryptionKey = Buffer.from(configService.get<string>('AIT_AD_DECRYPTION_KEY', ''), 'base64');
-    this.aad = Buffer.from(configService.get<string>('AIT_AD_AAD', 'TOSS'), 'utf8');
+    this.googleClientId = configService.get('AD_GOOGLE_CLIENT_ID') || '';
+    this.googleClientSecret = configService.get('AD_GOOGLE_CLIENT_SECRET') || '';
+    this.naverClientId = configService.get('AD_NAVER_CLIENT_ID') || '';
+    this.naverClientSecret = configService.get('AD_NAVER_CLIENT_SECRET') || '';
+    this.oauthCallbackBase = configService.get('AD_OAUTH_CALLBACK_BASE') || 'http://localhost:3400/api/ad';
+    this.frontUrl = configService.get('AD_FRONT_URL') || 'http://localhost:3400';
   }
 
-  async appLogin(dto: AppLoginDto) {
-    const host = dto.referrer === 'SANDBOX' ? this.sandboxHost : this.apiHost;
-    const userKey = await this.exchangeToken(dto.authorizationCode, host);
+  // ─── 소셜 로그인 (Google / Naver) ─────────────────────────────────────────────
 
-    const user = await this.upsertUser(userKey);
-    const tokens = this.issueTokens(user);
+  private redirectUri(provider: OAuthProvider): string {
+    return `${this.oauthCallbackBase}/auth/${provider}/callback`;
+  }
 
-    return { ...tokens, user };
+  /** CSRF 방지용 state — 10분짜리 서명 JWT */
+  private issueState(provider: OAuthProvider): string {
+    return this.jwtService.sign(
+      { p: provider, purpose: 'oauth-state' },
+      { secret: this.configService.get('jwt.secret'), expiresIn: '10m' },
+    );
+  }
+
+  private verifyState(state: string, provider: OAuthProvider): void {
+    try {
+      const payload = this.jwtService.verify(state, { secret: this.configService.get('jwt.secret') });
+      if (payload.purpose !== 'oauth-state' || payload.p !== provider) throw new Error('mismatch');
+    } catch {
+      throw new UnauthorizedException('유효하지 않은 OAuth state입니다.');
+    }
+  }
+
+  authorizeUrl(provider: OAuthProvider): string {
+    const state = this.issueState(provider);
+    if (provider === 'google') {
+      if (!this.googleClientId) throw new UnauthorizedException('Google OAuth가 설정되지 않았습니다.');
+      const q = new URLSearchParams({
+        client_id: this.googleClientId,
+        redirect_uri: this.redirectUri('google'),
+        response_type: 'code',
+        scope: 'openid email profile',
+        state,
+      });
+      return `https://accounts.google.com/o/oauth2/v2/auth?${q.toString()}`;
+    }
+    if (!this.naverClientId) throw new UnauthorizedException('Naver OAuth가 설정되지 않았습니다.');
+    const q = new URLSearchParams({
+      client_id: this.naverClientId,
+      redirect_uri: this.redirectUri('naver'),
+      response_type: 'code',
+      state,
+    });
+    return `https://nid.naver.com/oauth2.0/authorize?${q.toString()}`;
+  }
+
+  async oauthLogin(provider: OAuthProvider, code: string, state: string) {
+    this.verifyState(state, provider);
+    const profile =
+      provider === 'google'
+        ? await this.fetchGoogleProfile(code)
+        : await this.fetchNaverProfile(code, state);
+
+    const user = await this.upsertOAuthUser(provider, profile);
+    return { ...this.issueTokens(user), user };
+  }
+
+  private async fetchGoogleProfile(code: string): Promise<OAuthProfile> {
+    try {
+      const { data: token } = await axios.post(
+        'https://oauth2.googleapis.com/token',
+        new URLSearchParams({
+          code,
+          client_id: this.googleClientId,
+          client_secret: this.googleClientSecret,
+          redirect_uri: this.redirectUri('google'),
+          grant_type: 'authorization_code',
+        }).toString(),
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 10000 },
+      );
+      const { data: profile } = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${token.access_token}` },
+        timeout: 10000,
+      });
+      return {
+        providerId: String(profile.id),
+        email: profile.email?.toLowerCase() ?? null,
+        name: profile.name ?? null,
+      };
+    } catch {
+      throw new UnauthorizedException('Google 로그인에 실패했습니다.');
+    }
+  }
+
+  private async fetchNaverProfile(code: string, state: string): Promise<OAuthProfile> {
+    try {
+      const { data: token } = await axios.get('https://nid.naver.com/oauth2.0/token', {
+        params: {
+          grant_type: 'authorization_code',
+          client_id: this.naverClientId,
+          client_secret: this.naverClientSecret,
+          code,
+          state,
+        },
+        timeout: 10000,
+      });
+      const { data: me } = await axios.get('https://openapi.naver.com/v1/nid/me', {
+        headers: { Authorization: `Bearer ${token.access_token}` },
+        timeout: 10000,
+      });
+      const profile = me.response;
+      return {
+        providerId: String(profile.id),
+        email: profile.email?.toLowerCase() ?? null,
+        name: profile.name ?? profile.nickname ?? null,
+      };
+    } catch {
+      throw new UnauthorizedException('네이버 로그인에 실패했습니다.');
+    }
+  }
+
+  /** providerId 우선 매칭, 없으면 동일 이메일 계정에 연동, 그마저 없으면 신규 생성 */
+  private async upsertOAuthUser(provider: OAuthProvider, profile: OAuthProfile): Promise<AdUser> {
+    const idColumn = provider === 'google' ? 'googleId' : 'naverId';
+
+    let user = await this.userRepo.findOne({ where: { [idColumn]: profile.providerId } });
+
+    if (!user && profile.email) {
+      user = await this.userRepo.findOne({ where: { email: profile.email } });
+      if (user) user[idColumn] = profile.providerId;
+    }
+
+    if (!user) {
+      const name = profile.name || (profile.email ? profile.email.split('@')[0] : `사용자${profile.providerId.slice(-4)}`);
+      user = this.userRepo.create({
+        [idColumn]: profile.providerId,
+        email: profile.email,
+        name,
+        initial: name.charAt(0),
+        avatarColor: this.randomColor(),
+      });
+    }
+
+    user.lastLoginAt = new Date();
+    return this.userRepo.save(user);
   }
 
   async register(dto: RegisterDto) {
@@ -105,61 +237,6 @@ export class AuthService {
     } catch {
       throw new UnauthorizedException('갱신 토큰이 유효하지 않습니다.');
     }
-  }
-
-  private async exchangeToken(authorizationCode: string, host: string): Promise<string> {
-    const certPath = this.configService.get('AIT_AD_CERT_PATH');
-    const keyPath = this.configService.get('AIT_AD_KEY_PATH');
-
-    const httpsAgent =
-      certPath && keyPath && fs.existsSync(certPath) && fs.existsSync(keyPath)
-        ? new https.Agent({ cert: fs.readFileSync(certPath), key: fs.readFileSync(keyPath) })
-        : undefined;
-
-    try {
-      const response = await axios.post(
-        `${host}/api-partner/v1/apps-in-toss/user/oauth2`,
-        { authorizationCode, clientId: this.clientId, clientSecret: this.clientSecret },
-        { httpsAgent, timeout: 10000 },
-      );
-      return this.decryptUserKey(response.data.userKey);
-    } catch (error: any) {
-      if (process.env.NODE_ENV === 'development' && !this.clientId) {
-        // 개발 환경에서 mTLS 미설정 시 authorizationCode를 userKey로 사용 (더미)
-        return authorizationCode || 'dev-user-999999';
-      }
-      throw new UnauthorizedException('토스 토큰 교환에 실패했습니다.');
-    }
-  }
-
-  // AES-256-GCM 복호화: Toss가 반환하는 암호화된 userKey 복호화
-  private decryptUserKey(encrypted: string): string {
-    const buf = Buffer.from(encrypted, 'base64');
-    const iv = buf.subarray(0, 12);
-    const tag = buf.subarray(buf.length - 16);
-    const ciphertext = buf.subarray(12, buf.length - 16);
-
-    const decipher = crypto.createDecipheriv('aes-256-gcm', this.decryptionKey, iv);
-    decipher.setAuthTag(tag);
-    decipher.setAAD(this.aad);
-
-    return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
-  }
-
-  private async upsertUser(tossUserKey: string): Promise<AdUser> {
-    let user = await this.userRepo.findOne({ where: { tossUserKey } });
-
-    if (!user) {
-      user = this.userRepo.create({
-        tossUserKey,
-        name: `사용자${tossUserKey.slice(-4)}`,
-        avatarColor: this.randomColor(),
-        initial: '사',
-      });
-    }
-
-    user.lastLoginAt = new Date();
-    return this.userRepo.save(user);
   }
 
   private issueTokens(user: AdUser) {

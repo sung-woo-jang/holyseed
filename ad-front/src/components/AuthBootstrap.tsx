@@ -6,6 +6,8 @@ import { useAuthStore } from '../stores/auth.store';
 import Loader from './ui/Loader';
 
 const PUBLIC_PATHS = ['/login', '/register'];
+// 소셜 콜백은 인증 전이든 후든 자체 로직으로 처리 — 리다이렉트 대상에서 제외
+const NEUTRAL_PATHS = ['/auth/callback'];
 
 export async function loadHouseholds() {
   try {
@@ -52,8 +54,9 @@ export default function AuthBootstrap({ children }: { children: React.ReactNode 
   }
 
   const isPublic = PUBLIC_PATHS.includes(location.pathname);
+  const isNeutral = NEUTRAL_PATHS.includes(location.pathname);
 
-  if (!isAuthenticated && !isPublic) {
+  if (!isAuthenticated && !isPublic && !isNeutral) {
     return <Navigate to="/login" replace />;
   }
   if (isAuthenticated && isPublic) {

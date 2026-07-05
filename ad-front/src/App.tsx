@@ -5,6 +5,7 @@ import RegisterPage from './pages/auth/register';
 import HomePage from './pages/index';
 import OnboardingPage from './pages/auth/onboarding';
 import JoinPage from './pages/auth/join';
+import OAuthCallbackPage from './pages/auth/callback';
 import AssetDetailPage from './pages/assets/detail';
 import CashflowPage from './pages/more/cashflow';
 import CategoriesPage from './pages/more/categories';
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/assets/:id" element={<AssetDetailPage />} />
         <Route path="/auth/onboarding" element={<OnboardingPage />} />
         <Route path="/auth/join" element={<JoinPage />} />
+        <Route path="/auth/callback" element={<OAuthCallbackPage />} />
         <Route path="/more/cashflow" element={<CashflowPage />} />
         <Route path="/more/categories" element={<CategoriesPage />} />
         <Route path="/more/compare" element={<ComparePage />} />

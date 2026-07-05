@@ -9,6 +9,12 @@ export class AdUser extends BaseEntity {
   @Column({ length: 200, unique: true, nullable: true })
   email: string | null;
 
+  @Column({ name: 'google_id', unique: true, nullable: true })
+  googleId: string | null;
+
+  @Column({ name: 'naver_id', unique: true, nullable: true })
+  naverId: string | null;
+
   @Column({ name: 'password_hash', nullable: true, select: false })
   passwordHash?: string | null;
 

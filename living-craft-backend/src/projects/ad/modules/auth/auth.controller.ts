@@ -4,6 +4,8 @@ import { Public } from '@common/decorators';
 import { AuthService } from './auth.service';
 import { AppLoginDto } from './dto/request/app-login.dto';
 import { RefreshTokenDto } from './dto/request/refresh-token.dto';
+import { RegisterDto } from './dto/request/register.dto';
+import { LoginDto } from './dto/request/login.dto';
 
 @ApiTags('AD 인증')
 @Controller('ad/auth')
@@ -15,6 +17,22 @@ export class AuthController {
   @ApiOperation({ summary: '토스 appLogin 연동 로그인' })
   async appLogin(@Body() dto: AppLoginDto) {
     const result = await this.authService.appLogin(dto);
+    return { success: true, message: '로그인 성공', data: result, timestamp: new Date().toISOString() };
+  }
+
+  @Post('register')
+  @Public()
+  @ApiOperation({ summary: '이메일 회원가입' })
+  async register(@Body() dto: RegisterDto) {
+    const result = await this.authService.register(dto);
+    return { success: true, message: '회원가입 성공', data: result, timestamp: new Date().toISOString() };
+  }
+
+  @Post('login')
+  @Public()
+  @ApiOperation({ summary: '이메일 로그인' })
+  async login(@Body() dto: LoginDto) {
+    const result = await this.authService.emailLogin(dto);
     return { success: true, message: '로그인 성공', data: result, timestamp: new Date().toISOString() };
   }
 

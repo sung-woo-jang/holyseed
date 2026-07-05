@@ -1,0 +1,44 @@
+.root {
+  display: flex;
+  background: color-mix(in srgb, var(--text-muted) 12%, transparent);
+  border-radius: 12px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.fluid {
+  display: inline-flex;
+}
+
+.item {
+  flex: 1;
+  border-radius: 9px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  transition:
+    background 0.15s,
+    color 0.15s;
+  white-space: nowrap;
+}
+
+.fluid .item {
+  flex: none;
+}
+
+.item-large {
+  padding: 10px 14px;
+  font-size: 15px;
+}
+
+.item-small {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.active {
+  background: var(--card);
+  color: var(--text);
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}

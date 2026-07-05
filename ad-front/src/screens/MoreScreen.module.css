@@ -1,0 +1,58 @@
+.container {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 120px;
+}
+
+.bannerIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.roleNotice {
+  margin: 0 20px 8px;
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.roleNoticeText {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.menuIconBox {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menuLabel {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.menuDetail {
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.footer {
+  padding: 32px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.footerText {
+  font-size: 12px;
+  text-align: center;
+}

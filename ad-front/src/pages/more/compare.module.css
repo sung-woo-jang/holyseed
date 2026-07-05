@@ -1,0 +1,143 @@
+.root {
+  flex: 1;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.loadingBox {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 0;
+}
+
+.yearScroll {
+  display: flex;
+  overflow-x: auto;
+  padding: 12px 20px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.yearPill {
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1px solid;
+  flex-shrink: 0;
+}
+
+.yearPillText {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.headlineCard {
+  margin: 0 20px 8px;
+  border-radius: 16px;
+  border: 1px solid;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headlineDelta {
+  font-size: 22px;
+  font-weight: 800;
+  flex: 1;
+}
+
+.pctChip {
+  padding: 5px 10px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.pctChipText {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.section {
+  margin: 8px 20px 0;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sectionTitle {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.barRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.barCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.barTopLabel {
+  font-size: 10px;
+  font-weight: 700;
+  height: 14px;
+}
+
+.barBody {
+  width: 100%;
+  border-radius: 6px;
+  display: block;
+}
+
+.barLabel {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.accentBar {
+  width: 4px;
+  height: 32px;
+  border-radius: 2px;
+  display: block;
+}
+
+.contribTopRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.contribCat {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.contribWeight {
+  font-size: 12px;
+}
+
+.contribVal {
+  font-size: 14px;
+  font-weight: 700;
+}

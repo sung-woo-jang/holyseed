@@ -1,0 +1,34 @@
+.field {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  border-bottom: 2px solid var(--border);
+  padding: 8px 0;
+  transition: border-color 0.15s;
+}
+
+.field:focus-within {
+  border-bottom-color: var(--brand);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.input::placeholder {
+  color: color-mix(in srgb, var(--text-muted) 55%, transparent);
+}
+
+.suffix {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  flex-shrink: 0;
+}

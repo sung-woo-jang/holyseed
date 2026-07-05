@@ -1,0 +1,152 @@
+.root {
+  flex: 1;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.summaryCard {
+  margin: 8px 20px;
+  border-radius: 16px;
+  border: 1px solid;
+  padding: 16px;
+}
+
+.summaryRow {
+  display: flex;
+  margin-bottom: 12px;
+}
+
+.summaryItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.summaryLabel {
+  font-size: 12px;
+}
+
+.summaryValue {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.divider {
+  width: 1px;
+  margin: 4px 0;
+}
+
+.stackBar {
+  height: 8px;
+  border-radius: 4px;
+  display: flex;
+  overflow: hidden;
+}
+
+.section {
+  margin: 8px 20px 0;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sectionTitle {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.trendScroll {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.trendRow {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 8px;
+  align-items: flex-end;
+}
+
+.trendCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.trendBars {
+  display: flex;
+  align-items: flex-end;
+  height: 80px;
+}
+
+.trendBar {
+  width: 8px;
+  border-radius: 3px;
+}
+
+.trendLabel {
+  font-size: 9px;
+}
+
+.emptyRow {
+  padding: 24px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.emptyText {
+  font-size: 13px;
+}
+
+.catRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.catInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.catTopRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.catName {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catPct {
+  font-size: 12px;
+}
+
+.catVal {
+  font-size: 13px;
+  font-weight: 700;
+}

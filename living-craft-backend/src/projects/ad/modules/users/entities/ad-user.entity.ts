@@ -3,8 +3,14 @@ import { BaseEntity } from '@common/entities/base.entity';
 
 @Entity('users', { schema: 'ad' })
 export class AdUser extends BaseEntity {
-  @Column({ name: 'toss_user_key', unique: true })
-  tossUserKey: string;
+  @Column({ name: 'toss_user_key', unique: true, nullable: true })
+  tossUserKey: string | null;
+
+  @Column({ length: 200, unique: true, nullable: true })
+  email: string | null;
+
+  @Column({ name: 'password_hash', nullable: true, select: false })
+  passwordHash?: string | null;
 
   @Column({ length: 100, default: '사용자' })
   name: string;

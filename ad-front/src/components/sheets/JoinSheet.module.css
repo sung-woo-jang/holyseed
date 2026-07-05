@@ -1,0 +1,51 @@
+.body {
+  padding: 8px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.desc {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.previewCard {
+  border: 1px solid;
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.previewHousehold {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.previewMeta {
+  font-size: 13px;
+}
+
+.confirmBox {
+  padding: 60px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.confirmTitle {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.confirmSub {
+  font-size: 14px;
+}
+
+.errorText {
+  font-size: 13px;
+  text-align: center;
+}

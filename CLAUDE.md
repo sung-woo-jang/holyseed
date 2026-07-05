@@ -5,16 +5,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 항상 한국말을 할 것
 - 존댓말을 사용할 것
 - AskUserQuestion 도구로 선택형 질문을 적극 활용할 것
-- asset-diary-front 부분 화면개발 작업을 할 때는 **Apps-in-Toss MCP 서버를 적극 활용할 것**
-    - Apps-in-Toss SDK, API, 기능 관련 질문이나 작업 시 MCP를 통해 최신 문서와 예제를 참조
-    - appLogin, 인앱 광고, 딥링크 등 Apps-in-Toss 기능 구현 시 MCP 활용
-    - TDS 컴포넌트 사용 시 MCP를 통해 정확한 사용법 확인
 
 ---
 
 ## 프로젝트 개요
 
-**Asset Diary (자산일기)**는 가구 단위 자산 스냅샷·거래·정기지출을 관리하는 서비스입니다. 토스 앱 내에서 동작하는 Apps-in-Toss 기반의 Mini App과 NestJS 백엔드로 구성되어 있습니다.
+**Asset Diary (자산일기)**는 가구 단위 자산 스냅샷·거래·정기지출을 관리하는 서비스입니다. Vite 기반 웹앱과 NestJS 백엔드로 구성되어 있습니다.
 
 ---
 
@@ -22,7 +18,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```
 living-craft/
-├── asset-diary-front/       # 자산일기 앱 (React Native, Apps-in-Toss)
+├── ad-front/                # 자산일기 웹앱 (Vite + React)
+│
+├── wedding-front/           # 결혼식 아카이브 웹앱 (Vite + React)
 │
 └── living-craft-backend/    # API 서버 (NestJS)
     └── CLAUDE.md            # Backend 프로젝트 가이드
@@ -32,37 +30,42 @@ living-craft/
 
 ## 서브프로젝트 개요
 
-### 1. asset-diary-front (자산일기 앱)
+### 1. ad-front (자산일기 웹앱)
 
 **기술 스택:**
 
-- **프레임워크**: Granite.js + React Native
-- **라우팅**: Granite Router (파일 기반)
-- **UI**: Toss Design System (@toss/tds-react-native)
-- **상태 관리**: Zustand + React Hook Form
-- **플랫폼**: Apps-in-Toss (토스 앱 내 Mini App)
+- **프레임워크**: Vite 6 + React 19
+- **라우팅**: react-router-dom 7
+- **스타일링**: CSS Modules
+- **상태 관리**: Zustand + TanStack Query v5
+- **인증**: 이메일/비밀번호 + 구글/네이버 OAuth (JWT, localStorage)
+- **개발 서버**: localhost:3400 (proxy `/api` → localhost:8000)
 
-### 2. living-craft-backend (API 서버)
+### 2. wedding-front (결혼식 아카이브)
+
+- Vite 6 + React 19 + CSS Modules, FSD 구조
+- 개발 서버: localhost:3600
+
+### 3. living-craft-backend (API 서버)
 
 **기술 스택:**
 
 - **프레임워크**: NestJS
-- **데이터베이스**: PostgreSQL + TypeORM
-- **인증**: JWT (Apps-in-Toss appLogin 연동)
+- **데이터베이스**: PostgreSQL + TypeORM (synchronize: true)
+- **인증**: JWT
 - **API 문서**: Swagger
 
 **프로젝트 구조:**
 
-- **AD 프로젝트**: `src/projects/ad/` - Asset Diary 전용 모듈 13개
+- **AD 프로젝트**: `src/projects/ad/` - Asset Diary 모듈 (`ad` 스키마, `/api/ad/*`)
+- **WEDDING 프로젝트**: `src/projects/wedding/` (`wedding` 스키마, `/api/wedding/*`)
 - **공유 모듈**: `src/shared/` - 파일 업로드, 헬스체크, 주소 검색
-- **데이터베이스**: `ad` 스키마로 격리
-- **API Prefix**: `/api/ad/*`
 
 **개발 환경:**
 
 - Docker Compose로 PostgreSQL 관리
 - 개발 서버: localhost:8000
-- Swagger: localhost:8000/ad/docs
+- Swagger: localhost:8000/ad/docs, localhost:8000/wedding/docs
 
 **자세한 내용**: `living-craft-backend/CLAUDE.md` 참조
 
@@ -70,13 +73,15 @@ living-craft/
 
 ## 공통 명령어
 
-| 작업    | asset-diary-front | living-craft-backend |
+| 작업    | ad-front         | living-craft-backend |
 |-------|------------------|---------------------|
 | 개발 서버 | `yarn dev`       | `npm run start:dev` |
 | 빌드    | `yarn build`     | `npm run build`     |
 | 타입 체크 | `yarn typecheck` | -                   |
 | 린트    | `yarn lint`      | `npm run lint`      |
-| 테스트   | `yarn test`      | `npm run test`      |
+| 테스트   | -                | `npm run test`      |
+
+루트에서: `yarn dev:ad`, `yarn dev:back`, `yarn build:ad`, `yarn typecheck:ad`
 
 ---
 
@@ -100,9 +105,3 @@ interface SuccessResponse<T> {
     timestamp: string; // ISO 8601
 }
 ```
-
----
-
-## Apps-in-Toss SDK
-
-- `asset-diary-front/docs/sdk/` - SDK 문서 (있을 경우)

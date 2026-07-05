@@ -57,7 +57,7 @@ async function bootstrap() {
       .setDescription('자산일기 - 가구 자산 스냅샷·거래·정기지출 관리 서비스')
       .setVersion('1.0')
       .addBearerAuth()
-      .addTag('AD 인증', '토스 appLogin 연동 인증')
+      .addTag('AD 인증', '이메일·소셜 로그인 인증')
       .addTag('AD 사용자', '사용자 프로필 관리')
       .addTag('AD 가구', '가구 워크스페이스 관리')
       .addTag('AD 멤버십', '가구 멤버 역할 관리')
@@ -94,69 +94,6 @@ async function bootstrap() {
     console.log('💎 [AD] Swagger UI: http://localhost:8000/ad/docs')
     console.log('💎 [AD] Swagger JSON: http://localhost:8000/ad/docs/json')
     console.log(`📊 [AD] API 개수: ${Object.keys(filteredAdDocument.paths).length}개`)
-
-    // ========================================
-    // PC (단가표 비교) API 문서
-    // ========================================
-    const pcConfig = new DocumentBuilder()
-      .setTitle('PC (Price Compare) API')
-      .setDescription('단가표 업체별 비교 - 공급업체별 제품 단가 관리')
-      .setVersion('1.0')
-      .addBearerAuth()
-      .addTag('PC 인증', '단가표 관리 로그인')
-      .addTag('PC 카테고리', '제품 카테고리 트리 관리')
-      .addTag('PC 업체', '공급업체 관리')
-      .addTag('PC 제품', '제품 CRUD, 비교, 임포트')
-      .addTag('PC 제품 이미지', '제품 이미지 업로드/삭제')
-      .addTag('PC 가격', '업체별 제품 단가 관리')
-      .build()
-
-    const pcDocument = SwaggerModule.createDocument(app, pcConfig, { include: [] })
-
-    const filteredPcDocument = {
-      ...pcDocument,
-      paths: Object.fromEntries(Object.entries(pcDocument.paths).filter(([path]) => path.startsWith('/api/pc/'))),
-    }
-
-    SwaggerModule.setup('pc/docs', app, filteredPcDocument, {
-      swaggerOptions: { persistAuthorization: true, tagsSorter: 'alpha', operationsSorter: 'alpha' },
-      customSiteTitle: 'PC API - 단가표 비교',
-      jsonDocumentUrl: '/pc/docs/json',
-    })
-
-    console.log('💎 [PC] Swagger UI: http://localhost:8000/pc/docs')
-    console.log('💎 [PC] Swagger JSON: http://localhost:8000/pc/docs/json')
-    console.log(`📊 [PC] API 개수: ${Object.keys(filteredPcDocument.paths).length}개`)
-
-    // ========================================
-    // IV (Infinite+VR 자동매매) API 문서
-    // ========================================
-    const ivConfig = new DocumentBuilder()
-      .setTitle('IV (Infinite+VR) API')
-      .setDescription('라오어 무한매수법 V4.0 + 밸류리밸런싱 VR5.0 자동매매 관리')
-      .setVersion('1.0')
-      .addTag('IV 전략', '전략 생성/조회/삭제')
-      .addTag('IV 계획', '일별 LOC 매수매도 계획')
-      .addTag('IV 체결', '체결 내역 입력 및 상태 갱신')
-      .addTag('IV 사이클', '사이클 종료 및 새 사이클 시작')
-      .addTag('IV 시세', 'Yahoo Finance 종가 fetch')
-      .build()
-
-    const ivDocument = SwaggerModule.createDocument(app, ivConfig, { include: [] })
-
-    const filteredIvDocument = {
-      ...ivDocument,
-      paths: Object.fromEntries(Object.entries(ivDocument.paths).filter(([path]) => path.startsWith('/api/iv/'))),
-    }
-
-    SwaggerModule.setup('iv/docs', app, filteredIvDocument, {
-      swaggerOptions: { persistAuthorization: true, tagsSorter: 'alpha', operationsSorter: 'alpha' },
-      customSiteTitle: 'IV API - 자동매매',
-      jsonDocumentUrl: '/iv/docs/json',
-    })
-
-    console.log('💎 [IV] Swagger UI: http://localhost:8000/iv/docs')
-    console.log(`📊 [IV] API 개수: ${Object.keys(filteredIvDocument.paths).length}개`)
 
     // ========================================
     // WEDDING (결혼식 아카이브) API 문서

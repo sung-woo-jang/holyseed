@@ -1,11 +1,3 @@
 {
-  "mcpServers": {
-    "apps-in-toss": {
-      "command": "ax",
-      "args": [
-        "mcp",
-        "start"
-      ]
-    }
-  }
+  "mcpServers": {}
 }

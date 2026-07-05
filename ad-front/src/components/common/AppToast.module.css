@@ -1,0 +1,34 @@
+.wrap {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(88px + env(safe-area-inset-bottom));
+  z-index: 300;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.toast {
+  background: rgba(25, 31, 40, 0.92);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 13px 18px;
+  margin: 0 24px;
+  animation: rise 0.25s ease-out;
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

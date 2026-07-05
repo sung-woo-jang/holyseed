@@ -1,0 +1,238 @@
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 120px;
+  display: flex;
+  flex-direction: column;
+}
+
+.periodRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px 4px;
+}
+
+.periodLeft {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.periodRight {
+  font-size: 12px;
+}
+
+.heroBlock {
+  padding: 4px 20px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.heroLabel {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.heroValue {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 40px;
+}
+
+.changeRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.changeAbs {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sectionPad {
+  padding: 0 20px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ctaCaption {
+  font-size: 12px;
+  text-align: center;
+  margin-top: 8px;
+}
+
+.card {
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid;
+  display: flex;
+  flex-direction: column;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.cardTitle {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.cardSub {
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+
+.chartSubtitle {
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.chartHint {
+  font-size: 10px;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.yoyCard {
+  flex-direction: row;
+  align-items: center;
+  padding: 16px;
+  text-align: left;
+}
+
+.yoyTitle {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.yoySub {
+  font-size: 12px;
+}
+
+.donutRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.donutWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.donutCenter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.donutLabel {
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.donutValue {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.legend {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.legendRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legendCat {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.legendVal {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.insightBox {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.insightText {
+  font-size: 12px;
+  line-height: 18px;
+  white-space: pre-line;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.txIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.txTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.txTitle {
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.txMeta {
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.txAmount {
+  font-size: 14px;
+  font-weight: 700;
+}

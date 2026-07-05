@@ -1,0 +1,103 @@
+.body {
+  padding: 4px 20px 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.categoryGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.categoryCell {
+  width: 47%;
+  padding: 16px 14px;
+  border-radius: 12px;
+  border: 1.5px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.categoryCellText {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.amountWrap {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  margin: 16px 0 20px;
+}
+
+.amountInput {
+  font-size: 36px;
+  font-weight: 800;
+  text-align: center;
+  min-width: 80px;
+  width: 60%;
+  letter-spacing: -1px;
+  border: none;
+  outline: none;
+  background: transparent;
+}
+
+.amountInput::placeholder {
+  color: var(--border);
+}
+
+.amountUnit {
+  font-size: 20px;
+  font-weight: 700;
+  margin-left: 6px;
+}
+
+.skipBtn {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+  width: 100%;
+}
+
+.skipText {
+  font-size: 14px;
+  text-decoration: underline;
+}
+
+.cta {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+}
+
+.errorText {
+  font-size: 13px;
+  text-align: center;
+  margin-top: 8px;
+}
+
+.confirmBox {
+  padding: 60px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.confirmTitle {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.confirmSub {
+  font-size: 14px;
+}

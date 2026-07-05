@@ -1,0 +1,75 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.size-tiny {
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
+.size-small {
+  font-size: 12px;
+  padding: 3px 8px;
+}
+
+.size-medium {
+  font-size: 13px;
+  padding: 5px 10px;
+}
+
+.blue-weak {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.blue-fill {
+  background: var(--brand);
+  color: #fff;
+}
+
+.teal-weak {
+  background: color-mix(in srgb, #00b8b0 14%, transparent);
+  color: #00a49d;
+}
+
+.teal-fill {
+  background: #00b8b0;
+  color: #fff;
+}
+
+.elephant-weak {
+  background: color-mix(in srgb, var(--text-muted) 14%, transparent);
+  color: var(--text-muted);
+}
+
+.elephant-fill {
+  background: var(--text-muted);
+  color: #fff;
+}
+
+.red-weak {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+
+.red-fill {
+  background: var(--danger);
+  color: #fff;
+}
+
+.green-weak {
+  background: color-mix(in srgb, #34c759 14%, transparent);
+  color: #2aa14a;
+}
+
+.green-fill {
+  background: #34c759;
+  color: #fff;
+}

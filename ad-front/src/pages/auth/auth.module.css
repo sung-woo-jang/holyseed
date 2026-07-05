@@ -1,0 +1,119 @@
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--card);
+  padding: 120px 24px 52px;
+  min-height: 100dvh;
+}
+
+.logoArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.logoBox {
+  width: 80px;
+  height: 80px;
+  border-radius: 22px;
+  background: var(--brand-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.appName {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+.appDesc {
+  font-size: 16px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 24px;
+  margin-top: 4px;
+  white-space: pre-line;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bottomArea {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.input {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 16px;
+  font-size: 16px;
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--brand);
+}
+
+.errorBox {
+  background: #fee2e2;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.errorText {
+  color: #dc2626;
+  font-size: 13px;
+  text-align: center;
+  line-height: 18px;
+  white-space: pre-line;
+}
+
+.submitBtn {
+  background: var(--brand);
+  border-radius: 14px;
+  padding: 18px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.switchText {
+  font-size: 14px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.switchLink {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.note {
+  font-size: 12px;
+  color: #b0b8c1;
+  text-align: center;
+  line-height: 18px;
+  white-space: pre-line;
+}

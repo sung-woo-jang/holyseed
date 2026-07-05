@@ -1,0 +1,9 @@
+.button {
+  font-weight: 600;
+  padding: 4px 2px;
+  flex-shrink: 0;
+}
+
+.button:active {
+  opacity: 0.6;
+}

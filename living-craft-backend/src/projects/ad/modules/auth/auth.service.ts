@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,8 +7,11 @@ import * as https from 'https';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import axios from 'axios';
+import * as bcrypt from 'bcrypt';
 import { AdUser } from '../users/entities/ad-user.entity';
 import { AppLoginDto } from './dto/request/app-login.dto';
+import { RegisterDto } from './dto/request/register.dto';
+import { LoginDto } from './dto/request/login.dto';
 
 @Injectable()
 export class AuthService {
@@ -41,6 +44,52 @@ export class AuthService {
     const tokens = this.issueTokens(user);
 
     return { ...tokens, user };
+  }
+
+  async register(dto: RegisterDto) {
+    const existing = await this.userRepo.findOne({ where: { email: dto.email } });
+    if (existing) {
+      throw new ConflictException('이미 사용 중인 이메일입니다.');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 12);
+    const name = dto.name || dto.email.split('@')[0];
+
+    const user = this.userRepo.create({
+      email: dto.email,
+      passwordHash,
+      name,
+      initial: name.charAt(0),
+      avatarColor: this.randomColor(),
+      lastLoginAt: new Date(),
+    });
+    const saved = await this.userRepo.save(user);
+    delete saved.passwordHash;
+
+    return { ...this.issueTokens(saved), user: saved };
+  }
+
+  async emailLogin(dto: LoginDto) {
+    const user = await this.userRepo
+      .createQueryBuilder('user')
+      .addSelect('user.passwordHash')
+      .where('user.email = :email', { email: dto.email })
+      .getOne();
+
+    if (!user || !user.passwordHash) {
+      throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
+    }
+
+    const isValid = await bcrypt.compare(dto.password, user.passwordHash);
+    if (!isValid) {
+      throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
+    }
+
+    user.lastLoginAt = new Date();
+    await this.userRepo.save(user);
+    delete user.passwordHash;
+
+    return { ...this.issueTokens(user), user };
   }
 
   async refresh(refreshToken: string) {
@@ -114,7 +163,7 @@ export class AuthService {
   }
 
   private issueTokens(user: AdUser) {
-    const payload = { sub: user.id, tossUserKey: user.tossUserKey };
+    const payload = { sub: user.id, tossUserKey: user.tossUserKey, email: user.email };
     const secret = this.configService.get('jwt.secret');
 
     return {

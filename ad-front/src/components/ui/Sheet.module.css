@@ -1,0 +1,71 @@
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  /* 앱 폭(480px)에 맞춤 */
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.sheet {
+  position: relative;
+  background: var(--card);
+  border-radius: 20px 20px 0 0;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.24s cubic-bezier(0.25, 0.8, 0.35, 1);
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  overflow: hidden;
+}
+
+.open .backdrop {
+  opacity: 1;
+}
+
+.open .sheet {
+  transform: translateY(0);
+}
+
+.handle {
+  width: 36px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  align-self: center;
+  margin: 10px 0 8px;
+  flex-shrink: 0;
+}
+
+.header {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  padding: 8px 20px 12px;
+  flex-shrink: 0;
+}
+
+.body {
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.cta {
+  padding: 12px 20px 0;
+  flex-shrink: 0;
+}

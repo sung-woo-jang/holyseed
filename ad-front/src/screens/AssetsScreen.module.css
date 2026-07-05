@@ -1,0 +1,177 @@
+.root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 0;
+}
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 120px;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 12px 20px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.headerLabel {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.headerValue {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+}
+
+.pickingBanner {
+  margin: 0 20px 12px;
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pickingText {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pickingCancel {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.actionBlock {
+  padding: 0 20px 16px;
+}
+
+.actionRow {
+  display: flex;
+  gap: 8px;
+}
+
+.actionBtn {
+  flex: 1;
+  padding: 12px 0;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.actionBtnPrimary {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.actionBtnSoft {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.groupBlock {
+  padding: 0 20px 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.groupHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 0 4px;
+}
+
+.groupHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.groupLabel {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.groupCount {
+  font-size: 11px;
+}
+
+.groupSum {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.groupCard {
+  border-radius: 14px;
+  border: 1px solid;
+  overflow: hidden;
+}
+
+.assetName {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assetMeta {
+  font-size: 11px;
+}
+
+.assetRight {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.assetValue {
+  font-size: 14px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.kebabBtn {
+  padding: 6px;
+  margin: -6px -4px -6px 0;
+}
+
+.kebabIcon {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.fab {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 12px rgba(49, 130, 246, 0.4);
+  z-index: 5;
+}
+
+.fabText {
+  font-size: 28px;
+  color: #fff;
+  line-height: 32px;
+}

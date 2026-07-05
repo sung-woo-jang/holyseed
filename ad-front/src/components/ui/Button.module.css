@@ -1,0 +1,76 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-weight: 700;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+
+.button:active {
+  opacity: 0.8;
+}
+
+.button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.accessory {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 6px;
+}
+
+.full {
+  display: flex;
+  width: 100%;
+}
+
+.size-big {
+  padding: 16px 20px;
+  font-size: 17px;
+  border-radius: 14px;
+}
+
+.size-medium {
+  padding: 11px 16px;
+  font-size: 15px;
+}
+
+.size-small {
+  padding: 7px 12px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+.primary-fill {
+  background: var(--brand);
+  color: #fff;
+}
+
+.primary-weak {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.danger-fill {
+  background: var(--danger);
+  color: #fff;
+}
+
+.danger-weak {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+
+.dark-fill {
+  background: var(--text);
+  color: var(--card);
+}
+
+.dark-weak {
+  background: color-mix(in srgb, var(--text-muted) 15%, transparent);
+  color: var(--text);
+}

@@ -1,0 +1,179 @@
+.root {
+  flex: 1;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 40px;
+  display: flex;
+  flex-direction: column;
+}
+
+.summaryCard {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.summaryTop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.summaryTopText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.catLabel {
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.assetName {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.renameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.valueText {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.deltaBadge {
+  display: flex;
+  margin-bottom: 14px;
+}
+
+.deltaChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 20px;
+}
+
+.deltaText {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.section {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sectionTitle {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.emptyChart {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emptyRow {
+  padding: 20px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.emptyText {
+  font-size: 13px;
+}
+
+.snapDate {
+  font-size: 14px;
+}
+
+.snapValue {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.txIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.txTitle {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.txMeta {
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.txAmount {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.kebabWrap {
+  position: relative;
+}
+
+.kebabIcon {
+  font-size: 22px;
+  font-weight: 700;
+  padding: 0 4px;
+}
+
+.menuBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+}
+
+.menuDropdown {
+  position: absolute;
+  top: 32px;
+  right: 0;
+  width: 150px;
+  border-radius: 12px;
+  border: 1px solid;
+  overflow: hidden;
+  z-index: 20;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 14px;
+  width: 100%;
+}
+
+.menuItemText {
+  font-size: 14px;
+  font-weight: 600;
+}

@@ -1,0 +1,275 @@
+.root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 0;
+}
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 120px;
+  display: flex;
+  flex-direction: column;
+}
+
+.monthNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px 8px;
+}
+
+.monthBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.monthArrow {
+  font-size: 16px;
+  line-height: 20px;
+}
+
+.monthLabel {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.sectionPad {
+  padding: 0 20px 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.summary {
+  padding: 16px;
+  border-radius: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summaryLabel {
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.summaryValue {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.calCard {
+  margin: 0 20px 12px;
+  border-radius: 14px;
+  border: 1px solid;
+  padding: 12px 0;
+}
+
+.dayHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.dayTitle {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.addLink {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.dayCard {
+  border-radius: 14px;
+  border: 1px solid;
+  overflow: hidden;
+}
+
+.listDayTitle {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.listDayExp {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.statTitle {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.statRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.statRowTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.statName {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.statAmount {
+  font-size: 12px;
+}
+
+.statBarBg {
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.statBarFill {
+  height: 6px;
+  border-radius: 3px;
+}
+
+.itemIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.itemTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.itemTitle {
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemSub {
+  font-size: 11px;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemAmount {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.tagChip {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.recRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kebabBtn {
+  padding: 6px;
+  margin: -6px -4px -6px 0;
+}
+
+.kebab {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.toggleChip {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.recHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 14px;
+  border: 1px solid;
+  padding: 14px 16px;
+  width: 100%;
+}
+
+.recHeaderTitle {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.recHeaderSub {
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.recChevron {
+  font-size: 14px;
+}
+
+.recBody {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recSectionTitle {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 4px 0;
+}
+
+.recAddBtn {
+  border: 1.5px dashed;
+  border-radius: 12px;
+  padding: 12px 0;
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.recAddText {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.fab {
+  position: absolute;
+  right: 20px;
+  bottom: 16px;
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 12px rgba(49, 130, 246, 0.4);
+  z-index: 5;
+}

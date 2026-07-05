@@ -1,0 +1,64 @@
+.container {
+  padding: 0 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.weekRow {
+  display: flex;
+}
+
+.cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+}
+
+.weekday {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 0;
+}
+
+.dayInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3px 0;
+}
+
+.dayBox {
+  width: 34px;
+  height: 34px;
+  border-radius: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dayNum {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 10px;
+  margin-top: 1px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+}
+
+.moreDot {
+  font-size: 8px;
+  font-weight: 600;
+}

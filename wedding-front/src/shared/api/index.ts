@@ -15,13 +15,18 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// 401이면 토큰 제거 후 로그인 페이지로
+// 401이면 토큰 제거 후 로그인 페이지로 (단, 로그인/회원가입 요청은 제외)
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const url: string = err.config?.url ?? ''
+    const isAuthRequest = url.includes('/auth/login') || url.includes('/auth/register')
+    if (err.response?.status === 401 && !isAuthRequest) {
       localStorage.removeItem(TOKEN_KEY)
-      window.location.href = '/login'
+      // 이미 로그인 페이지면 리다이렉트하지 않음 (무한 새로고침 방지)
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(err)
   },

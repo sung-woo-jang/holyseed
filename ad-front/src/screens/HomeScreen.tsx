@@ -155,7 +155,10 @@ export default function HomeScreen({ onSeeAllTx }: HomeScreenProps) {
                   <div className={styles.donutCenter}>
                     <span className={styles.donutLabel} style={{ color: theme.textMuted }}>총 기여</span>
                     <span className={styles.donutValue} style={{ color: theme.text }}>
-                      +{krwShort(data.contributions.reduce((s, c) => s + c.value, 0))}
+                      {(() => {
+                        const sum = data.contributions.reduce((s, c) => s + c.value, 0);
+                        return `${sum >= 0 ? '+' : ''}${krwShort(sum)}`;
+                      })()}
                     </span>
                   </div>
                 </div>

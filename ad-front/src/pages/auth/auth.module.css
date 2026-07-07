@@ -116,8 +116,7 @@
   color: var(--text-muted);
 }
 
-.googleBtn,
-.naverBtn {
+.googleBtn {
   border-radius: 14px;
   padding: 15px 0;
   display: flex;
@@ -126,21 +125,12 @@
   gap: 8px;
   font-size: 15px;
   font-weight: 600;
-}
-
-.googleBtn {
   background: var(--card);
   border: 1px solid var(--border);
   color: var(--text);
 }
 
-.naverBtn {
-  background: #03c75a;
-  color: #fff;
-}
-
-.googleBtn:active,
-.naverBtn:active {
+.googleBtn:active {
   opacity: 0.85;
 }
 

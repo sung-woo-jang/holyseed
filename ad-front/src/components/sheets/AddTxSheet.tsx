@@ -9,13 +9,14 @@ import { useTheme } from '../../lib/theme';
 import { useDataSource } from '../../lib/data-source';
 import TossEmoji from '../common/TossEmoji';
 import FormRow from '../common/FormRow';
+import DatePicker from '../common/DatePicker';
 import PickerOverlay from './PickerOverlay';
 import { CATEGORY_DEFS, getCategoryDef } from '../../lib/category-meta';
 import { TE } from '../../lib/toss-emoji';
 import { Icon } from '../common/Icon';
 import { krw } from '../../lib/format';
 import { useCreateTx, useUpdateTx } from '../../queries/mutations';
-import { shiftDay, todayLocal } from '../../lib/date';
+import { todayLocal } from '../../lib/date';
 import { getErrorMessage } from '../../lib/error';
 import type { MockTransaction } from '../../lib/mock-data';
 import styles from './AddTxSheet.module.css';
@@ -58,6 +59,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
   const [catPicker, setCatPicker] = useState(false);
   const [fromPicker, setFromPicker] = useState(false);
   const [toPicker, setToPicker] = useState(false);
+  const [datePicker, setDatePicker] = useState(false);
   const [error, setError] = useState('');
   const createTx = useCreateTx();
   const updateTx = useUpdateTx();
@@ -155,6 +157,15 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
       }
       overlay={
         <>
+          {/* 날짜 피커 */}
+          <DatePicker
+            visible={datePicker}
+            value={txDate}
+            maxDate={todayLocal()}
+            onSelect={setTxDate}
+            onClose={() => setDatePicker(false)}
+          />
+
           {/* 카테고리 피커 */}
           <PickerOverlay visible={catPicker} title="카테고리 선택" onClose={() => setCatPicker(false)}>
             {(data.categories.filter((c) => c.type === type).length > 0
@@ -255,24 +266,9 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
           />
         </div>
 
-        {/* 날짜 (편집 시 조정 가능) */}
-        {isEdit && (
-          <div className={styles.dateRow} style={{ borderColor: theme.border }}>
-            <span className={styles.dateLabel} style={{ color: theme.text }}>날짜</span>
-            <div className={styles.dateCtrl}>
-              <button type="button" className={styles.dateArrowBtn} onClick={() => setTxDate(shiftDay(txDate, -1))}>
-                <span className={styles.dateArrow} style={{ color: theme.brand }}>‹</span>
-              </button>
-              <span className={styles.dateValue} style={{ color: theme.text }}>{txDate}</span>
-              <button type="button" className={styles.dateArrowBtn} onClick={() => setTxDate(shiftDay(txDate, 1))}>
-                <span className={styles.dateArrow} style={{ color: theme.brand }}>›</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* 카테고리 / 자산 (모두 선택사항 — 흐름 기록용) */}
+        {/* 날짜 / 카테고리 / 자산 (카테고리·자산은 선택사항 — 흐름 기록용) */}
         <div className={styles.fieldsCard} style={{ borderColor: theme.border }}>
+          <FormRow label="날짜" value={txDate === todayLocal() ? `오늘 (${txDate.slice(5).replace('-', '/')})` : txDate} onPress={() => setDatePicker(true)} />
           <FormRow label="카테고리" value={category?.name || ''} onPress={() => setCatPicker(true)} />
           {type === 'EXPENSE' ? (
             <FormRow label="출금 자산" value={fromAsset?.name || ''} onPress={() => setFromPicker(true)} />

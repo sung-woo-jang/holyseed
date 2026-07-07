@@ -18,8 +18,10 @@ export default function HomePage() {
   const tabParam = searchParams.get('tab') as TabKey | null;
   const activeTab: TabKey = tabParam && TAB_KEYS.includes(tabParam) ? tabParam : 'home';
 
+  // push로 쌓아 기기 뒤로가기 시 이전 탭으로 (이탈 방지) — 같은 탭 재탭은 무시
   function setActiveTab(tab: TabKey) {
-    setSearchParams(tab === 'home' ? {} : { tab }, { replace: true });
+    if (tab === activeTab) return;
+    setSearchParams(tab === 'home' ? {} : { tab });
   }
 
   useEffect(() => {

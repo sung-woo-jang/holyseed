@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import cn from 'classnames';
+import { useBackClose } from '../../lib/useBackClose';
 import styles from './Sheet.module.css';
 
 interface SheetProps {
@@ -20,6 +21,9 @@ interface SheetProps {
 export default function Sheet({ visible, onClose, header, cta, children, overlay }: SheetProps) {
   const [mounted, setMounted] = useState(visible);
   const [open, setOpen] = useState(false);
+
+  // 기기 뒤로가기로 시트 닫기
+  useBackClose(visible, onClose);
 
   useEffect(() => {
     if (visible) {

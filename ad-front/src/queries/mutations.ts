@@ -72,6 +72,20 @@ export function useUpsertSnapshot() {
   });
 }
 
+export function useDeleteSnapshot() {
+  const qc = useQueryClient();
+  const hid = useHid();
+  return useMutation({
+    mutationFn: ({ assetId, date }: { assetId: number; date: string }) =>
+      snapshotsApi.delete(assetId, date),
+    onSuccess: (_data, { assetId }) => {
+      qc.invalidateQueries({ queryKey: qk.dashboard(hid!) });
+      qc.invalidateQueries({ queryKey: qk.assets(hid!) });
+      qc.invalidateQueries({ queryKey: qk.assetSnapshots(assetId) });
+    },
+  });
+}
+
 export function useBatchSnapshots() {
   const qc = useQueryClient();
   const hid = useHid();

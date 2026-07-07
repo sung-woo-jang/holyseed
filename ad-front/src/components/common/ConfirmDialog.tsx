@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom';
 import Loader from '../ui/Loader';
+import { useBackClose } from '../../lib/useBackClose';
 import styles from './ConfirmDialog.module.css';
 
 interface ConfirmDialogProps {
@@ -25,6 +26,9 @@ export default function ConfirmDialog({
   onConfirm,
   onClose,
 }: ConfirmDialogProps) {
+  // 기기 뒤로가기로 다이얼로그 닫기
+  useBackClose(visible, onClose);
+
   if (!visible) return null;
 
   return createPortal(

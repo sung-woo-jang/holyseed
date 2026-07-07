@@ -25,3 +25,16 @@ export function daysBetween(a: string, b: string): number {
 export function isSameMonth(a: string, b: string): boolean {
   return a.slice(0, 7) === b.slice(0, 7);
 }
+
+/** 기준일이 속한 달의 직전 달 말일 (YYYY-MM-DD) */
+export function lastDayOfPrevMonth(dateStr: string): string {
+  const [y, m] = dateStr.split('-').map(Number);
+  return toLocalDateString(new Date(y!, m! - 1, 0));
+}
+
+/** YYYY-MM에 개월 수 가감 → YYYY-MM */
+export function shiftMonth(ym: string, delta: number): string {
+  const [y, m] = ym.split('-').map(Number);
+  const d = new Date(y!, m! - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}

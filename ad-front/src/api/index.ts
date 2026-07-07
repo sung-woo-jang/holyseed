@@ -52,7 +52,8 @@ export const snapshotsApi = {
   list: (assetId: number) =>
     api.get<AssetSnapshot[]>(`/assets/${assetId}/snapshots`).then((r) => r.data),
 
-  delete: (id: number) => api.post(`/asset-snapshots/${id}/delete`).then((r) => r.data),
+  delete: (assetId: number, date: string) =>
+    api.post(`/assets/${assetId}/snapshots/delete`, { date }).then((r) => r.data),
 };
 
 // ─── Transactions ─────────────────────────────────────────────────────────────

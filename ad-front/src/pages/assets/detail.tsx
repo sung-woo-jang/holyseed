@@ -15,6 +15,7 @@ import { useDataSource, useMockRole } from '../../lib/data-source';
 import TossEmoji from '../../components/common/TossEmoji';
 import LineChart from '../../components/charts/LineChart';
 import SnapshotSheet from '../../components/sheets/SnapshotSheet';
+import EditSnapshotSheet, { type EditableSnapshot } from '../../components/sheets/EditSnapshotSheet';
 import { getAssetCategoryMeta } from '../../lib/category-meta';
 import { krw, krwShort, pct } from '../../lib/format';
 import { TE } from '../../lib/toss-emoji';
@@ -37,6 +38,7 @@ export default function AssetDetailPage() {
   const [nameInput, setNameInput] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [snapshotOpen, setSnapshotOpen] = useState(false);
+  const [editSnap, setEditSnap] = useState<EditableSnapshot | null>(null);
   const [toast, setToast] = useState('');
   const updateAsset = useUpdateAsset();
   const deleteAsset = useDeleteAsset();
@@ -53,13 +55,14 @@ export default function AssetDetailPage() {
   });
 
   const rawSnapshots = Array.isArray(snapshotsQ.data) ? snapshotsQ.data : [];
-  const snapshots = rawSnapshots
-    .map((s: any) => ({
-      date: s.date,
-      valueKRW: s.valueKRW ?? s.value,
-    }))
-    .slice()
-    .reverse();
+  const parsed = rawSnapshots.map((s: any) => ({
+    date: String(s.date),
+    value: Number(s.value) || 0,
+    valueKRW: Number(s.valueKRW ?? s.value) || 0,
+  }));
+  // 항상 날짜순 정렬 — 히스토리는 최신 먼저, 차트는 과거→현재
+  const snapshots = [...parsed].sort((a, b) => b.date.localeCompare(a.date));
+  const chartAsc = [...parsed].sort((a, b) => a.date.localeCompare(b.date));
 
   // 자산을 못 찾으면 (삭제됐거나 잘못된 id) 빈 상태 표시
   if (!asset) {
@@ -77,7 +80,7 @@ export default function AssetDetailPage() {
 
   const meta = getAssetCategoryMeta(asset.category);
 
-  const chartData = snapshots.map((s) => ({
+  const chartData = chartAsc.map((s) => ({
     date: s.date,
     value: s.valueKRW,
   }));
@@ -233,6 +236,8 @@ export default function AssetDetailPage() {
                 <ListRow
                   contents={<span className={styles.snapDate} style={{ color: theme.textMuted }}>{s.date}</span>}
                   right={<span className={styles.snapValue} style={{ color: theme.text }}>{krw(s.valueKRW)}</span>}
+                  withArrow={role !== 'VIEWER'}
+                  onPress={role !== 'VIEWER' ? () => setEditSnap({ date: s.date, value: s.value }) : undefined}
                   verticalPadding="small"
                 />
                 {idx < snapshots.length - 1 && <Border type="full" />}
@@ -280,6 +285,13 @@ export default function AssetDetailPage() {
         focusAssetId={asset.id}
         onClose={() => setSnapshotOpen(false)}
         onSaved={() => setToast('스냅샷을 저장했어요')}
+      />
+      <EditSnapshotSheet
+        visible={!!editSnap}
+        assetId={Number(asset.id)}
+        snapshot={editSnap}
+        onClose={() => setEditSnap(null)}
+        onDone={setToast}
       />
 
       <ConfirmDialog

@@ -13,11 +13,13 @@ interface WorkCalendarProps {
   logs: CalLog[];
   selectedDate?: string;
   onSelectDay: (date: string) => void;
+  /** 이후 날짜는 선택 불가 (YYYY-MM-DD) */
+  maxDate?: string;
 }
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
-export default function WorkCalendar({ month, logs, selectedDate, onSelectDay }: WorkCalendarProps) {
+export default function WorkCalendar({ month, logs, selectedDate, onSelectDay, maxDate }: WorkCalendarProps) {
   const theme = useTheme();
   const [y, m] = month.split('-').map(Number);
   const year = y ?? new Date().getFullYear();
@@ -65,8 +67,16 @@ export default function WorkCalendar({ month, logs, selectedDate, onSelectDay }:
             const dateStr = `${month}-${pad(day)}`;
             const dayLogs = byDate[dateStr] ?? [];
             const isSelected = selectedDate === dateStr;
+            const isDisabled = !!maxDate && dateStr > maxDate;
             return (
-              <button type="button" key={di} className={styles.cell} onClick={() => onSelectDay(dateStr)}>
+              <button
+                type="button"
+                key={di}
+                className={styles.cell}
+                onClick={() => onSelectDay(dateStr)}
+                disabled={isDisabled}
+                style={isDisabled ? { opacity: 0.3, cursor: 'default' } : undefined}
+              >
                 <div className={styles.dayInner}>
                   <div
                     className={styles.dayBox}

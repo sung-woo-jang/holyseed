@@ -1,0 +1,50 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  padding-left: 20px;
+}
+
+.presetRow {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 12px;
+}
+
+.presetChip {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 20px;
+}
+
+.presetChip:active {
+  opacity: 0.8;
+}
+
+.monthNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  padding-right: 4px;
+}
+
+.monthBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.monthArrow {
+  font-size: 16px;
+  line-height: 20px;
+}
+
+.monthLabel {
+  font-size: 14px;
+  font-weight: 700;
+}

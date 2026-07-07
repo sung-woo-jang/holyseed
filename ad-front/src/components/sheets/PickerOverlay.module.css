@@ -1,10 +1,12 @@
 .root {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 20;
+  z-index: 120; /* 기본 시트(100) 위 */
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  max-width: 480px;
+  margin: 0 auto;
 }
 
 .dismiss {
@@ -15,11 +17,22 @@
 .panel {
   position: relative;
   background: var(--card);
-  max-height: 80%;
+  max-height: 85dvh;
   border-radius: 20px 20px 0 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  animation: rise 0.22s cubic-bezier(0.25, 0.8, 0.35, 1);
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(40%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 .handle {
@@ -28,7 +41,7 @@
   border-radius: 2px;
   background: var(--border);
   align-self: center;
-  margin: 12px 0 16px;
+  margin: 12px 0 14px;
   flex-shrink: 0;
 }
 
@@ -36,11 +49,11 @@
   font-size: 17px;
   font-weight: 700;
   color: var(--text);
-  padding: 0 20px 16px;
+  padding: 0 20px 14px;
   flex-shrink: 0;
 }
 
 .scroll {
   overflow-y: auto;
-  padding: 4px 20px 32px 0;
+  padding: 4px 20px 16px 0;
 }

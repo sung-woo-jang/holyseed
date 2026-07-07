@@ -25,8 +25,8 @@ export default function LoginPage() {
     }
   }, [searchParams]);
 
-  function handleSocial(provider: 'google' | 'naver') {
-    window.location.href = `/api/ad/auth/${provider}`;
+  function handleGoogleLogin() {
+    window.location.href = '/api/ad/auth/google';
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -100,7 +100,7 @@ export default function LoginPage() {
           <span className={styles.dividerLine} />
         </div>
 
-        <button type="button" className={styles.googleBtn} onClick={() => handleSocial('google')}>
+        <button type="button" className={styles.googleBtn} onClick={handleGoogleLogin}>
           <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
             <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z" />
             <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18Z" />
@@ -108,13 +108,6 @@ export default function LoginPage() {
             <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58Z" />
           </svg>
           구글로 계속하기
-        </button>
-
-        <button type="button" className={styles.naverBtn} onClick={() => handleSocial('naver')}>
-          <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden>
-            <path fill="#fff" d="M10.85 1.5v6.87L5.15 1.5H1.5v13h3.65V7.63l5.7 6.87h3.65v-13h-3.65Z" />
-          </svg>
-          네이버로 계속하기
         </button>
 
         <span className={styles.switchText}>

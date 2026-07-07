@@ -5,10 +5,11 @@ import TextButton from '../ui/TextButton';
 import Badge from '../ui/Badge';
 import SheetModal from './SheetModal';
 import EmptyState from '../common/EmptyState';
+import DatePicker from '../common/DatePicker';
 import { useTheme } from '../../lib/theme';
 import { useDataSource } from '../../lib/data-source';
 import { krw, krwShort } from '../../lib/format';
-import { todayLocal, shiftDay } from '../../lib/date';
+import { todayLocal } from '../../lib/date';
 import { getErrorMessage } from '../../lib/error';
 import { TE } from '../../lib/toss-emoji';
 import { useUpsertSnapshot, useBatchSnapshots } from '../../queries/mutations';
@@ -40,6 +41,7 @@ export default function SnapshotSheet({ visible, onClose, focusAssetId, onSaved 
   const data = useDataSource();
   const [values, setValues] = useState<Record<string, string>>({});
   const [date, setDate] = useState(todayLocal());
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -51,6 +53,7 @@ export default function SnapshotSheet({ visible, onClose, focusAssetId, onSaved 
     if (visible) {
       setValues({});
       setDate(todayLocal());
+      setDatePickerOpen(false);
       setFocusedId(null);
       setError('');
     }
@@ -188,27 +191,25 @@ export default function SnapshotSheet({ visible, onClose, focusAssetId, onSaved 
           </Button>
         </div>
       }
+      overlay={
+        <DatePicker
+          visible={datePickerOpen}
+          value={date}
+          maxDate={todayLocal()}
+          onSelect={setDate}
+          onClose={() => setDatePickerOpen(false)}
+        />
+      }
     >
       <div className={styles.body}>
         {/* 날짜 선택 + 진행 카운터 */}
         <div className={styles.toolbar}>
-          <div className={styles.dateCtrl}>
-            <button type="button" className={styles.dateArrowBtn} onClick={() => setDate(shiftDay(date, -1))}>
-              <span className={styles.dateArrow} style={{ color: theme.brand }}>‹</span>
-            </button>
+          <button type="button" className={styles.dateBtn} onClick={() => setDatePickerOpen(true)}>
             <span className={styles.dateValue} style={{ color: theme.text }}>
               {date}{isToday && <span style={{ color: theme.textMuted, fontWeight: 500 }}> (오늘)</span>}
             </span>
-            <button
-              type="button"
-              className={styles.dateArrowBtn}
-              onClick={() => setDate(shiftDay(date, 1))}
-              disabled={isToday}
-              style={isToday ? { opacity: 0.25 } : undefined}
-            >
-              <span className={styles.dateArrow} style={{ color: theme.brand }}>›</span>
-            </button>
-          </div>
+            <span className={styles.dateCaret} style={{ color: theme.brand }}>▾</span>
+          </button>
           {!focusAssetId && (
             <div className={styles.toolbarRight}>
               <span className={styles.progress} style={{ color: hasInput ? theme.brand : theme.textMuted }}>
@@ -275,7 +276,11 @@ export default function SnapshotSheet({ visible, onClose, focusAssetId, onSaved 
                     onChangeText={(t) => setValues((prev) => ({ ...prev, [asset.id]: formatAmount(t) }))}
                     style={{ width: 150 }}
                     inputRef={(el) => { inputRefs.current[asset.id] = el; }}
-                    onFocus={() => setFocusedId(asset.id)}
+                    onFocus={() => {
+                      setFocusedId(asset.id);
+                      // 모바일 키보드에 가리지 않게 행을 가운데로
+                      setTimeout(() => inputRefs.current[asset.id]?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 150);
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') { e.preventDefault(); focusNext(asset.id); }
                     }}

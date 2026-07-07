@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { useTheme } from '../../lib/theme';
+import { useBackClose } from '../../lib/useBackClose';
 import styles from './PickerOverlay.module.css';
 
 interface PickerOverlayProps {
@@ -10,23 +12,27 @@ interface PickerOverlayProps {
 }
 
 /**
- * 폼 시트(SheetModal) 내부에 띄우는 피커 오버레이.
- * SheetModal의 `overlay` prop으로 전달해 시트 위에 겹쳐 그린다.
+ * 시트 위에 겹쳐 뜨는 2단계 피커 — 화면 전체 기준 바텀시트.
+ * (RN과 달리 웹은 portal 중첩이 자유로워 부모 시트 높이에 갇히지 않는다)
+ * 기기 뒤로가기로 닫힌다.
  */
 export default function PickerOverlay({ visible, title, onClose, children }: PickerOverlayProps) {
   const theme = useTheme();
+  useBackClose(visible, onClose);
+
   if (!visible) return null;
 
-  const dim = theme.dark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.32)';
+  const dim = theme.dark ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.4)';
 
-  return (
-    <div className={styles.root} style={{ background: dim }}>
-      <div className={styles.dismiss} onClick={onClose} />
+  return createPortal(
+    <div className={styles.root}>
+      <div className={styles.dismiss} style={{ background: dim }} onClick={onClose} />
       <div className={styles.panel}>
         <div className={styles.handle} />
         <span className={styles.title}>{title}</span>
         <div className={styles.scroll}>{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

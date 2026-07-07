@@ -3,6 +3,7 @@ import { api, TOKEN_KEY } from '@/shared/api'
 import { ContentRowList } from '@/widgets/admin-content-rows/ContentRowList'
 import { ContentRowForm } from '@/widgets/admin-content-rows/ContentRowForm'
 import type { ContentRow } from '@/shared/types'
+import { useToast } from '@/shared/ui/toast'
 import styles from './ContentRowsPage.module.css'
 
 export default function AdminContentRowsPage() {
@@ -12,6 +13,7 @@ export default function AdminContentRowsPage() {
   const [editingRow, setEditingRow] = useState<ContentRow | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [coupleId, setCoupleId] = useState<string | null>(null)
+  const toast = useToast()
 
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY)
@@ -42,7 +44,7 @@ export default function AdminContentRowsPage() {
       await api.post(`/content-rows/${id}/delete`)
       await fetchContentRows()
     } catch {
-      alert('삭제에 실패했습니다.')
+      toast.error('삭제에 실패했습니다.')
     }
   }
 

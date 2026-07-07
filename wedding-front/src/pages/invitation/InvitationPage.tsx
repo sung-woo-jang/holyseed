@@ -19,6 +19,7 @@ import NetflixRow from '@/widgets/netflix-row/NetflixRow'
 import VenueModal from '@/shared/ui/VenueModal'
 import AttendanceModal from '@/features/rsvp/AttendanceModal'
 import KakaoMapScript from '@/shared/ui/KakaoMapScript'
+import { useToast } from '@/shared/ui/toast'
 import styles from './InvitationPage.module.css'
 
 const KakaoMap = lazy(() => import('@/shared/ui/KakaoMap'))
@@ -33,6 +34,7 @@ const GALLERY_IMAGES = [
 
 function InvitationContent() {
   const { couple, isLoading, error } = useCouple()
+  const toast = useToast()
   const [showIntro, setShowIntro] = useState(true)
   const [wasSkipped, setWasSkipped] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
@@ -71,7 +73,8 @@ function InvitationContent() {
     if (!couple?.id) return
     api.post('/media/search', { coupleId: couple.id, moderationStatus: 'APPROVED', limit: 10 })
       .then((res) => setGuestMedia(res.data.data?.media ?? []))
-      .catch(() => {})
+      // 하객에게는 에러를 노출하지 않고 기본 사진으로 대체 렌더
+      .catch((e) => console.warn('하객 미디어 조회 실패', e))
   }, [couple?.id])
 
   useEffect(() => {
@@ -86,7 +89,8 @@ function InvitationContent() {
           items: row.items,
         })))
       })
-      .catch(() => {})
+      // 실패해도 기본 섹션(systemRows)은 렌더되므로 하객에게 에러 미노출
+      .catch((e) => console.warn('콘텐츠 Row 조회 실패', e))
   }, [couple?.id])
 
   if (isLoading) return <div style={{ color: '#fff', padding: '2rem' }}>로딩 중...</div>
@@ -131,7 +135,7 @@ function InvitationContent() {
       type: 'account-card-row',
       items: accountInfo.map((account) => ({
         type: 'account-card', icon: '🎁', relation: account.relation, holder: account.holder, bank: account.bank, account: account.account,
-        action: { label: '계좌번호 복사', onClick: () => { navigator.clipboard.writeText(account.account); alert('계좌번호가 복사되었습니다.') } },
+        action: { label: '계좌번호 복사', onClick: () => { navigator.clipboard.writeText(account.account).then(() => toast.success('계좌번호가 복사되었습니다.')).catch(() => toast.error('계좌번호 복사에 실패했습니다.')) } },
       })),
     }] : []),
     {

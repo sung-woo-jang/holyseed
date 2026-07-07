@@ -1,6 +1,7 @@
 
 
 import { useState, lazy, Suspense } from 'react';
+import { useToast } from '@/shared/ui/toast';
 import styles from './VenueModal.module.css';
 
 const KakaoMap = lazy(() => import('@/shared/ui/KakaoMap'));
@@ -25,6 +26,7 @@ export default function VenueModal({
   lng,
 }: VenueModalProps) {
   const [copied, setCopied] = useState(false);
+  const toast = useToast();
 
   if (!isOpen) return null;
 
@@ -33,8 +35,8 @@ export default function VenueModal({
       await navigator.clipboard.writeText(address);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      alert('주소 복사에 실패했습니다.');
+    } catch {
+      toast.error('주소 복사에 실패했습니다.');
     }
   };
 

@@ -3,7 +3,7 @@ import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { api, TOKEN_KEY } from '@/shared/api'
-import styles from './settingsPage.module.css'
+import styles from './SettingsPage.module.css'
 import adminStyles from '../admin-page.module.css'
 
 const accountSchema = z.object({

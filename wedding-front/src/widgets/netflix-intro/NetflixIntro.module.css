@@ -4,6 +4,7 @@
   left: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh; /* 모바일 브라우저 하단 UI 제외한 실제 가시 높이 */
   background: #000;
   z-index: 9999;
   display: flex;
@@ -21,8 +22,8 @@
 
 .skipButton {
   position: absolute;
-  bottom: 2rem;
-  right: 2rem;
+  bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+  right: calc(2rem + env(safe-area-inset-right, 0px));
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.5);
   color: #fff;
@@ -55,5 +56,13 @@
 @media (prefers-reduced-motion: reduce) {
   .introOverlay {
     animation: fadeOut 0.01ms forwards;
+  }
+}
+
+@media (max-width: 640px) {
+  .skipButton {
+    bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+    right: calc(1.25rem + env(safe-area-inset-right, 0px));
+    padding: 0.875rem 1.5rem; /* 터치 타깃 확보 */
   }
 }

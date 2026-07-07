@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { api } from '@/shared/api';
 import { ContentRowType } from '@/shared/types';
+import { useToast } from '@/shared/ui/toast';
 import styles from './MediaUploader.module.css';
 
 interface MediaUploaderProps {
@@ -25,6 +26,7 @@ const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/x-msvideo'];
 export function MediaUploader({ coupleId, rowType, onComplete }: MediaUploaderProps) {
   const [uploads, setUploads] = useState<UploadProgress[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const toast = useToast();
 
   const allowedTypes =
     rowType === 'VIDEO_GALLERY'
@@ -39,11 +41,11 @@ export function MediaUploader({ coupleId, rowType, onComplete }: MediaUploaderPr
     // Validate files
     const validFiles = fileArray.filter((file) => {
       if (!allowedTypes.includes(file.type)) {
-        alert(`${file.name}: 지원하지 않는 파일 형식입니다.`);
+        toast.error(`${file.name}: 지원하지 않는 파일 형식입니다.`);
         return false;
       }
       if (file.size > 5 * 1024 * 1024 * 1024) {
-        alert(`${file.name}: 파일 크기가 5GB를 초과합니다.`);
+        toast.error(`${file.name}: 파일 크기가 5GB를 초과합니다.`);
         return false;
       }
       return true;

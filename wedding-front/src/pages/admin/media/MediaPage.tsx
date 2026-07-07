@@ -4,6 +4,7 @@ import { MediaFilters } from '@/widgets/admin-media/MediaFilters'
 import { MediaStats } from '@/widgets/admin-media/MediaStats'
 import { MediaGrid } from '@/widgets/admin-media/MediaGrid'
 import type { Media, MediaStats as IMediaStats, ModerationStatus } from '@/shared/types'
+import { useToast } from '@/shared/ui/toast'
 import styles from '../admin-page.module.css'
 
 interface MediaListData {
@@ -19,6 +20,7 @@ export default function AdminMediaPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [coupleId, setCoupleId] = useState<string | null>(null)
+  const toast = useToast()
 
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY)
@@ -46,13 +48,21 @@ export default function AdminMediaPage() {
   useEffect(() => { fetchMedia() }, [fetchMedia])
 
   const handleModerate = async (id: string, status: 'APPROVED' | 'REJECTED') => {
-    await api.post(`/media/${id}/moderate`, { moderationStatus: status })
-    await fetchMedia()
+    try {
+      await api.post(`/media/${id}/moderate`, { moderationStatus: status })
+      await fetchMedia()
+    } catch {
+      toast.error(status === 'APPROVED' ? '미디어 승인에 실패했습니다.' : '미디어 거부에 실패했습니다.')
+    }
   }
 
   const handleDelete = async (id: string) => {
-    await api.post(`/media/${id}/delete`)
-    await fetchMedia()
+    try {
+      await api.post(`/media/${id}/delete`)
+      await fetchMedia()
+    } catch {
+      toast.error('미디어 삭제에 실패했습니다.')
+    }
   }
 
   if (!coupleId && !error) return <div className={styles.loading}>정보를 불러오는 중...</div>

@@ -9,6 +9,7 @@ import { api } from '../../lib/api';
 import TossEmoji from '../common/TossEmoji';
 import { TE } from '../../lib/toss-emoji';
 import { qk } from '../../queries/keys';
+import { getErrorMessage } from '../../lib/error';
 import styles from './JoinSheet.module.css';
 
 interface JoinSheetProps {
@@ -58,7 +59,7 @@ export default function JoinSheet({ visible, onClose, initialCode }: JoinSheetPr
       setStep(3);
       setTimeout(() => { setStep(1); setCode(''); setPreview(null); onClose(); }, 1200);
     } catch (e: any) {
-      setError(e?.message ?? '합류에 실패했어요. 다시 시도해 주세요.');
+      setError(getErrorMessage(e, '합류에 실패했어요. 다시 시도해 주세요.'));
     } finally { setJoining(false); }
   }
 

@@ -20,15 +20,11 @@ import ConfirmDialog from '../components/common/ConfirmDialog';
 import AppToast from '../components/common/AppToast';
 import { useToggleRecurring, useDeleteRecurring, useDeleteTx } from '../queries/mutations';
 import type { MockRecurring, MockTransaction } from '../lib/mock-data';
+import { todayLocal } from '../lib/date';
 import styles from './BookScreen.module.css';
 
 function todayMonth(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
-function todayDate(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return todayLocal().slice(0, 7);
 }
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -181,7 +177,7 @@ export default function BookScreen() {
 
   // 선택일 등록
   function openAddForDay() {
-    if (!selectedDate) setSelectedDate(todayDate());
+    if (!selectedDate) setSelectedDate(todayLocal());
     setAddPicker(true);
   }
   function handleAddPick(value: string) {
@@ -526,8 +522,14 @@ export default function BookScreen() {
         date={editTx ? undefined : selectedDate}
         editTx={editTx ?? undefined}
         onClose={() => { setAddTxVisible(false); setEditTx(null); }}
+        onSaved={(mode) => setToast(mode === 'edit' ? '거래를 수정했어요' : '거래를 저장했어요')}
       />
-      <AddRecurringSheet visible={addRecVisible} editRec={editRec ?? undefined} onClose={() => { setAddRecVisible(false); setEditRec(null); }} />
+      <AddRecurringSheet
+        visible={addRecVisible}
+        editRec={editRec ?? undefined}
+        onClose={() => { setAddRecVisible(false); setEditRec(null); }}
+        onSaved={(mode) => setToast(mode === 'edit' ? '정기 항목을 수정했어요' : '정기 항목을 저장했어요')}
+      />
 
       {/* 거래 액션 */}
       <ActionSheet

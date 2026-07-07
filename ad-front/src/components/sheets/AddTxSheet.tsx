@@ -15,6 +15,8 @@ import { TE } from '../../lib/toss-emoji';
 import { Icon } from '../common/Icon';
 import { krw } from '../../lib/format';
 import { useCreateTx, useUpdateTx } from '../../queries/mutations';
+import { shiftDay, todayLocal } from '../../lib/date';
+import { getErrorMessage } from '../../lib/error';
 import type { MockTransaction } from '../../lib/mock-data';
 import styles from './AddTxSheet.module.css';
 
@@ -30,13 +32,6 @@ function formatNum(raw: string): string {
   return n ? Number(n).toLocaleString() : '';
 }
 
-/** YYYY-MM-DD에 일수 가감 */
-function shiftDay(dateStr: string, delta: number): string {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const dt = new Date(y!, (m! - 1), d! + delta);
-  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
-}
-
 interface AddTxSheetProps {
   visible: boolean;
   onClose: () => void;
@@ -44,9 +39,11 @@ interface AddTxSheetProps {
   date?: string;
   /** 지정 시 편집 모드 */
   editTx?: MockTransaction;
+  /** 저장/수정 성공 콜백 (토스트) */
+  onSaved?: (mode: 'create' | 'edit') => void;
 }
 
-export default function AddTxSheet({ visible, onClose, date, editTx }: AddTxSheetProps) {
+export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: AddTxSheetProps) {
   const theme = useTheme();
   const data = useDataSource();
   const isEdit = !!editTx;
@@ -61,7 +58,6 @@ export default function AddTxSheet({ visible, onClose, date, editTx }: AddTxShee
   const [catPicker, setCatPicker] = useState(false);
   const [fromPicker, setFromPicker] = useState(false);
   const [toPicker, setToPicker] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const createTx = useCreateTx();
   const updateTx = useUpdateTx();
@@ -84,7 +80,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx }: AddTxShee
       setError('');
     } else {
       reset();
-      setTxDate(date ?? new Date().toISOString().split('T')[0]!);
+      setTxDate(date ?? todayLocal());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, editTx]);
@@ -124,6 +120,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx }: AddTxShee
           },
         });
         onClose();
+        onSaved?.('edit');
         return;
       }
       await createTx.mutateAsync({
@@ -135,22 +132,12 @@ export default function AddTxSheet({ visible, onClose, date, editTx }: AddTxShee
         ...(toAsset ? { toAssetId: Number(toAsset.id) } : {}),
         memo: memo || title || undefined,
       });
-      setSaved(true);
-      setTimeout(() => { setSaved(false); reset(); onClose(); }, 700);
+      reset();
+      onClose();
+      onSaved?.('create');
     } catch (e: any) {
-      setError(e?.message ?? '저장에 실패했어요. 다시 시도해 주세요.');
+      setError(getErrorMessage(e, '저장에 실패했어요. 다시 시도해 주세요.'));
     }
-  }
-
-  if (saved) {
-    return (
-      <SheetModal visible={visible} onClose={onClose}>
-        <div className={styles.confirmBox}>
-          <TossEmoji code={TE.check} size={64} />
-          <span className={styles.confirmTitle} style={{ color: theme.text }}>저장 완료!</span>
-        </div>
-      </SheetModal>
-    );
   }
 
   return (

@@ -9,6 +9,7 @@ import TextField from '../../components/ui/TextField';
 import ScreenHeader from '../../components/common/ScreenHeader';
 import EmptyState from '../../components/common/EmptyState';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import AppToast from '../../components/common/AppToast';
 import { useTheme } from '../../lib/theme';
 import { useDataSource, useMockRole } from '../../lib/data-source';
 import TossEmoji from '../../components/common/TossEmoji';
@@ -36,6 +37,7 @@ export default function AssetDetailPage() {
   const [nameInput, setNameInput] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [snapshotOpen, setSnapshotOpen] = useState(false);
+  const [toast, setToast] = useState('');
   const updateAsset = useUpdateAsset();
   const deleteAsset = useDeleteAsset();
 
@@ -173,14 +175,16 @@ export default function AssetDetailPage() {
           <span className={styles.valueText} style={{ color: asset.isLiability ? theme.danger : theme.text }}>
             {krw(asset.value)}
           </span>
-          <div className={styles.deltaBadge}>
-            <span className={styles.deltaChip} style={{ backgroundColor: asset.delta >= 0 ? theme.brandSoft : '#FEE2E2' }}>
-              <span style={{ marginRight: 4, display: 'inline-flex' }}>{Icon.arrowUp(asset.delta >= 0 ? theme.brand : theme.danger, 12)}</span>
-              <span className={styles.deltaText} style={{ color: asset.delta >= 0 ? theme.brand : theme.danger }}>
-                {krwShort(Math.abs(asset.delta))} ({pct(asset.deltaPct)})
+          {asset.delta != null && (
+            <div className={styles.deltaBadge}>
+              <span className={styles.deltaChip} style={{ backgroundColor: asset.delta >= 0 ? theme.brandSoft : '#FEE2E2' }}>
+                <span style={{ marginRight: 4, display: 'inline-flex' }}>{Icon.arrowUp(asset.delta >= 0 ? theme.brand : theme.danger, 12)}</span>
+                <span className={styles.deltaText} style={{ color: asset.delta >= 0 ? theme.brand : theme.danger }}>
+                  {krwShort(Math.abs(asset.delta))} ({pct(asset.deltaPct ?? 0)})
+                </span>
               </span>
-            </span>
-          </div>
+            </div>
+          )}
           {role !== 'VIEWER' && (
             <Button
               display="full"
@@ -275,6 +279,7 @@ export default function AssetDetailPage() {
         visible={snapshotOpen}
         focusAssetId={asset.id}
         onClose={() => setSnapshotOpen(false)}
+        onSaved={() => setToast('스냅샷을 저장했어요')}
       />
 
       <ConfirmDialog
@@ -287,6 +292,7 @@ export default function AssetDetailPage() {
         onConfirm={handleDelete}
         onClose={() => setConfirmDelete(false)}
       />
+      <AppToast open={!!toast} text={toast} onClose={() => setToast('')} />
     </div>
   );
 }

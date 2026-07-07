@@ -19,21 +19,32 @@ export class AssetsService {
     });
     if (!assets.length) return [];
     const ids = assets.map((a) => a.id);
+    // 자산당 최신 2건 — rn=1 최신, rn=2 직전 (증감 계산용)
     const rows: any[] = await this.assetRepo.manager.query(
-      `SELECT DISTINCT ON (s.asset_id) s.asset_id, s.value, s.fx_rate_to_krw, s.value_krw, s.date
-       FROM ad.asset_snapshots s
-       WHERE s.asset_id = ANY($1)
-       ORDER BY s.asset_id, s.date DESC`,
+      `SELECT * FROM (
+         SELECT s.asset_id, s.value, s.fx_rate_to_krw, s.value_krw,
+                to_char(s.date, 'YYYY-MM-DD') AS date,
+                ROW_NUMBER() OVER (PARTITION BY s.asset_id ORDER BY s.date DESC) AS rn
+         FROM ad.asset_snapshots s
+         WHERE s.asset_id = ANY($1)
+       ) t WHERE t.rn <= 2`,
       [ids],
     );
-    const snapMap = new Map(rows.map((r) => [r.asset_id, r]));
+    const toSnapshot = (r: any) => ({
+      value: Number(r.value),
+      fxRateToKRW: Number(r.fx_rate_to_krw),
+      valueKRW: Number(r.value_krw),
+      date: r.date,
+    });
+    const latestMap = new Map(rows.filter((r) => Number(r.rn) === 1).map((r) => [r.asset_id, r]));
+    const prevMap = new Map(rows.filter((r) => Number(r.rn) === 2).map((r) => [r.asset_id, r]));
     return assets.map((a) => {
-      const s = snapMap.get(a.id);
+      const latest = latestMap.get(a.id);
+      const prev = prevMap.get(a.id);
       return {
         ...a,
-        latestSnapshot: s
-          ? { value: Number(s.value), fxRateToKRW: Number(s.fx_rate_to_krw), valueKRW: Number(s.value_krw), date: s.date }
-          : undefined,
+        latestSnapshot: latest ? toSnapshot(latest) : undefined,
+        prevSnapshot: prev ? toSnapshot(prev) : undefined,
       };
     });
   }

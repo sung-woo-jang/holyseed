@@ -8,6 +8,8 @@ import { TE } from '../../lib/toss-emoji';
 import TossEmoji from '../common/TossEmoji';
 import { ASSET_CATEGORY_META } from '../../lib/category-meta';
 import { useCreateAsset, useUpdateAsset, useUpsertSnapshot } from '../../queries/mutations';
+import { todayLocal } from '../../lib/date';
+import { getErrorMessage } from '../../lib/error';
 import type { MockAsset } from '../../lib/mock-data';
 import type { AssetCategory } from '../../types/api';
 import styles from './AddAssetSheet.module.css';
@@ -42,7 +44,6 @@ export default function AddAssetSheet({ visible, onClose, editAsset, onSaved }: 
   const [assetName, setAssetName] = useState('');
   const [category, setCategory] = useState<AssetCategory | null>(null);
   const [amount, setAmount] = useState('');
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const createAsset = useCreateAsset();
   const updateAsset = useUpdateAsset();
@@ -80,13 +81,13 @@ export default function AddAssetSheet({ visible, onClose, editAsset, onSaved }: 
       onClose();
       onSaved?.('edit');
     } catch (e: any) {
-      setError(e?.message ?? '수정에 실패했어요. 다시 시도해 주세요.');
+      setError(getErrorMessage(e, '수정에 실패했어요. 다시 시도해 주세요.'));
     }
   }
 
   async function handleSave(skipAmount = false) {
     setError('');
-    const today = new Date().toISOString().split('T')[0]!;
+    const today = todayLocal();
     try {
       const newAsset = await createAsset.mutateAsync({
         name: assetName.trim(),
@@ -101,26 +102,15 @@ export default function AddAssetSheet({ visible, onClose, editAsset, onSaved }: 
           dto: { date: today, value: valueToSave },
         });
       }
-      setSaved(true);
-      setTimeout(() => { setSaved(false); reset(); onClose(); onSaved?.('create'); }, 700);
+      reset();
+      onClose();
+      onSaved?.('create');
     } catch (e: any) {
-      setError(e?.message ?? '저장에 실패했어요. 다시 시도해 주세요.');
+      setError(getErrorMessage(e, '저장에 실패했어요. 다시 시도해 주세요.'));
     }
   }
 
   const headerTitle = isEdit ? '자산 수정' : `자산 추가 · ${step}/2`;
-
-  if (saved) {
-    return (
-      <SheetModal visible={visible} onClose={handleClose}>
-        <div className={styles.confirmBox}>
-          <TossEmoji code={TE.check} size={64} />
-          <span className={styles.confirmTitle} style={{ color: theme.text }}>자산이 추가됐어요!</span>
-          <span className={styles.confirmSub} style={{ color: theme.textMuted }}>스냅샷을 입력하면 순자산에 반영돼요</span>
-        </div>
-      </SheetModal>
-    );
-  }
 
   if (step === 1) {
     return (

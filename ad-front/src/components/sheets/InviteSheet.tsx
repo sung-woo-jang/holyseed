@@ -5,6 +5,7 @@ import SheetModal from './SheetModal';
 import { useTheme } from '../../lib/theme';
 import { Icon } from '../common/Icon';
 import { useInvite } from '../../queries/mutations';
+import { getErrorMessage } from '../../lib/error';
 import styles from './InviteSheet.module.css';
 
 type InviteRole = 'EDITOR' | 'VIEWER';
@@ -35,7 +36,7 @@ export default function InviteSheet({ visible, onClose }: InviteSheetProps) {
       setCode(result.code);
       setStep(2);
     } catch (e: any) {
-      setError(e?.message ?? '초대 코드 생성에 실패했어요.');
+      setError(getErrorMessage(e, '초대 코드 생성에 실패했어요.'));
     }
   }
 

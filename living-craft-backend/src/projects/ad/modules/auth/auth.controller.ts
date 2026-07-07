@@ -43,25 +43,11 @@ export class AuthController {
     res.redirect(this.authService.authorizeUrl('google'));
   }
 
-  @Get('naver')
-  @Public()
-  @ApiOperation({ summary: '네이버 로그인 시작 (인증 페이지로 리다이렉트)' })
-  naverStart(@Res() res: Response) {
-    res.redirect(this.authService.authorizeUrl('naver'));
-  }
-
   @Get('google/callback')
   @Public()
   @ApiOperation({ summary: '구글 로그인 콜백 — JWT 발급 후 프론트로 리다이렉트' })
   async googleCallback(@Query('code') code: string, @Query('state') state: string, @Res() res: Response) {
     return this.handleOAuthCallback('google', code, state, res);
-  }
-
-  @Get('naver/callback')
-  @Public()
-  @ApiOperation({ summary: '네이버 로그인 콜백 — JWT 발급 후 프론트로 리다이렉트' })
-  async naverCallback(@Query('code') code: string, @Query('state') state: string, @Res() res: Response) {
-    return this.handleOAuthCallback('naver', code, state, res);
   }
 
   private async handleOAuthCallback(provider: OAuthProvider, code: string, state: string, res: Response) {

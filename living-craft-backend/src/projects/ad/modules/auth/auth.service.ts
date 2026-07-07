@@ -9,7 +9,7 @@ import { AdUser } from '../users/entities/ad-user.entity';
 import { RegisterDto } from './dto/request/register.dto';
 import { LoginDto } from './dto/request/login.dto';
 
-export type OAuthProvider = 'google' | 'naver';
+export type OAuthProvider = 'google';
 
 interface OAuthProfile {
   providerId: string;
@@ -21,8 +21,6 @@ interface OAuthProfile {
 export class AuthService {
   private readonly googleClientId: string;
   private readonly googleClientSecret: string;
-  private readonly naverClientId: string;
-  private readonly naverClientSecret: string;
   /** OAuth redirect_uri 베이스 — 기본은 프론트 dev 프록시 경유 */
   private readonly oauthCallbackBase: string;
   readonly frontUrl: string;
@@ -35,13 +33,11 @@ export class AuthService {
   ) {
     this.googleClientId = configService.get('AD_GOOGLE_CLIENT_ID') || '';
     this.googleClientSecret = configService.get('AD_GOOGLE_CLIENT_SECRET') || '';
-    this.naverClientId = configService.get('AD_NAVER_CLIENT_ID') || '';
-    this.naverClientSecret = configService.get('AD_NAVER_CLIENT_SECRET') || '';
     this.oauthCallbackBase = configService.get('AD_OAUTH_CALLBACK_BASE') || 'http://localhost:3400/api/ad';
     this.frontUrl = configService.get('AD_FRONT_URL') || 'http://localhost:3400';
   }
 
-  // ─── 소셜 로그인 (Google / Naver) ─────────────────────────────────────────────
+  // ─── 소셜 로그인 (Google) ─────────────────────────────────────────────────────
 
   private redirectUri(provider: OAuthProvider): string {
     return `${this.oauthCallbackBase}/auth/${provider}/callback`;
@@ -66,34 +62,20 @@ export class AuthService {
 
   authorizeUrl(provider: OAuthProvider): string {
     const state = this.issueState(provider);
-    if (provider === 'google') {
-      if (!this.googleClientId) throw new UnauthorizedException('Google OAuth가 설정되지 않았습니다.');
-      const q = new URLSearchParams({
-        client_id: this.googleClientId,
-        redirect_uri: this.redirectUri('google'),
-        response_type: 'code',
-        scope: 'openid email profile',
-        state,
-      });
-      return `https://accounts.google.com/o/oauth2/v2/auth?${q.toString()}`;
-    }
-    if (!this.naverClientId) throw new UnauthorizedException('Naver OAuth가 설정되지 않았습니다.');
+    if (!this.googleClientId) throw new UnauthorizedException('Google OAuth가 설정되지 않았습니다.');
     const q = new URLSearchParams({
-      client_id: this.naverClientId,
-      redirect_uri: this.redirectUri('naver'),
+      client_id: this.googleClientId,
+      redirect_uri: this.redirectUri('google'),
       response_type: 'code',
+      scope: 'openid email profile',
       state,
     });
-    return `https://nid.naver.com/oauth2.0/authorize?${q.toString()}`;
+    return `https://accounts.google.com/o/oauth2/v2/auth?${q.toString()}`;
   }
 
   async oauthLogin(provider: OAuthProvider, code: string, state: string) {
     this.verifyState(state, provider);
-    const profile =
-      provider === 'google'
-        ? await this.fetchGoogleProfile(code)
-        : await this.fetchNaverProfile(code, state);
-
+    const profile = await this.fetchGoogleProfile(code);
     const user = await this.upsertOAuthUser(provider, profile);
     return { ...this.issueTokens(user), user };
   }
@@ -125,36 +107,10 @@ export class AuthService {
     }
   }
 
-  private async fetchNaverProfile(code: string, state: string): Promise<OAuthProfile> {
-    try {
-      const { data: token } = await axios.get('https://nid.naver.com/oauth2.0/token', {
-        params: {
-          grant_type: 'authorization_code',
-          client_id: this.naverClientId,
-          client_secret: this.naverClientSecret,
-          code,
-          state,
-        },
-        timeout: 10000,
-      });
-      const { data: me } = await axios.get('https://openapi.naver.com/v1/nid/me', {
-        headers: { Authorization: `Bearer ${token.access_token}` },
-        timeout: 10000,
-      });
-      const profile = me.response;
-      return {
-        providerId: String(profile.id),
-        email: profile.email?.toLowerCase() ?? null,
-        name: profile.name ?? profile.nickname ?? null,
-      };
-    } catch {
-      throw new UnauthorizedException('네이버 로그인에 실패했습니다.');
-    }
-  }
 
   /** providerId 우선 매칭, 없으면 동일 이메일 계정에 연동, 그마저 없으면 신규 생성 */
-  private async upsertOAuthUser(provider: OAuthProvider, profile: OAuthProfile): Promise<AdUser> {
-    const idColumn = provider === 'google' ? 'googleId' : 'naverId';
+  private async upsertOAuthUser(_provider: OAuthProvider, profile: OAuthProfile): Promise<AdUser> {
+    const idColumn = 'googleId' as const;
 
     let user = await this.userRepo.findOne({ where: { [idColumn]: profile.providerId } });
 

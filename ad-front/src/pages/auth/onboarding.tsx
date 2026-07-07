@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import TextField from '../../components/ui/TextField';
+import JoinSheet from '../../components/sheets/JoinSheet';
 import { api } from '../../lib/api';
 import { useAuthStore } from '../../stores/auth.store';
 import { useTheme } from '../../lib/theme';
@@ -12,6 +13,7 @@ export default function OnboardingPage() {
   const { setHouseholds } = useAuthStore();
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
 
   async function createHousehold() {
     if (!name.trim()) return;
@@ -24,6 +26,12 @@ export default function OnboardingPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  // JoinSheet 합류 성공 시 setHouseholds가 채워짐 → 홈으로
+  function handleJoinClose() {
+    setJoinOpen(false);
+    if (useAuthStore.getState().currentHousehold) navigate('/');
   }
 
   return (
@@ -60,6 +68,17 @@ export default function OnboardingPage() {
       >
         가구 만들기
       </Button>
+
+      <div style={{ marginTop: 10 }}>
+        <Button display="full" size="big" type="primary" style="weak" onPress={() => setJoinOpen(true)}>
+          초대 코드로 합류하기
+        </Button>
+      </div>
+      <span style={{ fontSize: 12, color: theme.textMuted, textAlign: 'center', marginTop: 14 }}>
+        가족이 보낸 초대 코드가 있다면 가구를 새로 만들 필요 없어요
+      </span>
+
+      <JoinSheet visible={joinOpen} onClose={handleJoinClose} />
     </div>
   );
 }

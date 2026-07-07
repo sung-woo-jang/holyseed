@@ -1,24 +1,52 @@
-.confirmBox {
-  padding: 60px 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.confirmTitle {
-  font-size: 22px;
-  font-weight: 800;
-}
-
-.confirmSub {
-  font-size: 14px;
-}
-
 .body {
-  padding: 4px 20px 12px;
+  padding: 0 20px 12px;
   display: flex;
   flex-direction: column;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0 4px;
+}
+
+.dateCtrl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dateArrowBtn {
+  padding: 4px 8px;
+  margin: -4px -4px;
+}
+
+.dateArrow {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.dateValue {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.toolbarRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dateHint {
+  font-size: 11px;
+  margin-bottom: 10px;
 }
 
 .deltaSummary {
@@ -27,7 +55,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .deltaSumLabel {
@@ -42,36 +70,87 @@
 .assetRow {
   display: flex;
   align-items: center;
-  padding: 14px 0;
+  padding: 12px 0;
 }
 
 .assetInfo {
   flex: 1;
   display: flex;
   flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.assetNameRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .assetName {
   font-size: 14px;
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filledDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.prevChip {
+  font-size: 12px;
+  padding: 2px 0;
+  text-align: left;
+  align-self: flex-start;
+}
+
+.prevChip:active {
+  opacity: 0.6;
 }
 
 .prevVal {
   font-size: 12px;
-  margin-top: 2px;
 }
 
 .inputWrap {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 4px;
-  width: 140px;
+  gap: 3px;
+  width: 150px;
+  flex-shrink: 0;
+}
+
+.wonHelper {
+  font-size: 11px;
 }
 
 .diffText {
   font-size: 12px;
   font-weight: 600;
+}
+
+.quickRow {
+  display: flex;
+  gap: 6px;
+  padding: 0 0 12px;
+  flex-wrap: wrap;
+}
+
+.quickChip {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+.quickChip:active {
+  opacity: 0.7;
 }
 
 .cta {

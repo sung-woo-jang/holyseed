@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import TabBar, { type TabKey } from '../components/TabBar';
 import AssetsScreen from '../screens/AssetsScreen';
 import BookScreen from '../screens/BookScreen';
@@ -8,10 +8,19 @@ import MoreScreen from '../screens/MoreScreen';
 import { useAuthStore } from '../stores/auth.store';
 import type { MockAsset } from '../lib/mock-data';
 
+const TAB_KEYS: TabKey[] = ['home', 'assets', 'book', 'more'];
+
 export default function HomePage() {
   const navigate = useNavigate();
   const { currentHousehold, isReady } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<TabKey>('home');
+  // 탭을 URL(?tab=)과 동기화 — 상세 갔다 뒤로 와도 탭 유지
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab') as TabKey | null;
+  const activeTab: TabKey = tabParam && TAB_KEYS.includes(tabParam) ? tabParam : 'home';
+
+  function setActiveTab(tab: TabKey) {
+    setSearchParams(tab === 'home' ? {} : { tab }, { replace: true });
+  }
 
   useEffect(() => {
     if (isReady && !currentHousehold) {
@@ -26,7 +35,7 @@ export default function HomePage() {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, height: '100dvh' }}>
-      {activeTab === 'home' && <HomeScreen />}
+      {activeTab === 'home' && <HomeScreen onSeeAllTx={() => setActiveTab('book')} />}
       {activeTab === 'assets' && <AssetsScreen onAssetPress={handleAssetPress} />}
       {activeTab === 'book' && <BookScreen />}
       {activeTab === 'more' && <MoreScreen />}

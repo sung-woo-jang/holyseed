@@ -153,11 +153,13 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
                       contents={
                         <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                           <span className={styles.assetName} style={{ color: theme.text }}>{a.name}</span>
-                          <span className={styles.assetMeta}>
-                            <span style={{ color: a.delta >= 0 ? theme.brand : theme.danger, fontWeight: 600 }}>
-                              {a.delta > 0 ? '+' : ''}{krwShort(a.delta)} ({pct(a.deltaPct)})
+                          {a.delta != null && (
+                            <span className={styles.assetMeta}>
+                              <span style={{ color: a.delta >= 0 ? theme.brand : theme.danger, fontWeight: 600 }}>
+                                {a.delta > 0 ? '+' : ''}{krwShort(a.delta)} ({pct(a.deltaPct ?? 0)})
+                              </span>
                             </span>
-                          </span>
+                          )}
                         </div>
                       }
                       right={
@@ -207,6 +209,7 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
         visible={snapshotOpen}
         focusAssetId={snapshotFocusId}
         onClose={handleSnapshotClose}
+        onSaved={() => setToast('스냅샷을 저장했어요')}
       />
       <AddAssetSheet
         visible={addAssetOpen}

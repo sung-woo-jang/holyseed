@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Badge from '../components/ui/Badge';
 import Border from '../components/ui/Border';
 import Button from '../components/ui/Button';
@@ -17,14 +18,36 @@ import LineChart from '../components/charts/LineChart';
 import DonutChart from '../components/charts/DonutChart';
 import SnapshotSheet from '../components/sheets/SnapshotSheet';
 import EmptyState from '../components/common/EmptyState';
+import AppToast from '../components/common/AppToast';
+import { todayLocal, daysBetween, isSameMonth } from '../lib/date';
 import styles from './HomeScreen.module.css';
 
-export default function HomeScreen() {
+interface HomeScreenProps {
+  /** "모두 보기" → 거래장부 탭 전환 */
+  onSeeAllTx?: () => void;
+}
+
+export default function HomeScreen({ onSeeAllTx }: HomeScreenProps) {
+  const navigate = useNavigate();
   const theme = useTheme();
   const role = useMockRole();
   const data = useDataSource();
   const [chartRange, setChartRange] = useState('1년');
   const [snapshotVisible, setSnapshotVisible] = useState(false);
+  const [toast, setToast] = useState('');
+
+  // 마지막 스냅샷 입력일 (자산별 최신 스냅샷 날짜의 최댓값)
+  const lastInputDate = data.assets.reduce<string | null>(
+    (max, a) => (a.snapshotDate && (!max || a.snapshotDate > max) ? a.snapshotDate : max),
+    null,
+  );
+  const today = todayLocal();
+  const inputDoneThisMonth = !!lastInputDate && isSameMonth(lastInputDate, today);
+  const ctaCaption = !lastInputDate
+    ? '첫 스냅샷을 입력하면 순자산 추이가 시작돼요'
+    : inputDoneThisMonth
+      ? `이번 달 입력 완료 · ${daysBetween(lastInputDate, today)}일 전`
+      : `마지막 입력 후 ${daysBetween(lastInputDate, today)}일 지났어요`;
 
   const nw = data.netWorth;
   const change = nw.current - nw.lastYear;
@@ -65,12 +88,13 @@ export default function HomeScreen() {
             display="full"
             size="big"
             type="primary"
-            leftAccessory={<TossEmoji code={TE.camera} size={18} />}
+            style={inputDoneThisMonth ? 'weak' : 'fill'}
+            leftAccessory={<TossEmoji code={inputDoneThisMonth ? TE.check : TE.camera} size={18} />}
             onPress={() => setSnapshotVisible(true)}
           >
-            이번 달 자산 스냅샷 입력하기
+            {inputDoneThisMonth ? '이번 달 스냅샷 다시 입력하기' : '이번 달 자산 스냅샷 입력하기'}
           </Button>
-          <span className={styles.ctaCaption} style={{ color: theme.textMuted }}>마지막 입력 후 32일 지났어요</span>
+          <span className={styles.ctaCaption} style={{ color: theme.textMuted }}>{ctaCaption}</span>
         </div>
       )}
 
@@ -101,6 +125,7 @@ export default function HomeScreen() {
           type="button"
           className={`${styles.card} ${styles.yoyCard}`}
           style={{ backgroundColor: theme.card, borderColor: theme.border }}
+          onClick={() => navigate('/more/compare')}
         >
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             <span className={styles.yoyTitle} style={{ color: theme.text }}>작년이랑 얼마나 달라졌지?</span>
@@ -165,7 +190,7 @@ export default function HomeScreen() {
         <div className={styles.sectionHeader}>
           <span className={styles.cardTitle} style={{ color: theme.text }}>최근 거래</span>
           {recentTxs.length > 0 && (
-            <TextButton typography="t5" variant="clear" color={theme.textMuted}>모두 보기</TextButton>
+            <TextButton typography="t5" variant="clear" color={theme.textMuted} onPress={onSeeAllTx}>모두 보기</TextButton>
           )}
         </div>
         {recentTxs.length === 0 && (
@@ -208,7 +233,9 @@ export default function HomeScreen() {
       <SnapshotSheet
         visible={snapshotVisible}
         onClose={() => setSnapshotVisible(false)}
+        onSaved={() => setToast('스냅샷을 저장했어요')}
       />
+      <AppToast open={!!toast} text={toast} onClose={() => setToast('')} />
     </div>
   );
 }

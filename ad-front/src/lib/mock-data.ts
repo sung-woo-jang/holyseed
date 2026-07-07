@@ -9,8 +9,11 @@ export interface MockAsset {
   fxRate?: number;
   value: number;
   isLiability: boolean;
-  delta: number;
-  deltaPct: number;
+  /** 직전 스냅샷 대비 증감 — 이전 스냅샷 없으면 null */
+  delta: number | null;
+  deltaPct: number | null;
+  /** 최신 스냅샷 날짜 (YYYY-MM-DD) */
+  snapshotDate?: string;
 }
 
 export interface MockSnapshot {

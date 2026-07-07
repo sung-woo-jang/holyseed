@@ -16,6 +16,8 @@ import { TE } from '../../lib/toss-emoji';
 import { Icon } from '../common/Icon';
 import { krw } from '../../lib/format';
 import { useCreateRecurring, useUpdateRecurring } from '../../queries/mutations';
+import { todayLocal } from '../../lib/date';
+import { getErrorMessage } from '../../lib/error';
 import type { MockRecurring } from '../../lib/mock-data';
 import styles from './AddRecurringSheet.module.css';
 
@@ -29,13 +31,15 @@ interface AddRecurringSheetProps {
   onClose: () => void;
   /** 지정 시 편집 모드 */
   editRec?: MockRecurring;
+  /** 저장/수정 성공 콜백 (토스트) */
+  onSaved?: (mode: 'create' | 'edit') => void;
 }
 
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 
 type RecType = 'EXPENSE' | 'INCOME';
 
-export default function AddRecurringSheet({ visible, onClose, editRec }: AddRecurringSheetProps) {
+export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }: AddRecurringSheetProps) {
   const theme = useTheme();
   const data = useDataSource();
   const isEdit = !!editRec;
@@ -52,7 +56,6 @@ export default function AddRecurringSheet({ visible, onClose, editRec }: AddRecu
   const [assetPicker, setAssetPicker] = useState(false);
   const [dayPicker, setDayPicker] = useState(false);
   const [endPicker, setEndPicker] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const createRecurring = useCreateRecurring();
   const updateRecurring = useUpdateRecurring();
@@ -100,7 +103,7 @@ export default function AddRecurringSheet({ visible, onClose, editRec }: AddRecu
 
   async function handleSave() {
     setError('');
-    const todayStr = new Date().toISOString().split('T')[0]!;
+    const todayStr = todayLocal();
     try {
       if (isEdit && editRec) {
         await updateRecurring.mutateAsync({
@@ -113,6 +116,7 @@ export default function AddRecurringSheet({ visible, onClose, editRec }: AddRecu
           },
         });
         onClose();
+        onSaved?.('edit');
         return;
       }
       await createRecurring.mutateAsync({
@@ -122,22 +126,12 @@ export default function AddRecurringSheet({ visible, onClose, editRec }: AddRecu
         frequency: 'MONTHLY', dayOfMonth, startDate: todayStr,
         ...(hasEnd ? { endDate: computeEndDate() } : {}),
       });
-      setSaved(true);
-      setTimeout(() => { setSaved(false); reset(); onClose(); }, 700);
+      reset();
+      onClose();
+      onSaved?.('create');
     } catch (e: any) {
-      setError(e?.message ?? '저장에 실패했어요. 다시 시도해 주세요.');
+      setError(getErrorMessage(e, '저장에 실패했어요. 다시 시도해 주세요.'));
     }
-  }
-
-  if (saved) {
-    return (
-      <SheetModal visible={visible} onClose={onClose}>
-        <div className={styles.confirmBox}>
-          <TossEmoji code={TE.check} size={64} />
-          <span className={styles.confirmTitle} style={{ color: theme.text }}>저장 완료!</span>
-        </div>
-      </SheetModal>
-    );
   }
 
   return (

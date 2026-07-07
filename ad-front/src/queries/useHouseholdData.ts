@@ -5,6 +5,7 @@ import type { MockPersona } from '../lib/mock-data';
 import type { AssetCategory } from '../types/api';
 import { ASSET_CATEGORY_META } from '../lib/category-meta';
 import { qk } from './keys';
+import { toLocalDateString } from '../lib/date';
 
 // 백엔드 자산 카테고리 enum(REAL_ASSET/DEBT)을 프론트 키(REAL_ESTATE/LIABILITY)로 정규화
 const CATEGORY_ALIAS: Record<string, string> = {
@@ -51,7 +52,7 @@ function computeNextDate(dayOfMonth: number): string {
   const today = new Date();
   const candidate = new Date(today.getFullYear(), today.getMonth(), dayOfMonth);
   if (candidate <= today) candidate.setMonth(candidate.getMonth() + 1);
-  return candidate.toISOString().split('T')[0]!;
+  return toLocalDateString(candidate);
 }
 
 export function useHouseholdData(): MockPersona {
@@ -138,18 +139,24 @@ export function useHouseholdData(): MockPersona {
     });
 
   // 자산
-  const assets = rawAssets.map((a: any) => ({
-    id: String(a.id),
-    name: a.name,
-    category: normalizeAssetCategory(a.category),
-    currency: a.currency ?? 'KRW',
-    currencyValue: a.currency !== 'KRW' ? Number(a.latestSnapshot?.value) || 0 : undefined,
-    fxRate: a.currency !== 'KRW' ? Number(a.latestSnapshot?.fxRateToKRW) || 0 : undefined,
-    value: Number(a.latestSnapshot?.valueKRW) || 0,
-    isLiability: a.isLiability,
-    delta: 0,
-    deltaPct: 0,
-  }));
+  const assets = rawAssets.map((a: any) => {
+    const latestKRW = Number(a.latestSnapshot?.valueKRW) || 0;
+    const prevKRW = a.prevSnapshot != null ? Number(a.prevSnapshot.valueKRW) || 0 : null;
+    const delta = prevKRW != null ? latestKRW - prevKRW : null;
+    return {
+      id: String(a.id),
+      name: a.name,
+      category: normalizeAssetCategory(a.category),
+      currency: a.currency ?? 'KRW',
+      currencyValue: a.currency !== 'KRW' ? Number(a.latestSnapshot?.value) || 0 : undefined,
+      fxRate: a.currency !== 'KRW' ? Number(a.latestSnapshot?.fxRateToKRW) || 0 : undefined,
+      value: latestKRW,
+      isLiability: a.isLiability,
+      delta,
+      deltaPct: delta != null && prevKRW ? (delta / prevKRW) * 100 : null,
+      snapshotDate: a.latestSnapshot?.date ?? undefined,
+    };
+  });
 
   // 거래내역
   const transactions = rawTx.map((t: any) => ({

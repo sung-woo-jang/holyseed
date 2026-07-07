@@ -3,6 +3,7 @@ import { api } from '@/shared/api';
 import type { Media } from '@/shared/types';
 import { ContentRowType, ContentItem } from '@/shared/types';
 import { MediaUploader } from './MediaUploader';
+import { useToast } from '@/shared/ui/toast';
 import styles from './MediaSelector.module.css';
 
 interface MediaSelectorProps {
@@ -18,6 +19,7 @@ export function MediaSelector({ coupleId, rowType, onSelect, onClose }: MediaSel
   const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   useEffect(() => {
     fetchMedia();
@@ -38,15 +40,15 @@ export function MediaSelector({ coupleId, rowType, onSelect, onClose }: MediaSel
   };
 
   const toggleSelection = (mediaId: string) => {
+    if (!selectedMediaIds.has(mediaId) && rowType === 'TOP_RANKED' && selectedMediaIds.size >= 5) {
+      toast.info('TOP 5 랭킹은 최대 5개까지만 선택할 수 있습니다.');
+      return;
+    }
     setSelectedMediaIds((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(mediaId)) {
         newSet.delete(mediaId);
       } else {
-        if (rowType === 'TOP_RANKED' && newSet.size >= 5) {
-          alert('TOP 5 랭킹은 최대 5개까지만 선택할 수 있습니다.');
-          return prev;
-        }
         newSet.add(mediaId);
       }
       return newSet;
@@ -88,7 +90,7 @@ export function MediaSelector({ coupleId, rowType, onSelect, onClose }: MediaSel
       const uploadedMedia = allMedia.filter((m) => mediaIds.includes(m.id));
 
       if (uploadedMedia.length === 0) {
-        alert('업로드한 미디어를 찾을 수 없습니다. 잠시 후 다시 시도해주세요.');
+        toast.error('업로드한 미디어를 찾을 수 없습니다. 잠시 후 다시 시도해주세요.');
         return;
       }
 
@@ -108,7 +110,7 @@ export function MediaSelector({ coupleId, rowType, onSelect, onClose }: MediaSel
       onSelect(items);
     } catch (error) {
       console.error('Failed to process uploaded media:', error);
-      alert('업로드는 성공했지만 미디어 처리 중 오류가 발생했습니다.');
+      toast.error('업로드는 성공했지만 미디어 처리 중 오류가 발생했습니다.');
     }
   };
 

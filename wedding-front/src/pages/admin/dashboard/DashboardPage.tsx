@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, TOKEN_KEY } from '@/shared/api'
 import type { Couple, MediaStats, AttendanceStats } from '@/shared/types'
-import styles from './dashboardPage.module.css'
+import styles from './DashboardPage.module.css'
 
 export default function AdminDashboardPage() {
   const [couple, setCouple] = useState<Couple | null>(null)
   const [mediaStats, setMediaStats] = useState<MediaStats>({ total: 0, pending: 0, approved: 0, rejected: 0 })
   const [attendanceStats, setAttendanceStats] = useState<AttendanceStats>({ total: 0, attending: 0, notAttending: 0, maybe: 0, totalGuests: 0 })
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY)
@@ -27,11 +28,12 @@ export default function AdminDashboardPage() {
         setMediaStats(mediaRes.data.data?.stats ?? { total: 0, pending: 0, approved: 0, rejected: 0 })
         setAttendanceStats(attendanceRes.data.data?.stats ?? { total: 0, attending: 0, notAttending: 0, maybe: 0, totalGuests: 0 })
       })
-      .catch(() => {})
+      .catch(() => setError('대시보드 데이터를 불러오는데 실패했습니다.'))
       .finally(() => setIsLoading(false))
   }, [])
 
   if (isLoading) return <div style={{ padding: '2rem' }}>로딩 중...</div>
+  if (error) return <div className={styles.pageContainer}>{error}</div>
   if (!couple) return <div className={styles.pageContainer}>커플 정보를 찾을 수 없습니다.</div>
 
   const attendTotal = attendanceStats.attending + attendanceStats.notAttending + attendanceStats.maybe

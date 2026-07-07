@@ -107,7 +107,7 @@ export default function RegisterPage() {
               <input {...register('slug')} id="slug" type="text" className={styles.input} placeholder="our-wedding" />
               {slugValue && (
                 <p className={styles.hint}>
-                  청첩장 주소: <span className={styles.urlPreview}>http://localhost:3600/{slugValue}</span>
+                  청첩장 주소: <span className={styles.urlPreview}>{window.location.origin}/{slugValue}</span>
                 </p>
               )}
               {errors.slug && <p className={styles.fieldError}>{errors.slug.message}</p>}

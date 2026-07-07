@@ -4,6 +4,7 @@ import { AttendanceStats } from '@/widgets/admin-attendance/AttendanceStats'
 import { AttendanceFilters } from '@/widgets/admin-attendance/AttendanceFilters'
 import { AttendanceTable } from '@/widgets/admin-attendance/AttendanceTable'
 import type { Attendance, AttendanceStats as IAttendanceStats } from '@/shared/types'
+import { useToast } from '@/shared/ui/toast'
 import styles from '../admin-page.module.css'
 
 type AttendanceFilter = 'all' | 'ATTENDING' | 'NOT_ATTENDING' | 'MAYBE'
@@ -15,6 +16,7 @@ export default function AdminAttendancePage() {
   const [filter, setFilter] = useState<AttendanceFilter>('all')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const toast = useToast()
 
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY)
@@ -47,7 +49,7 @@ export default function AdminAttendancePage() {
       await api.post(`/attendance/${id}/delete`)
       fetchAttendances()
     } catch {
-      alert('참석 응답 삭제에 실패했습니다.')
+      toast.error('참석 응답 삭제에 실패했습니다.')
     }
   }
 

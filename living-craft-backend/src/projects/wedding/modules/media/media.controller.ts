@@ -37,9 +37,9 @@ export class MediaController {
   }
 
   @Post('upload')
-  @ApiBearerAuth()
+  @Public()
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: '미디어 업로드 (이미지/비디오)' })
+  @ApiOperation({ summary: '미디어 업로드 (공개, 하객용 — PENDING 상태로 생성)' })
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),

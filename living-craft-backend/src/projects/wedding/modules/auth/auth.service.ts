@@ -119,6 +119,7 @@ export class WeddingAuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      coupleId: user.coupleId,
     });
   }
 

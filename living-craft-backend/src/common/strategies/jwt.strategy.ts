@@ -7,6 +7,7 @@ export interface JwtPayload {
   sub: string;
   email?: string;
   role?: string;
+  coupleId?: string;
   iat?: number;
   exp?: number;
 }
@@ -22,6 +23,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
-    return { userId: payload.sub, email: payload.email, role: payload.role };
+    return { userId: payload.sub, email: payload.email, role: payload.role, coupleId: payload.coupleId };
   }
 }

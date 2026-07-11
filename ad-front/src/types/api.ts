@@ -69,6 +69,18 @@ export interface RecurringTransaction {
   lastRunDate: string | null;
 }
 
+export interface MissedOccurrence {
+  recurringId: number;
+  date: string;
+  type: TxType;
+  amount: number;
+  title: string | null;
+  memo: string | null;
+  categoryId: number | null;
+  fromAssetId: number | null;
+  toAssetId: number | null;
+}
+
 export interface Member {
   id: number;
   userId: number;

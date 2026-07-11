@@ -1,0 +1,130 @@
+.body {
+  padding: 4px 20px 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.infoBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+
+.infoText {
+  flex: 1;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.rangeRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.rangeChip {
+  border-radius: 18px;
+  border: 1px solid;
+  padding: 7px 14px;
+}
+
+.rangeChipText {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.listHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.listHeaderText {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.selectAllBtn {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 0;
+}
+
+.listCard {
+  border-radius: 14px;
+  border: 1px solid;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.rowDivider {
+  border-top: 1px solid;
+}
+
+.checkCircle {
+  width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  border: 1.5px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rowInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rowTitle {
+  font-size: 15px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowDate {
+  font-size: 12px;
+}
+
+.rowAmount {
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.cta {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+}
+
+.errorText {
+  font-size: 13px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.loadingBox {
+  padding: 40px 0;
+  display: flex;
+  justify-content: center;
+}

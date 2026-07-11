@@ -202,6 +202,21 @@ export function useToggleRecurring() {
   });
 }
 
+export function useApplyMissed() {
+  const qc = useQueryClient();
+  const hid = useHid();
+  return useMutation({
+    mutationFn: (items: { recurringId: number; date: string }[]) =>
+      recurringApi.applyMissed(hid!, items),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.recurringMissed(hid!) });
+      qc.invalidateQueries({ queryKey: qk.recurring(hid!) });
+      qc.invalidateQueries({ queryKey: qk.transactions(hid!) });
+      qc.invalidateQueries({ queryKey: qk.dashboard(hid!) });
+    },
+  });
+}
+
 export function useDeleteRecurring() {
   const qc = useQueryClient();
   const hid = useHid();

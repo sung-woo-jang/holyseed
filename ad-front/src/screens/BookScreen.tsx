@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Border from '../components/ui/Border';
 import ListRow from '../components/ui/ListRow';
 import Switch from '../components/ui/Switch';
@@ -14,6 +15,9 @@ import WorkCalendar, { type CalLog } from '../components/WorkCalendar';
 import Segmented from '../components/common/Segmented';
 import AddTxSheet from '../components/sheets/AddTxSheet';
 import AddRecurringSheet from '../components/sheets/AddRecurringSheet';
+import MissedRecurringSheet from '../components/sheets/MissedRecurringSheet';
+import { recurringApi } from '../api';
+import { qk } from '../queries/keys';
 import EmptyState from '../components/common/EmptyState';
 import ActionSheet from '../components/common/ActionSheet';
 import ConfirmDialog from '../components/common/ConfirmDialog';
@@ -45,8 +49,9 @@ export default function BookScreen() {
   const theme = useTheme();
   const role = useMockRole();
   const data = useDataSource();
-  const { useMock } = useAuthStore();
+  const { useMock, currentHousehold } = useAuthStore();
   const isViewer = role === 'VIEWER';
+  const hid = currentHousehold?.id;
 
   const initialMonth = useMock && data.transactions[0]?.date
     ? data.transactions[0].date.slice(0, 7)
@@ -66,7 +71,15 @@ export default function BookScreen() {
   const [actionRec, setActionRec] = useState<MockRecurring | null>(null);
   const [deleteRec, setDeleteRec] = useState<MockRecurring | null>(null);
   const [addPicker, setAddPicker] = useState(false);
+  const [missedVisible, setMissedVisible] = useState(false);
   const [toast, setToast] = useState('');
+
+  // 누락 정기거래 (cron 미실행 등으로 미생성된 회차)
+  const { data: missed = [] } = useQuery({
+    queryKey: qk.recurringMissed(hid!),
+    queryFn: () => recurringApi.missed(hid!),
+    enabled: !useMock && !!hid,
+  });
 
   const toggleRecurring = useToggleRecurring();
   const deleteRecurring = useDeleteRecurring();
@@ -449,6 +462,20 @@ export default function BookScreen() {
 
         {/* 정기 항목 관리 (접이식) */}
         <div className={styles.sectionPad}>
+          {!isViewer && missed.length > 0 && (
+            <button
+              type="button"
+              className={styles.missedBanner}
+              style={{ backgroundColor: theme.danger + '14' }}
+              onClick={() => setMissedVisible(true)}
+            >
+              <TossEmoji code={TE.lightning} size={18} />
+              <span className={styles.missedBannerText} style={{ color: theme.danger }}>
+                미반영 정기거래 {missed.length}건이 있어요
+              </span>
+              <span className={styles.missedBannerAction} style={{ color: theme.danger }}>확인하기</span>
+            </button>
+          )}
           <button
             type="button"
             className={styles.recHeader}
@@ -529,6 +556,11 @@ export default function BookScreen() {
         editRec={editRec ?? undefined}
         onClose={() => { setAddRecVisible(false); setEditRec(null); }}
         onSaved={(mode) => setToast(mode === 'edit' ? '정기 항목을 수정했어요' : '정기 항목을 저장했어요')}
+      />
+      <MissedRecurringSheet
+        visible={missedVisible}
+        onClose={() => setMissedVisible(false)}
+        onApplied={(count) => setToast(`누락된 정기거래 ${count}건을 반영했어요`)}
       />
 
       {/* 거래 액션 */}

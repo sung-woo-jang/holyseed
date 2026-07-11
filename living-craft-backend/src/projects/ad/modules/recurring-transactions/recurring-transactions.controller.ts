@@ -5,6 +5,8 @@ import { MembershipGuard } from '../../common/guards/membership.guard';
 import { RequireMembership } from '../../common/decorators/require-membership.decorator';
 import { MemberRole } from '../memberships/entities/membership.entity';
 import { CreateRecurringDto } from './dto/request/create-recurring.dto';
+import { FindMissedDto } from './dto/request/find-missed.dto';
+import { ApplyMissedDto } from './dto/request/apply-missed.dto';
 
 @ApiTags('AD 정기거래')
 @Controller('ad')
@@ -26,6 +28,23 @@ export class RecurringTransactionsController {
   async create(@Param('householdId', ParseIntPipe) householdId: number, @Body() dto: CreateRecurringDto) {
     const data = await this.recurringService.create(householdId, dto);
     return { success: true, message: '정기거래 생성 성공', data, timestamp: new Date().toISOString() };
+  }
+
+  @Post('households/:householdId/recurring/missed')
+  @UseGuards(MembershipGuard)
+  @ApiOperation({ summary: '누락된 정기거래 조회' })
+  async findMissed(@Param('householdId', ParseIntPipe) householdId: number, @Body() dto: FindMissedDto) {
+    const data = await this.recurringService.findMissed(householdId, dto.fromDate);
+    return { success: true, message: '조회 성공', data, timestamp: new Date().toISOString() };
+  }
+
+  @Post('households/:householdId/recurring/apply-missed')
+  @UseGuards(MembershipGuard)
+  @RequireMembership({ minRole: MemberRole.EDITOR })
+  @ApiOperation({ summary: '누락된 정기거래 반영' })
+  async applyMissed(@Param('householdId', ParseIntPipe) householdId: number, @Body() dto: ApplyMissedDto) {
+    const created = await this.recurringService.applyMissed(householdId, dto.items);
+    return { success: true, message: `${created}건 반영 성공`, data: { created }, timestamp: new Date().toISOString() };
   }
 
   @Post('recurring/:id/update')

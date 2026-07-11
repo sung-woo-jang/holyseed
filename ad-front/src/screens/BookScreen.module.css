@@ -273,3 +273,26 @@
   box-shadow: 0 6px 12px rgba(49, 130, 246, 0.4);
   z-index: 5;
 }
+
+.missedBanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  text-align: left;
+}
+
+.missedBannerText {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.missedBannerAction {
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
+}

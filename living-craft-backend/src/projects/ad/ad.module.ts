@@ -12,6 +12,7 @@ import { RecurringTransactionsModule } from './modules/recurring-transactions/re
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { CashflowModule } from './modules/cashflow/cashflow.module';
 import { ComparisonModule } from './modules/comparison/comparison.module';
+import { AdMcpModule } from './modules/mcp/mcp.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { ComparisonModule } from './modules/comparison/comparison.module';
     DashboardModule,
     CashflowModule,
     ComparisonModule,
+    AdMcpModule,
   ],
 })
 export class AdModule {}

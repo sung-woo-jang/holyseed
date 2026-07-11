@@ -28,7 +28,11 @@ import { WeddingModule } from '@/projects/wedding/wedding.module';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig, databaseConfig, jwtConfig],
-      envFilePath: ['.env.local', '.env'],
+      envFilePath: [
+        ...(process.env.NODE_ENV ? [`.env.${process.env.NODE_ENV}`] : []),
+        '.env.local',
+        '.env',
+      ],
     }),
 
     // Database

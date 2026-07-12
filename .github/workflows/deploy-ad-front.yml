@@ -18,18 +18,18 @@ jobs:
     steps:
       - name: Sync live repo to origin/master
         run: |
-          git -C /Users/jangseong-u/project/living-craft fetch origin master
-          git -C /Users/jangseong-u/project/living-craft reset --hard origin/master
+          git -C /Users/jangseong-u/project/holyseed fetch origin master
+          git -C /Users/jangseong-u/project/holyseed reset --hard origin/master
 
       - name: Install dependencies & build
-        working-directory: /Users/jangseong-u/project/living-craft/ad-front
+        working-directory: /Users/jangseong-u/project/holyseed/ad-front
         run: |
           yarn install
           yarn build
 
       - name: Publish to /var/www/ad-front
-        working-directory: /Users/jangseong-u/project/living-craft/ad-front
+        working-directory: /Users/jangseong-u/project/holyseed/ad-front
         run: rsync -a --delete dist/ /var/www/ad-front/
 
       - name: Verify
-        run: curl -sf -o /dev/null -w "%{http_code}\n" https://ad.living-craft.p-e.kr
+        run: curl -sf -o /dev/null -w "%{http_code}\n" https://ad.holyseed.p-e.kr

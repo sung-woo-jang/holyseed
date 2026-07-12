@@ -5,16 +5,16 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: living_craft_postgres_prod
+    container_name: holyseed_postgres_prod
     restart: unless-stopped
     environment:
-      POSTGRES_DB: living_craft
+      POSTGRES_DB: holyseed
       POSTGRES_USER: ${DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_production_password}
     volumes:
       - postgres_data_prod:/var/lib/postgresql/data
     networks:
-      - living_craft_prod_network
+      - holyseed_prod_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres}"]
       interval: 10s
@@ -26,7 +26,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: living_craft_app_prod
+    container_name: holyseed_app_prod
     restart: unless-stopped
     env_file:
       - .env.production
@@ -35,7 +35,7 @@ services:
     volumes:
       - ./uploads:/app/uploads
     networks:
-      - living_craft_prod_network
+      - holyseed_prod_network
     depends_on:
       postgres:
         condition: service_healthy
@@ -43,7 +43,7 @@ services:
   # Nginx Reverse Proxy
   nginx:
     image: nginx:alpine
-    container_name: living_craft_nginx_prod
+    container_name: holyseed_nginx_prod
     restart: unless-stopped
     ports:
       - "80:80"
@@ -54,17 +54,17 @@ services:
       - ./ssl:/etc/nginx/ssl:ro
       - ./uploads:/var/www/uploads:ro
     networks:
-      - living_craft_prod_network
+      - holyseed_prod_network
     depends_on:
       - app
 
   # pgAdmin (Admin profile only)
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: living_craft_pgadmin_prod
+    container_name: holyseed_pgadmin_prod
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@livingcraft.com
+      PGADMIN_DEFAULT_EMAIL: admin@holyseed.com
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-secure_admin_password}
       PGADMIN_CONFIG_SERVER_MODE: 'True'
     ports:
@@ -72,7 +72,7 @@ services:
     volumes:
       - pgadmin_data_prod:/var/lib/pgadmin
     networks:
-      - living_craft_prod_network
+      - holyseed_prod_network
     depends_on:
       postgres:
         condition: service_healthy
@@ -86,5 +86,5 @@ volumes:
     driver: local
 
 networks:
-  living_craft_prod_network:
+  holyseed_prod_network:
     driver: bridge

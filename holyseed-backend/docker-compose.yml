@@ -5,10 +5,10 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: living_craft_postgres
+    container_name: holyseed_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: living_craft
+      POSTGRES_DB: holyseed
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DB_PASSWORD:-password123}
     ports:
@@ -16,7 +16,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - living_craft_network
+      - holyseed_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -26,10 +26,10 @@ services:
   # pgAdmin for Database Management
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: living_craft_pgadmin
+    container_name: holyseed_pgadmin
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@livingcraft.com
+      PGADMIN_DEFAULT_EMAIL: admin@holyseed.com
       PGADMIN_DEFAULT_PASSWORD: admin123
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     ports:
@@ -37,7 +37,7 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     networks:
-      - living_craft_network
+      - holyseed_network
     depends_on:
       postgres:
         condition: service_healthy
@@ -49,5 +49,5 @@ volumes:
     driver: local
 
 networks:
-  living_craft_network:
+  holyseed_network:
     driver: bridge

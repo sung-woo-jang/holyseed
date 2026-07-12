@@ -1,5 +1,5 @@
 {
-  "name": "@living-craft/backend",
+  "name": "@holyseed/backend",
   "version": "1.0.0",
   "description": "NestJS 클린 템플릿 (Files + Health)",
   "author": "Developer",
@@ -40,8 +40,8 @@
     "ad:seed:nova": "ts-node -r tsconfig-paths/register src/projects/ad/scripts/seed/seed-nova.ts"
   },
   "dependencies": {
-    "@living-craft/shared-types": "*",
-    "@living-craft/shared-utils": "*",
+    "@holyseed/shared-types": "*",
+    "@holyseed/shared-utils": "*",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.1.9",

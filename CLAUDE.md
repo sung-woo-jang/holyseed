@@ -17,12 +17,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 모노레포 구조
 
 ```
-living-craft/
+holyseed/
 ├── ad-front/                # 자산일기 웹앱 (Vite + React)
 │
 ├── wedding-front/           # 결혼식 아카이브 웹앱 (Vite + React)
 │
-└── living-craft-backend/    # API 서버 (NestJS)
+└── holyseed-backend/    # API 서버 (NestJS)
     └── CLAUDE.md            # Backend 프로젝트 가이드
 ```
 
@@ -46,7 +46,7 @@ living-craft/
 - Vite 6 + React 19 + CSS Modules, FSD 구조
 - 개발 서버: localhost:3600
 
-### 3. living-craft-backend (API 서버)
+### 3. holyseed-backend (API 서버)
 
 **기술 스택:**
 
@@ -67,13 +67,13 @@ living-craft/
 - 개발 서버: localhost:8000
 - Swagger: localhost:8000/ad/docs, localhost:8000/wedding/docs
 
-**자세한 내용**: `living-craft-backend/CLAUDE.md` 참조
+**자세한 내용**: `holyseed-backend/CLAUDE.md` 참조
 
 ---
 
 ## 공통 명령어
 
-| 작업    | ad-front         | living-craft-backend |
+| 작업    | ad-front         | holyseed-backend |
 |-------|------------------|---------------------|
 | 개발 서버 | `yarn dev`       | `npm run start:dev` |
 | 빌드    | `yarn build`     | `npm run build`     |

@@ -23,4 +23,4 @@ jobs:
       - name: Verify Nginx status
         run: |
           sleep 2
-          curl -f https://living-craft.p-e.kr/health || exit 1
+          curl -f https://holyseed.p-e.kr/health || exit 1

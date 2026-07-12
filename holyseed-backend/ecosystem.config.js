@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'living-craft-backend',
+      name: 'holyseed-backend',
       script: 'dist/main.js',
       instances: 2, // CPU 코어 수에 맞게 조정 (Mac Mini 성능에 따라 1~4)
       exec_mode: 'cluster',
@@ -13,7 +13,7 @@ module.exports = {
       env_production: {
         NODE_ENV: 'production',
         PORT: 8000,
-        CORS_ORIGINS: 'https://living-craft.p-e.kr',
+        CORS_ORIGINS: 'https://holyseed.p-e.kr',
       },
 
       // 로그 설정

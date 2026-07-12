@@ -11,7 +11,7 @@ export default new DataSource({
   port: parseInt(process.env.DB_PORT, 10) || 5432,
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'password123',
-  database: process.env.DB_DATABASE || 'living_craft',
+  database: process.env.DB_DATABASE || 'holyseed',
   entities: [
     path.join(__dirname, '../modules/**/*.entity.{ts,js}'),
     path.join(__dirname, '../common/**/*.entity.{ts,js}'),

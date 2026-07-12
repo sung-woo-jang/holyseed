@@ -4,7 +4,7 @@ on:
   push:
     branches: [master]
     paths:
-      - 'living-craft-backend/**'
+      - 'holyseed-backend/**'
   workflow_dispatch:
 
 concurrency:
@@ -18,18 +18,18 @@ jobs:
     steps:
       - name: Sync live repo to origin/master
         run: |
-          git -C /Users/jangseong-u/project/living-craft fetch origin master
-          git -C /Users/jangseong-u/project/living-craft reset --hard origin/master
+          git -C /Users/jangseong-u/project/holyseed fetch origin master
+          git -C /Users/jangseong-u/project/holyseed reset --hard origin/master
 
       - name: Install dependencies & build
-        working-directory: /Users/jangseong-u/project/living-craft/living-craft-backend
+        working-directory: /Users/jangseong-u/project/holyseed/holyseed-backend
         run: |
           npm install
           npm run build
 
       - name: Restart pm2
-        working-directory: /Users/jangseong-u/project/living-craft/living-craft-backend
-        run: pm2 restart living-craft-backend --update-env
+        working-directory: /Users/jangseong-u/project/holyseed/holyseed-backend
+        run: pm2 restart holyseed-backend --update-env
 
       - name: Health check
         run: |
@@ -41,5 +41,5 @@ jobs:
             sleep 5
           done
           echo "health check failed"
-          pm2 logs living-craft-backend --lines 30 --nostream --err || true
+          pm2 logs holyseed-backend --lines 30 --nostream --err || true
           exit 1

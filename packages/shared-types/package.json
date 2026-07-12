@@ -1,5 +1,5 @@
 {
-  "name": "@living-craft/shared-types",
+  "name": "@holyseed/shared-types",
   "version": "0.0.1",
   "private": true,
   "main": "./src/index.ts",

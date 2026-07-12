@@ -13,6 +13,6 @@ export default registerAs('app', () => ({
     endpoint: process.env.NCP_ENDPOINT || 'https://kr.object.ncloudstorage.com',
     accessKey: process.env.NCP_ACCESS_KEY,
     secretKey: process.env.NCP_SECRET_KEY,
-    bucketName: process.env.NCP_BUCKET_NAME || 'living-craft',
+    bucketName: process.env.NCP_BUCKET_NAME || 'holyseed',
   },
 }))

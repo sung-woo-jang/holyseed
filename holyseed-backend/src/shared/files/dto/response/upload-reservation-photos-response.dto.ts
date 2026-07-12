@@ -16,7 +16,7 @@ export class UploadedPhotoDto {
   @ApiProperty({
     description: '공개 URL',
     example:
-      'https://kr.object.ncloudstorage.com/living-craft/reservations/photo_1234567890.webp',
+      'https://kr.object.ncloudstorage.com/holyseed/reservations/photo_1234567890.webp',
   })
   url: string;
 }

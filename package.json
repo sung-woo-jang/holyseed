@@ -1,14 +1,14 @@
 {
-  "name": "@living-craft/root",
+  "name": "@holyseed/root",
   "private": true,
   "workspaces": {
     "packages": [
-      "living-craft-backend",
+      "holyseed-backend",
       "packages/*"
     ]
   },
   "scripts": {
-    "dev:back": "yarn workspace @living-craft/backend run start:dev",
+    "dev:back": "yarn workspace @holyseed/backend run start:dev",
     "dev:ad": "yarn --cwd ad-front dev",
     "build:ad": "yarn --cwd ad-front build",
     "typecheck:ad": "yarn --cwd ad-front typecheck",

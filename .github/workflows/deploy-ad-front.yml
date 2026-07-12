@@ -1,0 +1,35 @@
+name: Deploy AD Front
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'ad-front/**'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-ad-front
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Sync live repo to origin/master
+        run: |
+          git -C /Users/jangseong-u/project/living-craft fetch origin master
+          git -C /Users/jangseong-u/project/living-craft reset --hard origin/master
+
+      - name: Install dependencies & build
+        working-directory: /Users/jangseong-u/project/living-craft/ad-front
+        run: |
+          yarn install
+          yarn build
+
+      - name: Publish to /var/www/ad-front
+        working-directory: /Users/jangseong-u/project/living-craft/ad-front
+        run: rsync -a --delete dist/ /var/www/ad-front/
+
+      - name: Verify
+        run: curl -sf -o /dev/null -w "%{http_code}\n" https://ad.living-craft.p-e.kr

@@ -1,0 +1,45 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'living-craft-backend/**'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Sync live repo to origin/master
+        run: |
+          git -C /Users/jangseong-u/project/living-craft fetch origin master
+          git -C /Users/jangseong-u/project/living-craft reset --hard origin/master
+
+      - name: Install dependencies & build
+        working-directory: /Users/jangseong-u/project/living-craft/living-craft-backend
+        run: |
+          npm install
+          npm run build
+
+      - name: Restart pm2
+        working-directory: /Users/jangseong-u/project/living-craft/living-craft-backend
+        run: pm2 restart living-craft-backend --update-env
+
+      - name: Health check
+        run: |
+          for i in $(seq 1 24); do
+            if curl -sf http://127.0.0.1:8000/health > /dev/null; then
+              echo "healthy after $((i * 5))s"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "health check failed"
+          pm2 logs living-craft-backend --lines 30 --nostream --err || true
+          exit 1

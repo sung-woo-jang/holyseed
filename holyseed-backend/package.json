@@ -37,7 +37,8 @@
     "typecheck": "tsc --noEmit",
     "fix:all": "yarn lint:fix && yarn format",
     "ad:seed": "ts-node -r tsconfig-paths/register src/projects/ad/scripts/seed/seed-ad.ts",
-    "ad:seed:nova": "ts-node -r tsconfig-paths/register src/projects/ad/scripts/seed/seed-nova.ts"
+    "ad:seed:nova": "ts-node -r tsconfig-paths/register src/projects/ad/scripts/seed/seed-nova.ts",
+    "laofus:seed": "ts-node -r tsconfig-paths/register src/projects/laofus/scripts/seed.ts"
   },
   "dependencies": {
     "@holyseed/shared-types": "*",

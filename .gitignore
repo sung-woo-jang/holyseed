@@ -32,3 +32,15 @@ node_modules
 docs/*
 docs/mTLS_*/
 docs/securityMail.html
+# laofus 방법론 문서는 커밋 (docs/* 예외)
+!docs/laofus/
+
+# 환경변수 (live API 키 커밋 금지)
+.env
+.env.local
+.env.production
+!.env.example
+
+# laofus
+.laofus-token-cache.json
+laofus-front/dist/

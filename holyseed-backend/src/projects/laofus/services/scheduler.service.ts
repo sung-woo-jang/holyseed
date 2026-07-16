@@ -1,19 +1,25 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
 import { Cron, SchedulerRegistry } from '@nestjs/schedule'
+import { CronJob } from 'cron'
 import { LaofusEngineService } from './engine.service'
 
 /**
- * 무매 엔진 스케줄러 — 미국 정규장 마감 30분 전 실행.
- * KST 04:30 (EDT 마감 05:00 대비) + 05:30 (EST 마감 06:00 대비) 이중 등록,
- * checkWindow가 마감 20~35분 전 창을 검증하므로 해당 없는 쪽은 자동 스킵.
+ * 무매 엔진 스케줄러 — 미국 정규장 마감 전 실행 창에 맞춰 판단·주문.
+ * 매매 크론은 env로 조정 가능 (기본 KST 04:30/05:30 = EDT/EST 마감 30분 전 이중 등록):
+ * - LAOFUS_RUN_CRON_1 (기본 '30 4 * * 2-6')
+ * - LAOFUS_RUN_CRON_2 (기본 '30 5 * * 2-6')
+ * 창 검증 폭은 LAOFUS_WINDOW_MIN/MAX (engine.service 참조) — 크론을 앞당기면 함께 조정.
+ *
+ * 회수 크론(개장 10분 후, 22:40/23:40)은 고정 — 소수점 주문 개장 배치 체결 회수용.
  *
  * env:
  * - LAOFUS_SCHEDULER=false 로 비활성 (기본 활성) — 로컬 dev와 서버 동시 가동 시 중복 방지
  * - LAOFUS_LIVE=true 로 실주문 (기본 dry-run)
  */
 @Injectable()
-export class LaofusSchedulerService {
+export class LaofusSchedulerService implements OnModuleInit {
   private readonly logger = new Logger('LaofusScheduler')
+  private runJobs: { slot: string; name: string }[] = []
 
   constructor(
     private readonly engine: LaofusEngineService,
@@ -28,27 +34,37 @@ export class LaofusSchedulerService {
     return process.env.LAOFUS_LIVE === 'true'
   }
 
-  /** 등록된 cron의 다음 발화 시각 (ISO, 오름차순) — 대시보드 카운트다운용 */
-  getNextRuns(): { slot: string; at: string }[] {
-    return [
-      { slot: '04:30', name: 'laofus-edt' },
-      { slot: '05:30', name: 'laofus-est' },
+  /** cron 표현식 'm h * * d'에서 'HH:MM' 슬롯 라벨 추출 */
+  private slotOf(cron: string): string {
+    const [m, h] = cron.trim().split(/\s+/)
+    const pad = (v: string) => v.padStart(2, '0')
+    return /^\d+$/.test(m) && /^\d+$/.test(h) ? `${pad(h)}:${pad(m)}` : cron
+  }
+
+  onModuleInit(): void {
+    const specs = [
+      process.env.LAOFUS_RUN_CRON_1 ?? '30 4 * * 2-6',
+      process.env.LAOFUS_RUN_CRON_2 ?? '30 5 * * 2-6',
     ]
+    specs.forEach((spec, i) => {
+      const name = `laofus-run-${i + 1}`
+      const slot = this.slotOf(spec)
+      const job = new CronJob(spec, () => void this.tick(slot), null, false, 'Asia/Seoul')
+      this.registry.addCronJob(name, job)
+      job.start()
+      this.runJobs.push({ slot, name })
+      this.logger.log(`매매 크론 등록: ${name} '${spec}' (KST ${slot})`)
+    })
+  }
+
+  /** 등록된 매매 크론의 다음 발화 시각 (ISO, 오름차순) — 대시보드 카운트다운용 */
+  getNextRuns(): { slot: string; at: string }[] {
+    return this.runJobs
       .map(({ slot, name }) => ({
         slot,
         at: this.registry.getCronJob(name).nextDate().toJSDate().toISOString(),
       }))
       .sort((a, b) => a.at.localeCompare(b.at))
-  }
-
-  @Cron('30 4 * * 2-6', { name: 'laofus-edt', timeZone: 'Asia/Seoul' })
-  async runEdt(): Promise<void> {
-    await this.tick('04:30')
-  }
-
-  @Cron('30 5 * * 2-6', { name: 'laofus-est', timeZone: 'Asia/Seoul' })
-  async runEst(): Promise<void> {
-    await this.tick('05:30')
   }
 
   // 개장 직후 체결 회수 — 소수점 금액주문은 다음 세션 개장 배치로 체결되므로

@@ -1,0 +1,67 @@
+.section {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 16px;
+}
+
+.formGroup {
+  margin-bottom: 16px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+  }
+}
+
+.filmSelectRow {
+  display: flex;
+  gap: 8px;
+}
+
+.filmSelect {
+  flex: 1;
+}
+
+.addFilmButton {
+  flex-shrink: 0;
+}
+
+.switchGroup {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid #f3f4f6;
+  margin-top: 16px;
+}
+
+.switchInfo {
+  flex: 1;
+
+  label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+  }
+}
+
+.switchDescription {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #6b7280;
+}

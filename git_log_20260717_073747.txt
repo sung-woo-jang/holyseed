@@ -1,0 +1,111 @@
+----------------------------------------
+Git 커밋 로그 내보내기
+생성 일시: 2026-07-17 07:37:47
+저장소 경로: /Users/jangseong-u/Desktop/Project/living-craft
+현재 브랜치: master
+----------------------------------------
+
+커밋 해시: c94063f
+Author: sungwoo <sw.jang@gongsaero.com>
+작성일시: 2026-07-16 22:05:53
+브랜치: HEAD -> master
+
+제목: feat(laofus): 매매 창·크론 시각 env 파라미터화
+
+내용:
+컷오프 프로브 결과에 따라 코드 수정 없이 창을 이동할 수 있도록:
+- checkWindow에 WindowOptions(minBefore/maxBefore) 추가 (기본 20/35 유지,
+  테스트 21개)
+- 매매 크론을 SchedulerRegistry 동적 등록으로 전환 — LAOFUS_RUN_CRON_1/2
+  env로 시각 변경 (기본 '30 4'/'30 5' * * 2-6, Asia/Seoul)
+- 엔진 창 검증에 LAOFUS_WINDOW_MIN/MAX env 반영
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
+----------------------------------------
+M	holyseed-backend/src/projects/laofus/core/marketTime.ts
+M	holyseed-backend/src/projects/laofus/services/engine.service.ts
+M	holyseed-backend/src/projects/laofus/services/scheduler.service.ts
+M	packages/laofus-core/src/marketTime.ts
+M	packages/laofus-core/test/marketTime.test.ts
+
+커밋 해시: 4b6c46c
+Author: sungwoo <sw.jang@gongsaero.com>
+작성일시: 2026-07-16 21:50:06
+브랜치: 
+
+제목: chore(laofus): 소수점 주문 당일 체결 컷오프 탐색 프로브 (1회성)
+
+내용:
+장중 5개 시각(22:50/00:30/02:30/03:55/04:20 KST)에 AAPL $1 금액주문을
+넣고 체결 시각·orderedAt 이월 여부를 기록 — 컷오프가 있으면 매매 창을
+앞당겨 당일 체결을 유지할 수 있는지 판단하는 근거.
+SOXL 미사용(정합성 가드 보호), 엔진 cron과 ±10분 이격.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
+----------------------------------------
+M	.gitignore
+A	holyseed-backend/scripts/laofus-probe-fill-timing.mjs
+
+커밋 해시: 2bdf8d8
+Author: sungwoo <sw.jang@gongsaero.com>
+작성일시: 2026-07-16 19:02:34
+브랜치: 
+
+제목: fix(laofus): 소수점 금액주문 개장 체결 대응 — 주문 원장·체결 회수 도입
+
+내용:
+2026-07-16 첫 실주문에서 발견: 토스 orderAmount 시장가 주문은 장중 즉시
+체결되지 않고 다음 세션 개장 배치로 이월됨 (orderedAt 재설정, PENDING 유지).
+구 waitForFill(120s)은 타임아웃 → DB 미기록으로 매매 기록이 유실됐음.
+
+- laofus.pending_orders: 주문 접수 시 판단 컨텍스트 원장 기록
+- reconcile: 체결 확인 후 trade·state 반영 (부분 체결·취소·거부 처리),
+  개장 10분 후 크론(KST 22:40/23:40) + 매 실행 시작 시 수행
+- 미회수 주문 존재 시 신규 주문 스킵 (중복 매수 방지)
+- waitForFill 타임아웃을 오류가 아닌 '개장 체결 대기' 정상 경로로 변경
+- status.pendingOrders 노출 + 홈 모니터 바에 체결 대기 표시
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
+----------------------------------------
+M	docs/laofus/README.md
+A	holyseed-backend/src/projects/laofus/entities/pending-order.entity.ts
+M	holyseed-backend/src/projects/laofus/laofus.module.ts
+M	holyseed-backend/src/projects/laofus/services/engine.service.ts
+M	holyseed-backend/src/projects/laofus/services/scheduler.service.ts
+M	holyseed-backend/src/projects/laofus/services/status.service.ts
+M	laofus-front/src/components/ui.tsx
+M	laofus-front/src/lib/types.ts
+
+커밋 해시: c8cebc7
+Author: sungwoo <sw.jang@gongsaero.com>
+작성일시: 2026-07-15 23:41:44
+브랜치: 
+
+제목: docs(ad-front): README 추가
+
+내용:
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
+----------------------------------------
+A	ad-front/README.md
+
+커밋 해시: bb0dda1
+Author: sungwoo <sw.jang@gongsaero.com>
+작성일시: 2026-07-15 23:41:44
+브랜치: 
+
+제목: chore(root): laofus 워크스페이스·스크립트·gitignore + 운용 가이드 반영
+
+내용:
+dev/build/typecheck:laofus 스크립트, env·토큰캐시·dist 무시 규칙,
+CLAUDE.md에 LIVE 운용 절차(pm2 env 주입, nest dev 전 pm2 stop) 문서화.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
+----------------------------------------
+M	.gitignore
+M	CLAUDE.md
+M	package.json

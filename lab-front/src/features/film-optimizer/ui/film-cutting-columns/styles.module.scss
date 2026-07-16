@@ -1,0 +1,30 @@
+.centeredCell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.projectNameButton {
+  color: hsl(var(--primary));
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+.badgeComplete {
+  background-color: hsl(var(--success));
+  color: hsl(var(--success-foreground));
+}

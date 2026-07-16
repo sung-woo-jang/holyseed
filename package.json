@@ -18,7 +18,10 @@
     "reset": "yarn clean && yarn install",
     "dev:laofus": "yarn --cwd laofus-front dev",
     "build:laofus": "yarn --cwd laofus-front build",
-    "typecheck:laofus": "yarn --cwd laofus-front typecheck"
+    "typecheck:laofus": "yarn --cwd laofus-front typecheck",
+    "dev:lab": "yarn --cwd lab-front dev",
+    "build:lab": "yarn --cwd lab-front build",
+    "typecheck:lab": "yarn --cwd lab-front typecheck"
   },
   "devDependencies": {
     "turbo": "^2.5.4",

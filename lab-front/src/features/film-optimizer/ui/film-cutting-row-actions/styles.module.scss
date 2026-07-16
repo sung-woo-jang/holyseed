@@ -1,0 +1,14 @@
+.filmCuttingRowActions {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.deleteButton {
+  color: hsl(var(--muted-foreground));
+
+  &:hover {
+    color: hsl(var(--destructive));
+    background-color: hsl(var(--destructive) / 0.1);
+  }
+}

@@ -24,6 +24,12 @@ module.exports = {
         PORT: '8000',
         LAOFUS_LIVE: 'true',
         LAOFUS_SCHEDULER: 'true',
+        // 매매 시각: 마감 65분 전 (2026-07-17 프로브 검증 — 소수점 금액주문 당일 체결
+        // 컷오프가 마감 40~65분 전 사이라, 65분 전이 검증된 안전선. 40분 전은 다음 개장 이월됨)
+        LAOFUS_RUN_CRON_1: '55 3 * * 2-6', // EDT: 마감 05:00 KST → 03:55
+        LAOFUS_RUN_CRON_2: '55 4 * * 2-6', // EST: 마감 06:00 KST → 04:55
+        LAOFUS_WINDOW_MIN: '60',
+        LAOFUS_WINDOW_MAX: '75',
       },
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     },

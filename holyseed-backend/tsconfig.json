@@ -27,7 +27,8 @@
       "@ad/*": ["src/projects/ad/*"],
       "@pc/*": ["src/projects/pc/*"],
       "@shared/*": ["src/shared/*"],
-      "@wedding/*": ["src/projects/wedding/*"]
+      "@wedding/*": ["src/projects/wedding/*"],
+      "@lab/*": ["src/projects/lab/*"]
     }
   }
 }

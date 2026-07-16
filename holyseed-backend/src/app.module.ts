@@ -22,6 +22,7 @@ import { SharedModule } from '@/shared/shared.module';
 import { AdModule } from '@/projects/ad/ad.module';
 import { WeddingModule } from '@/projects/wedding/wedding.module';
 import { LaofusModule } from '@/projects/laofus/laofus.module';
+import { LabModule } from '@/projects/lab/lab.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { LaofusModule } from '@/projects/laofus/laofus.module';
     AdModule, // Asset Diary 프로젝트 통합 모듈 (/api/ad/* 경로)
     WeddingModule, // 결혼식 아카이브 (/api/wedding/* 경로)
     LaofusModule, // SOXL 무한매수법 자동매매 (/api/laofus/* 경로)
+    LabModule, // 개인 다목적 대시보드 (/api/lab/* 경로)
   ],
   providers: [
     JwtStrategy,

@@ -51,6 +51,24 @@ export class LaofusSchedulerService {
     await this.tick('05:30')
   }
 
+  // 개장 직후 체결 회수 — 소수점 금액주문은 다음 세션 개장 배치로 체결되므로
+  // 개장(EDT 22:30 / EST 23:30 KST) 10분 뒤 체결분을 DB에 반영한다.
+  @Cron('40 22 * * 1-5', { name: 'laofus-reconcile-edt', timeZone: 'Asia/Seoul' })
+  async reconcileEdt(): Promise<void> {
+    await this.reconcileTick('22:40')
+  }
+
+  @Cron('40 23 * * 1-5', { name: 'laofus-reconcile-est', timeZone: 'Asia/Seoul' })
+  async reconcileEst(): Promise<void> {
+    await this.reconcileTick('23:40')
+  }
+
+  private async reconcileTick(slot: string): Promise<void> {
+    if (!this.enabled) return
+    this.logger.log(`회수 스케줄 ${slot} 트리거`)
+    await this.engine.reconcileOnly()
+  }
+
   private async tick(slot: string): Promise<void> {
     if (!this.enabled) {
       this.logger.log(`스케줄 ${slot} — LAOFUS_SCHEDULER=false, 스킵`)

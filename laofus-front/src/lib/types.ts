@@ -71,10 +71,26 @@ export interface EngineDto {
   lastRun: LastRunDto | null
 }
 
+export interface PendingOrderDto {
+  id: number
+  orderId: string
+  clientOrderId: string
+  symbol: string
+  side: string
+  kind: string
+  tBefore: string
+  tAfter: string
+  requestAmount: string | null
+  requestQuantity: string | null
+  status: string
+  placedAt: string
+}
+
 export interface StatusDto {
   state: EngineStateDto | null
   cycles: CycleDto[]
   events: EventDto[]
+  pendingOrders: PendingOrderDto[]
   engine: EngineDto
   calendar: {
     previousBusinessDay: MarketDayDto

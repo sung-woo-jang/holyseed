@@ -33,8 +33,17 @@ export interface MarketWindow {
   closeAt?: Date
 }
 
-/** now가 어떤 거래일이든 정규장 마감 전 [35분, 20분] 창 안인지 확인 */
-export function checkWindow(cal: UsMarketCalendar, now: Date = new Date()): MarketWindow {
+export interface WindowOptions {
+  /** 마감 최소 N분 전까지 유효 (기본 20) */
+  minBefore?: number
+  /** 마감 최대 N분 전부터 유효 (기본 35) */
+  maxBefore?: number
+}
+
+/** now가 어떤 거래일이든 정규장 마감 전 [maxBefore, minBefore]분 창 안인지 확인 (기본 [35, 20]) */
+export function checkWindow(cal: UsMarketCalendar, now: Date = new Date(), opts: WindowOptions = {}): MarketWindow {
+  const minBefore = opts.minBefore ?? 20
+  const maxBefore = opts.maxBefore ?? 35
   const days: UsMarketDay[] = [cal.previousBusinessDay, cal.today, cal.nextBusinessDay]
 
   let nearest: { day: UsMarketDay; closeAt: Date; minutes: number } | null = null
@@ -42,7 +51,7 @@ export function checkWindow(cal: UsMarketCalendar, now: Date = new Date()): Mark
     if (!day?.regularMarket) continue
     const closeAt = new Date(day.regularMarket.endTime)
     const minutes = (closeAt.getTime() - now.getTime()) / 60000
-    if (minutes >= 20 && minutes <= 35) {
+    if (minutes >= minBefore && minutes <= maxBefore) {
       return { ok: true, reason: `마감 ${minutes.toFixed(1)}분 전 — 실행 창`, usDate: day.date, closeAt }
     }
     if (minutes > 0 && (!nearest || minutes < nearest.minutes)) {
@@ -55,7 +64,7 @@ export function checkWindow(cal: UsMarketCalendar, now: Date = new Date()): Mark
   }
   return {
     ok: false,
-    reason: `마감까지 ${nearest.minutes.toFixed(1)}분 — 창(20~35분 전) 아님`,
+    reason: `마감까지 ${nearest.minutes.toFixed(1)}분 — 창(${minBefore}~${maxBefore}분 전) 아님`,
     usDate: nearest.day.date,
     closeAt: nearest.closeAt,
   }

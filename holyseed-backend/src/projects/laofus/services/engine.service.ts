@@ -267,10 +267,13 @@ export class LaofusEngineService {
       // 미회수 주문 먼저 처리 (개장 배치 체결분 DB 반영 — 정합성 가드보다 앞서야 함)
       const remainingPending = await this.reconcile(runId, log)
 
-      // 시간창 검증
+      // 시간창 검증 — 창 폭은 env로 조정 가능 (매매 크론 이동 시 함께 변경)
       if (!opts.force) {
         const cal = (await this.toss.getUsMarketCalendar()) as UsMarketCalendar
-        const win = checkWindow(cal)
+        const win = checkWindow(cal, new Date(), {
+          minBefore: Number(process.env.LAOFUS_WINDOW_MIN ?? 20),
+          maxBefore: Number(process.env.LAOFUS_WINDOW_MAX ?? 35),
+        })
         if (!win.ok) {
           await this.event('info', `스킵: ${win.reason}${opts.live ? ' (LIVE)' : ''}`, runId)
           lines.push(`스킵: ${win.reason}`)

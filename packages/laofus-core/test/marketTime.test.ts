@@ -64,3 +64,14 @@ test('마감 10분 전 (창 지남) → 스킵', () => {
   const win = checkWindow(calendar, new Date('2026-07-15T04:50:00+09:00'))
   assert.equal(win.ok, false)
 })
+
+test('커스텀 창: [50, 80]분 전 — 마감 60분 전이 창 안', () => {
+  const win = checkWindow(calendar, new Date('2026-07-15T04:00:00+09:00'), { minBefore: 50, maxBefore: 80 })
+  assert.equal(win.ok, true)
+  assert.equal(win.usDate, '2026-07-14')
+})
+
+test('커스텀 창: 기본 창이면 스킵인 시각도 넓힌 창에선 통과', () => {
+  const base = checkWindow(calendar, new Date('2026-07-15T04:00:00+09:00'))
+  assert.equal(base.ok, false)
+})

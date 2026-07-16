@@ -1,0 +1,154 @@
+=== Unstaged Changes (git diff) ===
+diff --git a/.gitignore b/.gitignore
+index 771e91d..8b83109 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -45,3 +45,6 @@ docs/securityMail.html
+ .laofus-token-cache.json
+ laofus-front/dist/
+ .laofus-probe-results.json
++
++# lab
++lab-front/dist/
+diff --git a/CLAUDE.md b/CLAUDE.md
+index 61128b2..4e646c0 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -53,6 +53,14 @@ holyseed/
+ - 화면: 홈(판단 미리보기+시뮬레이터)/차트/사이클/계좌/시스템
+ - 판단 로직은 `packages/laofus-core` 공유 (백엔드와 동일 순수함수)
+ 
++### 2-2. lab-front (개인 다목적 대시보드)
++
++- Vite 6 + React 19, react-router 7, Tailwind 4 + shadcn/Radix (scss modules 혼용)
++- 개발 서버: localhost:4000 (proxy `/api` → :8000), preview 5000
++- 2중 사이드바 레이아웃: 1차=섹션 아이콘 바, 2차=섹션 내 페이지 목록
++- 섹션 추가 = `src/app/nav/sections.tsx`의 SECTIONS 항목 + `App.tsx` 라우트 추가
++- 현재 섹션: 노션 기록(틀만), 필름 재단 최적화(옛 living-craft film-optimizer 복원 이식)
++
+ ### 3. holyseed-backend (API 서버)
+ 
+ **기술 스택:**
+@@ -72,6 +80,8 @@ holyseed/
+   - ad-hoc `nest dev` 전 반드시 `pm2 stop laofus-backend` (포트 8000 충돌), 끝나면 `pm2 start laofus-backend`. 백엔드 수정 반영은 `yarn workspace @holyseed/backend build && pm2 restart laofus-backend`
+   - **주의**: 무매 잔금은 `laofus.engine_state.cash` 기준 (계좌 예수금 아님). 계좌-DB 보유수량 불일치 시 엔진이 주문 중단
+   - 방법론 문서·운용 규칙: `docs/laofus/README.md` 필독. 시드: `yarn laofus:seed`. 대시보드 상시 서빙 :4800 (pm2 `laofus-front`)
++- **LAB 프로젝트**: `src/projects/lab/` - 개인 다목적 대시보드 (`lab` 스키마, `/api/lab/*`)
++  - 자체 이메일/비번 JWT 인증 (lab.users) + film-optimizer(필름지/재단 프로젝트/조각 CRUD)
+ - **공유 모듈**: `src/shared/` - 파일 업로드, 헬스체크, 주소 검색
+ 
+ **개발 환경:**
+@@ -94,7 +104,7 @@ holyseed/
+ | 린트    | `yarn lint`      | `npm run lint`      |
+ | 테스트   | -                | `npm run test`      |
+ 
+-루트에서: `yarn dev:ad`, `yarn dev:back`, `yarn build:ad`, `yarn typecheck:ad`
++루트에서: `yarn dev:ad`, `yarn dev:back`, `yarn build:ad`, `yarn typecheck:ad`, `yarn dev:lab`, `yarn build:lab`, `yarn typecheck:lab`
+ 
+ ---
+ 
+diff --git a/holyseed-backend/init.sql b/holyseed-backend/init.sql
+index 0442852..5e7316f 100644
+--- a/holyseed-backend/init.sql
++++ b/holyseed-backend/init.sql
+@@ -14,6 +14,8 @@ CREATE SCHEMA IF NOT EXISTS ad;
+ CREATE SCHEMA IF NOT EXISTS pc;
+ CREATE SCHEMA IF NOT EXISTS iv;
+ CREATE SCHEMA IF NOT EXISTS wedding;
++CREATE SCHEMA IF NOT EXISTS laofus;
++CREATE SCHEMA IF NOT EXISTS lab;
+ 
+ -- 초기 설정 완료 로그
+ SELECT 'Database initialization completed' as status;
+diff --git a/holyseed-backend/src/app.module.ts b/holyseed-backend/src/app.module.ts
+index bea33ab..0f2e59d 100644
+--- a/holyseed-backend/src/app.module.ts
++++ b/holyseed-backend/src/app.module.ts
+@@ -22,6 +22,7 @@ import { SharedModule } from '@/shared/shared.module';
+ import { AdModule } from '@/projects/ad/ad.module';
+ import { WeddingModule } from '@/projects/wedding/wedding.module';
+ import { LaofusModule } from '@/projects/laofus/laofus.module';
++import { LabModule } from '@/projects/lab/lab.module';
+ 
+ @Module({
+   imports: [
+@@ -63,6 +64,7 @@ import { LaofusModule } from '@/projects/laofus/laofus.module';
+     AdModule, // Asset Diary 프로젝트 통합 모듈 (/api/ad/* 경로)
+     WeddingModule, // 결혼식 아카이브 (/api/wedding/* 경로)
+     LaofusModule, // SOXL 무한매수법 자동매매 (/api/laofus/* 경로)
++    LabModule, // 개인 다목적 대시보드 (/api/lab/* 경로)
+   ],
+   providers: [
+     JwtStrategy,
+diff --git a/holyseed-backend/src/main.ts b/holyseed-backend/src/main.ts
+index a8c5b6e..cf1f345 100644
+--- a/holyseed-backend/src/main.ts
++++ b/holyseed-backend/src/main.ts
+@@ -125,6 +125,35 @@ async function bootstrap() {
+ 
+     console.log('💎 [Wedding] Swagger UI: http://localhost:8000/wedding/docs')
+     console.log(`📊 [Wedding] API 개수: ${Object.keys(filteredWeddingDocument.paths).length}개`)
++
++    // ========================================
++    // LAB (개인 다목적 대시보드) API 문서
++    // ========================================
++    const labConfig = new DocumentBuilder()
++      .setTitle('Lab API')
++      .setDescription('개인 다목적 대시보드 — 노션 기록·필름 재단 최적화 등')
++      .setVersion('1.0')
++      .addBearerAuth()
++      .addTag('Lab 인증', '이메일/비밀번호 JWT 인증')
++      .addTag('Lab 사용자', '사용자 프로필 관리')
++      .addTag('Lab 필름 재단', '인테리어 필름 재단 최적화')
++      .build()
++
++    const labDocument = SwaggerModule.createDocument(app, labConfig, { include: [] })
++
++    const filteredLabDocument = {
++      ...labDocument,
++      paths: Object.fromEntries(Object.entries(labDocument.paths).filter(([path]) => path.startsWith('/api/lab/'))),
++    }
++
++    SwaggerModule.setup('lab/docs', app, filteredLabDocument, {
++      swaggerOptions: { persistAuthorization: true, tagsSorter: 'alpha', operationsSorter: 'alpha' },
++      customSiteTitle: 'Lab API - 개인 대시보드',
++      jsonDocumentUrl: '/lab/docs/json',
++    })
++
++    console.log('💎 [Lab] Swagger UI: http://localhost:8000/lab/docs')
++    console.log(`📊 [Lab] API 개수: ${Object.keys(filteredLabDocument.paths).length}개`)
+   }
+ 
+   await app.listen(port, '0.0.0.0')
+diff --git a/holyseed-backend/tsconfig.json b/holyseed-backend/tsconfig.json
+index a7fa424..3c7dbfb 100644
+--- a/holyseed-backend/tsconfig.json
++++ b/holyseed-backend/tsconfig.json
+@@ -27,7 +27,8 @@
+       "@ad/*": ["src/projects/ad/*"],
+       "@pc/*": ["src/projects/pc/*"],
+       "@shared/*": ["src/shared/*"],
+-      "@wedding/*": ["src/projects/wedding/*"]
++      "@wedding/*": ["src/projects/wedding/*"],
++      "@lab/*": ["src/projects/lab/*"]
+     }
+   }
+ }
+diff --git a/package.json b/package.json
+index 8ac0619..a7f200e 100644
+--- a/package.json
++++ b/package.json
+@@ -18,7 +18,10 @@
+     "reset": "yarn clean && yarn install",
+     "dev:laofus": "yarn --cwd laofus-front dev",
+     "build:laofus": "yarn --cwd laofus-front build",
+-    "typecheck:laofus": "yarn --cwd laofus-front typecheck"
++    "typecheck:laofus": "yarn --cwd laofus-front typecheck",
++    "dev:lab": "yarn --cwd lab-front dev",
++    "build:lab": "yarn --cwd lab-front build",
++    "typecheck:lab": "yarn --cwd lab-front typecheck"
+   },
+   "devDependencies": {
+     "turbo": "^2.5.4",
+
+=== Staged Changes (git diff --cached) ===

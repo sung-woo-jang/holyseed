@@ -1,0 +1,75 @@
+.container {
+  width: 100%;
+  min-height: 500px;
+  overflow: auto;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.canvas {
+  display: block;
+  margin: 0 auto;
+}
+
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.piece {
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 1 !important;
+  }
+}
+
+.pieceCompleted {
+  opacity: 0.6;
+}
+
+.pieceLabel {
+  fill: #ffffff;
+  font-size: 50px;
+  font-weight: 600;
+  pointer-events: none;
+  text-shadow:
+    1px 1px 2px rgba(0, 0, 0, 0.6),
+    -1px -1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.pieceSize {
+  fill: #ffffff;
+  font-size: 40px;
+  font-weight: 500;
+  pointer-events: none;
+  text-shadow:
+    1px 1px 1px rgba(0, 0, 0, 0.5),
+    -1px -1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.checkMark {
+  fill: #22c55e;
+  font-size: 16px;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.dimensionText {
+  fill: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.externalLabel {
+  fill: #1f2937;
+  font-size: 11px;
+  font-weight: 500;
+  pointer-events: none;
+}

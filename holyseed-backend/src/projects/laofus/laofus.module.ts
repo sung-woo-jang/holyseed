@@ -9,6 +9,7 @@ import { LaofusEngineState } from './entities/engine-state.entity'
 import { LaofusCycle } from './entities/cycle.entity'
 import { LaofusTrade } from './entities/trade.entity'
 import { LaofusEvent } from './entities/event.entity'
+import { LaofusPendingOrder } from './entities/pending-order.entity'
 
 /**
  * SOXL 소수점 무한매수법 자동매매 (/api/laofus/*)
@@ -17,7 +18,9 @@ import { LaofusEvent } from './entities/event.entity'
  * - 방법론 문서: docs/laofus/
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([LaofusEngineState, LaofusCycle, LaofusTrade, LaofusEvent])],
+  imports: [
+    TypeOrmModule.forFeature([LaofusEngineState, LaofusCycle, LaofusTrade, LaofusEvent, LaofusPendingOrder]),
+  ],
   controllers: [LaofusController],
   providers: [TossClientService, LaofusEngineService, LaofusStatusService, LaofusSchedulerService],
 })

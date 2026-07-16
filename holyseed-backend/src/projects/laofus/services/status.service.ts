@@ -7,6 +7,7 @@ import { LaofusSchedulerService } from './scheduler.service'
 import { LaofusEngineState } from '../entities/engine-state.entity'
 import { LaofusCycle } from '../entities/cycle.entity'
 import { LaofusEvent } from '../entities/event.entity'
+import { LaofusPendingOrder } from '../entities/pending-order.entity'
 
 export interface LaofusLastRun {
   runId: string
@@ -32,7 +33,8 @@ export class LaofusStatusService {
     private readonly scheduler: LaofusSchedulerService,
     @InjectRepository(LaofusEngineState) private readonly stateRepo: Repository<LaofusEngineState>,
     @InjectRepository(LaofusCycle) private readonly cycleRepo: Repository<LaofusCycle>,
-    @InjectRepository(LaofusEvent) private readonly eventRepo: Repository<LaofusEvent>
+    @InjectRepository(LaofusEvent) private readonly eventRepo: Repository<LaofusEvent>,
+    @InjectRepository(LaofusPendingOrder) private readonly pendingRepo: Repository<LaofusPendingOrder>
   ) {}
 
   async getCalendar(): Promise<unknown> {
@@ -114,7 +116,7 @@ export class LaofusStatusService {
   }
 
   async getStatus() {
-    const [state, cycles, events, lastRun] = await Promise.all([
+    const [state, cycles, events, lastRun, pendingOrders] = await Promise.all([
       this.stateRepo.findOne({ where: { symbol: 'SOXL' } }),
       this.cycleRepo.find({
         where: { symbol: 'SOXL' },
@@ -123,6 +125,7 @@ export class LaofusStatusService {
       }),
       this.eventRepo.find({ order: { id: 'DESC' }, take: 100 }),
       this.getLastRun(),
+      this.pendingRepo.find({ where: { status: 'PENDING' }, order: { id: 'ASC' } }),
     ])
     // trades seq 순 정렬 (relations는 순서 보장 안 됨)
     for (const c of cycles) c.trades?.sort((a, b) => a.seq - b.seq)
@@ -138,6 +141,7 @@ export class LaofusStatusService {
       state,
       cycles,
       events,
+      pendingOrders,
       engine: {
         mode: process.env.LAOFUS_LIVE === 'true' ? 'live' : 'dry-run',
         schedulerEnabled: process.env.LAOFUS_SCHEDULER !== 'false',

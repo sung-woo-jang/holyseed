@@ -120,6 +120,28 @@ export function EngineStatusBar() {
           {connected ? `● 실시간 (${recvAgo ?? '-'}초 전 수신)` : '○ 백엔드 연결 끊김 — 자동매매 중단 상태'}
         </span>
       </div>
+      {(status.pendingOrders ?? []).length > 0 && (
+        <div
+          style={{
+            marginTop: 8,
+            paddingTop: 8,
+            borderTop: '1px solid var(--grid)',
+            color: 'var(--status-warning)',
+            fontSize: 12,
+          }}
+        >
+          ⏳ 개장 체결 대기{' '}
+          {status.pendingOrders
+            .map(
+              (p) =>
+                `${p.kind} ${p.side === 'BUY' ? '매수' : '매도'} ${
+                  p.requestAmount ? `$${p.requestAmount}` : `${p.requestQuantity}주`
+                }`
+            )
+            .join(', ')}{' '}
+          — 다음 세션 개장 후 자동 회수
+        </div>
+      )}
       {lastRun && (
         <div
           style={{

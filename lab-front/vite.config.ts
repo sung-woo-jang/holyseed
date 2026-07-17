@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@holyseed/laofus-core': path.resolve(__dirname, '../packages/laofus-core/src'),
     },
   },
   server: {
@@ -21,7 +22,8 @@ export default defineConfig({
     },
   },
   preview: {
-    port: 5000,
+    // 5000은 macOS AirPlay(AirTunes)가 점유 — 구 laofus 대시보드 포트 4800 승계
+    port: 4800,
     proxy: {
       '/api': {
         target: 'http://localhost:8000',

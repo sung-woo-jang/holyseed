@@ -1,4 +1,12 @@
-import { NotebookPen, Scissors, type LucideIcon } from 'lucide-react'
+import {
+  CalendarDays,
+  ChartCandlestick,
+  HardHat,
+  Infinity as InfinityIcon,
+  PiggyBank,
+  Scissors,
+  type LucideIcon,
+} from 'lucide-react'
 
 export interface LabPage {
   /** 라우트 경로 */
@@ -28,11 +36,52 @@ export interface LabSection {
  */
 export const SECTIONS: LabSection[] = [
   {
-    id: 'notion',
-    label: '노션 기록',
-    icon: NotebookPen,
-    basePath: '/notion',
-    pages: [{ path: '/notion', label: '개요', end: true }],
+    id: 'laofus',
+    label: '무한매수법',
+    icon: InfinityIcon,
+    basePath: '/laofus',
+    pages: [
+      { path: '/laofus', label: '홈', end: true },
+      { path: '/laofus/chart', label: '차트' },
+      { path: '/laofus/cycles', label: '사이클', end: false },
+      { path: '/laofus/account', label: '계좌' },
+      { path: '/laofus/system', label: '시스템' },
+    ],
+  },
+  {
+    id: 'vr',
+    label: 'TQQQ VR',
+    icon: ChartCandlestick,
+    basePath: '/vr',
+    pages: [
+      { path: '/vr', label: '개요', end: true },
+      { path: '/vr/ladder', label: '예약표' },
+      { path: '/vr/fills', label: '체결·사이클' },
+    ],
+  },
+  {
+    id: 'worklog',
+    label: '근무일지',
+    icon: HardHat,
+    basePath: '/worklog',
+    pages: [{ path: '/worklog', label: '근무 기록', end: true }],
+  },
+  {
+    id: 'schedule',
+    label: '일정',
+    icon: CalendarDays,
+    basePath: '/schedule',
+    pages: [
+      { path: '/schedule', label: '캘린더', end: true },
+      { path: '/schedule/list', label: '리스트' },
+    ],
+  },
+  {
+    id: 'saving',
+    label: '저축',
+    icon: PiggyBank,
+    basePath: '/saving',
+    pages: [{ path: '/saving', label: '저축 플래너', end: true }],
   },
   {
     id: 'film',

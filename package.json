@@ -16,9 +16,6 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\" --ignore-path .prettierignore",
     "clean": "rm -rf node_modules **/node_modules",
     "reset": "yarn clean && yarn install",
-    "dev:laofus": "yarn --cwd laofus-front dev",
-    "build:laofus": "yarn --cwd laofus-front build",
-    "typecheck:laofus": "yarn --cwd laofus-front typecheck",
     "dev:lab": "yarn --cwd lab-front dev",
     "build:lab": "yarn --cwd lab-front build",
     "typecheck:lab": "yarn --cwd lab-front typecheck"

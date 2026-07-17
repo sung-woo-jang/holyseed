@@ -18,8 +18,9 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@holyseed/laofus-core": ["../packages/laofus-core/src/index.ts"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "../packages/laofus-core/src"]
 }

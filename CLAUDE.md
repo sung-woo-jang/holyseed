@@ -46,20 +46,14 @@ holyseed/
 - Vite 6 + React 19 + CSS Modules, FSD 구조
 - 개발 서버: localhost:3600
 
-### 2-1. laofus-front (SOXL 무한매수법 대시보드)
-
-- Vite 6 + React 19, react-router 7
-- 개발 서버: localhost:3800 (proxy `/api` → :8000)
-- 화면: 홈(판단 미리보기+시뮬레이터)/차트/사이클/계좌/시스템
-- 판단 로직은 `packages/laofus-core` 공유 (백엔드와 동일 순수함수)
-
-### 2-2. lab-front (개인 다목적 대시보드)
+### 2-1. lab-front (개인 다목적 대시보드)
 
 - Vite 6 + React 19, react-router 7, Tailwind 4 + shadcn/Radix (scss modules 혼용)
-- 개발 서버: localhost:4000 (proxy `/api` → :8000), preview 5000
+- 개발 서버: localhost:4000 (proxy `/api` → :8000), preview/상시 서빙 :4800 (pm2 `lab-front`)
 - 2중 사이드바 레이아웃: 1차=섹션 아이콘 바, 2차=섹션 내 페이지 목록
 - 섹션 추가 = `src/app/nav/sections.tsx`의 SECTIONS 항목 + `App.tsx` 라우트 추가
-- 현재 섹션: 노션 기록(틀만), 필름 재단 최적화(옛 living-craft film-optimizer 복원 이식)
+- 섹션 6개: **무한매수법**(구 laofus-front 흡수 — `/laofus`, `.laofus-scope` 스타일 격리, 자체 fetch로 `/api/laofus/*` 무인증 호출, laofus-core alias), TQQQ VR, 근무일지, 일정, 저축, 필름 재단
+- 무한매수법 판단 로직은 `packages/laofus-core` 공유 (백엔드와 동일 순수함수)
 
 ### 3. holyseed-backend (API 서버)
 
@@ -79,9 +73,10 @@ holyseed/
   - **⚠️ LIVE 운용 중 (2026-07-15~)**: pm2 `laofus-backend`가 상시 가동하며 실주문 담당. `.env`는 항상 `LAOFUS_LIVE=false`/`LAOFUS_SCHEDULER=false`(안전 기본값) — LIVE는 `ecosystem.local.config.js`의 pm2 env 주입으로만
   - ad-hoc `nest dev` 전 반드시 `pm2 stop laofus-backend` (포트 8000 충돌), 끝나면 `pm2 start laofus-backend`. 백엔드 수정 반영은 `yarn workspace @holyseed/backend build && pm2 restart laofus-backend`
   - **주의**: 무매 잔금은 `laofus.engine_state.cash` 기준 (계좌 예수금 아님). 계좌-DB 보유수량 불일치 시 엔진이 주문 중단
-  - 방법론 문서·운용 규칙: `docs/laofus/README.md` 필독. 시드: `yarn laofus:seed`. 대시보드 상시 서빙 :4800 (pm2 `laofus-front`)
+  - 방법론 문서·운용 규칙: `docs/laofus/README.md` 필독. 시드: `yarn laofus:seed`. 대시보드 상시 서빙 :4800 (pm2 `lab-front`, 무한매수법 섹션 `/laofus`)
 - **LAB 프로젝트**: `src/projects/lab/` - 개인 다목적 대시보드 (`lab` 스키마, `/api/lab/*`)
-  - 자체 이메일/비번 JWT 인증 (lab.users) + film-optimizer(필름지/재단 프로젝트/조각 CRUD)
+  - 자체 이메일/비번 JWT 인증 (lab.users)
+  - 모듈: film-optimizer(필름 재단), vr(TQQQ 밸류 리밸런싱), worklog(근무일지·급여계산), schedule(일정), saving(1억 저축 플래너)
 - **공유 모듈**: `src/shared/` - 파일 업로드, 헬스체크, 주소 검색
 
 **개발 환경:**

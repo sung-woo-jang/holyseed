@@ -34,9 +34,9 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     },
     {
-      // 대시보드 상시 서빙 — vite preview가 dist/를 :4800에 서빙 (/api → :8000 프록시 내장)
-      name: 'laofus-front',
-      cwd: `${__dirname}/../laofus-front`,
+      // lab 대시보드 상시 서빙 (무한매수법 섹션 포함) — vite preview가 dist/를 :4800에 서빙 (/api → :8000 프록시 내장)
+      name: 'lab-front',
+      cwd: `${__dirname}/../lab-front`,
       script: 'node_modules/vite/bin/vite.js',
       args: 'preview',
       instances: 1,

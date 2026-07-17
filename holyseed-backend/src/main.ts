@@ -131,12 +131,16 @@ async function bootstrap() {
     // ========================================
     const labConfig = new DocumentBuilder()
       .setTitle('Lab API')
-      .setDescription('개인 다목적 대시보드 — 노션 기록·필름 재단 최적화 등')
+      .setDescription('개인 다목적 대시보드 — 무한매수법·VR·근무일지·일정·저축·필름 재단')
       .setVersion('1.0')
       .addBearerAuth()
       .addTag('Lab 인증', '이메일/비밀번호 JWT 인증')
       .addTag('Lab 사용자', '사용자 프로필 관리')
       .addTag('Lab 필름 재단', '인테리어 필름 재단 최적화')
+      .addTag('Lab VR', 'TQQQ 밸류 리밸런싱 상태·체결·사이클')
+      .addTag('Lab 근무일지', '근무 기록·급여 계산·월별 집계')
+      .addTag('Lab 일정', '캘린더 일정 관리')
+      .addTag('Lab 저축', '1억 저축 플래너')
       .build()
 
     const labDocument = SwaggerModule.createDocument(app, labConfig, { include: [] })

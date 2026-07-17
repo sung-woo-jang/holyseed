@@ -27,6 +27,10 @@ jobs:
           npm install
           npm run build
 
+      - name: Run migrations (스키마 생성 등 — synchronize가 못 하는 작업)
+        working-directory: /Users/jangseong-u/project/holyseed/holyseed-backend
+        run: NODE_ENV=production npm run migration:run
+
       - name: Restart pm2
         working-directory: /Users/jangseong-u/project/holyseed/holyseed-backend
         run: pm2 restart holyseed-backend --update-env

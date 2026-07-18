@@ -4,7 +4,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -21,6 +21,7 @@ export class WeddingAuthService {
     @InjectRepository(Couple)
     private readonly coupleRepo: Repository<Couple>,
     private readonly jwtService: JwtService,
+    @InjectDataSource()
     private readonly dataSource: DataSource,
   ) {}
 

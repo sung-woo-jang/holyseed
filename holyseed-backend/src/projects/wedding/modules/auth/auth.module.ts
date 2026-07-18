@@ -1,8 +1,7 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule, getDataSourceToken } from '@nestjs/typeorm';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { DataSource } from 'typeorm';
 import { WeddingAuthController } from './auth.controller';
 import { WeddingAuthService } from './auth.service';
 import { WeddingUser } from './entities/wedding-user.entity';
@@ -20,10 +19,7 @@ import { Couple } from '../couples/entities/couple.entity';
     }),
   ],
   controllers: [WeddingAuthController],
-  providers: [
-    WeddingAuthService,
-    { provide: DataSource, useExisting: getDataSourceToken() },
-  ],
+  providers: [WeddingAuthService],
   exports: [WeddingAuthService],
 })
 export class WeddingAuthModule {}

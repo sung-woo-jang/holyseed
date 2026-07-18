@@ -1,0 +1,47 @@
+name: Deploy Lab Front
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'lab-front/**'
+      - 'packages/laofus-core/**'
+      - 'holyseed-backend/ecosystem.config.js'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-lab-front
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Sync live repo to origin/master
+        run: |
+          git -C /Users/jangseong-u/project/holyseed fetch origin master
+          git -C /Users/jangseong-u/project/holyseed reset --hard origin/master
+
+      - name: Install dependencies & build
+        working-directory: /Users/jangseong-u/project/holyseed/lab-front
+        run: |
+          yarn install
+          yarn build
+
+      - name: Restart pm2
+        working-directory: /Users/jangseong-u/project/holyseed/holyseed-backend
+        run: pm2 startOrRestart ecosystem.config.js --only lab-front
+
+      - name: Health check
+        run: |
+          for i in $(seq 1 24); do
+            if curl -sf http://127.0.0.1:4800 > /dev/null; then
+              echo "healthy after $((i * 5))s"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "health check failed"
+          pm2 logs lab-front --lines 30 --nostream --err || true
+          exit 1

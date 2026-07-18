@@ -29,5 +29,16 @@ module.exports = {
       listen_timeout: 10000,
       kill_timeout: 5000,
     },
+    {
+      // lab 대시보드 상시 서빙 — vite preview가 dist/를 :4800에 서빙 (/api → :8000 프록시 내장)
+      name: 'lab-front',
+      cwd: '/Users/jangseong-u/project/holyseed/lab-front',
+      script: 'node_modules/vite/bin/vite.js',
+      args: 'preview',
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+    },
   ],
 };

@@ -33,9 +33,11 @@ jobs:
 
       - name: Restart pm2
         working-directory: /Users/jangseong-u/project/holyseed/holyseed-backend
-        run: pm2 restart holyseed-backend --update-env
+        run: |
+          pm2 restart holyseed-backend --update-env
+          pm2 startOrRestart ecosystem.config.js --only laofus-backend --env production
 
-      - name: Health check
+      - name: Health check (holyseed-backend)
         run: |
           for i in $(seq 1 24); do
             if curl -sf http://127.0.0.1:8000/health > /dev/null; then
@@ -46,4 +48,17 @@ jobs:
           done
           echo "health check failed"
           pm2 logs holyseed-backend --lines 30 --nostream --err || true
+          exit 1
+
+      - name: Health check (laofus-backend)
+        run: |
+          for i in $(seq 1 24); do
+            if curl -sf http://127.0.0.1:8001/health > /dev/null; then
+              echo "healthy after $((i * 5))s"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "health check failed"
+          pm2 logs laofus-backend --lines 30 --nostream --err || true
           exit 1

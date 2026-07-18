@@ -4,29 +4,29 @@
  *
  * 실행: yarn laofus:seed  (backend 디렉터리)
  */
-import { NestFactory } from '@nestjs/core'
-import { DataSource } from 'typeorm'
-import { AppModule } from '../../../app.module'
-import { LaofusCycle } from '../entities/cycle.entity'
-import { LaofusEngineState } from '../entities/engine-state.entity'
-import { LaofusEvent } from '../entities/event.entity'
-import { LaofusTrade } from '../entities/trade.entity'
+import { NestFactory } from '@nestjs/core';
+import { DataSource } from 'typeorm';
+import { AppModule } from '../../../app.module';
+import { LaofusCycle } from '../entities/cycle.entity';
+import { LaofusEngineState } from '../entities/engine-state.entity';
+import { LaofusEvent } from '../entities/event.entity';
+import { LaofusTrade } from '../entities/trade.entity';
 
 interface SeedTrade {
-  date: string
-  kind: string
-  side: 'BUY' | 'SELL'
-  price: number
-  quantity: number
-  amount: number
-  tAfter: number
-  avgAfter: number
-  qtyAfter: number
-  cashAfter: number
-  note?: string
+  date: string;
+  kind: string;
+  side: 'BUY' | 'SELL';
+  price: number;
+  quantity: number;
+  amount: number;
+  tAfter: number;
+  avgAfter: number;
+  qtyAfter: number;
+  cashAfter: number;
+  note?: string;
 }
 
-const APPROX = '스냅샷 근사 (노션 미기재, 6/23 확정값 역산)'
+const APPROX = '스냅샷 근사 (노션 미기재, 6/23 확정값 역산)';
 
 const trades: SeedTrade[] = [
   {
@@ -265,29 +265,29 @@ const trades: SeedTrade[] = [
     qtyAfter: 3.570558,
     cashAfter: 1245.06,
   },
-]
+];
 
-const SYMBOL = 'SOXL'
+const SYMBOL = 'SOXL';
 
 async function main() {
-  const app = await NestFactory.createApplicationContext(AppModule, { logger: ['error', 'warn'] })
-  const ds = app.get(DataSource)
+  const app = await NestFactory.createApplicationContext(AppModule, { logger: ['error', 'warn'] });
+  const ds = app.get(DataSource);
 
-  await ds.getRepository(LaofusTrade).createQueryBuilder().delete().execute()
-  await ds.getRepository(LaofusCycle).createQueryBuilder().delete().execute()
-  await ds.getRepository(LaofusEngineState).createQueryBuilder().delete().execute()
+  await ds.getRepository(LaofusTrade).createQueryBuilder().delete().execute();
+  await ds.getRepository(LaofusCycle).createQueryBuilder().delete().execute();
+  await ds.getRepository(LaofusEngineState).createQueryBuilder().delete().execute();
 
   const cycle = await ds.getRepository(LaofusCycle).save({
     symbol: SYMBOL,
     cycleNo: 1,
     startDate: '2026-06-16',
     principal: '2000',
-  })
+  });
 
-  let tBefore = 0
-  let seq = 0
+  let tBefore = 0;
+  let seq = 0;
   for (const t of trades) {
-    seq += 1
+    seq += 1;
     await ds.getRepository(LaofusTrade).save({
       cycleId: cycle.id,
       seq,
@@ -303,11 +303,11 @@ async function main() {
       qtyAfter: String(t.qtyAfter),
       cashAfter: String(t.cashAfter),
       note: t.note ?? '노션 마이그레이션',
-    })
-    tBefore = t.tAfter
+    });
+    tBefore = t.tAfter;
   }
 
-  const last = trades[trades.length - 1]
+  const last = trades[trades.length - 1];
   await ds.getRepository(LaofusEngineState).save({
     symbol: SYMBOL,
     t: String(last.tAfter),
@@ -317,20 +317,20 @@ async function main() {
     principal: '2000',
     cycleNo: 1,
     cycleDone: false,
-  })
+  });
 
   await ds.getRepository(LaofusEvent).save({
     level: 'info',
     source: 'engine',
     message: `laofus 시딩 완료: trade ${seq}건, 최종 T=${last.tAfter}, 잔금=$${last.cashAfter}`,
-  })
+  });
 
-  console.log(`시딩 완료: cycle 1, trades ${seq}건`)
-  console.log(`engine_state: T=${last.tAfter}, qty=${last.qtyAfter}, avg=$${last.avgAfter}, cash=$${last.cashAfter}`)
-  await app.close()
+  console.log(`시딩 완료: cycle 1, trades ${seq}건`);
+  console.log(`engine_state: T=${last.tAfter}, qty=${last.qtyAfter}, avg=$${last.avgAfter}, cash=$${last.cashAfter}`);
+  await app.close();
 }
 
 main().catch((e) => {
-  console.error(e)
-  process.exit(1)
-})
+  console.error(e);
+  process.exit(1);
+});

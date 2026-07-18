@@ -1,5 +1,5 @@
-import { applyDecorators } from '@nestjs/common'
-import { ApiBearerAuth, ApiUnauthorizedResponse } from '@nestjs/swagger'
+import { applyDecorators } from '@nestjs/common';
+import { ApiBearerAuth, ApiUnauthorizedResponse } from '@nestjs/swagger';
 
 /**
  * Swagger 기본 데코레이터를 적용하는 유틸리티 함수
@@ -7,7 +7,7 @@ import { ApiBearerAuth, ApiUnauthorizedResponse } from '@nestjs/swagger'
  * @returns 합성된 데코레이터
  */
 export function swaggerBaseApplyDecorator(...decorators: any[]) {
-  return applyDecorators(...decorators)
+  return applyDecorators(...decorators);
 }
 
 /**
@@ -30,6 +30,6 @@ export function SwaggerBaseApply() {
           path: '/api/endpoint',
         },
       },
-    })
-  )
+    }),
+  );
 }

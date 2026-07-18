@@ -8,7 +8,10 @@ import { Membership } from '../../modules/memberships/entities/membership.entity
 import { Asset, AssetCategory } from '../../modules/assets/entities/asset.entity';
 import { AssetSnapshot } from '../../modules/asset-snapshots/entities/asset-snapshot.entity';
 import { Transaction, TransactionType } from '../../modules/transactions/entities/transaction.entity';
-import { RecurringTransaction, RecurringFrequency } from '../../modules/recurring-transactions/entities/recurring-transaction.entity';
+import {
+  RecurringTransaction,
+  RecurringFrequency,
+} from '../../modules/recurring-transactions/entities/recurring-transaction.entity';
 
 dotenv.config({ path: '.env.local' });
 dotenv.config({ path: '.env' });
@@ -55,9 +58,7 @@ async function seedNova(ds: DataSource) {
   await qr.connect();
   await qr.startTransaction();
   try {
-    const assetRows: { id: number }[] = await qr.query(
-      `SELECT id FROM ad.assets WHERE household_id = $1`, [HID],
-    );
+    const assetRows: { id: number }[] = await qr.query(`SELECT id FROM ad.assets WHERE household_id = $1`, [HID]);
     const assetIds = assetRows.map((r) => r.id);
     await qr.query(`DELETE FROM ad.transactions WHERE household_id = $1`, [HID]);
     await qr.query(`DELETE FROM ad.recurring_transactions WHERE household_id = $1`, [HID]);
@@ -81,26 +82,29 @@ async function seedNova(ds: DataSource) {
 
   // ── 3. 자산 ~7개 (전부 KRW, 새내기 20대) ────────────────────────────
   // base = 최신(현재) 평가액. 순자산 ≈ 500+800+1200+1000+300+700 − 500 ≈ 4,000만
-  const assetDefs: { name: string; category: AssetCategory; base: number; isLiability?: boolean; sortOrder: number }[] = [
-    { name: '카카오뱅크 입출금', category: AssetCategory.CASH, base: 5_000_000, sortOrder: 1 },
-    { name: '토스 비상금 파킹', category: AssetCategory.CASH, base: 8_000_000, sortOrder: 2 },
-    { name: '청년적금', category: AssetCategory.CASH, base: 12_000_000, sortOrder: 3 },
-    { name: '키움 주식계좌', category: AssetCategory.INVESTMENT, base: 10_000_000, sortOrder: 4 },
-    { name: '업비트 코인', category: AssetCategory.CRYPTO, base: 3_000_000, sortOrder: 5 },
-    { name: '연금저축펀드', category: AssetCategory.PENSION, base: 7_000_000, sortOrder: 6 },
-    { name: '학자금 대출', category: AssetCategory.DEBT, base: 5_000_000, isLiability: true, sortOrder: 7 },
-  ];
+  const assetDefs: { name: string; category: AssetCategory; base: number; isLiability?: boolean; sortOrder: number }[] =
+    [
+      { name: '카카오뱅크 입출금', category: AssetCategory.CASH, base: 5_000_000, sortOrder: 1 },
+      { name: '토스 비상금 파킹', category: AssetCategory.CASH, base: 8_000_000, sortOrder: 2 },
+      { name: '청년적금', category: AssetCategory.CASH, base: 12_000_000, sortOrder: 3 },
+      { name: '키움 주식계좌', category: AssetCategory.INVESTMENT, base: 10_000_000, sortOrder: 4 },
+      { name: '업비트 코인', category: AssetCategory.CRYPTO, base: 3_000_000, sortOrder: 5 },
+      { name: '연금저축펀드', category: AssetCategory.PENSION, base: 7_000_000, sortOrder: 6 },
+      { name: '학자금 대출', category: AssetCategory.DEBT, base: 5_000_000, isLiability: true, sortOrder: 7 },
+    ];
 
   const assets: { entity: Asset; base: number; isLiability: boolean }[] = [];
   for (const def of assetDefs) {
-    const a = await assetRepo.save(assetRepo.create({
-      householdId: HID,
-      name: def.name,
-      category: def.category,
-      currency: 'KRW',
-      isLiability: !!def.isLiability,
-      sortOrder: def.sortOrder,
-    }));
+    const a = await assetRepo.save(
+      assetRepo.create({
+        householdId: HID,
+        name: def.name,
+        category: def.category,
+        currency: 'KRW',
+        isLiability: !!def.isLiability,
+        sortOrder: def.sortOrder,
+      }),
+    );
     assets.push({ entity: a, base: def.base, isLiability: !!def.isLiability });
   }
   console.log(`  ✅ 자산 ${assets.length}개`);
@@ -120,21 +124,23 @@ async function seedNova(ds: DataSource) {
         factor = 0.08 + 0.92 * progress;
       }
       const value = Math.max(0, jitter(Math.round(a.base * factor), 0.06));
-      await snapshotRepo.save(snapshotRepo.create({
-        assetId: a.entity.id,
-        date: dateStr(mo, 28),
-        value,
-        fxRateToKRW: 1,
-        valueKRW: value,
-        createdByUserId: USER_ID,
-      }));
+      await snapshotRepo.save(
+        snapshotRepo.create({
+          assetId: a.entity.id,
+          date: dateStr(mo, 28),
+          value,
+          fxRateToKRW: 1,
+          valueKRW: value,
+          createdByUserId: USER_ID,
+        }),
+      );
       snapCount++;
     }
   }
   console.log(`  ✅ 스냅샷 ${snapCount}개 (자산 ${assets.length} × 60개월)`);
 
   const checking = assets[0].entity; // 입출금통장
-  const stock = assets[3].entity;    // 주식계좌
+  const stock = assets[3].entity; // 주식계좌
 
   // ── 5. 거래 60개월 (월 5~8건) ──────────────────────────────────────
   type TxDef = { type: TransactionType; catName: string; amount: number; title: string; prob: number };
@@ -158,18 +164,20 @@ async function seedNova(ds: DataSource) {
       if (Math.random() > def.prob) continue;
       const isIncome = def.type === TransactionType.INCOME;
       const day = isIncome && def.title === '월급' ? 25 : Math.ceil(rand(1, 28));
-      await txRepo.save(txRepo.create({
-        householdId: HID,
-        date: dateStr(mo, day),
-        type: def.type,
-        amount: jitter(def.amount, isIncome ? 0.05 : 0.3),
-        categoryId: cat(def.catName),
-        fromAssetId: isIncome ? undefined : checking.id,
-        toAssetId: isIncome ? checking.id : undefined,
-        title: def.title,
-        autoGenerated: false,
-        createdByUserId: USER_ID,
-      }));
+      await txRepo.save(
+        txRepo.create({
+          householdId: HID,
+          date: dateStr(mo, day),
+          type: def.type,
+          amount: jitter(def.amount, isIncome ? 0.05 : 0.3),
+          categoryId: cat(def.catName),
+          fromAssetId: isIncome ? undefined : checking.id,
+          toAssetId: isIncome ? checking.id : undefined,
+          title: def.title,
+          autoGenerated: false,
+          createdByUserId: USER_ID,
+        }),
+      );
       txCount++;
     }
   }
@@ -191,19 +199,21 @@ async function seedNova(ds: DataSource) {
   ];
   for (const def of recDefs) {
     const isIncome = def.type === TransactionType.INCOME;
-    await recurringRepo.save(recurringRepo.create({
-      householdId: HID,
-      type: def.type,
-      amount: def.amount,
-      categoryId: cat(def.catName),
-      fromAssetId: isIncome ? undefined : checking.id,
-      toAssetId: isIncome ? checking.id : undefined,
-      title: def.title,
-      frequency: RecurringFrequency.MONTHLY,
-      dayOfMonth: def.day,
-      startDate,
-      active: true,
-    }));
+    await recurringRepo.save(
+      recurringRepo.create({
+        householdId: HID,
+        type: def.type,
+        amount: def.amount,
+        categoryId: cat(def.catName),
+        fromAssetId: isIncome ? undefined : checking.id,
+        toAssetId: isIncome ? checking.id : undefined,
+        title: def.title,
+        frequency: RecurringFrequency.MONTHLY,
+        dayOfMonth: def.day,
+        startDate,
+        active: true,
+      }),
+    );
   }
   console.log(`  ✅ 정기항목 ${recDefs.length}개`);
   console.log('\n노바체 5년치 더미 시드 완료!');

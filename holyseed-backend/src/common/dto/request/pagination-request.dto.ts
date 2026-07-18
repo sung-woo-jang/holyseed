@@ -57,10 +57,7 @@ export class PaginationRequestDto {
   })
   @IsOptional()
   @IsEnum(SortOrder, {
-    message: ERROR_MESSAGES.VALIDATION.INVALID_ENUM(
-      FIELD_NAMES.sortOrder,
-      Object.values(SortOrder).join(', '),
-    ),
+    message: ERROR_MESSAGES.VALIDATION.INVALID_ENUM(FIELD_NAMES.sortOrder, Object.values(SortOrder).join(', ')),
   })
   sortOrder?: SortOrder = SortOrder.DESC;
 

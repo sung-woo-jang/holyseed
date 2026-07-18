@@ -40,7 +40,7 @@ export class CashflowService {
         income,
         expense,
         net: income - expense,
-        savingsRate: income > 0 ? Number(((income - expense) / income * 100).toFixed(1)) : null,
+        savingsRate: income > 0 ? Number((((income - expense) / income) * 100).toFixed(1)) : null,
       }));
   }
 }

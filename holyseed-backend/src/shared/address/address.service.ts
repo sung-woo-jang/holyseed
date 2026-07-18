@@ -18,8 +18,7 @@ interface KakaoKeywordSearchResponse {
 @Injectable()
 export class AddressService {
   private readonly logger = new Logger(AddressService.name);
-  private readonly KAKAO_API_URL =
-    'https://dapi.kakao.com/v2/local/search/keyword.json';
+  private readonly KAKAO_API_URL = 'https://dapi.kakao.com/v2/local/search/keyword.json';
   private readonly kakaoApiKey: string;
 
   constructor(
@@ -32,9 +31,7 @@ export class AddressService {
     }
   }
 
-  async searchAddress(
-    dto: SearchAddressDto,
-  ): Promise<AddressSearchResponseDto> {
+  async searchAddress(dto: SearchAddressDto): Promise<AddressSearchResponseDto> {
     const { query, regionPrefix = '인천' } = dto;
 
     if (!query || !query.trim()) {
@@ -52,9 +49,7 @@ export class AddressService {
       );
 
       // 지역명에서 "광역시", "특별시", "특별자치시", "특별자치도" 제거
-      const regionName = regionPrefix
-        .split(' ')[0]
-        .replace(/광역시|특별시|특별자치시|특별자치도/g, '');
+      const regionName = regionPrefix.split(' ')[0].replace(/광역시|특별시|특별자치시|특별자치도/g, '');
 
       const filteredDocuments = response.data.documents.filter((item) => {
         const address = item.road_address_name || item.address_name;
@@ -73,20 +68,14 @@ export class AddressService {
       this.logger.error(`주소 검색 오류: ${error.message}`, error.stack);
 
       if (error.response?.status === 401) {
-        throw new HttpException(
-          '카카오 API 인증 실패',
-          HttpStatus.UNAUTHORIZED,
-        );
+        throw new HttpException('카카오 API 인증 실패', HttpStatus.UNAUTHORIZED);
       } else if (error.response?.status === 429) {
         throw new HttpException('요청 한도 초과', HttpStatus.TOO_MANY_REQUESTS);
       } else if (error.code === 'ECONNABORTED') {
         throw new HttpException('요청 시간 초과', HttpStatus.REQUEST_TIMEOUT);
       }
 
-      throw new HttpException(
-        '주소 검색 중 오류 발생',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('주소 검색 중 오류 발생', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

@@ -6,12 +6,6 @@ import { AttendanceModule } from './modules/attendance/attendance.module';
 import { ContentRowsModule } from './modules/content-rows/content-rows.module';
 
 @Module({
-  imports: [
-    WeddingAuthModule,
-    CouplesModule,
-    MediaModule,
-    AttendanceModule,
-    ContentRowsModule,
-  ],
+  imports: [WeddingAuthModule, CouplesModule, MediaModule, AttendanceModule, ContentRowsModule],
 })
 export class WeddingModule {}

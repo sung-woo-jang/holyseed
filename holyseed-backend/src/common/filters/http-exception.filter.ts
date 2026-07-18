@@ -1,15 +1,6 @@
-import {
-  ExceptionFilter,
-  Catch,
-  ArgumentsHost,
-  HttpException,
-  HttpStatus,
-} from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { Response } from 'express';
-import {
-  ErrorResponseDto,
-  ValidationErrorResponseDto,
-} from '@common/dto/response/error-response.dto';
+import { ErrorResponseDto, ValidationErrorResponseDto } from '@common/dto/response/error-response.dto';
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -20,23 +11,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const exceptionResponse = exception.getResponse();
 
     // Validation 에러 처리
-    if (
-      status === HttpStatus.BAD_REQUEST &&
-      typeof exceptionResponse === 'object'
-    ) {
+    if (status === HttpStatus.BAD_REQUEST && typeof exceptionResponse === 'object') {
       const validationResponse = exceptionResponse as any;
 
-      if (
-        validationResponse.message &&
-        Array.isArray(validationResponse.message)
-      ) {
-        const validationErrors = this.formatValidationErrors(
-          validationResponse.message,
-        );
-        const errorResponse = new ValidationErrorResponseDto(
-          '입력 데이터가 유효하지 않습니다.',
-          validationErrors,
-        );
+      if (validationResponse.message && Array.isArray(validationResponse.message)) {
+        const validationErrors = this.formatValidationErrors(validationResponse.message);
+        const errorResponse = new ValidationErrorResponseDto('입력 데이터가 유효하지 않습니다.', validationErrors);
 
         return response.status(status).json(errorResponse);
       }
@@ -53,9 +33,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     response.status(status).json(errorResponse);
   }
 
-  private formatValidationErrors(
-    messages: string[],
-  ): Array<{ field: string; errors: string[] }> {
+  private formatValidationErrors(messages: string[]): Array<{ field: string; errors: string[] }> {
     const errorMap = new Map<string, string[]>();
 
     messages.forEach((message) => {

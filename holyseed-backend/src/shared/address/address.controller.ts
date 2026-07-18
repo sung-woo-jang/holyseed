@@ -19,9 +19,7 @@ export class AddressController {
   @ApiResponse({ status: 401, description: '카카오 API 인증 실패' })
   @ApiResponse({ status: 429, description: '요청 한도 초과' })
   @ApiResponse({ status: 408, description: '요청 시간 초과' })
-  async searchAddress(
-    @Query() dto: SearchAddressDto,
-  ): Promise<SuccessResponseDto<AddressSearchResponseDto>> {
+  async searchAddress(@Query() dto: SearchAddressDto): Promise<SuccessResponseDto<AddressSearchResponseDto>> {
     const result = await this.addressService.searchAddress(dto);
     return new SuccessResponseDto('주소 검색이 완료되었습니다.', result);
   }

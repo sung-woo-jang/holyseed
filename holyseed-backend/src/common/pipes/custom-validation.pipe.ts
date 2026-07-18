@@ -1,9 +1,4 @@
-import {
-  PipeTransform,
-  Injectable,
-  ArgumentMetadata,
-  BadRequestException,
-} from '@nestjs/common';
+import { PipeTransform, Injectable, ArgumentMetadata, BadRequestException } from '@nestjs/common';
 import { validate, ValidationError } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { ERROR_MESSAGES } from '@common/constants';
@@ -32,9 +27,7 @@ export class CustomValidationPipe implements PipeTransform<any> {
     // 허용되지 않은 필드 체크 (forbidNonWhitelisted)
     const unknownKeys = this.getUnknownKeys(value, object);
     if (unknownKeys.length > 0) {
-      const errors = unknownKeys.map((key) =>
-        ERROR_MESSAGES.SYSTEM.UNEXPECTED_FIELD(key),
-      );
+      const errors = unknownKeys.map((key) => ERROR_MESSAGES.SYSTEM.UNEXPECTED_FIELD(key));
       throw new BadRequestException(errors);
     }
 
@@ -59,13 +52,7 @@ export class CustomValidationPipe implements PipeTransform<any> {
    * 검증이 필요한 메타타입인지 확인
    */
   private toValidate(metatype: new (...args: any[]) => any): boolean {
-    const types: Array<new (...args: any[]) => any> = [
-      String,
-      Boolean,
-      Number,
-      Array,
-      Object,
-    ];
+    const types: Array<new (...args: any[]) => any> = [String, Boolean, Number, Array, Object];
     return !types.includes(metatype);
   }
 

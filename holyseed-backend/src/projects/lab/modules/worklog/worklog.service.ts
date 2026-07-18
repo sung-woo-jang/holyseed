@@ -82,8 +82,7 @@ export class WorklogService {
     const records = logs.map((log) => this.toView(log));
 
     const workRecords = records.filter((r) => r.payStatus !== PayStatus.DAYOFF);
-    const sum = (rows: WorklogView[], pick: (r: WorklogView) => number) =>
-      rows.reduce((acc, r) => acc + pick(r), 0);
+    const sum = (rows: WorklogView[], pick: (r: WorklogView) => number) => rows.reduce((acc, r) => acc + pick(r), 0);
 
     return {
       records,

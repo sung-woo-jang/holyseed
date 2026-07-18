@@ -145,7 +145,7 @@ export const ERROR_MESSAGES = {
     INTERNAL_ERROR: '서버 내부 오류가 발생했습니다.',
     DATABASE_ERROR: '데이터베이스 오류가 발생했습니다.',
   },
-}
+};
 
 /**
  * 필드명 한글 매핑
@@ -230,4 +230,4 @@ export const FIELD_NAMES = {
   districtName: '지역명',
   cityName: '시/군/구',
   baseCost: '기본 비용',
-}
+};

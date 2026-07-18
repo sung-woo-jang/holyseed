@@ -35,17 +35,11 @@ export class FilesService {
         if (FileUtil.isAllowedFileType(file.originalname, allowedTypes)) {
           cb(null, true);
         } else {
-          cb(
-            new BadRequestException(ERROR_MESSAGES.FILES.UNSUPPORTED_TYPE),
-            false,
-          );
+          cb(new BadRequestException(ERROR_MESSAGES.FILES.UNSUPPORTED_TYPE), false);
         }
       },
       limits: {
-        fileSize: this.configService.get<number>(
-          'app.maxFileSize',
-          10 * 1024 * 1024,
-        ), // 10MB
+        fileSize: this.configService.get<number>('app.maxFileSize', 10 * 1024 * 1024), // 10MB
       },
     };
   }
@@ -130,10 +124,7 @@ export class FilesService {
       // 압축률 로깅
       const originalSize = file.size;
       const optimizedSize = processedBuffer.length;
-      const compressionRatio = (
-        ((originalSize - optimizedSize) / originalSize) *
-        100
-      ).toFixed(1);
+      const compressionRatio = (((originalSize - optimizedSize) / originalSize) * 100).toFixed(1);
 
       console.log(
         `이미지 최적화: ${file.originalname} | ` +
@@ -166,9 +157,7 @@ export class FilesService {
           bufferLength: file.buffer?.length,
         },
       });
-      throw new BadRequestException(
-        ERROR_MESSAGES.FILES.IMAGE_PROCESSING_ERROR,
-      );
+      throw new BadRequestException(ERROR_MESSAGES.FILES.IMAGE_PROCESSING_ERROR);
     }
   }
 
@@ -210,16 +199,12 @@ export class FilesService {
   /**
    * 문서 파일 업로드 (NCP Object Storage, 리사이징 없이 원본 그대로 저장)
    */
-  async uploadDocument(
-    file: Express.Multer.File,
-  ): Promise<{ filename: string; path: string; url: string }> {
+  async uploadDocument(file: Express.Multer.File): Promise<{ filename: string; path: string; url: string }> {
     const allowedDocTypes = ['.pdf', '.doc', '.docx', '.hwp', '.txt'];
     const extension = FileUtil.getExtension(file.originalname);
 
     if (!allowedDocTypes.includes(extension.toLowerCase())) {
-      throw new BadRequestException(
-        ERROR_MESSAGES.FILES.UNSUPPORTED_DOCUMENT_TYPE,
-      );
+      throw new BadRequestException(ERROR_MESSAGES.FILES.UNSUPPORTED_DOCUMENT_TYPE);
     }
 
     const filename = FileUtil.generateUniqueFilename(file.originalname);
@@ -237,9 +222,7 @@ export class FilesService {
         url,
       };
     } catch (error) {
-      throw new BadRequestException(
-        ERROR_MESSAGES.FILES.DOCUMENT_SAVE_ERROR(error.message),
-      );
+      throw new BadRequestException(ERROR_MESSAGES.FILES.DOCUMENT_SAVE_ERROR(error.message));
     }
   }
 
@@ -273,14 +256,7 @@ export class FilesService {
    * 업로드 디렉토리 생성
    */
   private ensureUploadDirectories(): void {
-    const directories = [
-      'images',
-      'services',
-      'portfolio',
-      'reviews',
-      'documents',
-      'temp',
-    ];
+    const directories = ['images', 'services', 'portfolio', 'reviews', 'documents', 'temp'];
 
     directories.forEach((dir) => {
       const dirPath = join(this.uploadPath, dir);

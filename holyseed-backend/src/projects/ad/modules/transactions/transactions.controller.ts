@@ -26,14 +26,24 @@ export class TransactionsController {
   @ApiOperation({ summary: '거래 검색' })
   async search(@Param('householdId', ParseIntPipe) householdId: number, @Body() dto: SearchTransactionsDto) {
     const result = await this.txService.search(householdId, dto);
-    return { success: true, message: '조회 성공', data: result.data, total: result.total, timestamp: new Date().toISOString() };
+    return {
+      success: true,
+      message: '조회 성공',
+      data: result.data,
+      total: result.total,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @Post('households/:householdId/transactions')
   @UseGuards(MembershipGuard)
   @RequireMembership({ minRole: MemberRole.EDITOR })
   @ApiOperation({ summary: '거래 생성' })
-  async create(@Param('householdId', ParseIntPipe) householdId: number, @Body() dto: CreateTransactionDto, @Request() req: any) {
+  async create(
+    @Param('householdId', ParseIntPipe) householdId: number,
+    @Body() dto: CreateTransactionDto,
+    @Request() req: any,
+  ) {
     const data = await this.txService.create(householdId, dto, req.user?.userId);
     return { success: true, message: '거래 생성 성공', data, timestamp: new Date().toISOString() };
   }

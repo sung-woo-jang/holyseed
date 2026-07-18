@@ -107,7 +107,6 @@ export class AuthService {
     }
   }
 
-
   /** providerId 우선 매칭, 없으면 동일 이메일 계정에 연동, 그마저 없으면 신규 생성 */
   private async upsertOAuthUser(_provider: OAuthProvider, profile: OAuthProfile): Promise<AdUser> {
     const idColumn = 'googleId' as const;
@@ -120,7 +119,8 @@ export class AuthService {
     }
 
     if (!user) {
-      const name = profile.name || (profile.email ? profile.email.split('@')[0] : `사용자${profile.providerId.slice(-4)}`);
+      const name =
+        profile.name || (profile.email ? profile.email.split('@')[0] : `사용자${profile.providerId.slice(-4)}`);
       user = this.userRepo.create({
         [idColumn]: profile.providerId,
         email: profile.email,

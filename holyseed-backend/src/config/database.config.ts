@@ -1,5 +1,5 @@
-import { registerAs } from '@nestjs/config'
-import { TypeOrmModuleOptions } from '@nestjs/typeorm'
+import { registerAs } from '@nestjs/config';
+import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 export default registerAs(
   'database',
@@ -17,5 +17,5 @@ export default registerAs(
     autoLoadEntities: true,
     retryAttempts: 10,
     retryDelay: 3000,
-  })
-)
+  }),
+);

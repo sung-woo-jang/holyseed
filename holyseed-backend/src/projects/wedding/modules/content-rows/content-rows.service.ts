@@ -17,10 +17,7 @@ export class ContentRowsService {
   /**
    * 목록 조회 (includeHidden=false면 공개, true면 관리자)
    */
-  async search(
-    dto: SearchContentRowsDto,
-    user?: { coupleId: string; role: string },
-  ): Promise<WeddingContentRow[]> {
+  async search(dto: SearchContentRowsDto, user?: { coupleId: string; role: string }): Promise<WeddingContentRow[]> {
     if (dto.includeHidden) {
       if (!user) throw new ForbiddenException('인증이 필요합니다.');
       this._checkAccess(dto.coupleId, user);

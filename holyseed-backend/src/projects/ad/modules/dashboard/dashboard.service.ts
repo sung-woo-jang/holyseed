@@ -40,10 +40,13 @@ export class DashboardService {
 
   async getTimeseriesRange(householdId: number, range: TimeseriesRange) {
     const months =
-      range === TimeseriesRange.ONE_YEAR ? 12
-      : range === TimeseriesRange.THREE_YEAR ? 36
-      : range === TimeseriesRange.FIVE_YEAR ? 60
-      : null;
+      range === TimeseriesRange.ONE_YEAR
+        ? 12
+        : range === TimeseriesRange.THREE_YEAR
+          ? 36
+          : range === TimeseriesRange.FIVE_YEAR
+            ? 60
+            : null;
     return this.getTimeseries(householdId, months);
   }
 

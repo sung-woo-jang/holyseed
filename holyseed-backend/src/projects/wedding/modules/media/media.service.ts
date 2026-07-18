@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -197,11 +192,7 @@ export class MediaService {
   /**
    * 검수 상태 변경
    */
-  async moderate(
-    id: string,
-    dto: ModerateMediaDto,
-    user: { coupleId: string; role: string },
-  ): Promise<WeddingMedia> {
+  async moderate(id: string, dto: ModerateMediaDto, user: { coupleId: string; role: string }): Promise<WeddingMedia> {
     const media = await this.mediaRepo.findOne({ where: { id } });
     if (!media) {
       throw new NotFoundException('미디어를 찾을 수 없습니다.');

@@ -1,9 +1,9 @@
-import * as path from 'path'
-import * as dotenv from 'dotenv'
-import { DataSource } from 'typeorm'
+import * as path from 'path';
+import * as dotenv from 'dotenv';
+import { DataSource } from 'typeorm';
 
-const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env'
-dotenv.config({ path: path.resolve(process.cwd(), envFile) })
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
+dotenv.config({ path: path.resolve(process.cwd(), envFile) });
 
 export default new DataSource({
   type: 'postgres',
@@ -23,4 +23,4 @@ export default new DataSource({
   logging: false,
   migrationsRun: false,
   ssl: false,
-})
+});

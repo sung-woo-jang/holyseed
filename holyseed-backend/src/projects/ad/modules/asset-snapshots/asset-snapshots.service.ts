@@ -26,11 +26,25 @@ export class AssetSnapshotsService {
     const valueKRW = dto.value * fxRate;
 
     if (existing) {
-      Object.assign(existing, { value: dto.value, fxRateToKRW: fxRate, valueKRW, note: dto.note, createdByUserId: userId });
+      Object.assign(existing, {
+        value: dto.value,
+        fxRateToKRW: fxRate,
+        valueKRW,
+        note: dto.note,
+        createdByUserId: userId,
+      });
       return this.snapshotRepo.save(existing);
     }
 
-    const snapshot = this.snapshotRepo.create({ assetId, date: dto.date, value: dto.value, fxRateToKRW: fxRate, valueKRW, note: dto.note, createdByUserId: userId });
+    const snapshot = this.snapshotRepo.create({
+      assetId,
+      date: dto.date,
+      value: dto.value,
+      fxRateToKRW: fxRate,
+      valueKRW,
+      note: dto.note,
+      createdByUserId: userId,
+    });
     return this.snapshotRepo.save(snapshot);
   }
 

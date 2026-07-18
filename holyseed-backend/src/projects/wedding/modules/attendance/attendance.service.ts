@@ -41,7 +41,9 @@ export class AttendanceService {
 
     const [attending, notAttending, maybe] = await Promise.all([
       this.attendanceRepo.count({ where: { coupleId: dto.coupleId, attendanceStatus: AttendanceStatus.ATTENDING } }),
-      this.attendanceRepo.count({ where: { coupleId: dto.coupleId, attendanceStatus: AttendanceStatus.NOT_ATTENDING } }),
+      this.attendanceRepo.count({
+        where: { coupleId: dto.coupleId, attendanceStatus: AttendanceStatus.NOT_ATTENDING },
+      }),
       this.attendanceRepo.count({ where: { coupleId: dto.coupleId, attendanceStatus: AttendanceStatus.MAYBE } }),
     ]);
 

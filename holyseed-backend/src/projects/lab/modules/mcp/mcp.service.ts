@@ -57,8 +57,7 @@ export class McpService {
   }
 
   private fail(e: unknown) {
-    const msg =
-      (e as any)?.response?.data?.message ?? (e instanceof Error ? e.message : '요청에 실패했습니다.');
+    const msg = (e as any)?.response?.data?.message ?? (e instanceof Error ? e.message : '요청에 실패했습니다.');
     return { content: [{ type: 'text' as const, text: `오류: ${msg}` }], isError: true };
   }
 
@@ -124,7 +123,12 @@ export class McpService {
             const trigger = round2(state.minBand / prevQty);
             poolLeft = round2(poolLeft - trigger);
             used = round2(used + trigger);
-            buy.push({ 체결후보유: prevQty + 1, 트리거가: trigger, Pool잔액: poolLeft, 한도초과: used > state.usablePool });
+            buy.push({
+              체결후보유: prevQty + 1,
+              트리거가: trigger,
+              Pool잔액: poolLeft,
+              한도초과: used > state.usablePool,
+            });
           }
           const sell: any[] = [];
           let poolAfter = state.pool;
@@ -135,7 +139,13 @@ export class McpService {
             sell.push({ 체결후보유: prevQty - 1, 트리거가: trigger, Pool잔액: poolAfter });
           }
           return {
-            기준: { 보유수량: state.quantity, 최소밴드: state.minBand, 최대밴드: state.maxBand, Pool: state.pool, 사용가능Pool: state.usablePool },
+            기준: {
+              보유수량: state.quantity,
+              최소밴드: state.minBand,
+              최대밴드: state.maxBand,
+              Pool: state.pool,
+              사용가능Pool: state.usablePool,
+            },
             매수표: buy,
             매도표: sell,
           };
@@ -188,9 +198,12 @@ export class McpService {
         title: 'VR V 갱신 실행',
         description:
           'V 갱신일 처리: 현 사이클 종료 → V₂ = V₁ + Pool/G + 적립금 → 새 사이클 시작(적립금 DEPOSIT 자동 기록). 사이클 종료 다음 월요일에 실행하는 작업입니다. 실행 전 사용자에게 확인하세요.',
-        inputSchema: { newStartDate: z.string().optional().describe('새 사이클 시작일 YYYY-MM-DD (생략 시 종료 다음 월요일)') },
+        inputSchema: {
+          newStartDate: z.string().optional().describe('새 사이클 시작일 YYYY-MM-DD (생략 시 종료 다음 월요일)'),
+        },
       },
-      ({ newStartDate }) => this.call(async (api) => this.unwrap(await api.post('/vr/cycles/rollover', { newStartDate }))),
+      ({ newStartDate }) =>
+        this.call(async (api) => this.unwrap(await api.post('/vr/cycles/rollover', { newStartDate }))),
     );
 
     // ==================== 근무일지 ====================
@@ -222,7 +235,10 @@ export class McpService {
           endTime: z.string().optional().describe('종료 HH:mm'),
           breakHours: z.number().optional().describe('휴게시간 (기본 1)'),
           jobs: z.array(z.string()).optional().describe('업무: 도배/필름/퍼티/철거/페인트/세팅'),
-          payStatus: z.enum(['RECEIVED', 'EXPECTED', 'UNPAID', 'DAYOFF']).optional().describe('수령여부 (기본 EXPECTED=예상(미수령))'),
+          payStatus: z
+            .enum(['RECEIVED', 'EXPECTED', 'UNPAID', 'DAYOFF'])
+            .optional()
+            .describe('수령여부 (기본 EXPECTED=예상(미수령))'),
           amountOverride: z.number().optional().describe('실수령액이 계산과 다를 때 수동 금액 (원)'),
           address: z.string().optional().describe('주소'),
           memo: z.string().optional().describe('특이사항'),
@@ -340,10 +356,7 @@ export class McpService {
       },
       () =>
         this.call(async (api) => {
-          const [summary, records] = await Promise.all([
-            api.get('/saving/summary'),
-            api.get('/saving/records'),
-          ]);
+          const [summary, records] = await Promise.all([api.get('/saving/summary'), api.get('/saving/records')]);
           return { summary: this.unwrap(summary), records: this.unwrap(records) };
         }),
     );

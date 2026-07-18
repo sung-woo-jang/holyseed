@@ -24,6 +24,7 @@ export default defineConfig({
   preview: {
     // 5000은 macOS AirPlay(AirTunes)가 점유 — 구 laofus 대시보드 포트 4800 승계
     port: 4800,
+    allowedHosts: ['lab.holyseed.p-e.kr'],
     proxy: {
       '/api': {
         target: 'http://localhost:8000',

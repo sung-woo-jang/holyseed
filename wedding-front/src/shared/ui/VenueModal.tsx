@@ -4,7 +4,7 @@ import { useState, lazy, Suspense } from 'react';
 import { useToast } from '@/shared/ui/toast';
 import styles from './VenueModal.module.css';
 
-const KakaoMap = lazy(() => import('@/shared/ui/KakaoMap'));
+const NaverMap = lazy(() => import('@/shared/ui/NaverMap'));
 
 interface VenueModalProps {
   isOpen: boolean;
@@ -62,7 +62,7 @@ export default function VenueModal({
 
           <div className={styles.mapContainer}>
             <Suspense fallback={<p>지도 로딩 중...</p>}>
-              <KakaoMap
+              <NaverMap
                 lat={lat}
                 lng={lng}
                 venueName={venueName}
@@ -96,7 +96,7 @@ export default function VenueModal({
               <div className={styles.transportIcon}>🚇</div>
               <div className={styles.transportInfo}>
                 <strong>대중교통</strong>
-                <p>카카오맵, 네이버 지도에서 길찾기를 이용해주세요</p>
+                <p>네이버 지도에서 길찾기를 이용해주세요</p>
               </div>
             </div>
 

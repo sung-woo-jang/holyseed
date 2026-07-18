@@ -30,13 +30,13 @@
   transition: all 0.2s ease;
 }
 
-.buttonKakao {
-  background-color: #FEE500;
-  color: #191919;
+.buttonNaver {
+  background-color: #03c75a;
+  color: #fff;
 }
 
-.buttonKakao:hover {
-  background-color: #FDD835;
+.buttonNaver:hover {
+  background-color: #02b350;
 }
 
 .buttonMap {

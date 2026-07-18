@@ -18,11 +18,11 @@ import NetflixNav from '@/shared/ui/NetflixNav'
 import NetflixRow from '@/widgets/netflix-row/NetflixRow'
 import VenueModal from '@/shared/ui/VenueModal'
 import AttendanceModal from '@/features/rsvp/AttendanceModal'
-import KakaoMapScript from '@/shared/ui/KakaoMapScript'
+import NaverMapScript from '@/shared/ui/NaverMapScript'
 import { useToast } from '@/shared/ui/toast'
 import styles from './InvitationPage.module.css'
 
-const KakaoMap = lazy(() => import('@/shared/ui/KakaoMap'))
+const NaverMap = lazy(() => import('@/shared/ui/NaverMap'))
 
 const GALLERY_IMAGES = [
   '/wedding/스크린샷 2026-03-24 오전 9.09.21.png',
@@ -162,7 +162,7 @@ function InvitationContent() {
   return (
     <>
       {showIntro && <NetflixIntro onComplete={(skipped) => { setWasSkipped(skipped); setShowIntro(false) }} />}
-      <KakaoMapScript />
+      <NaverMapScript />
 
       <div className={cn(styles.container, { [styles.zoomInFromIntro]: !showIntro && !wasSkipped, [styles.fadeInNormal]: !showIntro && wasSkipped })}>
         <NetflixNav coupleSlug={couple.slug} groomName={couple.groomName} brideName={couple.brideName} />
@@ -210,7 +210,7 @@ function InvitationContent() {
             <div className={styles.mapContainer}>
               {venue.lat && venue.lng ? (
                 <Suspense fallback={<p>지도 로딩 중...</p>}>
-                  <KakaoMap lat={venue.lat} lng={venue.lng} venueName={venue.name} address={venue.address} />
+                  <NaverMap lat={venue.lat} lng={venue.lng} venueName={venue.name} address={venue.address} />
                 </Suspense>
               ) : (
                 <div className={styles.mapFallback}>

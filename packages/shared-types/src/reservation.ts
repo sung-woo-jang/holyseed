@@ -1,9 +1,4 @@
-export type ReservationStatus =
-  | 'PENDING'
-  | 'CONFIRMED'
-  | 'IN_PROGRESS'
-  | 'COMPLETED'
-  | 'CANCELLED'
+import type { ReservationStatus } from './common'
 
 export interface CreateReservationRequest {
   serviceId: string

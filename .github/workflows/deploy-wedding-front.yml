@@ -1,0 +1,35 @@
+name: Deploy Wedding Front
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'wedding-front/**'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-wedding-front
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Sync live repo to origin/master
+        run: |
+          git -C /Users/jangseong-u/project/holyseed fetch origin master
+          git -C /Users/jangseong-u/project/holyseed reset --hard origin/master
+
+      - name: Install dependencies & build
+        working-directory: /Users/jangseong-u/project/holyseed/wedding-front
+        run: |
+          yarn install
+          yarn build
+
+      - name: Publish to /var/www/wedding-front
+        working-directory: /Users/jangseong-u/project/holyseed/wedding-front
+        run: rsync -a --delete dist/ /var/www/wedding-front/
+
+      - name: Verify
+        run: curl -sf -o /dev/null -w "%{http_code}\n" https://wedding.holyseed.p-e.kr

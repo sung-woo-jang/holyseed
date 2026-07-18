@@ -61,10 +61,7 @@ export class ValidationErrorResponseDto extends ErrorResponseDto {
     errors: string[];
   }>;
 
-  constructor(
-    message: string,
-    validationErrors: Array<{ field: string; errors: string[] }>,
-  ) {
+  constructor(message: string, validationErrors: Array<{ field: string; errors: string[] }>) {
     super(message, 400);
     this.validationErrors = validationErrors;
   }

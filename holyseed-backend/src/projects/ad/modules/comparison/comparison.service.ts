@@ -46,7 +46,7 @@ export class ComparisonService {
       const change = prev !== null ? r.netWorth - prev.netWorth : null;
       const changeRate =
         prev && prev.netWorth !== 0
-          ? Number(((r.netWorth - prev.netWorth) / Math.abs(prev.netWorth) * 100).toFixed(1))
+          ? Number((((r.netWorth - prev.netWorth) / Math.abs(prev.netWorth)) * 100).toFixed(1))
           : null;
       return { ...r, change, changeRate };
     });

@@ -30,18 +30,13 @@ import { LabModule } from '@/projects/lab/lab.module';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig, databaseConfig, jwtConfig],
-      envFilePath: [
-        ...(process.env.NODE_ENV ? [`.env.${process.env.NODE_ENV}`] : []),
-        '.env.local',
-        '.env',
-      ],
+      envFilePath: [...(process.env.NODE_ENV ? [`.env.${process.env.NODE_ENV}`] : []), '.env.local', '.env'],
     }),
 
     // Database
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) =>
-        configService.get('database'),
+      useFactory: (configService: ConfigService) => configService.get('database'),
       inject: [ConfigService],
     }),
 

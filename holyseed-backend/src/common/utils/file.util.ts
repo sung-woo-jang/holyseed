@@ -1,5 +1,5 @@
-import * as path from 'path'
-import * as fs from 'fs'
+import * as path from 'path';
+import * as fs from 'fs';
 
 export class FileUtil {
   /**
@@ -8,7 +8,7 @@ export class FileUtil {
    * @returns 확장자 (점 포함, 소문자)
    */
   static getExtension(filename: string): string {
-    return path.extname(filename).toLowerCase()
+    return path.extname(filename).toLowerCase();
   }
 
   /**
@@ -17,7 +17,7 @@ export class FileUtil {
    * @returns 확장자가 제거된 파일명
    */
   static removeExtension(filename: string): string {
-    return path.parse(filename).name
+    return path.parse(filename).name;
   }
 
   /**
@@ -26,16 +26,16 @@ export class FileUtil {
    * @returns 안전한 파일명
    */
   static sanitizeFilename(filename: string): string {
-    const extension = this.getExtension(filename)
-    const basename = this.removeExtension(filename)
+    const extension = this.getExtension(filename);
+    const basename = this.removeExtension(filename);
 
     // 특수문자를 언더스코어로 변경, 한글과 영숫자만 유지
     const sanitized = basename
       .replace(/[^\w\sㄱ-ㅎ가-힣-]/gi, '_')
       .replace(/\s+/g, '_')
-      .slice(0, 100) // 길이 제한
+      .slice(0, 100); // 길이 제한
 
-    return `${sanitized}${extension}`
+    return `${sanitized}${extension}`;
   }
 
   /**
@@ -44,11 +44,11 @@ export class FileUtil {
    * @returns 고유한 파일명
    */
   static generateUniqueFilename(originalFilename: string): string {
-    const extension = this.getExtension(originalFilename)
-    const timestamp = Date.now()
-    const random = Math.random().toString(36).substring(2, 8)
+    const extension = this.getExtension(originalFilename);
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 8);
 
-    return `${timestamp}_${random}${extension}`
+    return `${timestamp}_${random}${extension}`;
   }
 
   /**
@@ -57,9 +57,9 @@ export class FileUtil {
    * @returns 이미지 파일 여부
    */
   static isImageFile(filename: string): boolean {
-    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg']
-    const extension = this.getExtension(filename)
-    return imageExtensions.includes(extension)
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+    const extension = this.getExtension(filename);
+    return imageExtensions.includes(extension);
   }
 
   /**
@@ -68,13 +68,13 @@ export class FileUtil {
    * @returns 변환된 크기 문자열
    */
   static formatFileSize(bytes: number): string {
-    if (bytes === 0) return '0 Bytes'
+    if (bytes === 0) return '0 Bytes';
 
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
   /**
@@ -83,7 +83,7 @@ export class FileUtil {
    */
   static ensureDirectoryExists(dirPath: string): void {
     if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true })
+      fs.mkdirSync(dirPath, { recursive: true });
     }
   }
 
@@ -93,7 +93,7 @@ export class FileUtil {
    * @returns MIME 타입
    */
   static getMimeType(filename: string): string {
-    const extension = this.getExtension(filename)
+    const extension = this.getExtension(filename);
     const mimeTypes: Record<string, string> = {
       '.jpg': 'image/jpeg',
       '.jpeg': 'image/jpeg',
@@ -106,9 +106,9 @@ export class FileUtil {
       '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       '.xls': 'application/vnd.ms-excel',
       '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    }
+    };
 
-    return mimeTypes[extension] || 'application/octet-stream'
+    return mimeTypes[extension] || 'application/octet-stream';
   }
 
   /**
@@ -118,7 +118,7 @@ export class FileUtil {
    * @returns 업로드 가능 여부
    */
   static isAllowedFileType(filename: string, allowedTypes: string[]): boolean {
-    const extension = this.getExtension(filename)
-    return allowedTypes.includes(extension)
+    const extension = this.getExtension(filename);
+    return allowedTypes.includes(extension);
   }
 }

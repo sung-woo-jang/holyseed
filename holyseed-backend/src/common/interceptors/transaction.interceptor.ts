@@ -12,10 +12,7 @@ import { DataSource } from 'typeorm';
 export class TransactionInterceptor implements NestInterceptor {
   constructor(private dataSource: DataSource) {}
 
-  async intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Promise<Observable<any>> {
+  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
     const request = context.switchToHttp().getRequest();
 
     const queryRunner = this.dataSource.createQueryRunner();

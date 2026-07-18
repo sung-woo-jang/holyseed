@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Household } from './entities/household.entity';
@@ -88,7 +83,7 @@ export class HouseholdsService {
     return this.membershipRepo.save(membership);
   }
 
-  async removeMember(householdId: number, targetUserId: number, requesterId: number) {
+  async removeMember(householdId: number, targetUserId: number, _requesterId: number) {
     const household = await this.findOne(householdId);
 
     if (targetUserId === household.ownerUserId) {

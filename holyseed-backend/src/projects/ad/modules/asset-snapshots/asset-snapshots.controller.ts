@@ -33,7 +33,11 @@ export class AssetSnapshotsController {
   @UseGuards(MembershipGuard)
   @RequireMembership({ minRole: MemberRole.EDITOR })
   @ApiOperation({ summary: '자산 스냅샷 일괄 upsert' })
-  async batchUpsert(@Param('householdId', ParseIntPipe) householdId: number, @Body() dto: BatchUpsertSnapshotsDto, @Request() req: any) {
+  async batchUpsert(
+    @Param('householdId', ParseIntPipe) householdId: number,
+    @Body() dto: BatchUpsertSnapshotsDto,
+    @Request() req: any,
+  ) {
     const data = await this.snapshotsService.batchUpsert(householdId, dto, req.user?.userId);
     return { success: true, message: '일괄 스냅샷 저장 성공', data, timestamp: new Date().toISOString() };
   }

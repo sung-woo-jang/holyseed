@@ -37,7 +37,13 @@ export class Worklog extends BaseEntity {
   jobs: string[];
 
   @ApiProperty({ description: '수령여부', enum: PayStatus })
-  @Column({ name: 'pay_status', type: 'enum', enum: PayStatus, enumName: 'lab_pay_status', default: PayStatus.EXPECTED })
+  @Column({
+    name: 'pay_status',
+    type: 'enum',
+    enum: PayStatus,
+    enumName: 'lab_pay_status',
+    default: PayStatus.EXPECTED,
+  })
   payStatus: PayStatus;
 
   @ApiProperty({ description: '일급여 (원)', example: 140000 })

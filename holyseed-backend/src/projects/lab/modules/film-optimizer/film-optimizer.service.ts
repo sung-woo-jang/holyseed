@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Film, CuttingProject, CuttingPiece } from './entities';
@@ -104,9 +100,7 @@ export class FilmOptimizerService {
     }
 
     if (film.cuttingProjects && film.cuttingProjects.length > 0) {
-      throw new BadRequestException(
-        '해당 필름지에 연결된 재단 프로젝트가 있어 삭제할 수 없습니다.',
-      );
+      throw new BadRequestException('해당 필름지에 연결된 재단 프로젝트가 있어 삭제할 수 없습니다.');
     }
 
     await this.filmRepository.remove(film);
@@ -152,9 +146,7 @@ export class FilmOptimizerService {
   /**
    * 재단 프로젝트 생성
    */
-  async createProject(
-    dto: CreateCuttingProjectDto,
-  ): Promise<CuttingProjectDetailDto> {
+  async createProject(dto: CreateCuttingProjectDto): Promise<CuttingProjectDetailDto> {
     // 필름지 존재 확인
     const film = await this.filmRepository.findOne({
       where: { id: dto.filmId },
@@ -196,10 +188,7 @@ export class FilmOptimizerService {
   /**
    * 재단 프로젝트 수정
    */
-  async updateProject(
-    id: number,
-    dto: UpdateCuttingProjectDto,
-  ): Promise<CuttingProjectDetailDto> {
+  async updateProject(id: number, dto: UpdateCuttingProjectDto): Promise<CuttingProjectDetailDto> {
     const project = await this.projectRepository.findOne({
       where: { id },
     });
@@ -244,10 +233,7 @@ export class FilmOptimizerService {
   /**
    * 재단 조각 일괄 추가
    */
-  async addPieces(
-    projectId: number,
-    dto: AddPiecesDto,
-  ): Promise<CuttingProjectDetailDto> {
+  async addPieces(projectId: number, dto: AddPiecesDto): Promise<CuttingProjectDetailDto> {
     const project = await this.projectRepository.findOne({
       where: { id: projectId },
       relations: ['pieces'],
@@ -258,10 +244,7 @@ export class FilmOptimizerService {
     }
 
     // 현재 최대 sortOrder 찾기
-    const maxSortOrder =
-      project.pieces.length > 0
-        ? Math.max(...project.pieces.map((p) => p.sortOrder))
-        : -1;
+    const maxSortOrder = project.pieces.length > 0 ? Math.max(...project.pieces.map((p) => p.sortOrder)) : -1;
 
     // 조각 추가
     const pieces = dto.pieces.map((piece, index) =>
@@ -285,11 +268,7 @@ export class FilmOptimizerService {
   /**
    * 재단 조각 수정
    */
-  async updatePiece(
-    projectId: number,
-    pieceId: number,
-    dto: UpdatePieceDto,
-  ): Promise<CuttingPieceResponseDto> {
+  async updatePiece(projectId: number, pieceId: number, dto: UpdatePieceDto): Promise<CuttingPieceResponseDto> {
     const piece = await this.pieceRepository.findOne({
       where: { id: pieceId, projectId },
     });
@@ -380,9 +359,7 @@ export class FilmOptimizerService {
     };
   }
 
-  private toProjectListItemDto(
-    project: CuttingProject,
-  ): CuttingProjectListItemDto {
+  private toProjectListItemDto(project: CuttingProject): CuttingProjectListItemDto {
     const pieces = project.pieces ?? [];
     return {
       id: project.id,
@@ -414,9 +391,7 @@ export class FilmOptimizerService {
       wastePercentage: project.wastePercentage,
       usedLength: project.usedLength,
       packingResult: project.packingResult,
-      pieces: (project.pieces ?? []).map((piece) =>
-        this.toPieceResponseDto(piece),
-      ),
+      pieces: (project.pieces ?? []).map((piece) => this.toPieceResponseDto(piece)),
       createdAt: project.createdAt,
       updatedAt: project.updatedAt,
     };

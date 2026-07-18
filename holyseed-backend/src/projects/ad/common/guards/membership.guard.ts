@@ -1,10 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -26,10 +20,10 @@ export class MembershipGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const options = this.reflector.getAllAndOverride<RequireMembershipOptions | undefined>(
-      REQUIRE_MEMBERSHIP_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const options = this.reflector.getAllAndOverride<RequireMembershipOptions | undefined>(REQUIRE_MEMBERSHIP_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (!options) return true;
 
@@ -57,10 +51,7 @@ export class MembershipGuard implements CanActivate {
   }
 
   private extractHouseholdId(request: any): number | null {
-    const id =
-      request.params?.householdId ??
-      request.params?.id ??
-      request.body?.householdId;
+    const id = request.params?.householdId ?? request.params?.id ?? request.body?.householdId;
     return id ? Number(id) : null;
   }
 }

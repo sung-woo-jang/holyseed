@@ -1,20 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  ParseIntPipe,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Query, ParseIntPipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { FilmOptimizerService } from './film-optimizer.service';
 import {
   CreateFilmDto,
@@ -63,9 +48,7 @@ export class FilmOptimizerController {
     type: FilmDetailDto,
   })
   @ApiResponse({ status: 404, description: '필름지를 찾을 수 없음' })
-  async getFilm(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<SuccessResponseDto<FilmDetailDto>> {
+  async getFilm(@Param('id', ParseIntPipe) id: number): Promise<SuccessResponseDto<FilmDetailDto>> {
     const film = await this.filmOptimizerService.findFilmById(id);
     return new SuccessResponseDto('필름지 상세 조회에 성공했습니다.', film);
   }
@@ -78,9 +61,7 @@ export class FilmOptimizerController {
     type: FilmDetailDto,
   })
   @ApiResponse({ status: 400, description: '잘못된 요청 데이터' })
-  async createFilm(
-    @Body() dto: CreateFilmDto,
-  ): Promise<SuccessResponseDto<FilmDetailDto>> {
+  async createFilm(@Body() dto: CreateFilmDto): Promise<SuccessResponseDto<FilmDetailDto>> {
     const film = await this.filmOptimizerService.createFilm(dto);
     return new SuccessResponseDto('필름지가 생성되었습니다.', film);
   }
@@ -111,9 +92,7 @@ export class FilmOptimizerController {
     status: 400,
     description: '연결된 프로젝트가 있어 삭제 불가',
   })
-  async deleteFilm(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<SuccessResponseDto<null>> {
+  async deleteFilm(@Param('id', ParseIntPipe) id: number): Promise<SuccessResponseDto<null>> {
     await this.filmOptimizerService.deleteFilm(id);
     return new SuccessResponseDto('필름지가 삭제되었습니다.', null);
   }
@@ -132,16 +111,10 @@ export class FilmOptimizerController {
     description: '재단 프로젝트 목록 조회 성공',
     type: [CuttingProjectListItemDto],
   })
-  async getProjects(
-    @Query('filmId') filmId?: string,
-  ): Promise<SuccessResponseDto<CuttingProjectListItemDto[]>> {
+  async getProjects(@Query('filmId') filmId?: string): Promise<SuccessResponseDto<CuttingProjectListItemDto[]>> {
     const parsedFilmId = filmId ? parseInt(filmId, 10) : undefined;
-    const projects =
-      await this.filmOptimizerService.findAllProjects(parsedFilmId);
-    return new SuccessResponseDto(
-      '재단 프로젝트 목록 조회에 성공했습니다.',
-      projects,
-    );
+    const projects = await this.filmOptimizerService.findAllProjects(parsedFilmId);
+    return new SuccessResponseDto('재단 프로젝트 목록 조회에 성공했습니다.', projects);
   }
 
   @Get('projects/:id')
@@ -153,14 +126,9 @@ export class FilmOptimizerController {
     type: CuttingProjectDetailDto,
   })
   @ApiResponse({ status: 404, description: '재단 프로젝트를 찾을 수 없음' })
-  async getProject(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<SuccessResponseDto<CuttingProjectDetailDto>> {
+  async getProject(@Param('id', ParseIntPipe) id: number): Promise<SuccessResponseDto<CuttingProjectDetailDto>> {
     const project = await this.filmOptimizerService.findProjectById(id);
-    return new SuccessResponseDto(
-      '재단 프로젝트 상세 조회에 성공했습니다.',
-      project,
-    );
+    return new SuccessResponseDto('재단 프로젝트 상세 조회에 성공했습니다.', project);
   }
 
   @Post('projects')
@@ -172,9 +140,7 @@ export class FilmOptimizerController {
   })
   @ApiResponse({ status: 400, description: '잘못된 요청 데이터' })
   @ApiResponse({ status: 404, description: '필름지를 찾을 수 없음' })
-  async createProject(
-    @Body() dto: CreateCuttingProjectDto,
-  ): Promise<SuccessResponseDto<CuttingProjectDetailDto>> {
+  async createProject(@Body() dto: CreateCuttingProjectDto): Promise<SuccessResponseDto<CuttingProjectDetailDto>> {
     const project = await this.filmOptimizerService.createProject(dto);
     return new SuccessResponseDto('재단 프로젝트가 생성되었습니다.', project);
   }
@@ -201,9 +167,7 @@ export class FilmOptimizerController {
   @ApiParam({ name: 'id', description: '프로젝트 ID' })
   @ApiResponse({ status: 200, description: '재단 프로젝트 삭제 성공' })
   @ApiResponse({ status: 404, description: '재단 프로젝트를 찾을 수 없음' })
-  async deleteProject(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<SuccessResponseDto<null>> {
+  async deleteProject(@Param('id', ParseIntPipe) id: number): Promise<SuccessResponseDto<null>> {
     await this.filmOptimizerService.deleteProject(id);
     return new SuccessResponseDto('재단 프로젝트가 삭제되었습니다.', null);
   }
@@ -242,11 +206,7 @@ export class FilmOptimizerController {
     @Param('pieceId', ParseIntPipe) pieceId: number,
     @Body() dto: UpdatePieceDto,
   ): Promise<SuccessResponseDto<CuttingPieceResponseDto>> {
-    const piece = await this.filmOptimizerService.updatePiece(
-      projectId,
-      pieceId,
-      dto,
-    );
+    const piece = await this.filmOptimizerService.updatePiece(projectId, pieceId, dto);
     return new SuccessResponseDto('재단 조각이 수정되었습니다.', piece);
   }
 
@@ -279,11 +239,7 @@ export class FilmOptimizerController {
     @Param('pieceId', ParseIntPipe) pieceId: number,
     @Body() dto: TogglePieceCompleteDto,
   ): Promise<SuccessResponseDto<CuttingPieceResponseDto>> {
-    const piece = await this.filmOptimizerService.togglePieceComplete(
-      projectId,
-      pieceId,
-      dto.fixedPosition,
-    );
+    const piece = await this.filmOptimizerService.togglePieceComplete(projectId, pieceId, dto.fixedPosition);
     return new SuccessResponseDto('재단 완료 상태가 변경되었습니다.', piece);
   }
 }

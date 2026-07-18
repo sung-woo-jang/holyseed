@@ -69,9 +69,7 @@ export class McpService {
   }
 
   private fail(e: unknown) {
-    const msg =
-      (e as any)?.response?.data?.message ??
-      (e instanceof Error ? e.message : '요청에 실패했습니다.');
+    const msg = (e as any)?.response?.data?.message ?? (e instanceof Error ? e.message : '요청에 실패했습니다.');
     return { content: [{ type: 'text' as const, text: `오류: ${msg}` }], isError: true };
   }
 
@@ -118,7 +116,8 @@ export class McpService {
       'list_assets',
       {
         title: '자산 목록',
-        description: '가구의 자산 목록을 조회합니다. 각 자산의 최신/직전 스냅샷(평가액) 포함. 자산 id는 다른 도구 입력에 사용합니다.',
+        description:
+          '가구의 자산 목록을 조회합니다. 각 자산의 최신/직전 스냅샷(평가액) 포함. 자산 id는 다른 도구 입력에 사용합니다.',
         inputSchema: {},
       },
       () => this.call(async (api, hid) => this.unwrap(await api.get(`/households/${hid}/assets`))),
@@ -192,9 +191,7 @@ export class McpService {
       },
       ({ from, to, type, limit }) =>
         this.call(async (api, hid) =>
-          this.unwrap(
-            await api.post(`/households/${hid}/transactions/search`, { from, to, type, limit: limit ?? 50 }),
-          ),
+          this.unwrap(await api.post(`/households/${hid}/transactions/search`, { from, to, type, limit: limit ?? 50 })),
         ),
     );
 

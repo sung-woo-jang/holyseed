@@ -82,7 +82,7 @@ export class RecurringTransactionsService {
         await this.generateTransaction(r);
         r.lastRunDate = todayStr;
         await this.recurringRepo.save(r);
-      } catch (_) {
+      } catch {
         // 개별 실패가 전체 cron 중단 방지
       }
     }
@@ -168,8 +168,7 @@ export class RecurringTransactionsService {
 
     const dates: string[] = [];
     while (y < uy || (y === uy && m <= um)) {
-      const isDue =
-        r.frequency === RecurringFrequency.MONTHLY ? true : r.monthOfYear === m;
+      const isDue = r.frequency === RecurringFrequency.MONTHLY ? true : r.monthOfYear === m;
       // 해당 월에 없는 일자(예: 2월 31일)는 기존 cron과 동일하게 스킵
       const daysInMonth = new Date(y, m, 0).getDate();
       if (isDue && r.dayOfMonth <= daysInMonth) {

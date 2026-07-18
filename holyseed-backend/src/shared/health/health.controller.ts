@@ -1,10 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Public } from '@common/decorators/public.decorator';
-import {
-  HealthCheckSwaggerDecorator,
-  DetailedHealthCheckSwaggerDecorator,
-} from './docs';
+import { HealthCheckSwaggerDecorator, DetailedHealthCheckSwaggerDecorator } from './docs';
 
 @ApiTags('헬스체크')
 @Controller('health')
@@ -38,12 +35,8 @@ export class HealthController {
       environment: process.env.NODE_ENV || 'development',
       version: '1.0.0',
       memory: {
-        used:
-          Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) /
-          100,
-        total:
-          Math.round((process.memoryUsage().heapTotal / 1024 / 1024) * 100) /
-          100,
+        used: Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100,
+        total: Math.round((process.memoryUsage().heapTotal / 1024 / 1024) * 100) / 100,
       },
       cpu: {
         usage: process.cpuUsage(),

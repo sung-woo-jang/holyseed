@@ -74,7 +74,7 @@ export class VrService {
   private nextMonday(dateStr: string): string {
     const d = new Date(`${dateStr}T00:00:00Z`);
     const day = d.getUTCDay();
-    const add = ((8 - day) % 7) || 7;
+    const add = (8 - day) % 7 || 7;
     d.setUTCDate(d.getUTCDate() + add);
     return d.toISOString().slice(0, 10);
   }
@@ -82,11 +82,7 @@ export class VrService {
   // ==================== Fills ====================
 
   async findAllFills(): Promise<VrFill[]> {
-    return this.fillRepo
-      .createQueryBuilder('f')
-      .orderBy('f.fill_date', 'DESC')
-      .addOrderBy('f.id', 'DESC')
-      .getMany();
+    return this.fillRepo.createQueryBuilder('f').orderBy('f.fill_date', 'DESC').addOrderBy('f.id', 'DESC').getMany();
   }
 
   async createFill(dto: CreateFillDto): Promise<VrFill> {

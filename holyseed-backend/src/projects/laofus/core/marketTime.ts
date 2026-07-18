@@ -8,64 +8,64 @@
  */
 
 export interface MarketSessionTime {
-  startTime: string // KST ISO 8601
-  endTime: string
+  startTime: string; // KST ISO 8601
+  endTime: string;
 }
 
 export interface UsMarketDay {
-  date: string
-  dayMarket: MarketSessionTime | null
-  preMarket: MarketSessionTime | null
-  regularMarket: MarketSessionTime | null // 휴장 시 null
-  afterMarket: MarketSessionTime | null
+  date: string;
+  dayMarket: MarketSessionTime | null;
+  preMarket: MarketSessionTime | null;
+  regularMarket: MarketSessionTime | null; // 휴장 시 null
+  afterMarket: MarketSessionTime | null;
 }
 
 export interface UsMarketCalendar {
-  today: UsMarketDay
-  previousBusinessDay: UsMarketDay
-  nextBusinessDay: UsMarketDay
+  today: UsMarketDay;
+  previousBusinessDay: UsMarketDay;
+  nextBusinessDay: UsMarketDay;
 }
 
 export interface MarketWindow {
-  ok: boolean
-  reason: string
-  usDate?: string
-  closeAt?: Date
+  ok: boolean;
+  reason: string;
+  usDate?: string;
+  closeAt?: Date;
 }
 
 export interface WindowOptions {
   /** 마감 최소 N분 전까지 유효 (기본 20) */
-  minBefore?: number
+  minBefore?: number;
   /** 마감 최대 N분 전부터 유효 (기본 35) */
-  maxBefore?: number
+  maxBefore?: number;
 }
 
 /** now가 어떤 거래일이든 정규장 마감 전 [maxBefore, minBefore]분 창 안인지 확인 (기본 [35, 20]) */
 export function checkWindow(cal: UsMarketCalendar, now: Date = new Date(), opts: WindowOptions = {}): MarketWindow {
-  const minBefore = opts.minBefore ?? 20
-  const maxBefore = opts.maxBefore ?? 35
-  const days: UsMarketDay[] = [cal.previousBusinessDay, cal.today, cal.nextBusinessDay]
+  const minBefore = opts.minBefore ?? 20;
+  const maxBefore = opts.maxBefore ?? 35;
+  const days: UsMarketDay[] = [cal.previousBusinessDay, cal.today, cal.nextBusinessDay];
 
-  let nearest: { day: UsMarketDay; closeAt: Date; minutes: number } | null = null
+  let nearest: { day: UsMarketDay; closeAt: Date; minutes: number } | null = null;
   for (const day of days) {
-    if (!day?.regularMarket) continue
-    const closeAt = new Date(day.regularMarket.endTime)
-    const minutes = (closeAt.getTime() - now.getTime()) / 60000
+    if (!day?.regularMarket) continue;
+    const closeAt = new Date(day.regularMarket.endTime);
+    const minutes = (closeAt.getTime() - now.getTime()) / 60000;
     if (minutes >= minBefore && minutes <= maxBefore) {
-      return { ok: true, reason: `마감 ${minutes.toFixed(1)}분 전 — 실행 창`, usDate: day.date, closeAt }
+      return { ok: true, reason: `마감 ${minutes.toFixed(1)}분 전 — 실행 창`, usDate: day.date, closeAt };
     }
     if (minutes > 0 && (!nearest || minutes < nearest.minutes)) {
-      nearest = { day, closeAt, minutes }
+      nearest = { day, closeAt, minutes };
     }
   }
 
   if (!nearest) {
-    return { ok: false, reason: `가까운 정규장 세션 없음 (휴장?)` }
+    return { ok: false, reason: `가까운 정규장 세션 없음 (휴장?)` };
   }
   return {
     ok: false,
     reason: `마감까지 ${nearest.minutes.toFixed(1)}분 — 창(${minBefore}~${maxBefore}분 전) 아님`,
     usDate: nearest.day.date,
     closeAt: nearest.closeAt,
-  }
+  };
 }

@@ -36,11 +36,7 @@ export class NcpStorageService {
    * @param mimeType 파일 MIME 타입
    * @returns 업로드된 파일의 공개 URL
    */
-  async uploadFile(
-    buffer: Buffer,
-    key: string,
-    mimeType: string,
-  ): Promise<string> {
+  async uploadFile(buffer: Buffer, key: string, mimeType: string): Promise<string> {
     try {
       const params: AWS.S3.PutObjectRequest = {
         Bucket: this.bucketName,
@@ -63,9 +59,7 @@ export class NcpStorageService {
         code: error.code,
         statusCode: error.statusCode,
       });
-      throw new InternalServerErrorException(
-        `파일 업로드에 실패했습니다: ${error.message}`,
-      );
+      throw new InternalServerErrorException(`파일 업로드에 실패했습니다: ${error.message}`);
     }
   }
 

@@ -1,11 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsOptional,
-  IsObject,
-  IsNumber,
-  IsBoolean,
-  ValidateNested,
-} from 'class-validator';
+import { IsOptional, IsObject, IsNumber, IsBoolean, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class FixedPositionDto {

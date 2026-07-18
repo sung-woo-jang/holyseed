@@ -1,4 +1,4 @@
-import Joi from 'joi'
+import Joi from 'joi';
 
 export const validationSchema = Joi.object({
   // Application
@@ -32,4 +32,4 @@ export const validationSchema = Joi.object({
   // Rate Limiting
   RATE_LIMIT_TTL: Joi.number().default(60),
   RATE_LIMIT_MAX: Joi.number().default(100),
-})
+});

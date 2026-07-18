@@ -36,18 +36,14 @@ async function seedIcons() {
 
     // icon.json 파일 읽기
     const iconJsonPath = path.join(__dirname, '../data/icon.json');
-    const iconData: IconData = JSON.parse(
-      fs.readFileSync(iconJsonPath, 'utf-8'),
-    );
+    const iconData: IconData = JSON.parse(fs.readFileSync(iconJsonPath, 'utf-8'));
 
     console.log(`📊 icon.json 데이터:`);
     console.log(`  - fill: ${iconData.fill.length}개`);
     console.log(`  - mono: ${iconData.mono.length}개\n`);
 
     // 기존 아이콘 데이터 조회 (name만 체크, name은 unique)
-    const existingIcons = await AppDataSource.query(
-      'SELECT name FROM icons',
-    );
+    const existingIcons = await AppDataSource.query('SELECT name FROM icons');
 
     const existingIconSet = new Set<string>();
     existingIcons.forEach((icon: { name: string }) => {
@@ -94,15 +90,10 @@ async function seedIcons() {
     for (let i = 0; i < iconsToInsert.length; i += batchSize) {
       const batch = iconsToInsert.slice(i, i + batchSize);
       const values = batch
-        .map(
-          (icon) =>
-            `('${icon.name.replace(/'/g, "''")}', '${icon.type}', NOW(), NOW())`,
-        )
+        .map((icon) => `('${icon.name.replace(/'/g, "''")}', '${icon.type}', NOW(), NOW())`)
         .join(', ');
 
-      await AppDataSource.query(
-        `INSERT INTO icons (name, type, "createdAt", "updatedAt") VALUES ${values}`,
-      );
+      await AppDataSource.query(`INSERT INTO icons (name, type, "createdAt", "updatedAt") VALUES ${values}`);
 
       insertedCount += batch.length;
       console.log(`  ✓ ${insertedCount}/${iconsToInsert.length} 삽입 완료...`);
@@ -116,15 +107,11 @@ async function seedIcons() {
       'SELECT type, COUNT(*) as count FROM icons GROUP BY type ORDER BY type',
     );
 
-    finalStats.forEach(
-      (stat: { type: string; count: string }) => {
-        console.log(`  - ${stat.type}: ${stat.count}개`);
-      },
-    );
+    finalStats.forEach((stat: { type: string; count: string }) => {
+      console.log(`  - ${stat.type}: ${stat.count}개`);
+    });
 
-    const totalCount = await AppDataSource.query(
-      'SELECT COUNT(*) as total FROM icons',
-    );
+    const totalCount = await AppDataSource.query('SELECT COUNT(*) as total FROM icons');
     console.log(`  - 전체: ${totalCount[0].total}개`);
 
     // 연결 종료

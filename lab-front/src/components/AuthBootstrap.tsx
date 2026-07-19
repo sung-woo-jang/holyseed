@@ -5,7 +5,7 @@ import { axiosInstance, AUTH_API } from '@/shared/api'
 import { getTokens } from '@/shared/lib/storage'
 import { useAuthStore, type LabUser } from '@/stores/auth.store'
 
-const PUBLIC_PATHS = ['/login', '/register']
+const PUBLIC_PATHS = ['/login']
 
 export default function AuthBootstrap({ children }: { children: React.ReactNode }) {
   const { isReady, isAuthenticated, setAuth, setReady } = useAuthStore()

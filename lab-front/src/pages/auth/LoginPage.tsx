@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { FlaskConical } from 'lucide-react'
 import { axiosInstance, AUTH_API } from '@/shared/api'
@@ -73,12 +73,6 @@ export default function LoginPage() {
             {isLoading ? '로그인 중…' : '로그인'}
           </Button>
         </form>
-        <p className="text-center text-sm text-muted-foreground">
-          계정이 없나요?{' '}
-          <Link to="/register" className="text-primary underline-offset-4 hover:underline">
-            회원가입
-          </Link>
-        </p>
       </div>
     </div>
   )

@@ -1,12 +1,14 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { LabUser } from '../users/entities/lab-user.entity';
-import { RegisterDto } from './dto/request/register.dto';
 import { LoginDto } from './dto/request/login.dto';
+
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCK_DURATION_MS = 15 * 60 * 1000;
 
 @Injectable()
 export class AuthService {
@@ -16,27 +18,6 @@ export class AuthService {
     @InjectRepository(LabUser)
     private readonly userRepo: Repository<LabUser>,
   ) {}
-
-  async register(dto: RegisterDto) {
-    const existing = await this.userRepo.findOne({ where: { email: dto.email } });
-    if (existing) {
-      throw new ConflictException('이미 사용 중인 이메일입니다.');
-    }
-
-    const passwordHash = await bcrypt.hash(dto.password, 12);
-    const name = dto.name || dto.email.split('@')[0];
-
-    const user = this.userRepo.create({
-      email: dto.email,
-      passwordHash,
-      name,
-      lastLoginAt: new Date(),
-    });
-    const saved = await this.userRepo.save(user);
-    delete saved.passwordHash;
-
-    return { ...this.issueTokens(saved), user: saved };
-  }
 
   async emailLogin(dto: LoginDto) {
     const user = await this.userRepo
@@ -49,11 +30,24 @@ export class AuthService {
       throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
     }
 
+    if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
+      const remainMin = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60000);
+      throw new UnauthorizedException(`계정이 잠겼습니다. ${remainMin}분 후 다시 시도하세요.`);
+    }
+
     const isValid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!isValid) {
+      user.failedLoginCount += 1;
+      if (user.failedLoginCount >= MAX_FAILED_ATTEMPTS) {
+        user.lockedUntil = new Date(Date.now() + LOCK_DURATION_MS);
+        user.failedLoginCount = 0;
+      }
+      await this.userRepo.save(user);
       throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
     }
 
+    user.failedLoginCount = 0;
+    user.lockedUntil = null;
     user.lastLoginAt = new Date();
     await this.userRepo.save(user);
     delete user.passwordHash;

@@ -2,7 +2,6 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import AuthBootstrap from '@/components/AuthBootstrap'
 import AppLayout from '@/app/layout/AppLayout'
 import LoginPage from '@/pages/auth/LoginPage'
-import RegisterPage from '@/pages/auth/RegisterPage'
 import { FilmCuttingPage, FilmCuttingFormPage } from '@/pages/film-cutting'
 import LaofusLayout from '@/pages/laofus/LaofusLayout'
 import HomePage from '@/pages/laofus/HomePage'
@@ -25,7 +24,6 @@ export default function App() {
     <AuthBootstrap>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
         <Route element={<AppLayout />}>
           <Route path="/" element={<Navigate to="/laofus" replace />} />
 

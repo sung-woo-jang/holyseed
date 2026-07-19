@@ -5,7 +5,6 @@
 
 // ===== 인증 API =====
 export const AUTH_API = {
-  REGISTER: '/auth/register',
   LOGIN: '/auth/login',
   REFRESH: '/auth/refresh',
   ME: '/users/me',

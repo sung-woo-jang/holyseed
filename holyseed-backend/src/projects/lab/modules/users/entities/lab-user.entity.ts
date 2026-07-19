@@ -14,4 +14,10 @@ export class LabUser extends BaseEntity {
 
   @Column({ name: 'last_login_at', type: 'timestamp', nullable: true })
   lastLoginAt: Date;
+
+  @Column({ name: 'failed_login_count', type: 'int', default: 0 })
+  failedLoginCount: number;
+
+  @Column({ name: 'locked_until', type: 'timestamp', nullable: true })
+  lockedUntil: Date | null;
 }

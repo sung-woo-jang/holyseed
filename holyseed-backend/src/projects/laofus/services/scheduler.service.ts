@@ -5,7 +5,8 @@ import { LaofusEngineService } from './engine.service';
 
 /**
  * 무매 엔진 스케줄러 — 미국 정규장 마감 전 실행 창에 맞춰 판단·주문.
- * 매매 크론은 env로 조정 가능 (기본 KST 04:30/05:30 = EDT/EST 마감 30분 전 이중 등록):
+ * 매매 크론은 env로 조정 가능 (운용값은 KST 03:25/04:25 = EDT/EST 마감 95분 전 이중 등록 —
+ * 토스 앱 소수점 주문가능시간 22:30~04:00(EDT)/23:30~05:00(EST) 대비 여유 확보):
  * - LAOFUS_RUN_CRON_1 (기본 '30 4 * * 2-6')
  * - LAOFUS_RUN_CRON_2 (기본 '30 5 * * 2-6')
  * 창 검증 폭은 LAOFUS_WINDOW_MIN/MAX (engine.service 참조) — 크론을 앞당기면 함께 조정.
@@ -77,14 +78,21 @@ export class LaofusSchedulerService implements OnModuleInit {
   }
 
   private async reconcileTick(slot: string): Promise<void> {
-    if (!this.enabled) return;
+    if (!this.enabled) {
+      const message = `회수 스케줄 ${slot} — LAOFUS_SCHEDULER=false, 스킵`;
+      this.logger.log(message);
+      await this.engine.logSchedulerEvent('warn', message);
+      return;
+    }
     this.logger.log(`회수 스케줄 ${slot} 트리거`);
     await this.engine.reconcileOnly();
   }
 
   private async tick(slot: string): Promise<void> {
     if (!this.enabled) {
-      this.logger.log(`스케줄 ${slot} — LAOFUS_SCHEDULER=false, 스킵`);
+      const message = `스케줄 ${slot} — LAOFUS_SCHEDULER=false, 스킵`;
+      this.logger.log(message);
+      await this.engine.logSchedulerEvent('warn', message);
       return;
     }
     this.logger.log(`스케줄 ${slot} 트리거 (${this.live ? 'LIVE' : 'dry-run'})`);

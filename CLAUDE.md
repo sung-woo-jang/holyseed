@@ -79,7 +79,7 @@ holyseed/
 - **LAOFUS 프로젝트**: `src/projects/laofus/` - SOXL 무한매수법 자동매매 (`laofus` 스키마, `/api/laofus/*`)
   - 토스증권 Open API로 미국 장마감 65분 전(KST 03:55/04:55 cron — 소수점 주문 당일 체결 컷오프 대응) LOC 에뮬레이션 매매
   - **⚠️ LIVE 운용 중 (2026-07-15~)**: pm2 `laofus-backend`가 상시 가동하며 실주문 담당. `.env`는 항상 `LAOFUS_LIVE=false`/`LAOFUS_SCHEDULER=false`(안전 기본값) — LIVE는 `ecosystem.local.config.js`의 pm2 env 주입으로만
-  - ad-hoc `nest dev` 전 반드시 `pm2 stop laofus-backend` (포트 8000 충돌), 끝나면 `pm2 start laofus-backend`. 백엔드 수정 반영은 `yarn workspace @holyseed/backend build && pm2 restart laofus-backend`
+  - `laofus-backend`는 8001 포트 전용(holyseed-backend 8000과 분리, 2026-07-23 포트충돌 크래시 수정). ad-hoc `nest dev`(8000)는 `holyseed-backend`와 충돌하니 그쪽을 `pm2 stop`. 백엔드 수정 반영은 `yarn workspace @holyseed/backend build && pm2 delete laofus-backend && pm2 start ecosystem.local.config.js --only laofus-backend` (단순 `pm2 restart`는 pm2가 캐싱한 구 env를 재사용해 LIVE/SCHEDULER가 조용히 꺼진 채 남을 수 있음 — 2026-07-23 실제 발생)
   - **주의**: 무매 잔금은 `laofus.engine_state.cash` 기준 (계좌 예수금 아님). 계좌-DB 보유수량 불일치 시 엔진이 주문 중단
   - 방법론 문서·운용 규칙: `docs/laofus/README.md` 필독. 시드: `yarn laofus:seed`. 대시보드 상시 서빙 :4800 (pm2 `lab-front`, 무한매수법 섹션 `/laofus`)
 - **LAB 프로젝트**: `src/projects/lab/` - 개인 다목적 대시보드 (`lab` 스키마, `/api/lab/*`)

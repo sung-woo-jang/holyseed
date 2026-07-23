@@ -49,6 +49,11 @@ export class LaofusEngineService {
     @InjectRepository(LaofusPendingOrder) private readonly pendingRepo: Repository<LaofusPendingOrder>,
   ) {}
 
+  /** 스케줄러 등 엔진 외부에서 발생한 이벤트(예: 비활성 스킵)를 동일한 laofus.events 원장에 기록 */
+  async logSchedulerEvent(level: 'info' | 'warn' | 'error', message: string): Promise<void> {
+    await this.event(level, message);
+  }
+
   private async event(level: 'info' | 'warn' | 'error', message: string, runId: string | null = null): Promise<void> {
     this.logger.log(`[${level}] ${message}`);
     try {

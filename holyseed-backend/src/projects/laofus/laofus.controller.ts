@@ -13,7 +13,6 @@ function ok<T>(data: T, message = '조회 성공') {
 
 @ApiTags('LAOFUS 무한매수법')
 @Public()
-@UseGuards(LaofusKeyGuard)
 @Controller('laofus')
 export class LaofusController {
   constructor(
@@ -64,6 +63,7 @@ export class LaofusController {
   }
 
   @Post('run')
+  @UseGuards(LaofusKeyGuard)
   @ApiOperation({ summary: '엔진 수동 실행 (live=false면 dry-run, force로 시간창 생략)' })
   async run(@Body() dto: LaofusRunRequestDto) {
     const lines = await this.engine.run({

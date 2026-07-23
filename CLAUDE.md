@@ -28,6 +28,14 @@ holyseed/
 
 ---
 
+## 개발 환경 = 배포 환경 (맥미니 겸용)
+
+이 맥미니는 로컬 개발 환경이면서 동시에 self-hosted GitHub Actions runner로서 실제 배포(빌드·`pm2 restart`)까지 담당합니다. `deploy-*.yml` 워크플로우는 master push 시 **지금 개발 중인 이 저장소 경로(`/Users/jangseong-u/project/holyseed`)에서 그대로** `git reset --hard origin/master`를 실행합니다.
+
+⚠️ **따라서 커밋되지 않은 로컬 변경은 언제든 덮어써져 유실될 수 있습니다.** 작업을 중단하거나 자리를 비울 때는 항상 커밋(또는 최소한 `git stash`)해두고, uncommitted 상태로 방치하지 않을 것.
+
+---
+
 ## 서브프로젝트 개요
 
 ### 1. ad-front (자산일기 웹앱)

@@ -29,25 +29,6 @@ export const WORKLOG_API = {
   DELETE: (id: number | string) => `/worklog/${id}/delete`,
 } as const
 
-// ===== 일정 API =====
-export const SCHEDULE_API = {
-  LIST: '/schedules',
-  SEARCH: '/schedules/search',
-  CREATE: '/schedules',
-  UPDATE: (id: number | string) => `/schedules/${id}/update`,
-  DELETE: (id: number | string) => `/schedules/${id}/delete`,
-} as const
-
-// ===== 저축 API =====
-export const SAVING_API = {
-  RECORDS: '/saving/records',
-  SUMMARY: '/saving/summary',
-  PLAN: '/saving/plan',
-  UPSERT: '/saving/records',
-  UPDATE: (id: number | string) => `/saving/records/${id}/update`,
-  DELETE: (id: number | string) => `/saving/records/${id}/delete`,
-} as const
-
 // ===== Lab API =====
 // 구 백오피스의 ADMIN_API 이름을 유지 — film-optimizer 훅들이 그대로 참조
 export const ADMIN_API = {

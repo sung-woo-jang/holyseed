@@ -15,9 +15,6 @@ import VrOverviewPage from '@/pages/vr/VrOverviewPage'
 import VrLadderPage from '@/pages/vr/VrLadderPage'
 import VrFillsPage from '@/pages/vr/VrFillsPage'
 import WorklogPage from '@/pages/worklog/WorklogPage'
-import ScheduleCalendarPage from '@/pages/schedule/ScheduleCalendarPage'
-import ScheduleListPage from '@/pages/schedule/ScheduleListPage'
-import SavingPage from '@/pages/saving/SavingPage'
 
 export default function App() {
   return (
@@ -42,11 +39,6 @@ export default function App() {
           <Route path="/vr/fills" element={<VrFillsPage />} />
 
           <Route path="/worklog" element={<WorklogPage />} />
-
-          <Route path="/schedule" element={<ScheduleCalendarPage />} />
-          <Route path="/schedule/list" element={<ScheduleListPage />} />
-
-          <Route path="/saving" element={<SavingPage />} />
 
           <Route path="/film-cutting" element={<FilmCuttingPage />} />
           <Route path="/film-cutting/new" element={<FilmCuttingFormPage />} />

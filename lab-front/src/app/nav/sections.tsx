@@ -1,9 +1,7 @@
 import {
-  CalendarDays,
   ChartCandlestick,
   HardHat,
   Infinity as InfinityIcon,
-  PiggyBank,
   Scissors,
   type LucideIcon,
 } from 'lucide-react'
@@ -65,23 +63,6 @@ export const SECTIONS: LabSection[] = [
     icon: HardHat,
     basePath: '/worklog',
     pages: [{ path: '/worklog', label: '근무 기록', end: true }],
-  },
-  {
-    id: 'schedule',
-    label: '일정',
-    icon: CalendarDays,
-    basePath: '/schedule',
-    pages: [
-      { path: '/schedule', label: '캘린더', end: true },
-      { path: '/schedule/list', label: '리스트' },
-    ],
-  },
-  {
-    id: 'saving',
-    label: '저축',
-    icon: PiggyBank,
-    basePath: '/saving',
-    pages: [{ path: '/saving', label: '저축 플래너', end: true }],
   },
   {
     id: 'film',

@@ -21,15 +21,16 @@ module.exports = {
       max_restarts: 20,
       env: {
         NODE_ENV: 'development', // 로컬 DB(.env) + synchronize:true
-        PORT: '8000',
+        PORT: '8001', // holyseed-backend(8000, 클러스터)와 분리 — 대시보드는 holyseed-backend의 /api/laofus/* 조회만 사용하므로 이 포트는 외부에서 쓸 일 없음
         LAOFUS_LIVE: 'true',
         LAOFUS_SCHEDULER: 'true',
-        // 매매 시각: 마감 65분 전 (2026-07-17 프로브 검증 — 소수점 금액주문 당일 체결
-        // 컷오프가 마감 40~65분 전 사이라, 65분 전이 검증된 안전선. 40분 전은 다음 개장 이월됨)
-        LAOFUS_RUN_CRON_1: '55 3 * * 2-6', // EDT: 마감 05:00 KST → 03:55
-        LAOFUS_RUN_CRON_2: '55 4 * * 2-6', // EST: 마감 06:00 KST → 04:55
-        LAOFUS_WINDOW_MIN: '60',
-        LAOFUS_WINDOW_MAX: '75',
+        // 매매 시각: 마감 95분 전 (2026-07-21 토스 앱 확인 — 소수점 주문가능시간이
+        // 22:30~04:00 KST(EDT)/23:30~05:00 KST(EST)로, 마감 65분 전(구 설정)은 그 마감
+        // 불과 5분 전이라 타이트해 30분 더 앞당김)
+        LAOFUS_RUN_CRON_1: '25 3 * * 2-6', // EDT: 마감 05:00 KST → 03:25
+        LAOFUS_RUN_CRON_2: '25 4 * * 2-6', // EST: 마감 06:00 KST → 04:25
+        LAOFUS_WINDOW_MIN: '90',
+        LAOFUS_WINDOW_MAX: '105',
       },
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     },

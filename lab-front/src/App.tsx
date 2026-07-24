@@ -15,6 +15,8 @@ import VrOverviewPage from '@/pages/vr/VrOverviewPage'
 import VrLadderPage from '@/pages/vr/VrLadderPage'
 import VrFillsPage from '@/pages/vr/VrFillsPage'
 import WorklogPage from '@/pages/worklog/WorklogPage'
+import ExpensePage from '@/pages/expense/ExpensePage'
+import FinanceDashboardPage from '@/pages/dashboard/FinanceDashboardPage'
 
 export default function App() {
   return (
@@ -38,7 +40,9 @@ export default function App() {
           <Route path="/vr/ladder" element={<VrLadderPage />} />
           <Route path="/vr/fills" element={<VrFillsPage />} />
 
+          <Route path="/worklog/dashboard" element={<FinanceDashboardPage />} />
           <Route path="/worklog" element={<WorklogPage />} />
+          <Route path="/worklog/expense" element={<ExpensePage />} />
 
           <Route path="/film-cutting" element={<FilmCuttingPage />} />
           <Route path="/film-cutting/new" element={<FilmCuttingFormPage />} />

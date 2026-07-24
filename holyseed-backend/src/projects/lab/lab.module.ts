@@ -4,9 +4,10 @@ import { LabUsersModule } from './modules/users/users.module';
 import { FilmOptimizerModule } from './modules/film-optimizer/film-optimizer.module';
 import { VrModule } from './modules/vr/vr.module';
 import { WorklogModule } from './modules/worklog/worklog.module';
+import { ExpenseModule } from './modules/expense/expense.module';
 import { LabMcpModule } from './modules/mcp/mcp.module';
 
 @Module({
-  imports: [LabAuthModule, LabUsersModule, FilmOptimizerModule, VrModule, WorklogModule, LabMcpModule],
+  imports: [LabAuthModule, LabUsersModule, FilmOptimizerModule, VrModule, WorklogModule, ExpenseModule, LabMcpModule],
 })
 export class LabModule {}

@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, Query, Res } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { Public } from '@common/decorators';
 import { AuthService, type OAuthProvider } from './auth.service';
@@ -14,6 +15,7 @@ export class AuthController {
 
   @Post('register')
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: '이메일 회원가입' })
   async register(@Body() dto: RegisterDto) {
     const result = await this.authService.register(dto);
@@ -22,6 +24,7 @@ export class AuthController {
 
   @Post('login')
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: '이메일 로그인' })
   async login(@Body() dto: LoginDto) {
     const result = await this.authService.emailLogin(dto);

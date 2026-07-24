@@ -185,6 +185,7 @@ export class AuthService {
       const payload = this.jwtService.verify(refreshToken, {
         secret: this.configService.get('jwt.secret'),
       });
+      if (payload.aud !== 'ad') throw new UnauthorizedException('다른 프로젝트에서 발급된 토큰입니다.');
 
       const user = await this.userRepo.findOne({ where: { id: payload.sub } });
       if (!user) throw new UnauthorizedException('사용자를 찾을 수 없습니다.');
@@ -196,7 +197,7 @@ export class AuthService {
   }
 
   private issueTokens(user: AdUser) {
-    const payload = { sub: user.id, tossUserKey: user.tossUserKey, email: user.email };
+    const payload = { sub: user.id, tossUserKey: user.tossUserKey, email: user.email, aud: 'ad' };
     const secret = this.configService.get('jwt.secret');
 
     return {

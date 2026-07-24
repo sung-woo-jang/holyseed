@@ -13,7 +13,7 @@ module.exports = {
       env_production: {
         NODE_ENV: 'production',
         PORT: 8000,
-        CORS_ORIGINS: 'https://holyseed.p-e.kr',
+        CORS_ORIGINS: 'https://holyseed.p-e.kr,https://ad.holyseed.p-e.kr,https://wedding.holyseed.p-e.kr,https://lab.holyseed.p-e.kr',
       },
 
       // 로그 설정
@@ -43,7 +43,11 @@ module.exports = {
     {
       // laofus 실주문 엔진 — holyseed-backend와 같은 dist/main.js를 다른 포트+LIVE env로 기동
       // ⚠️ 절대 instances>1 / cluster 금지 — cron이 인스턴스마다 발화해 실주문이 중복된다.
-      // ⚠️ LAOFUS_LIVE/SCHEDULER는 여기(pm2 env)에서만 켠다 — .env.production은 안전 기본값(false) 유지.
+      // ⚠️ 이 맥미니가 곧 실거래 서버다(별도 원격 서버 없음) — deploy-backend.yml이 백엔드 푸시마다
+      //    `pm2 startOrRestart ecosystem.config.js --only laofus-backend --env production`으로 재기동하므로
+      //    여기 LAOFUS_LIVE/SCHEDULER가 실제 운영값이다. false로 두면 배포 때마다 라이브가 꺼진다
+      //    (2026-07-23~24 실제 발생 — 배포 때마다 조용히 꺼져서 며칠간 매매 스킵됨). .env.production은 안전
+      //    기본값(false) 유지 — holyseed-backend(조회 전용, 8000)는 이 값을 그대로 물려받아야 하기 때문.
       name: 'laofus-backend',
       script: 'dist/main.js',
       instances: 1,
@@ -55,9 +59,9 @@ module.exports = {
       env_production: {
         NODE_ENV: 'production',
         PORT: 8001,
-        CORS_ORIGINS: 'https://holyseed.p-e.kr',
-        LAOFUS_LIVE: 'false',
-        LAOFUS_SCHEDULER: 'false',
+        CORS_ORIGINS: 'https://holyseed.p-e.kr,https://ad.holyseed.p-e.kr,https://wedding.holyseed.p-e.kr,https://lab.holyseed.p-e.kr',
+        LAOFUS_LIVE: 'true',
+        LAOFUS_SCHEDULER: 'true',
         LAOFUS_RUN_CRON_1: '25 3 * * 2-6',
         LAOFUS_RUN_CRON_2: '25 4 * * 2-6',
         LAOFUS_WINDOW_MIN: '90',

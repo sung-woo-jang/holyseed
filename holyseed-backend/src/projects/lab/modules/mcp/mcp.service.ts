@@ -288,7 +288,8 @@ export class McpService {
       'expense_month',
       {
         title: '지출내역 월별 조회',
-        description: '해당 월의 수입/지출 기록과 집계(총수입/총지출/순현금흐름/고정지출 합계/분류별 합계)를 조회합니다.',
+        description:
+          '해당 월의 수입/지출 기록과 집계(총수입/총지출/순현금흐름/고정지출 합계/분류별 합계)를 조회합니다.',
         inputSchema: {
           year: z.number().describe('연도 (예: 2026)'),
           month: z.number().min(1).max(12).describe('월 (1~12)'),
@@ -307,7 +308,9 @@ export class McpService {
           title: z.string().describe('항목 (예: 월세, 급여)'),
           date: z.string().optional().describe('YYYY-MM-DD, 생략 시 오늘'),
           kind: z.enum(['EXPENSE', 'INCOME']).describe('구분'),
-          category: z.string().describe('분류 (예: 주거/통신/공과금/보험/차량·유류비/구독서비스/대출·할부/생활/급여/기타수입/기타지출)'),
+          category: z
+            .string()
+            .describe('분류 (예: 주거/통신/공과금/보험/차량·유류비/구독서비스/대출·할부/생활/급여/기타수입/기타지출)'),
           expenseType: z
             .enum(['FIXED_SAME', 'FIXED_VARIABLE', 'IRREGULAR'])
             .optional()
@@ -317,9 +320,7 @@ export class McpService {
         },
       },
       (args) =>
-        this.call(async (api) =>
-          this.unwrap(await api.post('/expense', { ...args, date: args.date ?? this.today() })),
-        ),
+        this.call(async (api) => this.unwrap(await api.post('/expense', { ...args, date: args.date ?? this.today() }))),
     );
 
     registerTool(

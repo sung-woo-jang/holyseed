@@ -5,11 +5,13 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 // Config
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
+import { validationSchema } from './config/validation.schema';
 
 // Common
 import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
@@ -31,6 +33,19 @@ import { LabModule } from '@/projects/lab/lab.module';
       isGlobal: true,
       load: [appConfig, databaseConfig, jwtConfig],
       envFilePath: [...(process.env.NODE_ENV ? [`.env.${process.env.NODE_ENV}`] : []), '.env.local', '.env'],
+      validationSchema,
+    }),
+
+    // Rate limiting
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => [
+        {
+          ttl: configService.get<number>('RATE_LIMIT_TTL', 60) * 1000,
+          limit: configService.get<number>('RATE_LIMIT_MAX', 100),
+        },
+      ],
+      inject: [ConfigService],
     }),
 
     // Database
@@ -45,7 +60,7 @@ import { LabModule } from '@/projects/lab/lab.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('jwt.secret') || 'default-secret',
+        secret: configService.get<string>('jwt.secret'),
         signOptions: { expiresIn: (configService.get<string>('jwt.expiresIn') || '24h') as any },
       }),
       inject: [ConfigService],
@@ -67,6 +82,11 @@ import { LabModule } from '@/projects/lab/lab.module';
     {
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,
+    },
+    // Global Rate Limit Guard
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
     // Global JWT Auth Guard
     {

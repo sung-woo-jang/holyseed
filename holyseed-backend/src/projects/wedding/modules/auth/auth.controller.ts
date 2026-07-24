@@ -1,5 +1,6 @@
 import { Body, Controller, Post, Request } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Public } from '@common/decorators/public.decorator';
 import { WeddingAuthService } from './auth.service';
 import { WeddingRegisterDto } from './dto/request/register.dto';
@@ -12,6 +13,7 @@ export class WeddingAuthController {
 
   @Post('register')
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: '커플+관리자 계정 등록' })
   @ApiResponse({ status: 201, description: '등록 성공 및 JWT 발급' })
   @ApiResponse({ status: 409, description: '이메일 또는 slug 중복' })
@@ -27,6 +29,7 @@ export class WeddingAuthController {
 
   @Post('login')
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: '로그인' })
   @ApiResponse({ status: 200, description: 'JWT 발급' })
   @ApiResponse({ status: 401, description: '인증 실패' })

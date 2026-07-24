@@ -32,4 +32,4 @@ export const validationSchema = Joi.object({
   // Rate Limiting
   RATE_LIMIT_TTL: Joi.number().default(60),
   RATE_LIMIT_MAX: Joi.number().default(100),
-});
+}).unknown(true); // process.env 전체(OS 환경변수 + laofus/toss/ncp/oauth 등 프로젝트별 미등록 키) 검증 대상이므로 허용

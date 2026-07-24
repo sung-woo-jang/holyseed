@@ -27,7 +27,7 @@ async function bootstrap() {
   console.log('🌍 Environment:', environment);
 
   app.enableCors({
-    origin: true, // 임시로 모든 Origin 허용
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'Authorization'],

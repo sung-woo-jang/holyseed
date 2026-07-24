@@ -1,5 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Public } from '@common/decorators';
 import { AuthService } from './auth.service';
 import { RefreshTokenDto } from './dto/request/refresh-token.dto';
@@ -12,6 +13,7 @@ export class AuthController {
 
   @Post('login')
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: '이메일 로그인' })
   async login(@Body() dto: LoginDto) {
     const result = await this.authService.emailLogin(dto);

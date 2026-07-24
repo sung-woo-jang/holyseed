@@ -282,6 +282,75 @@ export class McpService {
       ({ id }) => this.call(async (api) => this.unwrap(await api.post(`/worklog/${id}/delete`))),
     );
 
+    // ==================== 지출내역 ====================
+
+    registerTool(
+      'expense_month',
+      {
+        title: '지출내역 월별 조회',
+        description: '해당 월의 수입/지출 기록과 집계(총수입/총지출/순현금흐름/고정지출 합계/분류별 합계)를 조회합니다.',
+        inputSchema: {
+          year: z.number().describe('연도 (예: 2026)'),
+          month: z.number().min(1).max(12).describe('월 (1~12)'),
+        },
+      },
+      ({ year, month }) => this.call(async (api) => this.unwrap(await api.post('/expense/search', { year, month }))),
+    );
+
+    registerTool(
+      'expense_add',
+      {
+        title: '수입/지출 기록 추가',
+        description:
+          '수입 또는 지출 기록을 추가합니다. kind=EXPENSE(지출)일 때만 expenseType 지정 — FIXED_SAME(고정-동일금액)/FIXED_VARIABLE(고정-가변금액)/IRREGULAR(비정기-다회성).',
+        inputSchema: {
+          title: z.string().describe('항목 (예: 월세, 급여)'),
+          date: z.string().optional().describe('YYYY-MM-DD, 생략 시 오늘'),
+          kind: z.enum(['EXPENSE', 'INCOME']).describe('구분'),
+          category: z.string().describe('분류 (예: 주거/통신/공과금/보험/차량·유류비/구독서비스/대출·할부/생활/급여/기타수입/기타지출)'),
+          expenseType: z
+            .enum(['FIXED_SAME', 'FIXED_VARIABLE', 'IRREGULAR'])
+            .optional()
+            .describe('지출유형 (지출만 해당)'),
+          amount: z.number().describe('금액 (원)'),
+          memo: z.string().optional().describe('메모'),
+        },
+      },
+      (args) =>
+        this.call(async (api) =>
+          this.unwrap(await api.post('/expense', { ...args, date: args.date ?? this.today() })),
+        ),
+    );
+
+    registerTool(
+      'expense_update',
+      {
+        title: '수입/지출 기록 수정',
+        description: '기존 수입/지출 기록을 수정합니다.',
+        inputSchema: {
+          id: z.number().describe('기록 id (expense_month로 확인)'),
+          title: z.string().optional(),
+          date: z.string().optional().describe('YYYY-MM-DD'),
+          kind: z.enum(['EXPENSE', 'INCOME']).optional(),
+          category: z.string().optional(),
+          expenseType: z.enum(['FIXED_SAME', 'FIXED_VARIABLE', 'IRREGULAR']).nullable().optional(),
+          amount: z.number().optional(),
+          memo: z.string().optional(),
+        },
+      },
+      ({ id, ...rest }) => this.call(async (api) => this.unwrap(await api.post(`/expense/${id}/update`, rest))),
+    );
+
+    registerTool(
+      'expense_delete',
+      {
+        title: '수입/지출 기록 삭제',
+        description: '수입/지출 기록을 삭제합니다. 삭제 전 사용자에게 확인하세요.',
+        inputSchema: { id: z.number().describe('기록 id') },
+      },
+      ({ id }) => this.call(async (api) => this.unwrap(await api.post(`/expense/${id}/delete`))),
+    );
+
     // ==================== 필름 재단 ====================
 
     registerTool(

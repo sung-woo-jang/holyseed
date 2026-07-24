@@ -1,8 +1,8 @@
 import {
   ChartCandlestick,
-  HardHat,
   Infinity as InfinityIcon,
   Scissors,
+  Wallet,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -58,11 +58,15 @@ export const SECTIONS: LabSection[] = [
     ],
   },
   {
-    id: 'worklog',
-    label: '근무일지',
-    icon: HardHat,
+    id: 'finance',
+    label: '가계부',
+    icon: Wallet,
     basePath: '/worklog',
-    pages: [{ path: '/worklog', label: '근무 기록', end: true }],
+    pages: [
+      { path: '/worklog/dashboard', label: '대시보드', end: true },
+      { path: '/worklog', label: '근무 기록', end: true },
+      { path: '/worklog/expense', label: '지출내역', end: true },
+    ],
   },
   {
     id: 'film',

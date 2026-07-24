@@ -29,6 +29,15 @@ export const WORKLOG_API = {
   DELETE: (id: number | string) => `/worklog/${id}/delete`,
 } as const
 
+// ===== 지출내역 API =====
+export const EXPENSE_API = {
+  LIST: '/expense',
+  SEARCH: '/expense/search',
+  CREATE: '/expense',
+  UPDATE: (id: number | string) => `/expense/${id}/update`,
+  DELETE: (id: number | string) => `/expense/${id}/delete`,
+} as const
+
 // ===== Lab API =====
 // 구 백오피스의 ADMIN_API 이름을 유지 — film-optimizer 훅들이 그대로 참조
 export const ADMIN_API = {

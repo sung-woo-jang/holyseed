@@ -3,7 +3,13 @@ import { useFetchFilms, useTogglePieceComplete } from '../../api'
 import { useFilmCuttingForm, useBinPacker } from '../../model'
 import { CuttingCanvas, type CuttingCanvasRef, type PieceClickInfo } from '../cutting-canvas'
 import { ExportButtons } from '../export-buttons'
+import { useContainerWidth } from '@/shared/hooks/use-container-width'
 import styles from './styles.module.scss'
+
+/** CuttingCanvas의 RIGHT_PADDING(치수 표시 여백)과 동일한 값 */
+const CANVAS_RIGHT_PADDING = 70
+/** cutting-canvas/styles.module.scss .container의 좌우 padding 합 */
+const CANVAS_CONTAINER_PADDING = 48
 
 // 로컬에서 생성된 ID인지 확인 (Date.now()로 생성된 ID는 매우 큰 숫자)
 // PostgreSQL integer 최대값: 2,147,483,647
@@ -18,6 +24,7 @@ const isLocalPieceId = (id: number) => id > 2_000_000_000
 export function FilmCuttingFormVisualization() {
   const canvasRef = useRef<CuttingCanvasRef | null>(null)
   const [togglingPieceId, setTogglingPieceId] = useState<number | null>(null)
+  const { ref: canvasWrapRef, width: canvasWrapWidth } = useContainerWidth<HTMLDivElement>(700)
 
   const {
     editingProjectId,
@@ -41,6 +48,13 @@ export function FilmCuttingFormVisualization() {
   const { data: filmsList } = useFetchFilms()
   const selectedFilm = filmsList?.find(
     (f) => f.id.toString() === selectedFilmId
+  )
+
+  // 컨테이너 폭에 맞춰 캔버스 배율 축소 (모바일에서 가로 스크롤 없이 전체 원단이 보이도록)
+  const filmNaturalWidth = (selectedFilm?.width ?? 1220) + CANVAS_RIGHT_PADDING
+  const canvasScale = Math.min(
+    0.6,
+    (canvasWrapWidth - CANVAS_CONTAINER_PADDING) / filmNaturalWidth
   )
 
   // 패킹 계산
@@ -177,14 +191,16 @@ export function FilmCuttingFormVisualization() {
       )}
 
       {/* 캔버스 */}
-      <CuttingCanvas
-        ref={canvasRef}
-        packingResult={packingResult}
-        filmWidth={selectedFilm?.width ?? 1220}
-        scale={0.6}
-        completedPieceIds={completedPieceIds}
-        onPieceClick={handlePieceClick}
-      />
+      <div ref={canvasWrapRef}>
+        <CuttingCanvas
+          ref={canvasRef}
+          packingResult={packingResult}
+          filmWidth={selectedFilm?.width ?? 1220}
+          scale={canvasScale}
+          completedPieceIds={completedPieceIds}
+          onPieceClick={handlePieceClick}
+        />
+      </div>
     </div>
   )
 }

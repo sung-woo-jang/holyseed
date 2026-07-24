@@ -3,6 +3,7 @@ import { computeIndicators } from '@holyseed/laofus-core'
 import type { CandleDto, TradeDto } from '@/features/laofus/lib/types'
 import { api, n, usd, kstDateOnly } from '@/features/laofus/lib/types'
 import { useStatus, usePrice } from '@/features/laofus/lib/useStatus'
+import { useContainerWidth } from '@/shared/hooks/use-container-width'
 
 type Range = '1m' | '3m' | 'all' | 'intraday'
 
@@ -12,6 +13,7 @@ export default function ChartPage() {
   const [range, setRange] = useState<Range>('3m')
   const [candles, setCandles] = useState<CandleDto[] | null>(null)
   const [hover, setHover] = useState<number | null>(null)
+  const { ref: chartRef, width } = useContainerWidth<HTMLDivElement>(960)
 
   useEffect(() => {
     setCandles(null)
@@ -61,7 +63,7 @@ export default function ChartPage() {
       </main>
     )
 
-  const W = 960
+  const W = Math.max(320, width)
   const H = 380
   const PAD = { l: 8, r: 64, t: 12, b: 26 }
   const vals = candles.flatMap((c) => [n(c.highPrice), n(c.lowPrice)])
@@ -106,10 +108,10 @@ export default function ChartPage() {
       </div>
 
       <div className="card" style={{ position: 'relative' }}>
-        <div style={{ overflowX: 'auto' }}>
+        <div ref={chartRef}>
           <svg
             viewBox={`0 0 ${W} ${H}`}
-            style={{ width: '100%', minWidth: 640, display: 'block' }}
+            style={{ width: '100%', display: 'block' }}
             onMouseLeave={() => setHover(null)}
             onMouseMove={(e) => {
               const rect = e.currentTarget.getBoundingClientRect()

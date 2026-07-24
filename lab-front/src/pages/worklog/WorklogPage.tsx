@@ -150,8 +150,8 @@ function WorklogDialog({
           <DialogTitle>{editing ? '근무 기록 수정' : '근무 기록 추가'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2 space-y-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="sm:col-span-2 space-y-2">
               <Label>현장명 (여러 곳이면 / 구분)</Label>
               <Input value={form.title} onChange={(e) => set('title', e.target.value)} required placeholder="송도 / 학익" />
             </div>

@@ -2,14 +2,14 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { findActiveSection } from '@/app/nav/sections'
 import { cn } from '@/shared/lib/utils'
 
-export default function SecondarySidebar() {
+export default function SecondarySidebar({ className }: { className?: string }) {
   const location = useLocation()
   const section = findActiveSection(location.pathname)
 
-  if (!section) return <aside className="border-r bg-sidebar" />
+  if (!section) return <aside className={cn('border-r bg-sidebar', className)} />
 
   return (
-    <aside className="flex h-full flex-col border-r bg-sidebar">
+    <aside className={cn('flex h-full flex-col border-r bg-sidebar', className)}>
       <div className="flex h-14 items-center gap-2 border-b px-4">
         <section.icon className="size-4 text-muted-foreground" />
         <span className="text-sm font-semibold">{section.label}</span>

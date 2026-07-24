@@ -1,11 +1,13 @@
 import type { TradeDto } from '@/features/laofus/lib/types'
 import { n, kstDateOnly } from '@/features/laofus/lib/types'
+import { useContainerWidth } from '@/shared/hooks/use-container-width'
 
 /** T값 추이 스텝차트 */
 export function TChart({ trades }: { trades: TradeDto[] }) {
+  const { ref: chartRef, width } = useContainerWidth<HTMLDivElement>(720)
   const pts = trades.filter((t) => t.kind !== '이월')
   if (pts.length < 2) return null
-  const W = 720,
+  const W = Math.max(280, width),
     H = 150,
     PAD = { l: 36, r: 20, t: 10, b: 24 }
   const tMax = Math.max(20, ...pts.map((t) => n(t.tAfter)))
@@ -17,8 +19,8 @@ export function TChart({ trades }: { trades: TradeDto[] }) {
     d += ` L${xs(i)},${ys(n(t.tBefore))} L${xs(i)},${ys(n(t.tAfter))}`
   })
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', minWidth: 480, display: 'block' }}>
+    <div ref={chartRef}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block' }}>
         {[0, 10, 20].map(
           (v) =>
             v <= tMax && (
@@ -74,9 +76,10 @@ export function TChart({ trades }: { trades: TradeDto[] }) {
 
 /** 누적 투입금 vs 잔금 */
 export function CashChart({ trades, principal }: { trades: TradeDto[]; principal: number }) {
+  const { ref: chartRef, width } = useContainerWidth<HTMLDivElement>(720)
   const pts = trades.filter((t) => t.kind !== '이월')
   if (pts.length < 2) return null
-  const W = 720,
+  const W = Math.max(280, width),
     H = 150,
     PAD = { l: 48, r: 20, t: 10, b: 24 }
   const xs = (i: number) => PAD.l + (i / (pts.length - 1)) * (W - PAD.l - PAD.r)
@@ -91,7 +94,7 @@ export function CashChart({ trades, principal }: { trades: TradeDto[]; principal
     pts.map((_, i) => `${i === 0 ? 'M' : 'L'}${xs(i).toFixed(1)},${ys(get(i)).toFixed(1)}`).join(' ')
   const investedArea = `${line((i) => investedPts[i])} L${xs(pts.length - 1)},${ys(0)} L${xs(0)},${ys(0)} Z`
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <div ref={chartRef}>
       <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>
         <span>
           <span
@@ -122,7 +125,7 @@ export function CashChart({ trades, principal }: { trades: TradeDto[]; principal
           잔금
         </span>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', minWidth: 480, display: 'block' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block' }}>
         {[0, principal / 2, principal].map((v) => (
           <g key={v}>
             <line x1={PAD.l} x2={W - PAD.r} y1={ys(v)} y2={ys(v)} stroke="var(--grid)" strokeWidth="1" />

@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import type { TradeDto } from '@/features/laofus/lib/types'
 import { n, usd, kstDateOnly } from '@/features/laofus/lib/types'
+import { useContainerWidth } from '@/shared/hooks/use-container-width'
 
 /** 사이클 내 체결가 vs 평단 라인차트 (2시리즈, hover 툴팁) */
 export function CycleChart({ trades }: { trades: TradeDto[] }) {
   const [hover, setHover] = useState<number | null>(null)
+  const { ref: chartRef, width } = useContainerWidth<HTMLDivElement>(720)
   const pts = trades.filter((t) => t.kind !== '이월')
   if (pts.length < 2) return null
 
-  const W = 720
+  const W = Math.max(280, width)
   const H = 240
   const PAD = { l: 48, r: 76, t: 16, b: 28 }
   const xs = (i: number) => PAD.l + (i / (pts.length - 1)) * (W - PAD.l - PAD.r)
@@ -55,10 +57,10 @@ export function CycleChart({ trades }: { trades: TradeDto[] }) {
           평단
         </span>
       </div>
-      <div style={{ overflowX: 'auto' }}>
+      <div ref={chartRef}>
         <svg
           viewBox={`0 0 ${W} ${H}`}
-          style={{ width: '100%', minWidth: 480, display: 'block' }}
+          style={{ width: '100%', display: 'block' }}
           onMouseLeave={() => setHover(null)}
           onMouseMove={(e) => {
             const rect = e.currentTarget.getBoundingClientRect()

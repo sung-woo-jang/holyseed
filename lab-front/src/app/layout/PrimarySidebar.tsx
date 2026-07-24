@@ -7,7 +7,7 @@ import { Button } from '@/shared/ui/button'
 import { clearTokens } from '@/shared/lib/storage'
 import { useAuthStore } from '@/stores/auth.store'
 
-export default function PrimarySidebar() {
+export default function PrimarySidebar({ className }: { className?: string }) {
   const location = useLocation()
   const activeSection = findActiveSection(location.pathname)
   const user = useAuthStore((s) => s.user)
@@ -20,7 +20,7 @@ export default function PrimarySidebar() {
 
   return (
     <TooltipProvider delayDuration={0}>
-      <aside className="flex h-full flex-col items-center gap-2 border-r bg-sidebar py-3">
+      <aside className={cn('flex h-full flex-col items-center gap-2 border-r bg-sidebar py-3', className)}>
         <Link to="/" className="mb-2 flex size-10 items-center justify-center rounded-lg text-primary">
           <FlaskConical className="size-6" />
         </Link>

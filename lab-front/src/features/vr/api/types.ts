@@ -66,3 +66,42 @@ export interface CreateCycleInput {
   poolStart: number
   depositAmount?: number
 }
+
+// ---- 엔진 상태 (자동매매) ----
+
+export type VrMarketSession = 'PRE' | 'REGULAR' | 'AFTER' | null
+
+export interface VrEventDto {
+  id: number
+  createdAt: string
+  level: string
+  source: string
+  runId: string | null
+  message: string
+}
+
+export interface VrLastRunDto {
+  runId: string
+  startedAt: string
+  endedAt: string
+  level: 'info' | 'warn' | 'error'
+  summary: string
+}
+
+export interface VrEngineDto {
+  mode: string
+  schedulerEnabled: boolean
+  running: boolean
+  nextRun: string
+  lastRun: VrLastRunDto | null
+}
+
+export interface VrStatusDto {
+  state: VrState
+  cycles: VrCycle[]
+  events: VrEventDto[]
+  activeSession: VrMarketSession
+  engine: VrEngineDto
+  calendar: unknown
+  now: string
+}

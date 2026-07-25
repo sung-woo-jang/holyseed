@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { TossModule } from '@shared/toss/toss.module';
 import { LaofusController } from './laofus.controller';
-import { TossClientService } from './services/toss-client.service';
 import { LaofusEngineService } from './services/engine.service';
 import { LaofusStatusService } from './services/status.service';
 import { LaofusSchedulerService } from './services/scheduler.service';
@@ -18,8 +18,11 @@ import { LaofusPendingOrder } from './entities/pending-order.entity';
  * - 방법론 문서: docs/laofus/
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([LaofusEngineState, LaofusCycle, LaofusTrade, LaofusEvent, LaofusPendingOrder])],
+  imports: [
+    TypeOrmModule.forFeature([LaofusEngineState, LaofusCycle, LaofusTrade, LaofusEvent, LaofusPendingOrder]),
+    TossModule,
+  ],
   controllers: [LaofusController],
-  providers: [TossClientService, LaofusEngineService, LaofusStatusService, LaofusSchedulerService],
+  providers: [LaofusEngineService, LaofusStatusService, LaofusSchedulerService],
 })
 export class LaofusModule {}

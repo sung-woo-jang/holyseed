@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
-import { TossClientService, TossOrder } from './toss-client.service';
+import { TossClientService, TossOrder } from '@shared/toss/toss-client.service';
 import { applyFill, computeIndicators, decide, Decision, ImuState } from '../core/engine';
 import { checkWindow, UsMarketCalendar } from '../core/marketTime';
 import { LaofusEngineState } from '../entities/engine-state.entity';

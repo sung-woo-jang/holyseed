@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
-import { TossClientService, TossOrder } from './toss-client.service';
+import { TossClientService, TossOrder } from '@shared/toss/toss-client.service';
 import { LaofusEngineService } from './engine.service';
 import { LaofusSchedulerService } from './scheduler.service';
 import { LaofusEngineState } from '../entities/engine-state.entity';

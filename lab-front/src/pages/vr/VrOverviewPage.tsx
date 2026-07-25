@@ -17,6 +17,7 @@ import {
   AlertDialogTrigger,
 } from '@/shared/ui/alert-dialog'
 import { useRollover, useVrState } from '@/features/vr/api/hooks'
+import { VrEngineStatusBar } from '@/features/vr/ui/VrEngineStatusBar'
 
 const usd = (n: number | null | undefined) =>
   n === null || n === undefined ? '—' : `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -90,6 +91,10 @@ export default function VrOverviewPage() {
           )
         }
       />
+
+      <div className="mt-4">
+        <VrEngineStatusBar />
+      </div>
 
       {state && (
         <>

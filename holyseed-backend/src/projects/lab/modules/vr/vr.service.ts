@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VrSetting, VrCycle, VrFill, VrFillKind } from './entities';
 import { CreateFillDto, CreateCycleDto, RolloverCycleDto, UpdateSettingsDto } from './dto/request';
+import { computeBand, computeV2, nextMonday, fridayAfterTwoWeeks } from './core';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const round4 = (n: number) => Math.round(n * 10000) / 10000;
@@ -53,30 +54,21 @@ export class VrService {
     const avgPrice = lastFill?.avgPriceAfter ?? 0;
 
     const v = currentCycle?.vValue ?? 0;
-    const bandRatio = settings.bandPct / 100;
+    const { minBand, maxBand } = computeBand(v, settings.bandPct);
 
     return {
       settings,
       cycle: currentCycle,
-      nextRenewalDate: currentCycle ? this.nextMonday(currentCycle.endDate) : null,
+      nextRenewalDate: currentCycle ? nextMonday(currentCycle.endDate) : null,
       pool: round2(pool),
       quantity,
       avgPrice: round4(avgPrice),
       vValue: v,
-      minBand: round2(v * (1 - bandRatio)),
-      maxBand: round2(v * (1 + bandRatio)),
+      minBand,
+      maxBand,
       usablePool: round2(pool * (settings.poolLimitPct / 100)),
-      v2Preview: currentCycle ? round2(v + pool / settings.gFactor + settings.depositAmount) : null,
+      v2Preview: currentCycle ? computeV2(v, pool, settings.gFactor, settings.depositAmount) : null,
     };
-  }
-
-  /** 종료일 다음 월요일 */
-  private nextMonday(dateStr: string): string {
-    const d = new Date(`${dateStr}T00:00:00Z`);
-    const day = d.getUTCDay();
-    const add = (8 - day) % 7 || 7;
-    d.setUTCDate(d.getUTCDate() + add);
-    return d.toISOString().slice(0, 10);
   }
 
   // ==================== Fills ====================
@@ -222,17 +214,17 @@ export class VrService {
     const state = await this.getState();
     const deposit = dto.deposit ?? settings.depositAmount;
 
-    const v2 = round2(current.vValue + state.pool / settings.gFactor + deposit);
+    const v2 = computeV2(current.vValue, state.pool, settings.gFactor, deposit);
 
     current.poolEnd = state.pool;
     current.isClosed = true;
     await this.cycleRepo.save(current);
 
-    const startDate = dto.newStartDate ?? this.nextMonday(current.endDate);
+    const startDate = dto.newStartDate ?? nextMonday(current.endDate);
     const newCycle = this.cycleRepo.create({
       cycleNo: current.cycleNo + 1,
       startDate,
-      endDate: this.fridayAfterTwoWeeks(startDate),
+      endDate: fridayAfterTwoWeeks(startDate),
       vValue: v2,
       poolStart: round2(state.pool + deposit),
       depositAmount: deposit,
@@ -252,15 +244,5 @@ export class VrService {
     }
 
     return { closedCycle: current, newCycle: saved };
-  }
-
-  /** 시작일로부터 2주차 금요일 */
-  private fridayAfterTwoWeeks(startDateStr: string): string {
-    const d = new Date(`${startDateStr}T00:00:00Z`);
-    d.setUTCDate(d.getUTCDate() + 7); // 다음 주로
-    const day = d.getUTCDay();
-    const toFriday = (5 - day + 7) % 7;
-    d.setUTCDate(d.getUTCDate() + toFriday);
-    return d.toISOString().slice(0, 10);
   }
 }

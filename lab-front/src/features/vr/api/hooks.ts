@@ -1,10 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { axiosInstance, VR_API } from '@/shared/api'
 import { useStandardQuery, useStandardMutation } from '@/shared/hooks/custom-query'
-import type { CreateCycleInput, CreateFillInput, VrCycle, VrFill, VrState } from './types'
+import type { CreateCycleInput, CreateFillInput, VrCycle, VrFill, VrState, VrStatusDto } from './types'
 
 const KEYS = {
   state: ['vr', 'state'],
+  status: ['vr', 'status'],
   fills: ['vr', 'fills'],
   cycles: ['vr', 'cycles'],
 }
@@ -17,6 +18,15 @@ export function useVrState() {
   return useStandardQuery<VrState>({
     queryKey: KEYS.state,
     queryFn: async () => (await axiosInstance.get<VrState>(VR_API.STATE)).data,
+  })
+}
+
+/** 엔진 상태(mode/스케줄러/다음실행/활성세션/이벤트) — 10초 폴링 (VR은 매시 1회 판단이라 SSE 불필요) */
+export function useVrStatus() {
+  return useStandardQuery<VrStatusDto>({
+    queryKey: KEYS.status,
+    queryFn: async () => (await axiosInstance.get<VrStatusDto>(VR_API.STATUS)).data,
+    refetchInterval: 10_000,
   })
 }
 

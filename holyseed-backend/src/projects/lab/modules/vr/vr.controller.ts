@@ -1,7 +1,10 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, Sse } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Observable } from 'rxjs';
 import { VrService } from './vr.service';
-import { CreateFillDto, CreateCycleDto, RolloverCycleDto, UpdateSettingsDto } from './dto/request';
+import { VrEngineService } from './services/vr-engine.service';
+import { VrStatusService } from './services/vr-status.service';
+import { CreateFillDto, CreateCycleDto, RolloverCycleDto, UpdateSettingsDto, VrRunRequestDto } from './dto/request';
 
 const ok = (message: string, data: unknown) => ({
   success: true,
@@ -13,12 +16,71 @@ const ok = (message: string, data: unknown) => ({
 @ApiTags('Lab VR')
 @Controller('lab/vr')
 export class VrController {
-  constructor(private readonly vrService: VrService) {}
+  constructor(
+    private readonly vrService: VrService,
+    private readonly engine: VrEngineService,
+    private readonly status: VrStatusService,
+  ) {}
 
   @Get('state')
   @ApiOperation({ summary: 'VR 종합 상태 (V/밴드/Pool/보유/평단/파생값)' })
   async getState() {
     return ok('조회 성공', await this.vrService.getState());
+  }
+
+  @Get('status')
+  @ApiOperation({ summary: '엔진 상태 + 사이클 + 이벤트 + 활성 세션 + 시장 캘린더' })
+  async getStatus() {
+    return ok('조회 성공', await this.status.getStatus());
+  }
+
+  @Get('events')
+  @ApiOperation({ summary: '이벤트 페이지네이션 (cursor, level)' })
+  async getEvents(@Query('cursor') cursor = '0', @Query('level') level = 'all') {
+    return ok('조회 성공', await this.status.getEvents(Number(cursor) || 0, level));
+  }
+
+  @Post('run')
+  @ApiOperation({ summary: '엔진 수동 실행 (live=false면 dry-run, 시간창 항상 생략)' })
+  async run(@Body() dto: VrRunRequestDto) {
+    const lines = await this.engine.run({ live: dto.live === true, force: true });
+    return ok('실행 완료', { lines });
+  }
+
+  @Sse('stream')
+  stream(): Observable<MessageEvent> {
+    return new Observable((subscriber) => {
+      let lastSig = '';
+      let closed = false;
+      let lastBeat = Date.now();
+
+      const tick = async () => {
+        try {
+          const sig = await this.status.getChangeSignature();
+          if (sig !== lastSig) {
+            lastSig = sig;
+            const data = await this.status.getStatus();
+            subscriber.next({ type: 'status', data: JSON.stringify(data) } as MessageEvent);
+            lastBeat = Date.now();
+          } else if (Date.now() - lastBeat > 30_000) {
+            subscriber.next({
+              type: 'heartbeat',
+              data: JSON.stringify({ now: new Date().toISOString() }),
+            } as MessageEvent);
+            lastBeat = Date.now();
+          }
+        } catch {
+          /* 다음 틱에 재시도 */
+        }
+        if (!closed) timer = setTimeout(tick, 2000);
+      };
+
+      let timer = setTimeout(tick, 0);
+      return () => {
+        closed = true;
+        clearTimeout(timer);
+      };
+    });
   }
 
   @Get('fills')

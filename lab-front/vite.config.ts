@@ -9,15 +9,20 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@holyseed/laofus-core': path.resolve(__dirname, '../packages/laofus-core/src'),
+      '@holyseed/vr-core': path.resolve(__dirname, '../packages/vr-core/src'),
     },
   },
   server: {
     port: 4000,
     host: true,
     proxy: {
-      // laofus는 실주문 전용 프로세스(8001)로 — holyseed-backend(8000)는 LAOFUS_LIVE=false 조회 전용이라
+      // laofus/VR 둘 다 실주문 전용 프로세스(8001)로 — holyseed-backend(8000)는 LIVE=false 조회 전용이라
       // 여기로 보내면 대시보드에 스케줄/모드가 잘못 표시됨 (2026-07-24 확인된 문제)
       '/api/laofus': {
+        target: 'http://localhost:8001',
+        changeOrigin: true,
+      },
+      '/api/lab/vr': {
         target: 'http://localhost:8001',
         changeOrigin: true,
       },
@@ -33,6 +38,10 @@ export default defineConfig({
     allowedHosts: ['lab.holyseed.p-e.kr'],
     proxy: {
       '/api/laofus': {
+        target: 'http://localhost:8001',
+        changeOrigin: true,
+      },
+      '/api/lab/vr': {
         target: 'http://localhost:8001',
         changeOrigin: true,
       },

@@ -3,7 +3,9 @@ import { dirname, join } from 'path';
 import { Injectable, Logger } from '@nestjs/common';
 
 const BASE_URL = 'https://openapi.tossinvest.com';
-// client당 유효 토큰 1개(재발급 시 기존 무효화) + AUTH rate limit 때문에 프로세스 재시작 간 토큰 공유 필수
+// client당 유효 토큰 1개(재발급 시 기존 무효화) + AUTH rate limit 때문에 프로세스 재시작 간 토큰 공유 필수.
+// laofus + VR 엔진이 이 서비스를 같은 프로세스(laofus-backend pm2 앱)에서 DI 싱글톤으로 공유 —
+// 파일명은 laofus 시절 그대로 유지 (바꾸면 기존 운영 캐시가 끊겨 재발급 레이스 발생).
 const TOKEN_CACHE_PATH = join(process.cwd(), '.laofus-token-cache.json');
 
 export interface TossPrice {
@@ -232,6 +234,46 @@ export class TossClientService {
   async sellByQuantity(symbol: string, quantity: string, clientOrderId: string): Promise<TossOrder> {
     return this.request('POST', '/api/v1/orders', {
       body: { symbol, side: 'SELL', orderType: 'MARKET', quantity, clientOrderId },
+      withAccount: true,
+    });
+  }
+
+  /** 정수 수량 시장가 매수 (VR 전용 — 정규장 세션에서 사용) */
+  async buyByQuantity(symbol: string, quantity: string, clientOrderId: string): Promise<TossOrder> {
+    return this.request('POST', '/api/v1/orders', {
+      body: { symbol, side: 'BUY', orderType: 'MARKET', quantity, clientOrderId },
+      withAccount: true,
+    });
+  }
+
+  /** 정수 수량 시장가 매도 (VR 전용 — 소수점 매도용 sellByQuantity와 별개) */
+  async sellByQuantityMarket(symbol: string, quantity: string, clientOrderId: string): Promise<TossOrder> {
+    return this.request('POST', '/api/v1/orders', {
+      body: { symbol, side: 'SELL', orderType: 'MARKET', quantity, clientOrderId },
+      withAccount: true,
+    });
+  }
+
+  /** 정수 수량 지정가 매수 — timeInForce=DAY, 프리/애프터마켓 등 정규장 외 시간대용 */
+  async buyByLimit(symbol: string, quantity: string, limitPrice: string, clientOrderId: string): Promise<TossOrder> {
+    return this.request('POST', '/api/v1/orders', {
+      body: { symbol, side: 'BUY', orderType: 'LIMIT', quantity, price: limitPrice, timeInForce: 'DAY', clientOrderId },
+      withAccount: true,
+    });
+  }
+
+  /** 정수 수량 지정가 매도 — timeInForce=DAY, 프리/애프터마켓 등 정규장 외 시간대용 */
+  async sellByLimit(symbol: string, quantity: string, limitPrice: string, clientOrderId: string): Promise<TossOrder> {
+    return this.request('POST', '/api/v1/orders', {
+      body: {
+        symbol,
+        side: 'SELL',
+        orderType: 'LIMIT',
+        quantity,
+        price: limitPrice,
+        timeInForce: 'DAY',
+        clientOrderId,
+      },
       withAccount: true,
     });
   }

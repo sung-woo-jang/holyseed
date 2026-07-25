@@ -7,8 +7,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import axios, { AxiosInstance } from 'axios';
 import { z } from 'zod';
 import { LabUser } from '../users/entities/lab-user.entity';
-
-const round2 = (n: number) => Math.round(n * 100) / 100;
+import { buildBuyLadder, buildSellLadder } from '../vr/core';
 
 /**
  * lab 대시보드 API를 MCP 도구로 노출 (VR/근무일지/일정/저축/필름재단).
@@ -114,30 +113,19 @@ export class McpService {
         this.call(async (api) => {
           const state = this.unwrap(await api.get('/vr/state'));
           const n = steps ?? 15;
-          const buy: any[] = [];
-          let poolLeft = state.pool;
-          let used = 0;
-          for (let i = 1; i <= n; i++) {
-            const prevQty = state.quantity + i - 1;
-            if (prevQty <= 0) break;
-            const trigger = round2(state.minBand / prevQty);
-            poolLeft = round2(poolLeft - trigger);
-            used = round2(used + trigger);
-            buy.push({
-              체결후보유: prevQty + 1,
-              트리거가: trigger,
-              Pool잔액: poolLeft,
-              한도초과: used > state.usablePool,
-            });
-          }
-          const sell: any[] = [];
-          let poolAfter = state.pool;
-          for (let i = 1; i <= Math.min(n, state.quantity); i++) {
-            const prevQty = state.quantity - i + 1;
-            const trigger = round2(state.maxBand / prevQty);
-            poolAfter = round2(poolAfter + trigger);
-            sell.push({ 체결후보유: prevQty - 1, 트리거가: trigger, Pool잔액: poolAfter });
-          }
+          const buy = buildBuyLadder({
+            quantity: state.quantity,
+            minBand: state.minBand,
+            pool: state.pool,
+            usablePool: state.usablePool,
+            steps: n,
+          });
+          const sell = buildSellLadder({
+            quantity: state.quantity,
+            maxBand: state.maxBand,
+            pool: state.pool,
+            steps: n,
+          });
           return {
             기준: {
               보유수량: state.quantity,
@@ -146,8 +134,8 @@ export class McpService {
               Pool: state.pool,
               사용가능Pool: state.usablePool,
             },
-            매수표: buy,
-            매도표: sell,
+            매수표: buy.map((r) => ({ 체결후보유: r.qtyAfter, 트리거가: r.triggerPrice, Pool잔액: r.poolAfter, 한도초과: r.exceedsLimit })),
+            매도표: sell.map((r) => ({ 체결후보유: r.qtyAfter, 트리거가: r.triggerPrice, Pool잔액: r.poolAfter })),
           };
         }),
     );

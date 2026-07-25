@@ -1,9 +1,11 @@
 /**
- * 로컬(개발 맥) laofus 상시 가동용 pm2 설정 — 서버용 ecosystem.config.js와 별개.
+ * 로컬(개발 맥) laofus+VR 상시 가동용 pm2 설정 — 서버용 ecosystem.config.js와 별개.
  *
  * ⚠️ 절대 instances>1 / cluster 금지 — cron이 인스턴스마다 발화해 실주문이 중복된다.
- * ⚠️ LAOFUS_LIVE/SCHEDULER는 여기(pm2 env)에서만 켠다 — .env는 안전 기본값(false) 유지.
+ * ⚠️ LAOFUS_LIVE/SCHEDULER, VR_LIVE/SCHEDULER는 여기(pm2 env)에서만 켠다 — .env는 안전 기본값(false) 유지.
  *    (@nestjs/config는 이미 설정된 process.env를 덮어쓰지 않으므로 pm2 env가 우선)
+ * ⚠️ VR도 laofus와 같은 토스 계좌/API 앱을 쓰므로 반드시 이 프로세스 안에서 함께 돈다
+ *    (TossClientService를 같은 DI 싱글톤으로 공유 — 토큰 경합 원천 차단, 별도 pm2 앱 금지)
  *
  * 운용: ad-hoc `nest dev` 필요 시 `pm2 stop laofus-backend` 후 개발, 끝나면 start.
  */
@@ -22,6 +24,11 @@ module.exports = {
       env: {
         NODE_ENV: 'development', // 로컬 DB(.env) + synchronize:true
         PORT: '8001', // holyseed-backend(8000, 클러스터)와 분리 — 대시보드는 holyseed-backend의 /api/laofus/* 조회만 사용하므로 이 포트는 외부에서 쓸 일 없음
+        // ⚠️ 실거래 상태(계좌 잔고·보유수량과 대조되는 원장)가 걸려 있어 DB_DATABASE를 여기서 고정한다.
+        //    .env/.env.local의 DB_DATABASE는 다른 로컬 개발용으로 자유롭게 바뀔 수 있는데(2026-07-25 실제로
+        //    holyseed_dev로 바뀌어 있어서 이 프로세스가 며칠 지난 스냅샷 DB로 뜰 뻔함), 그게 이 라이브
+        //    트레이딩 프로세스에 영향을 주면 안 된다 — 항상 실계좌와 일치하는 'holyseed'만 사용.
+        DB_DATABASE: 'holyseed',
         LAOFUS_LIVE: 'true',
         LAOFUS_SCHEDULER: 'true',
         // 매매 시각: 마감 95분 전 (2026-07-21 토스 앱 확인 — 소수점 주문가능시간이
@@ -31,6 +38,12 @@ module.exports = {
         LAOFUS_RUN_CRON_2: '25 4 * * 2-6', // EST: 마감 06:00 KST → 04:25
         LAOFUS_WINDOW_MIN: '90',
         LAOFUS_WINDOW_MAX: '105',
+        // VR(TQQQ 밸류 리밸런싱) — laofus와 같은 토스 계좌/API 앱을 쓰므로 토큰 경합을 피하려고
+        // 같은 프로세스(이 laofus-backend 앱)에서 함께 돈다. 절대 별도 pm2 앱으로 분리하지 말 것.
+        VR_LIVE: 'true',
+        VR_SCHEDULER: 'true',
+        VR_RUN_CRON: '5 * * * *', // 매시 5분, 프리+정규+애프터마켓 전부
+        VR_EXTENDED_LIMIT_BUFFER_PCT: '0.3',
       },
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     },

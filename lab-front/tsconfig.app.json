@@ -19,8 +19,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@holyseed/laofus-core": ["../packages/laofus-core/src/index.ts"]
+      "@holyseed/laofus-core": ["../packages/laofus-core/src/index.ts"],
+      "@holyseed/vr-core": ["../packages/vr-core/src/index.ts"]
     }
   },
-  "include": ["src", "../packages/laofus-core/src"]
+  "include": ["src", "../packages/laofus-core/src", "../packages/vr-core/src"]
 }

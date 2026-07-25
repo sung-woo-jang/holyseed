@@ -13,6 +13,8 @@ export const AUTH_API = {
 // ===== VR API =====
 export const VR_API = {
   STATE: '/vr/state',
+  STATUS: '/vr/status',
+  RUN: '/vr/run',
   FILLS: '/vr/fills',
   FILL_DELETE: (id: number | string) => `/vr/fills/${id}/delete`,
   CYCLES: '/vr/cycles',

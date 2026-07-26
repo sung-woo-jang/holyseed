@@ -38,7 +38,7 @@ export class McpService {
     if (!user) throw new Error(`MCP 계정(${email})을 찾을 수 없습니다. AD_MCP_USER_EMAIL을 확인하세요.`);
 
     const token = this.jwtService.sign(
-      { sub: user.id, email: user.email },
+      { sub: user.id, email: user.email, aud: 'ad' },
       { secret: this.configService.get('jwt.secret'), expiresIn: '365d' },
     );
 

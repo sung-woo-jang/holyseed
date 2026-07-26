@@ -38,7 +38,7 @@ export class McpService {
     if (!user) throw new Error(`MCP 계정(${email})을 찾을 수 없습니다. LAB_MCP_USER_EMAIL을 확인하세요.`);
 
     const token = this.jwtService.sign(
-      { sub: user.id, email: user.email },
+      { sub: user.id, email: user.email, aud: 'lab' },
       { secret: this.configService.get('jwt.secret'), expiresIn: '365d' },
     );
 
@@ -134,7 +134,12 @@ export class McpService {
               Pool: state.pool,
               사용가능Pool: state.usablePool,
             },
-            매수표: buy.map((r) => ({ 체결후보유: r.qtyAfter, 트리거가: r.triggerPrice, Pool잔액: r.poolAfter, 한도초과: r.exceedsLimit })),
+            매수표: buy.map((r) => ({
+              체결후보유: r.qtyAfter,
+              트리거가: r.triggerPrice,
+              Pool잔액: r.poolAfter,
+              한도초과: r.exceedsLimit,
+            })),
             매도표: sell.map((r) => ({ 체결후보유: r.qtyAfter, 트리거가: r.triggerPrice, Pool잔액: r.poolAfter })),
           };
         }),

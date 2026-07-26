@@ -194,11 +194,10 @@ export class VrEngineService {
           `최소밴드=$${state.minBand}, 최대밴드=$${state.maxBand} | 현재가=$${price}`,
       );
 
-      const decision = decide(
-        { quantity: state.quantity, vValue: state.vValue, pool: state.pool },
-        price,
-        { bandPct: settings.bandPct, poolLimitPct: settings.poolLimitPct },
-      );
+      const decision = decide({ quantity: state.quantity, vValue: state.vValue, pool: state.pool }, price, {
+        bandPct: settings.bandPct,
+        poolLimitPct: settings.poolLimitPct,
+      });
 
       if (decision.action === 'NONE') {
         await this.event('info', `판단: 주문 없음 — ${decision.reason} (현재가 $${price})`, runId);
@@ -244,7 +243,8 @@ export class VrEngineService {
             : await this.toss.sellByQuantityMarket(SYMBOL, String(decision.quantity), clientOrderId);
       } else {
         // 프리/애프터마켓 — marketable limit (현재가 대비 버퍼만큼 유리하게 걸어 사실상 즉시체결 유도)
-        const limitPrice = decision.action === 'BUY' ? (price * (1 + bufferPct)).toFixed(2) : (price * (1 - bufferPct)).toFixed(2);
+        const limitPrice =
+          decision.action === 'BUY' ? (price * (1 + bufferPct)).toFixed(2) : (price * (1 - bufferPct)).toFixed(2);
         placed =
           decision.action === 'BUY'
             ? await this.toss.buyByLimit(SYMBOL, String(decision.quantity), limitPrice, clientOrderId)

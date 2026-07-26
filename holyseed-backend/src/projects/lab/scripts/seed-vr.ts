@@ -8,7 +8,8 @@
  * 실행: DB_DATABASE=holyseed yarn workspace @holyseed/backend lab:vr:seed
  */
 import { NestFactory } from '@nestjs/core';
-import { DataSource } from 'typeorm';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { AppModule } from '../../../app.module';
 import { VrCycle, VrFill, VrFillKind, VrSetting } from '../modules/vr/entities';
 
@@ -134,21 +135,24 @@ const CYCLES = [
 
 async function main() {
   const app = await NestFactory.createApplicationContext(AppModule, { logger: ['error', 'warn'] });
-  const ds = app.get(DataSource);
+  const fillRepo = app.get<Repository<VrFill>>(getRepositoryToken(VrFill));
+  const cycleRepo = app.get<Repository<VrCycle>>(getRepositoryToken(VrCycle));
+  const settingRepo = app.get<Repository<VrSetting>>(getRepositoryToken(VrSetting));
 
-  await ds.getRepository(VrFill).createQueryBuilder().delete().execute();
-  await ds.getRepository(VrCycle).createQueryBuilder().delete().execute();
+  await fillRepo.createQueryBuilder().delete().execute();
+  await cycleRepo.createQueryBuilder().delete().execute();
 
   // 설정값 확인/보정 (기존 default row가 이미 있을 수 있음)
-  let settings = await ds.getRepository(VrSetting).findOne({ where: {} });
-  if (!settings) settings = await ds.getRepository(VrSetting).save(ds.getRepository(VrSetting).create({}));
-  await ds
-    .getRepository(VrSetting)
-    .update({ id: settings.id }, { symbol: 'TQQQ', gFactor: 10, bandPct: 15, depositAmount: 200, poolLimitPct: 75 });
+  let settings = await settingRepo.findOne({ where: {} });
+  if (!settings) settings = await settingRepo.save(settingRepo.create({}));
+  await settingRepo.update(
+    { id: settings.id },
+    { symbol: 'TQQQ', gFactor: 10, bandPct: 15, depositAmount: 200, poolLimitPct: 75 },
+  );
 
   for (const c of CYCLES) {
-    await ds.getRepository(VrCycle).save(
-      ds.getRepository(VrCycle).create({
+    await cycleRepo.save(
+      cycleRepo.create({
         cycleNo: c.cycleNo,
         startDate: c.startDate,
         endDate: c.endDate,
@@ -168,8 +172,8 @@ async function main() {
     if (f.kind === VrFillKind.DEPOSIT) {
       const deposit = round2(f.price);
       pool = round2(pool + deposit);
-      await ds.getRepository(VrFill).save(
-        ds.getRepository(VrFill).create({
+      await fillRepo.save(
+        fillRepo.create({
           fillDate: f.date,
           kind: f.kind,
           price: f.price,
@@ -191,8 +195,8 @@ async function main() {
     avgPrice = f.snapAvg ?? round4((avgPrice * (quantity - f.quantity) + amount) / quantity);
     pool = round2(pool - amount);
 
-    await ds.getRepository(VrFill).save(
-      ds.getRepository(VrFill).create({
+    await fillRepo.save(
+      fillRepo.create({
         fillDate: f.date,
         kind: f.kind,
         price: f.price,

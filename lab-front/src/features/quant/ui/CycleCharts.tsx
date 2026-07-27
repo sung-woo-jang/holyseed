@@ -1,5 +1,5 @@
-import type { TradeDto } from '@/features/laofus/lib/types'
-import { n, kstDateOnly } from '@/features/laofus/lib/types'
+import type { TradeDto } from '@/features/quant/lib/types'
+import { n, kstDateOnly } from '@/features/quant/lib/types'
 import { useContainerWidth } from '@/shared/hooks/use-container-width'
 
 /** T값 추이 스텝차트 */

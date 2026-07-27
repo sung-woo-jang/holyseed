@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { LogOut, FlaskConical } from 'lucide-react'
-import { SECTIONS, findActiveSection } from '@/app/nav/sections'
+import { SECTIONS, findActiveSection, sectionPages } from '@/app/nav/sections'
 import { cn } from '@/shared/lib/utils'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/ui/tooltip'
 import { Button } from '@/shared/ui/button'
@@ -31,7 +31,7 @@ export default function PrimarySidebar({ className }: { className?: string }) {
             <Tooltip key={section.id}>
               <TooltipTrigger asChild>
                 <Link
-                  to={section.pages[0]?.path ?? section.basePath}
+                  to={sectionPages(section)[0]?.path ?? section.basePaths[0]}
                   className={cn(
                     'flex size-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
                     isActive && 'bg-accent text-accent-foreground'

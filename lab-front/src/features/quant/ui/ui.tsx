@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useStatusContext } from '@/features/laofus/lib/StatusContext'
-import type { StatusDto } from '@/features/laofus/lib/types'
-import { kst } from '@/features/laofus/lib/types'
+import { useStatusContext } from '@/features/quant/lib/StatusContext'
+import type { StatusDto } from '@/features/quant/lib/types'
+import { kst } from '@/features/quant/lib/types'
 
 export function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (

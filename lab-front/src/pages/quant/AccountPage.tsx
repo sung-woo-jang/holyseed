@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Tile } from '@/features/laofus/ui/ui'
-import type { AccountDto, TossOrderDto } from '@/features/laofus/lib/types'
-import { api, krw, kst, n, usd } from '@/features/laofus/lib/types'
-import { useStatus } from '@/features/laofus/lib/useStatus'
+import { Tile } from '@/features/quant/ui/ui'
+import type { AccountDto, TossOrderDto } from '@/features/quant/lib/types'
+import { api, krw, kst, n, usd } from '@/features/quant/lib/types'
+import { useStatus } from '@/features/quant/lib/useStatus'
 
 /** orderId → 해당 무매 거래 링크 정보 */
 type TradeLinkMap = Map<string, { cycleNo: number; seq: number }>
@@ -207,7 +207,7 @@ function OrderTable({ rows, tradeLinks }: { rows: TossOrderDto[]; tradeLinks: Tr
                 <td>{o.execution.filledAmount ? usd(n(o.execution.filledAmount)) : '—'}</td>
                 <td className="l">
                   {link ? (
-                    <Link to={`/laofus/cycles/${link.cycleNo}/trades/${link.seq}`} style={{ fontSize: 12 }}>
+                    <Link to={`/quant/cycles/${link.cycleNo}/trades/${link.seq}`} style={{ fontSize: 12 }}>
                       {link.cycleNo}-{link.seq}차 →
                     </Link>
                   ) : (

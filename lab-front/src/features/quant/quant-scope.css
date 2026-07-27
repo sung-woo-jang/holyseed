@@ -1,7 +1,7 @@
-/* laofus-front globals.css를 .laofus-scope 하위로 스코핑한 버전
+/* laofus-front globals.css를 .quant-scope 하위로 스코핑한 버전
    — 전역 태그 리셋이 shadcn(button/table)과 충돌하지 않도록 격리 */
 
-.laofus-scope {
+.quant-scope {
   color-scheme: light;
   --page: #f9f9f7;
   --surface-1: #fcfcfb;
@@ -19,7 +19,7 @@
   --delta-good: #006300;
 }
 @media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme='light'])) .laofus-scope {
+  :root:where(:not([data-theme='light'])) .quant-scope {
     color-scheme: dark;
     --page: #0d0d0d;
     --surface-1: #1a1a19;
@@ -34,7 +34,7 @@
     --delta-good: #0ca30c;
   }
 }
-:root[data-theme='dark'] .laofus-scope {
+:root[data-theme='dark'] .quant-scope {
   color-scheme: dark;
   --page: #0d0d0d;
   --surface-1: #1a1a19;
@@ -49,14 +49,14 @@
   --delta-good: #0ca30c;
 }
 
-.laofus-scope,
-.laofus-scope * {
+.quant-scope,
+.quant-scope * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-.laofus-scope {
+.quant-scope {
   min-height: 100%;
   background: var(--page);
   color: var(--text-primary);
@@ -65,20 +65,20 @@
   line-height: 1.5;
 }
 
-.laofus-scope .wrap {
+.quant-scope .wrap {
   max-width: 1080px;
   margin: 0 auto;
   padding: 24px 20px 80px;
 }
 
-.laofus-scope .card {
+.quant-scope .card {
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 16px;
 }
 
-.laofus-scope button {
+.quant-scope button {
   font: inherit;
   cursor: pointer;
   border-radius: 8px;
@@ -87,25 +87,25 @@
   color: var(--text-primary);
   padding: 8px 14px;
 }
-.laofus-scope button:hover {
+.quant-scope button:hover {
   border-color: var(--baseline);
 }
-.laofus-scope button:disabled {
+.quant-scope button:disabled {
   opacity: 0.5;
   cursor: default;
 }
-.laofus-scope button.danger {
+.quant-scope button.danger {
   border-color: var(--status-critical);
   color: var(--status-critical);
   font-weight: 600;
 }
 
-.laofus-scope table {
+.quant-scope table {
   width: 100%;
   border-collapse: collapse;
   font-variant-numeric: tabular-nums;
 }
-.laofus-scope th {
+.quant-scope th {
   text-align: right;
   color: var(--text-muted);
   font-weight: 500;
@@ -114,16 +114,16 @@
   border-bottom: 1px solid var(--grid);
   white-space: nowrap;
 }
-.laofus-scope td {
+.quant-scope td {
   text-align: right;
   padding: 6px 8px;
   border-bottom: 1px solid var(--grid);
   white-space: nowrap;
 }
-.laofus-scope th:first-child,
-.laofus-scope td:first-child,
-.laofus-scope th.l,
-.laofus-scope td.l {
+.quant-scope th:first-child,
+.quant-scope td:first-child,
+.quant-scope th.l,
+.quant-scope td.l {
   text-align: left;
 }
 
@@ -136,6 +136,6 @@
     opacity: 0.35;
   }
 }
-.laofus-scope .pulse {
+.quant-scope .pulse {
   animation: laofus-pulse 1.2s ease-in-out infinite;
 }

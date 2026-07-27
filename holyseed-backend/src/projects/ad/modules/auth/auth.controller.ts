@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Res } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Post, Query, Res } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
@@ -11,6 +11,8 @@ import { LoginDto } from './dto/request/login.dto';
 @ApiTags('AD 인증')
 @Controller('ad/auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
@@ -62,7 +64,8 @@ export class AuthController {
       const { accessToken, refreshToken } = await this.authService.oauthLogin(provider, code, state ?? '');
       // 토큰은 fragment로 전달 — 서버 로그/리퍼러에 남지 않음
       return res.redirect(`${front}/auth/callback#accessToken=${accessToken}&refreshToken=${refreshToken}`);
-    } catch {
+    } catch (err) {
+      this.logger.error(`OAuth 콜백 처리 실패 (${provider}): ${err instanceof Error ? err.message : err}`);
       return res.redirect(`${front}/login?error=oauth`);
     }
   }

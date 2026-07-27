@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -19,6 +19,7 @@ interface OAuthProfile {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private readonly googleClientId: string;
   private readonly googleClientSecret: string;
   /** OAuth redirect_uri 베이스 — 기본은 프론트 dev 프록시 경유 */
@@ -55,7 +56,8 @@ export class AuthService {
     try {
       const payload = this.jwtService.verify(state, { secret: this.configService.get('jwt.secret') });
       if (payload.purpose !== 'oauth-state' || payload.p !== provider) throw new Error('mismatch');
-    } catch {
+    } catch (err) {
+      this.logger.warn(`OAuth state 검증 실패 (${provider}): ${err instanceof Error ? err.message : err}`);
       throw new UnauthorizedException('유효하지 않은 OAuth state입니다.');
     }
   }
@@ -102,7 +104,9 @@ export class AuthService {
         email: profile.email?.toLowerCase() ?? null,
         name: profile.name ?? null,
       };
-    } catch {
+    } catch (err) {
+      const detail = axios.isAxiosError(err) ? JSON.stringify(err.response?.data ?? err.message) : String(err);
+      this.logger.error(`Google 프로필 조회 실패: ${detail}`);
       throw new UnauthorizedException('Google 로그인에 실패했습니다.');
     }
   }

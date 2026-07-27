@@ -15,20 +15,29 @@ export default function SecondarySidebar({ className }: { className?: string }) 
         <span className="text-sm font-semibold">{section.label}</span>
       </div>
       <nav className="flex flex-col gap-1 p-2">
-        {section.pages.map((page) => (
-          <NavLink
-            key={page.path}
-            to={page.path}
-            end={page.end}
-            className={({ isActive }) =>
-              cn(
-                'rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
-                isActive && 'bg-accent font-medium text-accent-foreground'
-              )
-            }
-          >
-            {page.label}
-          </NavLink>
+        {section.groups.map((group, i) => (
+          <div key={group.label ?? i} className={cn('flex flex-col gap-1', i > 0 && 'mt-3')}>
+            {section.groups.length > 1 && group.label && (
+              <div className="px-3 pb-1 pt-1 text-xs font-semibold text-muted-foreground/70">
+                {group.label}
+              </div>
+            )}
+            {group.pages.map((page) => (
+              <NavLink
+                key={page.path}
+                to={page.path}
+                end={page.end}
+                className={({ isActive }) =>
+                  cn(
+                    'rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
+                    isActive && 'bg-accent font-medium text-accent-foreground'
+                  )
+                }
+              >
+                {page.label}
+              </NavLink>
+            ))}
+          </div>
         ))}
       </nav>
     </aside>

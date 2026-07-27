@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { computeIndicators } from '@holyseed/laofus-core'
-import type { CandleDto, TradeDto } from '@/features/laofus/lib/types'
-import { api, n, usd, kstDateOnly } from '@/features/laofus/lib/types'
-import { useStatus, usePrice } from '@/features/laofus/lib/useStatus'
+import type { CandleDto, TradeDto } from '@/features/quant/lib/types'
+import { api, n, usd, kstDateOnly } from '@/features/quant/lib/types'
+import { useStatus, usePrice } from '@/features/quant/lib/useStatus'
 import { useContainerWidth } from '@/shared/hooks/use-container-width'
 
 type Range = '1m' | '3m' | 'all' | 'intraday'

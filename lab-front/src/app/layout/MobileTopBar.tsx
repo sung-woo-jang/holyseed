@@ -1,6 +1,6 @@
 import { useLocation } from 'react-router-dom'
 import { Menu } from 'lucide-react'
-import { findActiveSection } from '@/app/nav/sections'
+import { findActiveSection, sectionPages } from '@/app/nav/sections'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 
@@ -13,7 +13,7 @@ export default function MobileTopBar({
 }) {
   const location = useLocation()
   const section = findActiveSection(location.pathname)
-  const page = section?.pages.find((p) => p.path === location.pathname)
+  const page = section ? sectionPages(section).find((p) => p.path === location.pathname) : undefined
   const title = section ? (page ? `${section.label} · ${page.label}` : section.label) : ''
 
   return (

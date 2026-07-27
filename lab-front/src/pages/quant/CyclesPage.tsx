@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
-import { n, usd, kstDateOnly } from '@/features/laofus/lib/types'
-import { useStatus } from '@/features/laofus/lib/useStatus'
+import { n, usd, kstDateOnly } from '@/features/quant/lib/types'
+import { useStatus } from '@/features/quant/lib/useStatus'
 
 export default function CyclesPage() {
   const { status } = useStatus()
@@ -25,7 +25,7 @@ export default function CyclesPage() {
         return (
           <Link
             key={c.id}
-            to={`/laofus/cycles/${c.cycleNo}`}
+            to={`/quant/cycles/${c.cycleNo}`}
             style={{ display: 'block', textDecoration: 'none', color: 'inherit', marginBottom: 12 }}
           >
             <div className="card" style={{ cursor: 'pointer' }}>

@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { applyFill, computeIndicators, decide } from '@holyseed/laofus-core'
 import type { ImuState } from '@holyseed/laofus-core'
-import { EngineStatusBar, ErrorBanner, Tile } from '@/features/laofus/ui/ui'
-import { kst, n, usd } from '@/features/laofus/lib/types'
-import { usePrice, useStatus } from '@/features/laofus/lib/useStatus'
+import { EngineStatusBar, ErrorBanner, Tile } from '@/features/quant/ui/ui'
+import { kst, n, usd } from '@/features/quant/lib/types'
+import { usePrice, useStatus } from '@/features/quant/lib/useStatus'
 
 /** 판단 구간 밴드 — 가격축에 매수/매도 구간 + 현재가/시뮬 마커 */
 function DecisionBand({ s, price, simPrice }: { s: ImuState; price: number | null; simPrice: number }) {
@@ -264,7 +264,7 @@ export default function HomePage() {
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 8 }}>
           <h2 style={{ fontSize: 15 }}>최근 이벤트</h2>
-          <Link to="/laofus/system" style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--series-1)' }}>
+          <Link to="/quant/system" style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--series-1)' }}>
             전체 보기 →
           </Link>
         </div>

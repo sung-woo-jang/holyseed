@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { TradeDto } from '@/features/laofus/lib/types'
-import { n, usd, kstDateOnly } from '@/features/laofus/lib/types'
+import type { TradeDto } from '@/features/quant/lib/types'
+import { n, usd, kstDateOnly } from '@/features/quant/lib/types'
 import { useContainerWidth } from '@/shared/hooks/use-container-width'
 
 /** 사이클 내 체결가 vs 평단 라인차트 (2시리즈, hover 툴팁) */

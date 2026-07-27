@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { computeIndicators } from '@holyseed/laofus-core'
 import type { ImuState } from '@holyseed/laofus-core'
-import { Tile } from '@/features/laofus/ui/ui'
-import type { TossOrderDto } from '@/features/laofus/lib/types'
-import { api, kst, kstDateOnly, n, usd } from '@/features/laofus/lib/types'
-import { useStatus } from '@/features/laofus/lib/useStatus'
+import { Tile } from '@/features/quant/ui/ui'
+import type { TossOrderDto } from '@/features/quant/lib/types'
+import { api, kst, kstDateOnly, n, usd } from '@/features/quant/lib/types'
+import { useStatus } from '@/features/quant/lib/useStatus'
 
 export default function TradeDetailPage() {
   const { status } = useStatus()
@@ -38,7 +38,7 @@ export default function TradeDetailPage() {
     return (
       <main className="wrap">
         <p style={{ color: 'var(--text-muted)' }}>
-          거래 없음 — <Link to="/laofus/cycles">사이클 목록</Link>
+          거래 없음 — <Link to="/quant/cycles">사이클 목록</Link>
         </p>
       </main>
     )
@@ -69,7 +69,7 @@ export default function TradeDetailPage() {
   return (
     <main className="wrap">
       <div style={{ display: 'flex', gap: 12, alignItems: 'baseline', marginBottom: 12, flexWrap: 'wrap' }}>
-        <Link to={`/laofus/cycles/${cycle.cycleNo}`} style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+        <Link to={`/quant/cycles/${cycle.cycleNo}`} style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
           ← {cycle.cycleNo}차 사이클
         </Link>
         <h1 style={{ fontSize: 18 }}>

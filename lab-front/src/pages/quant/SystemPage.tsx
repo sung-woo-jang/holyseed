@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { EngineStatusBar, ErrorBanner } from '@/features/laofus/ui/ui'
-import type { EventDto } from '@/features/laofus/lib/types'
-import { api, kst } from '@/features/laofus/lib/types'
-import { useStatus } from '@/features/laofus/lib/useStatus'
+import { EngineStatusBar, ErrorBanner } from '@/features/quant/ui/ui'
+import type { EventDto } from '@/features/quant/lib/types'
+import { api, kst } from '@/features/quant/lib/types'
+import { useStatus } from '@/features/quant/lib/useStatus'
 
 type EventGroup = { key: string; runId: string | null; events: EventDto[] }
 

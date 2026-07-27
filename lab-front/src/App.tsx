@@ -3,14 +3,14 @@ import AuthBootstrap from '@/components/AuthBootstrap'
 import AppLayout from '@/app/layout/AppLayout'
 import LoginPage from '@/pages/auth/LoginPage'
 import { FilmCuttingPage, FilmCuttingFormPage } from '@/pages/film-cutting'
-import LaofusLayout from '@/pages/laofus/LaofusLayout'
-import HomePage from '@/pages/laofus/HomePage'
-import ChartPage from '@/pages/laofus/ChartPage'
-import CyclesPage from '@/pages/laofus/CyclesPage'
-import CycleDetailPage from '@/pages/laofus/CycleDetailPage'
-import TradeDetailPage from '@/pages/laofus/TradeDetailPage'
-import AccountPage from '@/pages/laofus/AccountPage'
-import SystemPage from '@/pages/laofus/SystemPage'
+import QuantLayout from '@/pages/quant/QuantLayout'
+import HomePage from '@/pages/quant/HomePage'
+import ChartPage from '@/pages/quant/ChartPage'
+import CyclesPage from '@/pages/quant/CyclesPage'
+import CycleDetailPage from '@/pages/quant/CycleDetailPage'
+import TradeDetailPage from '@/pages/quant/TradeDetailPage'
+import AccountPage from '@/pages/quant/AccountPage'
+import SystemPage from '@/pages/quant/SystemPage'
 import VrOverviewPage from '@/pages/vr/VrOverviewPage'
 import VrLadderPage from '@/pages/vr/VrLadderPage'
 import VrFillsPage from '@/pages/vr/VrFillsPage'
@@ -24,16 +24,16 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route element={<AppLayout />}>
-          <Route path="/" element={<Navigate to="/laofus" replace />} />
+          <Route path="/" element={<Navigate to="/quant" replace />} />
 
-          <Route element={<LaofusLayout />}>
-            <Route path="/laofus" element={<HomePage />} />
-            <Route path="/laofus/chart" element={<ChartPage />} />
-            <Route path="/laofus/cycles" element={<CyclesPage />} />
-            <Route path="/laofus/cycles/:cycleNo" element={<CycleDetailPage />} />
-            <Route path="/laofus/cycles/:cycleNo/trades/:seq" element={<TradeDetailPage />} />
-            <Route path="/laofus/account" element={<AccountPage />} />
-            <Route path="/laofus/system" element={<SystemPage />} />
+          <Route element={<QuantLayout />}>
+            <Route path="/quant" element={<HomePage />} />
+            <Route path="/quant/chart" element={<ChartPage />} />
+            <Route path="/quant/cycles" element={<CyclesPage />} />
+            <Route path="/quant/cycles/:cycleNo" element={<CycleDetailPage />} />
+            <Route path="/quant/cycles/:cycleNo/trades/:seq" element={<TradeDetailPage />} />
+            <Route path="/quant/account" element={<AccountPage />} />
+            <Route path="/quant/system" element={<SystemPage />} />
           </Route>
 
           <Route path="/vr" element={<VrOverviewPage />} />

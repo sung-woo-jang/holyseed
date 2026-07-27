@@ -78,22 +78,31 @@ export default function MobileNavDrawer({
                     />
                   </button>
                   {isExpanded && (
-                    <div className="ml-4 mt-1 flex flex-col gap-1 border-l pl-3">
-                      {section.pages.map((page) => (
-                        <NavLink
-                          key={page.path}
-                          to={page.path}
-                          end={page.end}
-                          onClick={handleNavLinkClick}
-                          className={({ isActive }) =>
-                            cn(
-                              'rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
-                              isActive && 'bg-accent font-medium text-accent-foreground'
-                            )
-                          }
-                        >
-                          {page.label}
-                        </NavLink>
+                    <div className="ml-4 mt-1 border-l pl-3">
+                      {section.groups.map((group, i) => (
+                        <div key={group.label ?? i} className={cn('flex flex-col gap-1', i > 0 && 'mt-2')}>
+                          {section.groups.length > 1 && group.label && (
+                            <div className="px-3 pb-1 pt-1 text-xs font-semibold text-muted-foreground/70">
+                              {group.label}
+                            </div>
+                          )}
+                          {group.pages.map((page) => (
+                            <NavLink
+                              key={page.path}
+                              to={page.path}
+                              end={page.end}
+                              onClick={handleNavLinkClick}
+                              className={({ isActive }) =>
+                                cn(
+                                  'rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
+                                  isActive && 'bg-accent font-medium text-accent-foreground'
+                                )
+                              }
+                            >
+                              {page.label}
+                            </NavLink>
+                          ))}
+                        </div>
                       ))}
                     </div>
                   )}

@@ -1,9 +1,9 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { CycleChart } from '@/features/laofus/ui/CycleChart'
-import { CashChart, TChart } from '@/features/laofus/ui/CycleCharts'
-import { Tile } from '@/features/laofus/ui/ui'
-import { n, usd, kstDateOnly } from '@/features/laofus/lib/types'
-import { useStatus } from '@/features/laofus/lib/useStatus'
+import { CycleChart } from '@/features/quant/ui/CycleChart'
+import { CashChart, TChart } from '@/features/quant/ui/CycleCharts'
+import { Tile } from '@/features/quant/ui/ui'
+import { n, usd, kstDateOnly } from '@/features/quant/lib/types'
+import { useStatus } from '@/features/quant/lib/useStatus'
 
 export default function CycleDetailPage() {
   const { status } = useStatus()
@@ -22,7 +22,7 @@ export default function CycleDetailPage() {
     return (
       <main className="wrap">
         <p style={{ color: 'var(--text-muted)' }}>
-          {cycleNo}차 사이클 없음 — <Link to="/laofus/cycles">사이클 목록</Link>
+          {cycleNo}차 사이클 없음 — <Link to="/quant/cycles">사이클 목록</Link>
         </p>
       </main>
     )
@@ -37,7 +37,7 @@ export default function CycleDetailPage() {
   return (
     <main className="wrap">
       <div style={{ display: 'flex', gap: 12, alignItems: 'baseline', marginBottom: 12, flexWrap: 'wrap' }}>
-        <Link to="/laofus/cycles" style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+        <Link to="/quant/cycles" style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
           ← 사이클 목록
         </Link>
         <h1 style={{ fontSize: 18 }}>{c.cycleNo}차 사이클</h1>
@@ -106,7 +106,7 @@ export default function CycleDetailPage() {
                   key={t.id}
                   title={t.note ?? undefined}
                   style={{ cursor: 'pointer' }}
-                  onClick={() => navigate(`/laofus/cycles/${c.cycleNo}/trades/${t.seq}`)}
+                  onClick={() => navigate(`/quant/cycles/${c.cycleNo}/trades/${t.seq}`)}
                 >
                   <td className="l">{t.seq}</td>
                   <td className="l">{kstDateOnly(t.date)}</td>

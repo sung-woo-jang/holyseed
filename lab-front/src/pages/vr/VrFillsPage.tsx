@@ -40,6 +40,13 @@ function FillDialog() {
   const [quantity, setQuantity] = useState('')
   const createFill = useCreateFill()
 
+  const isDeposit = kind === 'DEPOSIT'
+
+  function handleKindChange(v: VrFillKind) {
+    setKind(v)
+    if (v === 'DEPOSIT') setQuantity('0')
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     try {
@@ -47,7 +54,7 @@ function FillDialog() {
         fillDate,
         kind,
         price: parseFloat(price),
-        quantity: parseInt(quantity, 10),
+        quantity: isDeposit ? 0 : parseInt(quantity, 10),
       })
       toast.success('체결이 등록되었습니다. Pool·보유·평단이 갱신됐습니다.')
       setOpen(false)
@@ -76,7 +83,7 @@ function FillDialog() {
           </div>
           <div className="space-y-2">
             <Label>구분</Label>
-            <Select value={kind} onValueChange={(v) => setKind(v as VrFillKind)}>
+            <Select value={kind} onValueChange={(v) => handleKindChange(v as VrFillKind)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -84,17 +91,25 @@ function FillDialog() {
                 <SelectItem value="BUY">매수</SelectItem>
                 <SelectItem value="SELL">매도</SelectItem>
                 <SelectItem value="INITIAL_BUY">초기매수</SelectItem>
+                <SelectItem value="DEPOSIT">적립</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>체결가 ($)</Label>
+              <Label>{isDeposit ? '적립금액 ($)' : '체결가 ($)'}</Label>
               <Input type="number" step="0.0001" min="0" value={price} onChange={(e) => setPrice(e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label>수량</Label>
-              <Input type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} required />
+              <Input
+                type="number"
+                min="1"
+                value={isDeposit ? '0' : quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                disabled={isDeposit}
+                required={!isDeposit}
+              />
             </div>
           </div>
           <DialogFooter>

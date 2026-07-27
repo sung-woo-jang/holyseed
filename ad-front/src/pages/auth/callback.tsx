@@ -36,7 +36,8 @@ export default function OAuthCallbackPage() {
         // setAuth를 마지막에 — 인증 플래그가 서기 전에 가구 목록까지 채워 온보딩 오판 방지
         setAuth({ accessToken, refreshToken }, res.data ?? res);
         navigate('/', { replace: true });
-      } catch {
+      } catch (err) {
+        console.error('[OAuthCallback] 로그인 완료 처리 실패:', err);
         navigate('/login?error=oauth', { replace: true });
       }
     })();

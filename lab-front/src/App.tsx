@@ -12,8 +12,11 @@ import TradeDetailPage from '@/pages/quant/TradeDetailPage'
 import AccountPage from '@/pages/quant/AccountPage'
 import SystemPage from '@/pages/quant/SystemPage'
 import VrOverviewPage from '@/pages/vr/VrOverviewPage'
+import VrChartPage from '@/pages/vr/VrChartPage'
+import VrTrendPage from '@/pages/vr/VrTrendPage'
 import VrLadderPage from '@/pages/vr/VrLadderPage'
 import VrFillsPage from '@/pages/vr/VrFillsPage'
+import VrSystemPage from '@/pages/vr/VrSystemPage'
 import WorklogPage from '@/pages/worklog/WorklogPage'
 import ExpensePage from '@/pages/expense/ExpensePage'
 import FinanceDashboardPage from '@/pages/dashboard/FinanceDashboardPage'
@@ -37,8 +40,11 @@ export default function App() {
           </Route>
 
           <Route path="/vr" element={<VrOverviewPage />} />
+          <Route path="/vr/chart" element={<VrChartPage />} />
+          <Route path="/vr/trend" element={<VrTrendPage />} />
           <Route path="/vr/ladder" element={<VrLadderPage />} />
           <Route path="/vr/fills" element={<VrFillsPage />} />
+          <Route path="/vr/system" element={<VrSystemPage />} />
 
           <Route path="/worklog/dashboard" element={<FinanceDashboardPage />} />
           <Route path="/worklog" element={<WorklogPage />} />

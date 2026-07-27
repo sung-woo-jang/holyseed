@@ -105,3 +105,24 @@ export interface VrStatusDto {
   calendar: unknown
   now: string
 }
+
+// ---- 캔들 ----
+
+/** 토스 API 원본 그대로 — Decimal 필드는 문자열로 내려옴 */
+export interface VrCandle {
+  timestamp: string
+  openPrice: string
+  highPrice: string
+  lowPrice: string
+  closePrice: string
+  volume: string
+}
+
+export type VrCandleRange = '1m' | '3m' | 'all' | 'intraday'
+
+// ---- 이벤트 로그 페이지네이션 ----
+
+export interface VrEventsPage {
+  events: VrEventDto[]
+  nextCursor: number | null
+}

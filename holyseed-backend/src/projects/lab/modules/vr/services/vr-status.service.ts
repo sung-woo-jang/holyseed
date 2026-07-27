@@ -21,6 +21,7 @@ export interface VrLastRun {
 @Injectable()
 export class VrStatusService {
   private calendarCache: { data: UsMarketCalendar; at: number } | null = null;
+  private candleCache = new Map<string, { data: unknown; at: number }>();
 
   constructor(
     private readonly toss: TossClientService,
@@ -34,6 +35,17 @@ export class VrStatusService {
     if (this.calendarCache && Date.now() - this.calendarCache.at < 10 * 60_000) return this.calendarCache.data;
     const data = (await this.toss.getUsMarketCalendar()) as UsMarketCalendar;
     this.calendarCache = { data, at: Date.now() };
+    return data;
+  }
+
+  async getCandles(range: string): Promise<unknown> {
+    const hit = this.candleCache.get(range);
+    if (hit && Date.now() - hit.at < 5 * 60_000) return hit.data;
+    const data =
+      range === 'intraday'
+        ? await this.toss.getCandles('TQQQ', '1m', 200)
+        : await this.toss.getCandles('TQQQ', '1d', range === '1m' ? 22 : range === '3m' ? 64 : 200);
+    this.candleCache.set(range, { data, at: Date.now() });
     return data;
   }
 

@@ -40,6 +40,12 @@ export class VrController {
     return ok('조회 성공', await this.status.getEvents(Number(cursor) || 0, level));
   }
 
+  @Get('candles')
+  @ApiOperation({ summary: 'TQQQ 캔들 (range: 1m|3m|all|intraday, 5분 캐시)' })
+  async getCandles(@Query('range') range = '3m') {
+    return ok('조회 성공', await this.status.getCandles(range));
+  }
+
   @Post('run')
   @ApiOperation({ summary: '엔진 수동 실행 (live=false면 dry-run, 시간창 항상 생략)' })
   async run(@Body() dto: VrRunRequestDto) {

@@ -1,13 +1,23 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { axiosInstance, VR_API } from '@/shared/api'
 import { useStandardQuery, useStandardMutation } from '@/shared/hooks/custom-query'
-import type { CreateCycleInput, CreateFillInput, VrCycle, VrFill, VrState, VrStatusDto } from './types'
+import type {
+  CreateCycleInput,
+  CreateFillInput,
+  VrCandle,
+  VrCandleRange,
+  VrCycle,
+  VrFill,
+  VrState,
+  VrStatusDto,
+} from './types'
 
 const KEYS = {
   state: ['vr', 'state'],
   status: ['vr', 'status'],
   fills: ['vr', 'fills'],
   cycles: ['vr', 'cycles'],
+  candles: (range: VrCandleRange) => ['vr', 'candles', range],
 }
 
 const invalidateAll = (qc: ReturnType<typeof useQueryClient>) => {
@@ -41,6 +51,23 @@ export function useVrCycles() {
   return useStandardQuery<VrCycle[]>({
     queryKey: KEYS.cycles,
     queryFn: async () => (await axiosInstance.get<VrCycle[]>(VR_API.CYCLES)).data,
+  })
+}
+
+/** TQQQ 캔들 (range별 5분 서버 캐시) */
+export function useVrCandles(range: VrCandleRange) {
+  return useStandardQuery<VrCandle[]>({
+    queryKey: KEYS.candles(range),
+    queryFn: async () => (await axiosInstance.get<VrCandle[]>(VR_API.CANDLES, { params: { range } })).data,
+  })
+}
+
+/** 엔진 수동 실행 (항상 dry-run — live 파라미터 없음) */
+export function useRunVrEngine() {
+  const qc = useQueryClient()
+  return useStandardMutation<{ lines: string[] }, Error, void>({
+    mutationFn: async () => (await axiosInstance.post<{ lines: string[] }>(VR_API.RUN, { live: false })).data,
+    onSuccess: () => invalidateAll(qc),
   })
 }
 

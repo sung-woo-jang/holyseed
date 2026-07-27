@@ -20,6 +20,8 @@ export const VR_API = {
   CYCLES: '/vr/cycles',
   ROLLOVER: '/vr/cycles/rollover',
   SETTINGS_UPDATE: '/vr/settings/update',
+  EVENTS: '/vr/events',
+  CANDLES: '/vr/candles',
 } as const
 
 // ===== 근무일지 API =====

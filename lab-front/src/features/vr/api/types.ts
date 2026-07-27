@@ -120,6 +120,12 @@ export interface VrCandle {
 
 export type VrCandleRange = '1m' | '3m' | 'all' | 'intraday'
 
+/** 토스 캔들 API 원본 응답 형태 — 배열이 아니라 이 객체로 감싸서 내려옴 */
+export interface VrCandlesData {
+  candles: VrCandle[]
+  nextBefore: string | null
+}
+
 // ---- 이벤트 로그 페이지네이션 ----
 
 export interface VrEventsPage {

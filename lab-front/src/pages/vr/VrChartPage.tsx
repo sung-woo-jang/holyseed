@@ -26,7 +26,8 @@ export default function VrChartPage() {
   const { data: candlesRes, isLoading } = useVrCandles(range)
   const { data: stateRes } = useVrState()
 
-  const candles = candlesRes?.data ?? []
+  // 토스 API는 최신순으로 내려주므로 차트용으로 시간순 정렬
+  const candles = candlesRes?.data.candles.slice().reverse() ?? []
   const state = stateRes?.data
 
   let levels: VrPriceLevels | null = null

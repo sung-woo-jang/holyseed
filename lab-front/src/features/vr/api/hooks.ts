@@ -4,7 +4,7 @@ import { useStandardQuery, useStandardMutation } from '@/shared/hooks/custom-que
 import type {
   CreateCycleInput,
   CreateFillInput,
-  VrCandle,
+  VrCandlesData,
   VrCandleRange,
   VrCycle,
   VrFill,
@@ -54,11 +54,11 @@ export function useVrCycles() {
   })
 }
 
-/** TQQQ 캔들 (range별 5분 서버 캐시) */
+/** TQQQ 캔들 (range별 5분 서버 캐시) — 토스 응답은 { candles, nextBefore } 형태, candles는 최신순 */
 export function useVrCandles(range: VrCandleRange) {
-  return useStandardQuery<VrCandle[]>({
+  return useStandardQuery<VrCandlesData>({
     queryKey: KEYS.candles(range),
-    queryFn: async () => (await axiosInstance.get<VrCandle[]>(VR_API.CANDLES, { params: { range } })).data,
+    queryFn: async () => (await axiosInstance.get<VrCandlesData>(VR_API.CANDLES, { params: { range } })).data,
   })
 }
 

@@ -73,7 +73,7 @@ module.exports = {
         LAOFUS_WINDOW_MAX: '105',
         VR_LIVE: 'true',
         VR_SCHEDULER: 'true',
-        VR_RUN_CRON: '5 * * * *',
+        VR_RUN_CRON: '*/5 * * * *',
         VR_EXTENDED_LIMIT_BUFFER_PCT: '0.3',
       },
       error_file: '/Users/jangseong-u/production/logs/laofus-error.log',

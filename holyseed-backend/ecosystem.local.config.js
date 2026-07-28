@@ -42,7 +42,7 @@ module.exports = {
         // 같은 프로세스(이 laofus-backend 앱)에서 함께 돈다. 절대 별도 pm2 앱으로 분리하지 말 것.
         VR_LIVE: 'true',
         VR_SCHEDULER: 'true',
-        VR_RUN_CRON: '5 * * * *', // 매시 5분, 프리+정규+애프터마켓 전부
+        VR_RUN_CRON: '*/5 * * * *', // 5분마다, 프리+정규+애프터마켓 전부
         VR_EXTENDED_LIMIT_BUFFER_PCT: '0.3',
       },
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',

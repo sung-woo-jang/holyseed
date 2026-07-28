@@ -12,6 +12,12 @@
 .dismiss {
   position: absolute;
   inset: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.open .dismiss {
+  opacity: 1;
 }
 
 .panel {
@@ -23,16 +29,12 @@
   display: flex;
   flex-direction: column;
   padding-bottom: calc(16px + env(safe-area-inset-bottom));
-  animation: rise 0.22s cubic-bezier(0.25, 0.8, 0.35, 1);
+  transform: translateY(100%);
+  transition: transform 0.22s cubic-bezier(0.25, 0.8, 0.35, 1);
 }
 
-@keyframes rise {
-  from {
-    transform: translateY(40%);
-  }
-  to {
-    transform: translateY(0);
-  }
+.open .panel {
+  transform: translateY(0);
 }
 
 .handle {
@@ -43,6 +45,12 @@
   align-self: center;
   margin: 12px 0 14px;
   flex-shrink: 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+.handle:active {
+  cursor: grabbing;
 }
 
 .title {
@@ -51,6 +59,7 @@
   color: var(--text);
   padding: 0 20px 14px;
   flex-shrink: 0;
+  touch-action: none;
 }
 
 .scroll {

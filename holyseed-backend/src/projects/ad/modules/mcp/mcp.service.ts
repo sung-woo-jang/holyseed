@@ -123,9 +123,7 @@ export class McpService {
           '새 자산(계좌/투자상품 등)을 생성합니다. initialValue를 함께 넘기면 생성 직후 첫 평가액 스냅샷도 같이 저장합니다.',
         inputSchema: {
           name: z.string().describe('자산명 (예: 네이버페이, Kbank)'),
-          category: z
-            .enum(['CASH', 'INVESTMENT', 'CRYPTO', 'REAL_ASSET', 'PENSION', 'DEBT'])
-            .describe('자산군'),
+          category: z.enum(['CASH', 'INVESTMENT', 'CRYPTO', 'REAL_ASSET', 'PENSION', 'DEBT']).describe('자산군'),
           isLiability: z.boolean().optional().describe('부채 여부 (기본 false)'),
           memo: z.string().optional().describe('메모'),
           initialValue: z.number().optional().describe('초기 평가액 (원) — 넘기면 첫 스냅샷도 같이 저장'),
@@ -134,9 +132,7 @@ export class McpService {
       },
       ({ name, category, isLiability, memo, initialValue, date }) =>
         this.call(user, async (api, hid) => {
-          const asset = this.unwrap(
-            await api.post(`/households/${hid}/assets`, { name, category, isLiability, memo }),
-          );
+          const asset = this.unwrap(await api.post(`/households/${hid}/assets`, { name, category, isLiability, memo }));
           if (initialValue != null) {
             await api.post(`/assets/${asset.id}/snapshots`, { date: date ?? this.today(), value: initialValue });
           }

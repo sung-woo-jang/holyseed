@@ -31,6 +31,7 @@ export const WORKLOG_API = {
   CREATE: '/worklog',
   UPDATE: (id: number | string) => `/worklog/${id}/update`,
   DELETE: (id: number | string) => `/worklog/${id}/delete`,
+  UPLOAD_PHOTOS: '/worklog/upload-photos',
 } as const
 
 // ===== 지출내역 API =====

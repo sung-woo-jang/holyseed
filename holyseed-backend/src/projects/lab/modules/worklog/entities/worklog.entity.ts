@@ -10,6 +10,17 @@ export enum PayStatus {
   DAYOFF = 'DAYOFF',
 }
 
+export class WorklogPhoto {
+  @ApiProperty({ example: 'a1b2c3.webp' })
+  filename: string;
+
+  @ApiProperty({ example: 'worklog/a1b2c3.webp' })
+  path: string;
+
+  @ApiProperty({ example: 'https://holyseed.p-e.kr/uploads/worklog/a1b2c3.webp' })
+  url: string;
+}
+
 @Entity('worklogs', { schema: 'lab' })
 export class Worklog extends BaseEntity {
   @ApiProperty({ description: '현장명 (여러 곳이면 / 구분)', example: '송도 / 학익' })
@@ -65,4 +76,8 @@ export class Worklog extends BaseEntity {
   @ApiPropertyOptional({ description: '메모' })
   @Column({ type: 'text', nullable: true })
   memo: string | null;
+
+  @ApiPropertyOptional({ description: '근무 사진', type: [WorklogPhoto] })
+  @Column({ type: 'jsonb', default: () => "'[]'" })
+  photos: WorklogPhoto[];
 }

@@ -1,5 +1,11 @@
 export type PayStatus = 'RECEIVED' | 'EXPECTED' | 'UNPAID' | 'DAYOFF'
 
+export interface WorklogPhoto {
+  filename: string
+  path: string
+  url: string
+}
+
 export interface Worklog {
   id: number
   title: string
@@ -14,6 +20,7 @@ export interface Worklog {
   amountOverride: number | null
   address: string | null
   memo: string | null
+  photos: WorklogPhoto[]
   effectiveAmount: number
   netAmount: number
 }
@@ -41,4 +48,5 @@ export interface WorklogInput {
   amountOverride?: number | null
   address?: string
   memo?: string
+  photos?: WorklogPhoto[]
 }

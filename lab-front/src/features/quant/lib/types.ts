@@ -136,6 +136,19 @@ export interface TossOrderDto {
   }
 }
 
+export interface AccountSnapshotDto {
+  id: number
+  date: string
+  totalValueUsd: string
+  totalValueKrw: string
+  stockValueUsd: string
+  cashUsd: string
+  cashKrw: string
+  fxRate: string
+  holdingsJson: { symbol: string; quantity: number; marketValueUsd: number }[]
+  createdAt: string
+}
+
 export interface CandleDto {
   timestamp: string
   openPrice: string

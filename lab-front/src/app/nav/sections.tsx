@@ -70,6 +70,10 @@ export const SECTIONS: LabSection[] = [
           { path: '/vr/system', label: '시스템' },
         ],
       },
+      {
+        label: '자산 기록',
+        pages: [{ path: '/quant/wealth', label: '실계좌' }],
+      },
     ],
   },
   {

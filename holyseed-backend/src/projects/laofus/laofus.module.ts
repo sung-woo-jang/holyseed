@@ -10,6 +10,7 @@ import { LaofusCycle } from './entities/cycle.entity';
 import { LaofusTrade } from './entities/trade.entity';
 import { LaofusEvent } from './entities/event.entity';
 import { LaofusPendingOrder } from './entities/pending-order.entity';
+import { LaofusAccountSnapshot } from './entities/account-snapshot.entity';
 
 /**
  * SOXL 소수점 무한매수법 자동매매 (/api/laofus/*)
@@ -19,7 +20,14 @@ import { LaofusPendingOrder } from './entities/pending-order.entity';
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([LaofusEngineState, LaofusCycle, LaofusTrade, LaofusEvent, LaofusPendingOrder]),
+    TypeOrmModule.forFeature([
+      LaofusEngineState,
+      LaofusCycle,
+      LaofusTrade,
+      LaofusEvent,
+      LaofusPendingOrder,
+      LaofusAccountSnapshot,
+    ]),
     TossModule,
   ],
   controllers: [LaofusController],

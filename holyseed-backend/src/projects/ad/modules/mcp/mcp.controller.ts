@@ -14,16 +14,16 @@ import { McpService } from './mcp.service';
 export class McpController {
   constructor(private readonly mcpService: McpService) {}
 
-  @Post(':secret')
+  @Post(':token')
   @Public()
-  async handle(@Param('secret') secret: string, @Req() req: Request, @Res() res: Response) {
-    const expected = this.mcpService.secret;
-    if (!expected || secret !== expected) {
+  async handle(@Param('token') token: string, @Req() req: Request, @Res() res: Response) {
+    const user = await this.mcpService.resolveUserByToken(token);
+    if (!user) {
       throw new NotFoundException();
     }
 
     // 요청마다 새 서버/트랜스포트 (세션리스)
-    const server = this.mcpService.createServer();
+    const server = this.mcpService.createServer(user);
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
 
     res.on('close', () => {

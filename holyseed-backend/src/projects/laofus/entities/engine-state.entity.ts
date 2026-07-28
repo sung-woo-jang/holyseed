@@ -27,6 +27,10 @@ export class LaofusEngineState {
   @Column({ name: 'cycle_done', default: false })
   cycleDone: boolean;
 
+  /** 마지막으로 매수/매도 판단을 실행한 미국 거래일 (YYYY-MM-DD) — 2거래일 주기 게이트용 */
+  @Column({ name: 'last_decision_us_date', type: 'varchar', length: 10, nullable: true })
+  lastDecisionUsDate: string | null;
+
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
   updatedAt: Date;
 }

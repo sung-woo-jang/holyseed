@@ -278,6 +278,18 @@ export class LaofusEngineService {
       // 미회수 주문 먼저 처리 (개장 배치 체결분 DB 반영 — 정합성 가드보다 앞서야 함)
       const remainingPending = await this.reconcile(runId, log);
 
+      // 상태 로드
+      const row = await this.stateRepo.findOne({ where: { symbol: SYMBOL } });
+      if (!row) {
+        await this.event(
+          'error',
+          'engine_state 행 없음 — 시딩 필요 (yarn workspace @holyseed/backend laofus:seed)',
+          runId,
+        );
+        lines.push('오류: engine_state 없음');
+        return lines;
+      }
+
       // 시간창 검증 — 창 폭은 env로 조정 가능 (매매 크론 이동 시 함께 변경)
       if (!opts.force) {
         const cal = (await this.toss.getUsMarketCalendar()) as UsMarketCalendar;
@@ -291,19 +303,18 @@ export class LaofusEngineService {
           return lines;
         }
         log(`시간창 OK: ${win.reason} (미국 거래일 ${win.usDate})`);
+
+        // 2거래일 주기 게이트 — 직전 거래일에 이미 판단을 실행했으면 오늘은 스킵 (하락장 원금 소진 페이스 완화)
+        if (row.lastDecisionUsDate && row.lastDecisionUsDate === cal.previousBusinessDay?.date) {
+          const message = `스킵: 2거래일 주기 — 직전 판단일(${row.lastDecisionUsDate}) 다음 거래일`;
+          await this.event('info', message, runId);
+          lines.push(message);
+          return lines;
+        }
+        await this.stateRepo.update({ symbol: SYMBOL }, { lastDecisionUsDate: win.usDate });
+        row.lastDecisionUsDate = win.usDate;
       }
 
-      // 상태 로드
-      const row = await this.stateRepo.findOne({ where: { symbol: SYMBOL } });
-      if (!row) {
-        await this.event(
-          'error',
-          'engine_state 행 없음 — 시딩 필요 (yarn workspace @holyseed/backend laofus:seed)',
-          runId,
-        );
-        lines.push('오류: engine_state 없음');
-        return lines;
-      }
       if (row.cycleDone) {
         await this.event('warn', '사이클 종료 상태 — 다음 사이클 시작(복리 여부)은 수동 확인 필요', runId);
         lines.push('사이클 종료 상태 — 종료');

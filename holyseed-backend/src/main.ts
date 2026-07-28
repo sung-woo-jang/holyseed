@@ -5,7 +5,12 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as dotenv from 'dotenv';
+import { types } from 'pg';
 import { AppModule } from './app.module';
+
+// timestamp(타임존 없음) 컬럼은 DB에 UTC로 저장되는데, pg 기본 파서가 Node 프로세스의 로컬 타임존(KST)
+// 기준으로 재해석해 9시간이 어긋나던 문제 — 명시적으로 UTC로 해석하도록 고정 (OID 1114)
+types.setTypeParser(1114, (val: string) => new Date(`${val}Z`));
 
 // Explicitly load environment variables
 const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';

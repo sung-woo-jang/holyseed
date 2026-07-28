@@ -13,4 +13,5 @@ export const qk = {
   members: (householdId: number) => ['members', householdId] as const,
   invitations: (householdId: number) => ['invitations', householdId] as const,
   comparison: (householdId: number) => ['comparison', householdId] as const,
+  mcpTokens: () => ['mcp-tokens'] as const,
 };

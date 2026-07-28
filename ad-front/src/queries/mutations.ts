@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   assetsApi,
   snapshotsApi,
@@ -6,6 +6,7 @@ import {
   recurringApi,
   categoriesApi,
   householdsApi,
+  mcpTokensApi,
 } from '../api';
 import { useAuthStore } from '../stores/auth.store';
 import type { AssetCategory, CategoryType, MemberRole } from '../types/api';
@@ -308,6 +309,32 @@ export function useRevokeInvite() {
     mutationFn: (id: number) => householdsApi.revokeInvitation(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.invitations(hid!) });
+    },
+  });
+}
+
+// ─── MCP 토큰 ─────────────────────────────────────────────────────────────────
+
+export function useMcpTokens() {
+  return useQuery({ queryKey: qk.mcpTokens(), queryFn: mcpTokensApi.list });
+}
+
+export function useCreateMcpToken() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (label?: string) => mcpTokensApi.create(label),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.mcpTokens() });
+    },
+  });
+}
+
+export function useDeleteMcpToken() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => mcpTokensApi.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.mcpTokens() });
     },
   });
 }

@@ -1,16 +1,27 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  ImagePlus,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+} from 'lucide-react'
 import { toast } from 'sonner'
-import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react'
-import { PageHeader } from '@/widgets/page-header'
-import { Badge } from '@/shared/ui/badge'
-import { Button } from '@/shared/ui/button'
-import { Checkbox } from '@/shared/ui/checkbox'
-import { Input } from '@/shared/ui/input'
-import { Label } from '@/shared/ui/label'
-import { Textarea } from '@/shared/ui/textarea'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
+import {
+  useCreateWorklog,
+  useDeleteWorklog,
+  useUpdateWorklog,
+  useUploadWorklogPhotos,
+  useWorklogMonth,
+} from '@/features/worklog/api/hooks'
+import type { PayStatus, Worklog, WorklogInput, WorklogPhoto } from '@/features/worklog/api/types'
+import { calcWorklogAmount, getDailyWage, JOB_OPTIONS, WITHHOLDING_RATE } from '@/features/worklog/lib/worklog-calc'
+import { cn } from '@/shared/lib/utils'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,13 +32,63 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/shared/ui/alert-dialog'
-import { useCreateWorklog, useDeleteWorklog, useUpdateWorklog, useWorklogMonth } from '@/features/worklog/api/hooks'
-import type { PayStatus, Worklog, WorklogInput } from '@/features/worklog/api/types'
-import { calcWorklogAmount, getDailyWage, JOB_OPTIONS, WITHHOLDING_RATE } from '@/features/worklog/lib/worklog-calc'
+import { Badge } from '@/shared/ui/badge'
+import { Button } from '@/shared/ui/button'
+import { Checkbox } from '@/shared/ui/checkbox'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
+import { Input } from '@/shared/ui/input'
+import { Label } from '@/shared/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
+import { Textarea } from '@/shared/ui/textarea'
+import { PageHeader } from '@/widgets/page-header'
 
 const won = (n: number) => `${n.toLocaleString('ko-KR')}원`
 
-const PAY_STATUS_META: Record<PayStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+type SortKey = 'workDate' | 'title' | 'amount' | 'net'
+
+function compareWorklogs(a: Worklog, b: Worklog, key: SortKey): number {
+  switch (key) {
+    case 'workDate':
+      return a.workDate.localeCompare(b.workDate) || a.id - b.id
+    case 'title':
+      return a.title.localeCompare(b.title)
+    case 'amount':
+      return a.effectiveAmount - b.effectiveAmount
+    case 'net':
+      return a.netAmount - b.netAmount
+  }
+}
+
+function SortableHead({
+  label,
+  sortKey,
+  sort,
+  onSort,
+  className,
+}: {
+  label: string
+  sortKey: SortKey
+  sort: { key: SortKey; dir: 'asc' | 'desc' }
+  onSort: (sortKey: SortKey) => void
+  className?: string
+}) {
+  const active = sort.key === sortKey
+  const Icon = active ? (sort.dir === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown
+  return (
+    <TableHead className={cn('cursor-pointer select-none', className)} onClick={() => onSort(sortKey)}>
+      <span className="inline-flex items-center gap-1">
+        {label}
+        <Icon className={cn('size-3.5', !active && 'text-muted-foreground/50')} />
+      </span>
+    </TableHead>
+  )
+}
+
+const PAY_STATUS_META: Record<
+  PayStatus,
+  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
+> = {
   RECEIVED: { label: '✅ 수령완료', variant: 'default' },
   EXPECTED: { label: '🟠 예상(미수령)', variant: 'secondary' },
   UNPAID: { label: '🟡 미수령', variant: 'destructive' },
@@ -46,6 +107,7 @@ interface FormState {
   amountOverride: string
   address: string
   memo: string
+  photos: WorklogPhoto[]
 }
 
 const emptyForm = (date: string): FormState => ({
@@ -60,6 +122,7 @@ const emptyForm = (date: string): FormState => ({
   amountOverride: '',
   address: '',
   memo: '',
+  photos: [],
 })
 
 function WorklogDialog({
@@ -76,6 +139,8 @@ function WorklogDialog({
   const [form, setForm] = useState<FormState>(emptyForm(defaultDate))
   const create = useCreateWorklog()
   const update = useUpdateWorklog()
+  const uploadPhotos = useUploadWorklogPhotos()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // 다이얼로그 열릴 때 폼 초기화
   const [prevOpen, setPrevOpen] = useState(false)
@@ -96,10 +161,34 @@ function WorklogDialog({
               amountOverride: editing.amountOverride !== null ? String(editing.amountOverride) : '',
               address: editing.address ?? '',
               memo: editing.memo ?? '',
+              photos: editing.photos ?? [],
             }
-          : emptyForm(defaultDate),
+          : emptyForm(defaultDate)
       )
     }
+  }
+
+  async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    e.target.value = ''
+    if (files.length === 0) return
+    if (form.photos.length + files.length > 5) {
+      toast.error('사진은 최대 5장까지 등록할 수 있습니다.')
+      return
+    }
+    try {
+      const res = await uploadPhotos.mutateAsync(files)
+      set('photos', [...form.photos, ...res.data.photos])
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? '사진 업로드에 실패했습니다.')
+    }
+  }
+
+  function removePhoto(url: string) {
+    set(
+      'photos',
+      form.photos.filter((p) => p.url !== url)
+    )
   }
 
   const preview = calcWorklogAmount({
@@ -128,6 +217,7 @@ function WorklogDialog({
       amountOverride: form.amountOverride !== '' ? parseInt(form.amountOverride, 10) : null,
       address: form.address || undefined,
       memo: form.memo || undefined,
+      photos: form.photos,
     }
     try {
       if (editing) {
@@ -151,9 +241,14 @@ function WorklogDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="sm:col-span-2 space-y-2">
+            <div className="space-y-2 sm:col-span-2">
               <Label>현장명 (여러 곳이면 / 구분)</Label>
-              <Input value={form.title} onChange={(e) => set('title', e.target.value)} required placeholder="송도 / 학익" />
+              <Input
+                value={form.title}
+                onChange={(e) => set('title', e.target.value)}
+                required
+                placeholder="송도 / 학익"
+              />
             </div>
             <div className="space-y-2">
               <Label>날짜</Label>
@@ -192,11 +287,23 @@ function WorklogDialog({
             </div>
             <div className="space-y-2">
               <Label>휴게 (시간)</Label>
-              <Input type="number" step="0.5" min="0" value={form.breakHours} onChange={(e) => set('breakHours', e.target.value)} />
+              <Input
+                type="number"
+                step="0.5"
+                min="0"
+                value={form.breakHours}
+                onChange={(e) => set('breakHours', e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>일급여 (원)</Label>
-              <Input type="number" min="0" step="10000" value={form.dailyWage} onChange={(e) => set('dailyWage', e.target.value)} />
+              <Input
+                type="number"
+                min="0"
+                step="10000"
+                value={form.dailyWage}
+                onChange={(e) => set('dailyWage', e.target.value)}
+              />
             </div>
           </div>
 
@@ -226,7 +333,45 @@ function WorklogDialog({
             <Textarea rows={2} value={form.memo} onChange={(e) => set('memo', e.target.value)} />
           </div>
 
-          <div className="rounded-md border bg-muted/40 p-3 text-sm">
+          <div className="space-y-2">
+            <Label>사진 ({form.photos.length}/5)</Label>
+            <div className="flex flex-wrap gap-2">
+              {form.photos.map((p) => (
+                <div key={p.url} className="group relative size-16 overflow-hidden rounded-md border">
+                  <img src={p.url} alt="" className="size-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(p.url)}
+                    className="absolute top-0.5 right-0.5 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                    aria-label="사진 삭제"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              ))}
+              {form.photos.length < 5 && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadPhotos.isPending}
+                  className="text-muted-foreground hover:bg-accent flex size-16 flex-col items-center justify-center gap-1 rounded-md border border-dashed disabled:opacity-50"
+                >
+                  <ImagePlus className="size-4" />
+                  <span className="text-[10px]">{uploadPhotos.isPending ? '업로드 중' : '추가'}</span>
+                </button>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handlePhotoSelect}
+            />
+          </div>
+
+          <div className="bg-muted/40 rounded-md border p-3 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">계산 금액</span>
               <b className="tabular-nums">{won(preview)}</b>
@@ -267,9 +412,24 @@ export default function WorklogPage() {
 
   const { data: res, isLoading } = useWorklogMonth(year, month)
   const deleteWorklog = useDeleteWorklog()
+  const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' }>({ key: 'workDate', dir: 'asc' })
 
   const records = res?.data?.records ?? []
   const summary = res?.data?.summary
+
+  const sortedRecords = useMemo(() => {
+    const sign = sort.dir === 'asc' ? 1 : -1
+    return [...records].sort((a, b) => sign * compareWorklogs(a, b, sort.key))
+  }, [records, sort])
+
+  function handleSort(key: SortKey) {
+    setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }))
+  }
+
+  function openEdit(r: Worklog) {
+    setEditing(r)
+    setDialogOpen(true)
+  }
 
   const defaultDate = useMemo(() => {
     const m = String(month).padStart(2, '0')
@@ -323,89 +483,97 @@ export default function WorklogPage() {
 
       {summary && (
         <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <div className="rounded-lg border bg-card p-4">
-            <p className="text-xs text-muted-foreground">근무일수</p>
+          <div className="bg-card rounded-lg border p-4">
+            <p className="text-muted-foreground text-xs">근무일수</p>
             <p className="mt-1 text-lg font-semibold">{summary.workDays}일</p>
           </div>
-          <div className="rounded-lg border bg-card p-4">
-            <p className="text-xs text-muted-foreground">합계 (세전)</p>
+          <div className="bg-card rounded-lg border p-4">
+            <p className="text-muted-foreground text-xs">합계 (세전)</p>
             <p className="mt-1 text-lg font-semibold tabular-nums">{won(summary.totalAmount)}</p>
           </div>
-          <div className="rounded-lg border bg-card p-4">
-            <p className="text-xs text-muted-foreground">실수령 합계</p>
+          <div className="bg-card rounded-lg border p-4">
+            <p className="text-muted-foreground text-xs">실수령 합계</p>
             <p className="mt-1 text-lg font-semibold tabular-nums">{won(summary.totalNet)}</p>
           </div>
-          <div className="rounded-lg border bg-card p-4">
-            <p className="text-xs text-muted-foreground">수령 / 미수령</p>
+          <div className="bg-card rounded-lg border p-4">
+            <p className="text-muted-foreground text-xs">수령 / 미수령</p>
             <p className="mt-1 text-lg font-semibold tabular-nums">
-              {won(summary.receivedNet)} <span className="text-sm font-normal text-muted-foreground">/ {won(summary.pendingNet)}</span>
+              {won(summary.receivedNet)}{' '}
+              <span className="text-muted-foreground text-sm font-normal">/ {won(summary.pendingNet)}</span>
             </p>
           </div>
         </div>
       )}
 
-      <div className="mt-4 rounded-lg border bg-card p-4">
+      <div className="bg-card mt-4 rounded-lg border p-4">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">불러오는 중…</p>
+          <p className="text-muted-foreground text-sm">불러오는 중…</p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>날짜</TableHead>
-                <TableHead>현장</TableHead>
+                <SortableHead label="날짜" sortKey="workDate" sort={sort} onSort={handleSort} />
+                <SortableHead label="현장" sortKey="title" sort={sort} onSort={handleSort} />
                 <TableHead>근무시간</TableHead>
                 <TableHead>업무</TableHead>
-                <TableHead className="text-right">금액</TableHead>
-                <TableHead className="text-right">실수령</TableHead>
+                <SortableHead label="금액" sortKey="amount" sort={sort} onSort={handleSort} className="text-right" />
+                <SortableHead label="실수령" sortKey="net" sort={sort} onSort={handleSort} className="text-right" />
                 <TableHead>수령</TableHead>
+                <TableHead>사진</TableHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {records.length === 0 && (
+              {sortedRecords.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground">
+                  <TableCell colSpan={9} className="text-muted-foreground text-center">
                     이 달의 기록이 없습니다.
                   </TableCell>
                 </TableRow>
               )}
-              {records.map((r) => {
+              {sortedRecords.map((r) => {
                 const meta = PAY_STATUS_META[r.payStatus]
                 return (
-                  <TableRow key={r.id}>
+                  <TableRow key={r.id} className="cursor-pointer" onClick={() => openEdit(r)}>
                     <TableCell>{r.workDate.slice(5)}</TableCell>
                     <TableCell className="max-w-40 truncate" title={r.memo ?? undefined}>
                       {r.title}
                     </TableCell>
                     <TableCell>
-                      {r.payStatus === 'DAYOFF' ? '휴무' : r.startTime && r.endTime ? `${r.startTime}~${r.endTime}` : '—'}
+                      {r.payStatus === 'DAYOFF'
+                        ? '휴무'
+                        : r.startTime && r.endTime
+                          ? `${r.startTime}~${r.endTime}`
+                          : '—'}
                     </TableCell>
                     <TableCell>{r.jobs.join(', ') || '—'}</TableCell>
                     <TableCell className="text-right tabular-nums">
                       {won(r.effectiveAmount)}
-                      {r.amountOverride !== null && <span className="ml-1 text-xs text-muted-foreground">*</span>}
+                      {r.amountOverride !== null && <span className="text-muted-foreground ml-1 text-xs">*</span>}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{won(r.netAmount)}</TableCell>
                     <TableCell>
                       <Badge variant={meta.variant}>{meta.label}</Badge>
                     </TableCell>
                     <TableCell>
+                      {r.photos.length > 0 ? (
+                        <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
+                          <ImagePlus className="size-3.5" />
+                          {r.photos.length}
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-7"
-                          onClick={() => {
-                            setEditing(r)
-                            setDialogOpen(true)
-                          }}
-                        >
-                          <Pencil className="size-4 text-muted-foreground" />
+                        <Button variant="ghost" size="icon" className="size-7" onClick={() => openEdit(r)}>
+                          <Pencil className="text-muted-foreground size-4" />
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon" className="size-7">
-                              <Trash2 className="size-4 text-muted-foreground" />
+                              <Trash2 className="text-muted-foreground size-4" />
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
@@ -426,10 +594,15 @@ export default function WorklogPage() {
             </TableBody>
           </Table>
         )}
-        <p className="mt-2 text-xs text-muted-foreground">* 표시는 수동 오버라이드된 금액 (실수령액 우선 원칙)</p>
+        <p className="text-muted-foreground mt-2 text-xs">* 표시는 수동 오버라이드된 금액 (실수령액 우선 원칙)</p>
       </div>
 
-      <WorklogDialog open={dialogOpen} onClose={() => setDialogOpen(false)} editing={editing} defaultDate={defaultDate} />
+      <WorklogDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        editing={editing}
+        defaultDate={defaultDate}
+      />
     </div>
   )
 }

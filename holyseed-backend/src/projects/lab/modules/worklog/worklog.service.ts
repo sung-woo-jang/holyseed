@@ -107,6 +107,7 @@ export class WorklogService {
     const log = this.worklogRepo.create({
       ...dto,
       jobs: dto.jobs ?? [],
+      photos: dto.photos ?? [],
       breakHours: dto.breakHours ?? 1,
       payStatus: dto.payStatus ?? PayStatus.EXPECTED,
       dailyWage,

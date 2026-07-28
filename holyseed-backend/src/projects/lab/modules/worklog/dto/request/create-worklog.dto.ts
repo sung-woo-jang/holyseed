@@ -10,9 +10,10 @@ import {
   Matches,
   MaxLength,
   Min,
+  ValidateNested,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
-import { PayStatus } from '../../entities';
+import { Transform, Type } from 'class-transformer';
+import { PayStatus, WorklogPhoto } from '../../entities';
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -75,4 +76,11 @@ export class CreateWorklogDto {
   @IsOptional()
   @IsString()
   memo?: string;
+
+  @ApiPropertyOptional({ description: '근무 사진', type: [WorklogPhoto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => WorklogPhoto)
+  photos?: WorklogPhoto[];
 }

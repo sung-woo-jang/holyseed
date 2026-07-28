@@ -80,9 +80,9 @@ export default function MobileNavDrawer({
                   {isExpanded && (
                     <div className="ml-4 mt-1 border-l pl-3">
                       {section.groups.map((group, i) => (
-                        <div key={group.label ?? i} className={cn('flex flex-col gap-1', i > 0 && 'mt-2')}>
+                        <div key={group.label ?? i} className={cn('flex flex-col gap-1', i > 0 && 'mt-4 border-t pt-3')}>
                           {section.groups.length > 1 && group.label && (
-                            <div className="px-3 pb-1 pt-1 text-xs font-semibold text-muted-foreground/70">
+                            <div className="px-3 pb-1 pt-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                               {group.label}
                             </div>
                           )}
@@ -94,8 +94,8 @@ export default function MobileNavDrawer({
                               onClick={handleNavLinkClick}
                               className={({ isActive }) =>
                                 cn(
-                                  'rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
-                                  isActive && 'bg-accent font-medium text-accent-foreground'
+                                  'rounded-md border-l-2 border-transparent px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
+                                  isActive && 'border-primary bg-accent font-medium text-accent-foreground'
                                 )
                               }
                             >

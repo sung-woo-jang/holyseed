@@ -33,6 +33,7 @@ export default function MoreScreen() {
     { emojiCode: TE.people, bgColor: theme.dark ? '#1e2a40' : '#EBF5FB', label: '멤버 관리', detail: `${memberCount}명이 함께하고 있어요`, route: '/more/members' },
     { emojiCode: TE.money, bgColor: theme.dark ? '#1a2e28' : '#E8F8F5', label: '현금흐름', detail: '수입·지출·저축률 분석', route: '/more/cashflow' },
     { emojiCode: TE.chartBar, bgColor: theme.dark ? '#1a2340' : '#EEF2FF', label: '연간 비교', detail: '자산군별 증감 워터폴', route: '/more/compare' },
+    { emojiCode: TE.calendar, bgColor: theme.dark ? '#0f2e26' : '#E6F9F3', label: '날짜별 자산 조회', detail: '과거 특정일 총자산 확인', route: '/more/net-worth-at' },
     { emojiCode: TE.folder, bgColor: theme.dark ? '#2a2010' : '#FEF9E7', label: '카테고리 관리', detail: '우리집만의 카테고리 설정', route: '/more/categories' },
     { emojiCode: TE.gear, bgColor: theme.dark ? '#221a2e' : '#F5EEF8', label: '설정', detail: '알림, 통화, 테마', route: '/more/settings' },
   ];

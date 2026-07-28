@@ -1,0 +1,102 @@
+.root {
+  flex: 1;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.loadingBox {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 0;
+}
+
+.dateButton {
+  margin: 12px 20px 8px;
+  border-radius: 16px;
+  border: 1px solid;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dateLabel {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.dateChange {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.headlineCard {
+  margin: 8px 20px;
+  border-radius: 16px;
+  border: 1px solid;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.headlineLabel {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.headlineValue {
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.section {
+  margin: 8px 20px 0;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sectionTitle {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.accentBar {
+  width: 4px;
+  height: 32px;
+  border-radius: 2px;
+  display: block;
+}
+
+.assetRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.assetName {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.staleNote {
+  font-size: 11px;
+}
+
+.assetValue {
+  font-size: 14px;
+  font-weight: 700;
+}

@@ -62,7 +62,11 @@ textarea {
   max-width: 480px;
   margin: 0 auto;
   background: var(--bg);
-  min-height: 100dvh;
+  /* html,body,#root의 height:100%(정적 뷰포트 기준)와 충돌 방지 —
+     min-height가 아니라 height로 못박아 동적 뷰포트(dvh) 기준을 확정시킴.
+     그렇지 않으면 주소창이 보여 100%(정적) > 100dvh(동적)가 되는 순간
+     #root가 실제 화면보다 커져 맨 아래 TabBar가 화면 밖으로 밀려남. */
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   position: relative;

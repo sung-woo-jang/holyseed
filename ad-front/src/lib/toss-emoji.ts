@@ -6,6 +6,7 @@ export function tossEmoji(code: string): string {
 
 export const TE = {
   house:       '1F3E1',
+  calendar:    '1F4C5',
   camera:      '1F4F8',
   pencil:      '270F',
   people:      '1F465',

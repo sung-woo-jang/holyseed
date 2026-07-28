@@ -10,6 +10,7 @@ import AssetDetailPage from './pages/assets/detail';
 import CashflowPage from './pages/more/cashflow';
 import CategoriesPage from './pages/more/categories';
 import ComparePage from './pages/more/compare';
+import NetWorthAtPage from './pages/more/net-worth-at';
 import MembersPage from './pages/more/members';
 import SettingsPage from './pages/more/settings';
 import NotFoundPage from './pages/NotFound';
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="/more/cashflow" element={<CashflowPage />} />
         <Route path="/more/categories" element={<CategoriesPage />} />
         <Route path="/more/compare" element={<ComparePage />} />
+        <Route path="/more/net-worth-at" element={<NetWorthAtPage />} />
         <Route path="/more/members" element={<MembersPage />} />
         <Route path="/more/settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFoundPage />} />

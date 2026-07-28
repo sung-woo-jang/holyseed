@@ -168,6 +168,8 @@ export const dashboardApi = {
     api.get(`/households/${householdId}/dashboard`).then((r) => r.data),
   timeseries: (householdId: number, range: '1Y' | '3Y' | '5Y' | 'ALL') =>
     api.post(`/households/${householdId}/dashboard/timeseries`, { range }).then((r) => r.data),
+  netWorthAt: (householdId: number, date: string) =>
+    api.post(`/households/${householdId}/net-worth-at`, { date }).then((r) => r.data),
 };
 
 // ─── Comparison ───────────────────────────────────────────────────────────────

@@ -38,6 +38,48 @@ export class DashboardService {
     return { netWorth, donut, timeseries, recentTx };
   }
 
+  /** 기준 날짜(이하) 최신 스냅샷 기준으로 그 날짜 시점의 가구 총자산을 조회 */
+  async getNetWorthAt(householdId: number, date: string) {
+    const rows: {
+      id: number;
+      name: string;
+      category: string;
+      is_liability: boolean;
+      value_krw: string | null;
+      snapshot_date: string | null;
+    }[] = await this.assetRepo.manager.query(
+      `SELECT a.id, a.name, a.category, a.is_liability,
+              latest.value_krw AS value_krw,
+              latest.date AS snapshot_date
+       FROM ad.assets a
+       LEFT JOIN LATERAL (
+         SELECT value_krw, date
+         FROM ad.asset_snapshots s
+         WHERE s.asset_id = a.id AND s.date <= $2
+         ORDER BY s.date DESC
+         LIMIT 1
+       ) latest ON true
+       WHERE a.household_id = $1
+         AND a.archived_at IS NULL
+       ORDER BY a.category, a.name`,
+      [householdId, date],
+    );
+
+    const byAsset = rows.map((r) => ({
+      assetId: r.id,
+      name: r.name,
+      category: r.category,
+      isLiability: r.is_liability,
+      valueKRW: r.value_krw !== null ? Number(r.value_krw) : null,
+      // 기준일 이전 최신 스냅샷 날짜 (기준일에 정확히 입력이 없으면 그 전 값을 그대로 사용)
+      snapshotDate: r.snapshot_date,
+    }));
+
+    const netWorth = byAsset.reduce((sum, a) => sum + (a.valueKRW ?? 0), 0);
+
+    return { date, netWorth, byAsset };
+  }
+
   async getTimeseriesRange(householdId: number, range: TimeseriesRange) {
     const months =
       range === TimeseriesRange.ONE_YEAR

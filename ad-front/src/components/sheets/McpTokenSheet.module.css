@@ -1,0 +1,59 @@
+.body {
+  padding: 8px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.codeBox {
+  border: 1px solid;
+  border-radius: 16px;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.codeText {
+  font-size: 13px;
+  font-weight: 700;
+  word-break: break-all;
+  text-align: center;
+}
+
+.hintText {
+  text-align: center;
+  font-size: 12px;
+}
+
+.btnRow {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.actionBtn {
+  flex: 1;
+  border-radius: 14px;
+  padding: 14px 0;
+  display: flex;
+  justify-content: center;
+  border: 1px solid;
+}
+
+.actionBtnText {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.errorText {
+  font-size: 13px;
+  text-align: center;
+}

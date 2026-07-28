@@ -95,3 +95,12 @@ export interface Invitation {
   expiresAt: string;
   householdId: number;
 }
+
+export interface McpToken {
+  id: number;
+  token: string;
+  label: string | null;
+  lastUsedAt: string | null;
+  createdAt: string;
+  connectorUrl: string;
+}

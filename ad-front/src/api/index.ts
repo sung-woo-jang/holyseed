@@ -7,6 +7,7 @@ import type {
   Category,
   CategoryType,
   Invitation,
+  McpToken,
   Member,
   MemberRole,
   MissedOccurrence,
@@ -173,4 +174,11 @@ export const dashboardApi = {
 export const comparisonApi = {
   yearly: (householdId: number) =>
     api.get(`/households/${householdId}/comparison/yearly`).then((r) => r.data),
+};
+
+// ─── MCP 토큰 ─────────────────────────────────────────────────────────────────
+export const mcpTokensApi = {
+  list: () => api.get<McpToken[]>('/mcp-tokens').then((r) => r.data),
+  create: (label?: string) => api.post<McpToken>('/mcp-tokens', { label }).then((r) => r.data),
+  delete: (id: number) => api.post(`/mcp-tokens/${id}/delete`).then((r) => r.data),
 };

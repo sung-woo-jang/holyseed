@@ -47,6 +47,12 @@
   align-self: center;
   margin: 10px 0 8px;
   flex-shrink: 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+.handle:active {
+  cursor: grabbing;
 }
 
 .header {
@@ -55,6 +61,7 @@
   color: var(--text);
   padding: 8px 20px 12px;
   flex-shrink: 0;
+  touch-action: none;
 }
 
 .body {

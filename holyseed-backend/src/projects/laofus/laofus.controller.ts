@@ -50,6 +50,18 @@ export class LaofusController {
     return ok(await this.status.getOrders());
   }
 
+  @Get('account-snapshots')
+  @ApiOperation({ summary: '실계좌 일별 총자산 스냅샷 이력 (날짜 오름차순)' })
+  async getAccountSnapshots() {
+    return ok(await this.status.getAccountSnapshots());
+  }
+
+  @Post('account-snapshot/run')
+  @ApiOperation({ summary: '오늘자 실계좌 스냅샷 즉시 기록/재기록 (조회만 — 주문 없음, 인증 불필요)' })
+  async runAccountSnapshot() {
+    return ok(await this.engine.captureAccountSnapshot(), '스냅샷 기록 완료');
+  }
+
   @Get('order')
   @ApiOperation({ summary: '주문 단건 상세 (orderId 쿼리, 거래 상세 페이지용)' })
   async getOrder(@Query('orderId') orderId = '') {

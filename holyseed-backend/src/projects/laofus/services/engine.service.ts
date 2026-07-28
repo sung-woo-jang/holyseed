@@ -10,6 +10,7 @@ import { LaofusCycle } from '../entities/cycle.entity';
 import { LaofusTrade } from '../entities/trade.entity';
 import { LaofusEvent } from '../entities/event.entity';
 import { LaofusPendingOrder } from '../entities/pending-order.entity';
+import { LaofusAccountSnapshot } from '../entities/account-snapshot.entity';
 
 /** 회수/기록에 필요한 판단 컨텍스트 (BuyDecision | SellDecision 재구성용) */
 type FillDecision = Extract<Decision, { action: 'BUY' } | { action: 'SELL' }>;
@@ -47,6 +48,7 @@ export class LaofusEngineService {
     @InjectRepository(LaofusTrade) private readonly tradeRepo: Repository<LaofusTrade>,
     @InjectRepository(LaofusEvent) private readonly eventRepo: Repository<LaofusEvent>,
     @InjectRepository(LaofusPendingOrder) private readonly pendingRepo: Repository<LaofusPendingOrder>,
+    @InjectRepository(LaofusAccountSnapshot) private readonly snapshotRepo: Repository<LaofusAccountSnapshot>,
   ) {}
 
   /** 스케줄러 등 엔진 외부에서 발생한 이벤트(예: 비활성 스킵)를 동일한 laofus.events 원장에 기록 */
@@ -430,5 +432,40 @@ export class LaofusEngineService {
     } finally {
       this.running = false;
     }
+  }
+
+  /** 오늘(KST) 실계좌 총자산 스냅샷을 계산해 upsert — 크론 + 수동 트리거(POST /account-snapshot/run) 공용 */
+  async captureAccountSnapshot(): Promise<LaofusAccountSnapshot> {
+    const [holdings, bpUsd, bpKrw, fx] = await Promise.all([
+      this.toss.getHoldingsAll(),
+      this.toss.getBuyingPower('USD'),
+      this.toss.getBuyingPower('KRW'),
+      this.toss.getExchangeRate(),
+    ]);
+    const rate = Number(fx.rate);
+    const stockValueUsd = holdings.items.reduce((sum, h) => sum + Number(h.marketValue.amount), 0);
+    const cashUsd = Number(bpUsd);
+    const cashKrw = Number(bpKrw);
+    const totalValueUsd = stockValueUsd + cashUsd;
+    const totalValueKrw = totalValueUsd * rate + cashKrw;
+    const holdingsJson = holdings.items.map((h) => ({
+      symbol: h.symbol,
+      quantity: Number(h.quantity),
+      marketValueUsd: Number(h.marketValue.amount),
+    }));
+
+    const date = kstDate();
+    const existing = await this.snapshotRepo.findOne({ where: { date } });
+    return this.snapshotRepo.save({
+      ...(existing ?? {}),
+      date,
+      totalValueUsd: String(Math.round(totalValueUsd * 100) / 100),
+      totalValueKrw: String(Math.round(totalValueKrw * 100) / 100),
+      stockValueUsd: String(Math.round(stockValueUsd * 100) / 100),
+      cashUsd: String(cashUsd),
+      cashKrw: String(cashKrw),
+      fxRate: String(rate),
+      holdingsJson,
+    });
   }
 }

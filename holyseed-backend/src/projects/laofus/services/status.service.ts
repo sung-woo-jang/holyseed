@@ -8,6 +8,7 @@ import { LaofusEngineState } from '../entities/engine-state.entity';
 import { LaofusCycle } from '../entities/cycle.entity';
 import { LaofusEvent } from '../entities/event.entity';
 import { LaofusPendingOrder } from '../entities/pending-order.entity';
+import { LaofusAccountSnapshot } from '../entities/account-snapshot.entity';
 
 export interface LaofusLastRun {
   runId: string;
@@ -35,6 +36,7 @@ export class LaofusStatusService {
     @InjectRepository(LaofusCycle) private readonly cycleRepo: Repository<LaofusCycle>,
     @InjectRepository(LaofusEvent) private readonly eventRepo: Repository<LaofusEvent>,
     @InjectRepository(LaofusPendingOrder) private readonly pendingRepo: Repository<LaofusPendingOrder>,
+    @InjectRepository(LaofusAccountSnapshot) private readonly snapshotRepo: Repository<LaofusAccountSnapshot>,
   ) {}
 
   async getCalendar(): Promise<unknown> {
@@ -74,6 +76,10 @@ export class LaofusStatusService {
     const data = { holdings, buyingPower: { usd: bpUsd, krw: bpKrw }, exchangeRate: fx };
     this.accountCache = { data, at: Date.now() };
     return data;
+  }
+
+  async getAccountSnapshots(): Promise<LaofusAccountSnapshot[]> {
+    return this.snapshotRepo.find({ order: { date: 'ASC' } });
   }
 
   async getOrders(): Promise<unknown> {

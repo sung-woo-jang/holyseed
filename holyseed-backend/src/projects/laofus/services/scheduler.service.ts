@@ -98,4 +98,22 @@ export class LaofusSchedulerService implements OnModuleInit {
     this.logger.log(`스케줄 ${slot} 트리거 (${this.live ? 'LIVE' : 'dry-run'})`);
     await this.engine.run({ live: this.live, force: false, injectedPrice: null });
   }
+
+  // 실계좌 총자산 일별 스냅샷 — 화~토 06:00 KST(EDT/EST 마감 모두 확정된 시점). 주문이 아니라 조회이므로 LAOFUS_LIVE와 무관하게 기록
+  @Cron('0 6 * * 2-6', { name: 'laofus-wealth-snapshot', timeZone: 'Asia/Seoul' })
+  async wealthSnapshotTick(): Promise<void> {
+    if (!this.enabled) {
+      this.logger.log('스케줄 자산 스냅샷 — LAOFUS_SCHEDULER=false, 스킵');
+      return;
+    }
+    try {
+      const saved = await this.engine.captureAccountSnapshot();
+      await this.engine.logSchedulerEvent('info', `일별 자산 스냅샷 기록: ${saved.date} = ₩${saved.totalValueKrw}`);
+    } catch (e) {
+      await this.engine.logSchedulerEvent(
+        'error',
+        `자산 스냅샷 기록 실패: ${e instanceof Error ? e.message : e}`,
+      );
+    }
+  }
 }

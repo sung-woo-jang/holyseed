@@ -13,6 +13,7 @@ import HomePage from '@/pages/quant/HomePage'
 import QuantLayout from '@/pages/quant/QuantLayout'
 import SystemPage from '@/pages/quant/SystemPage'
 import TradeDetailPage from '@/pages/quant/TradeDetailPage'
+import WealthPage from '@/pages/quant/WealthPage'
 import VrChartPage from '@/pages/vr/VrChartPage'
 import VrFillsPage from '@/pages/vr/VrFillsPage'
 import VrLadderPage from '@/pages/vr/VrLadderPage'
@@ -37,6 +38,7 @@ export default function App() {
             <Route path="/quant/cycles/:cycleNo/trades/:seq" element={<TradeDetailPage />} />
             <Route path="/quant/account" element={<AccountPage />} />
             <Route path="/quant/system" element={<SystemPage />} />
+            <Route path="/quant/wealth" element={<WealthPage />} />
           </Route>
 
           <Route path="/vr" element={<VrOverviewPage />} />

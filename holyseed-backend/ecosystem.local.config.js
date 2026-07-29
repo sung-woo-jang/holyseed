@@ -40,8 +40,8 @@ module.exports = {
         LAOFUS_WINDOW_MAX: '105',
         // VR(TQQQ 밸류 리밸런싱) — laofus와 같은 토스 계좌/API 앱을 쓰므로 토큰 경합을 피하려고
         // 같은 프로세스(이 laofus-backend 앱)에서 함께 돈다. 절대 별도 pm2 앱으로 분리하지 말 것.
-        VR_LIVE: 'false',
-        VR_SCHEDULER: 'false', // 2026-07-29 사용자 요청으로 임시 중단
+        VR_LIVE: 'true',
+        VR_SCHEDULER: 'true',
         VR_RUN_CRON: '*/5 * * * *', // 5분마다, 프리+정규+애프터마켓 전부
         VR_EXTENDED_LIMIT_BUFFER_PCT: '0.3',
       },

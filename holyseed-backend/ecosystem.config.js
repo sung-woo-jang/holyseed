@@ -71,8 +71,8 @@ module.exports = {
         LAOFUS_RUN_CRON_2: '25 4 * * 2-6',
         LAOFUS_WINDOW_MIN: '90',
         LAOFUS_WINDOW_MAX: '105',
-        VR_LIVE: 'false',
-        VR_SCHEDULER: 'false', // 2026-07-29 사용자 요청으로 임시 중단
+        VR_LIVE: 'true',
+        VR_SCHEDULER: 'true',
         VR_RUN_CRON: '*/5 * * * *',
         VR_EXTENDED_LIMIT_BUFFER_PCT: '0.3',
       },

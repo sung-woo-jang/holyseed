@@ -1,10 +1,28 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { Tile } from '@/features/quant/ui/ui'
 import type { AccountDto, AccountSnapshotDto } from '@/features/quant/lib/types'
 import { api, krw, n, usd } from '@/features/quant/lib/types'
 
+const LAST_COPY_KEY = 'vr-wealth-last-copy-date'
+
 function kstToday(): string {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' }).format(new Date())
+}
+
+function shiftDate(date: string, deltaDays: number): string {
+  const d = new Date(`${date}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + deltaDays)
+  return d.toISOString().slice(0, 10)
+}
+
+function toClipboardRows(rows: AccountSnapshotDto[]) {
+  return rows.map((s) => ({
+    date: s.date,
+    value: n(s.totalValueKrw),
+    totalValueUsd: n(s.totalValueUsd),
+    fxRateToKRW: n(s.fxRate),
+  }))
 }
 
 export default function WealthPage() {
@@ -12,7 +30,9 @@ export default function WealthPage() {
   const [snapshots, setSnapshots] = useState<AccountSnapshotDto[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [recording, setRecording] = useState(false)
-  const [copied, setCopied] = useState(false)
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+  const [lastCopy, setLastCopy] = useState<string | null>(() => localStorage.getItem(LAST_COPY_KEY))
 
   const loadAll = async () => {
     try {
@@ -23,6 +43,10 @@ export default function WealthPage() {
       setAccount(a)
       setSnapshots(s)
       setError(null)
+      if (s.length > 0) {
+        setFromDate((prev) => prev || s[0].date)
+        setToDate((prev) => prev || s[s.length - 1].date)
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     }
@@ -44,17 +68,48 @@ export default function WealthPage() {
     }
   }
 
-  async function copyJson() {
-    if (!snapshots) return
-    const rows = snapshots.map((s) => ({
-      date: s.date,
-      value: n(s.totalValueKrw),
-      totalValueUsd: n(s.totalValueUsd),
-      fxRateToKRW: n(s.fxRate),
-    }))
-    await navigator.clipboard.writeText(JSON.stringify(rows, null, 2))
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  const rangeRows = useMemo(() => {
+    if (!snapshots) return []
+    return snapshots.filter((s) => (!fromDate || s.date >= fromDate) && (!toDate || s.date <= toDate))
+  }, [snapshots, fromDate, toDate])
+
+  async function copyRange() {
+    if (rangeRows.length === 0) {
+      toast.error('선택한 범위에 기록이 없습니다.')
+      return
+    }
+    await navigator.clipboard.writeText(JSON.stringify(toClipboardRows(rangeRows), null, 2))
+    if (toDate) {
+      localStorage.setItem(LAST_COPY_KEY, toDate)
+      setLastCopy(toDate)
+    }
+    toast.success(`${rangeRows.length}건 복사됨 (${fromDate} ~ ${toDate})`)
+  }
+
+  async function copyOne(s: AccountSnapshotDto) {
+    await navigator.clipboard.writeText(JSON.stringify(toClipboardRows([s]), null, 2))
+    localStorage.setItem(LAST_COPY_KEY, s.date)
+    setLastCopy(s.date)
+    toast.success(`${s.date} 복사됨`)
+  }
+
+  function applyPreset(preset: 'all' | '7d' | '30d' | 'since-last') {
+    if (!snapshots || snapshots.length === 0) return
+    const latest = snapshots[snapshots.length - 1].date
+    const earliest = snapshots[0].date
+    if (preset === 'all') {
+      setFromDate(earliest)
+      setToDate(latest)
+    } else if (preset === '7d') {
+      setFromDate(shiftDate(latest, -6))
+      setToDate(latest)
+    } else if (preset === '30d') {
+      setFromDate(shiftDate(latest, -29))
+      setToDate(latest)
+    } else {
+      setFromDate(lastCopy ? shiftDate(lastCopy, 1) : earliest)
+      setToDate(latest)
+    }
   }
 
   if (error)
@@ -81,6 +136,8 @@ export default function WealthPage() {
   const sorted = [...snapshots].reverse() // 최신순
   const latest = sorted[0]
   const alreadyRecordedToday = latest?.date === todayStr
+
+  const presetBtnStyle = { fontSize: 12, padding: '4px 10px' }
 
   return (
     <main className="wrap">
@@ -113,15 +170,47 @@ export default function WealthPage() {
             오늘({todayStr}) 이미 기록됨 — 다시 누르면 최신 값으로 덮어씁니다
           </span>
         )}
-        <div style={{ marginLeft: 'auto' }}>
-          <button onClick={copyJson} disabled={snapshots.length === 0}>
-            {copied ? '복사됨!' : 'JSON 복사 (자산일기용)'}
+      </div>
+
+      <div className="card" style={{ marginBottom: 16 }}>
+        <h2 style={{ fontSize: 15, marginBottom: 8 }}>JSON 복사 (자산일기용)</h2>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+          <button style={presetBtnStyle} onClick={() => applyPreset('all')}>
+            전체
           </button>
+          <button style={presetBtnStyle} onClick={() => applyPreset('7d')}>
+            최근 7일
+          </button>
+          <button style={presetBtnStyle} onClick={() => applyPreset('30d')}>
+            최근 30일
+          </button>
+          {lastCopy && (
+            <button style={presetBtnStyle} onClick={() => applyPreset('since-last')}>
+              지난 복사 이후
+            </button>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+            From
+            <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+            To
+            <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+          </label>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{rangeRows.length}건 복사됩니다</span>
+          <div style={{ marginLeft: 'auto' }}>
+            <button onClick={copyRange} disabled={rangeRows.length === 0}>
+              JSON 복사
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="card">
         <h2 style={{ fontSize: 15, marginBottom: 8 }}>일별 기록 ({sorted.length}건)</h2>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>행을 클릭하면 그 날짜만 바로 복사됩니다.</p>
         {sorted.length === 0 ? (
           <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>아직 기록 없음 — 위 버튼으로 오늘자를 기록해보세요</p>
         ) : (
@@ -141,7 +230,14 @@ export default function WealthPage() {
                   const prev = sorted[i + 1]
                   const delta = prev ? n(s.totalValueKrw) - n(prev.totalValueKrw) : null
                   return (
-                    <tr key={s.id}>
+                    <tr
+                      key={s.id}
+                      onClick={() => copyOne(s)}
+                      style={{ cursor: 'pointer' }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-2, rgba(128,128,128,0.08))')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                      title="클릭하여 이 날짜만 복사"
+                    >
                       <td className="l">{s.date}</td>
                       <td>{krw(n(s.totalValueKrw))}</td>
                       <td>{usd(n(s.totalValueUsd))}</td>

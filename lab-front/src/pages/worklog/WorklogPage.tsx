@@ -51,6 +51,17 @@ import { PageHeader } from '@/widgets/page-header'
 const won = (n: number) => `${n.toLocaleString('ko-KR')}원`
 
 type SortKey = 'workDate' | 'title' | 'amount' | 'net'
+type Sort = { key: SortKey; dir: 'asc' | 'desc' }
+
+const SORT_OPTIONS: { value: string; label: string; sort: Sort }[] = [
+  { value: 'workDate:desc', label: '최신순', sort: { key: 'workDate', dir: 'desc' } },
+  { value: 'workDate:asc', label: '오래된순', sort: { key: 'workDate', dir: 'asc' } },
+  { value: 'title:asc', label: '현장명순', sort: { key: 'title', dir: 'asc' } },
+  { value: 'amount:desc', label: '금액 높은순', sort: { key: 'amount', dir: 'desc' } },
+  { value: 'amount:asc', label: '금액 낮은순', sort: { key: 'amount', dir: 'asc' } },
+  { value: 'net:desc', label: '실수령 높은순', sort: { key: 'net', dir: 'desc' } },
+  { value: 'net:asc', label: '실수령 낮은순', sort: { key: 'net', dir: 'asc' } },
+]
 
 function compareWorklogs(a: Worklog, b: Worklog, key: SortKey): number {
   switch (key) {
@@ -504,7 +515,7 @@ export default function WorklogPage() {
 
   const { data: res, isLoading } = useWorklogMonth(year, month)
   const deleteWorklog = useDeleteWorklog()
-  const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' }>({ key: 'workDate', dir: 'asc' })
+  const [sort, setSort] = useState<Sort>({ key: 'workDate', dir: 'desc' })
   const isDesktop = useIsDesktopNav()
 
   const records = res?.data?.records ?? []
@@ -599,6 +610,28 @@ export default function WorklogPage() {
       )}
 
       <div className="bg-card mt-4 rounded-lg border p-4">
+        {!isDesktop && !isLoading && (
+          <div className="mb-3 flex justify-end">
+            <Select
+              value={`${sort.key}:${sort.dir}`}
+              onValueChange={(v) => {
+                const opt = SORT_OPTIONS.find((o) => o.value === v)
+                if (opt) setSort(opt.sort)
+              }}
+            >
+              <SelectTrigger className="h-8 w-36 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SORT_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         {isLoading ? (
           <p className="text-muted-foreground text-sm">불러오는 중…</p>
         ) : isDesktop ? (

@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
-import { Worklog, PayStatus } from './entities';
+import { Worklog, PayStatus, WorklogCategory, WorklogJobOption } from './entities';
 import { CreateWorklogDto, UpdateWorklogDto, SearchWorklogDto } from './dto/request';
 
 /** 일당 기준 이력 — 변경 시 여기에 구간 추가 */
@@ -11,6 +11,9 @@ const DAILY_WAGE_HISTORY: { from: string; wage: number }[] = [
 ];
 
 const WITHHOLDING_RATE = 0.033; // 원천징수 3.3%
+
+/** "업무" 체크박스 팔레트 초기값 — worklog_job_options 테이블이 비어 있을 때만 1회 시딩 */
+const DEFAULT_JOB_OPTIONS = ['도배', '필름', '퍼티', '철거', '페인트', '세팅'];
 
 export interface WorklogView extends Worklog {
   /** 유효 금액 (오버라이드 우선) */
@@ -24,6 +27,8 @@ export class WorklogService {
   constructor(
     @InjectRepository(Worklog)
     private readonly worklogRepo: Repository<Worklog>,
+    @InjectRepository(WorklogJobOption)
+    private readonly jobOptionRepo: Repository<WorklogJobOption>,
   ) {}
 
   getDailyWage(date: string): number {
@@ -39,8 +44,15 @@ export class WorklogService {
    * 실근무 = 총근무 − 휴게, 초과 = max(0, 실근무 − 8)
    * 공수 = 1 + 초과/8, 금액 = 공수×일급 + 초과×시급×0.1
    */
-  calcAmount(log: Pick<Worklog, 'startTime' | 'endTime' | 'breakHours' | 'dailyWage' | 'payStatus'>): number {
+  calcAmount(
+    log: Pick<
+      Worklog,
+      'startTime' | 'endTime' | 'breakHours' | 'dailyWage' | 'payStatus' | 'category' | 'amountOverride'
+    >,
+  ): number {
     if (log.payStatus === PayStatus.DAYOFF) return 0;
+    // 쿠팡 일용직은 이미 확정된 세후 금액만 존재 — 공수 공식 적용 대상이 아님
+    if (log.category === WorklogCategory.COUPANG) return log.amountOverride ?? 0;
     if (!log.startTime || !log.endTime) return log.dailyWage;
 
     const toHours = (t: string) => {
@@ -58,11 +70,12 @@ export class WorklogService {
 
   private toView(log: Worklog): WorklogView {
     const effectiveAmount = log.amountOverride ?? log.amount;
-    return {
-      ...log,
-      effectiveAmount,
-      netAmount: Math.round(effectiveAmount * (1 - WITHHOLDING_RATE)),
-    };
+    // 쿠팡은 이미 세후 확정 금액이라 원천징수를 다시 적용하지 않음
+    const netAmount =
+      log.category === WorklogCategory.COUPANG
+        ? effectiveAmount
+        : Math.round(effectiveAmount * (1 - WITHHOLDING_RATE));
+    return { ...log, effectiveAmount, netAmount };
   }
 
   async findAll(): Promise<WorklogView[]> {
@@ -110,6 +123,7 @@ export class WorklogService {
       photos: dto.photos ?? [],
       breakHours: dto.breakHours ?? 1,
       payStatus: dto.payStatus ?? PayStatus.EXPECTED,
+      category: dto.category ?? WorklogCategory.INTERIOR,
       dailyWage,
       amountOverride: dto.amountOverride ?? null,
     });
@@ -134,5 +148,26 @@ export class WorklogService {
     const log = await this.worklogRepo.findOne({ where: { id } });
     if (!log) throw new NotFoundException('근무 기록을 찾을 수 없습니다.');
     await this.worklogRepo.remove(log);
+  }
+
+  /** 업무 팔레트 조회 — 최초 호출 시(테이블이 비어있으면) 기본 6개 자동 시딩 */
+  async getJobOptions(): Promise<WorklogJobOption[]> {
+    const count = await this.jobOptionRepo.count();
+    if (count === 0) {
+      await this.jobOptionRepo.save(DEFAULT_JOB_OPTIONS.map((name) => this.jobOptionRepo.create({ name })));
+    }
+    return this.jobOptionRepo.find({ order: { id: 'ASC' } });
+  }
+
+  async createJobOption(name: string): Promise<WorklogJobOption> {
+    const exists = await this.jobOptionRepo.findOne({ where: { name } });
+    if (exists) throw new BadRequestException('이미 있는 업무입니다.');
+    return this.jobOptionRepo.save(this.jobOptionRepo.create({ name }));
+  }
+
+  async deleteJobOption(id: number): Promise<void> {
+    const option = await this.jobOptionRepo.findOne({ where: { id } });
+    if (!option) throw new NotFoundException('업무 항목을 찾을 수 없습니다.');
+    await this.jobOptionRepo.remove(option);
   }
 }

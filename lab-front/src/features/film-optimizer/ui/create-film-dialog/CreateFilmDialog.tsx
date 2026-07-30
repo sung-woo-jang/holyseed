@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { Button } from '@/shared/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/shared/ui/dialog'
+  FormSheet,
+  FormSheetContent,
+  FormSheetDescription,
+  FormSheetFooter,
+  FormSheetHeader,
+  FormSheetTitle,
+} from '@/shared/ui/form-sheet'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { Textarea } from '@/shared/ui/textarea'
@@ -109,14 +109,14 @@ export function CreateFilmDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={styles.dialog}>
-        <DialogHeader>
-          <DialogTitle>새 필름 추가</DialogTitle>
-          <DialogDescription>
+    <FormSheet open={open} onOpenChange={onOpenChange}>
+      <FormSheetContent className={styles.dialog}>
+        <FormSheetHeader>
+          <FormSheetTitle>새 필름 추가</FormSheetTitle>
+          <FormSheetDescription>
             재단에 사용할 필름을 추가합니다.
-          </DialogDescription>
-        </DialogHeader>
+          </FormSheetDescription>
+        </FormSheetHeader>
 
         <div className={styles.content}>
           {/* 필름 이름 (필수) */}
@@ -197,7 +197,7 @@ export function CreateFilmDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <FormSheetFooter>
           <Button
             variant='outline'
             onClick={handleClose}
@@ -211,8 +211,8 @@ export function CreateFilmDialog({
           >
             {createFilm.isPending ? '생성 중...' : '생성'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </FormSheetFooter>
+      </FormSheetContent>
+    </FormSheet>
   )
 }

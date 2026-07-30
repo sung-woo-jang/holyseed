@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { Tile } from '@/features/quant/ui/ui'
 import type { AccountDto, AccountSnapshotDto } from '@/features/quant/lib/types'
 import { api, krw, n, usd } from '@/features/quant/lib/types'
+import { useIsDesktopNav } from '@/shared/hooks/use-media-query'
 
 const LAST_COPY_KEY = 'vr-wealth-last-copy-date'
 
@@ -26,6 +27,7 @@ function toClipboardRows(rows: AccountSnapshotDto[]) {
 }
 
 export default function WealthPage() {
+  const isDesktop = useIsDesktopNav()
   const [account, setAccount] = useState<AccountDto | null>(null)
   const [snapshots, setSnapshots] = useState<AccountSnapshotDto[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -213,7 +215,7 @@ export default function WealthPage() {
         <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>행을 클릭하면 그 날짜만 바로 복사됩니다.</p>
         {sorted.length === 0 ? (
           <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>아직 기록 없음 — 위 버튼으로 오늘자를 기록해보세요</p>
-        ) : (
+        ) : isDesktop ? (
           <div style={{ overflowX: 'auto' }}>
             <table>
               <thead>
@@ -250,6 +252,35 @@ export default function WealthPage() {
                 })}
               </tbody>
             </table>
+          </div>
+        ) : (
+          <div className="rowcard-list">
+            {sorted.map((s, i) => {
+              const prev = sorted[i + 1]
+              const delta = prev ? n(s.totalValueKrw) - n(prev.totalValueKrw) : null
+              return (
+                <div key={s.id} className="rowcard" onClick={() => copyOne(s)} style={{ cursor: 'pointer' }}>
+                  <div className="rowcard-row">
+                    <div>{s.date}</div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div>{krw(n(s.totalValueKrw))}</div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: delta === null ? 'var(--text-muted)' : delta >= 0 ? 'var(--delta-good)' : 'var(--status-critical)',
+                        }}
+                      >
+                        {delta === null ? '—' : `${delta >= 0 ? '+' : ''}${krw(delta)}`}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rowcard-meta">
+                    <span>{usd(n(s.totalValueUsd))}</span>
+                    <span>· ₩{n(s.fxRate).toLocaleString()}</span>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

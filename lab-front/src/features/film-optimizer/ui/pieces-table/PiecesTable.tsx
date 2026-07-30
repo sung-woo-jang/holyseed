@@ -1,7 +1,10 @@
 import type { CuttingPiece } from '@/shared/types/api'
+import { useIsDesktopNav } from '@/shared/hooks/use-media-query'
 import { Button } from '@/shared/ui/button'
 import { Checkbox } from '@/shared/ui/checkbox'
+import { RecordCard, RecordCardList, RecordCardRow } from '@/shared/ui/record-card'
 import { Trash2 } from 'lucide-react'
+import { cn } from '@/shared/lib/utils'
 import styles from './styles.module.scss'
 
 interface PiecesTableProps {
@@ -34,6 +37,8 @@ export function PiecesTable({
   togglingId,
   disabled = false,
 }: PiecesTableProps) {
+  const isDesktop = useIsDesktopNav()
+
   if (pieces.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -63,6 +68,7 @@ export function PiecesTable({
         </span>
       </div>
 
+      {isDesktop ? (
       <div className={styles.tableWrapper}>
         <table className={styles.table}>
           <thead>
@@ -114,6 +120,45 @@ export function PiecesTable({
           </tbody>
         </table>
       </div>
+      ) : (
+        <RecordCardList>
+          {pieces.map((piece, index) => (
+            <RecordCard key={piece.id} className={cn(piece.isCompleted && 'opacity-60')}>
+              <RecordCardRow>
+                <div className="flex min-w-0 items-center gap-2">
+                  <Checkbox
+                    checked={piece.isCompleted}
+                    onCheckedChange={() => onToggleComplete?.(piece.id)}
+                    disabled={disabled || togglingId === piece.id}
+                    aria-label={`${piece.label || `조각 ${index + 1}`} 완료 표시`}
+                  />
+                  <div className="min-w-0">
+                    <p className="font-medium">
+                      {piece.width} × {piece.height}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {piece.label || `조각 ${index + 1}`}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <span className="text-sm tabular-nums text-muted-foreground">×{piece.quantity}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onDelete?.(piece.id)}
+                    disabled={disabled || deletingId === piece.id}
+                    className="size-9"
+                    aria-label={`${piece.label || `조각 ${index + 1}`} 삭제`}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
+              </RecordCardRow>
+            </RecordCard>
+          ))}
+        </RecordCardList>
+      )}
     </div>
   )
 }

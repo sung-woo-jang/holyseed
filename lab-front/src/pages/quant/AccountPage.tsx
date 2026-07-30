@@ -4,12 +4,14 @@ import { Tile } from '@/features/quant/ui/ui'
 import type { AccountDto, TossOrderDto } from '@/features/quant/lib/types'
 import { api, krw, kst, n, usd } from '@/features/quant/lib/types'
 import { useStatus } from '@/features/quant/lib/useStatus'
+import { useIsDesktopNav } from '@/shared/hooks/use-media-query'
 
 /** orderId → 해당 무매 거래 링크 정보 */
 type TradeLinkMap = Map<string, { cycleNo: number; seq: number }>
 
 export default function AccountPage() {
   const { status } = useStatus()
+  const isDesktop = useIsDesktopNav()
   const [account, setAccount] = useState<AccountDto | null>(null)
   const [orders, setOrders] = useState<{ open: TossOrderDto[]; closed: TossOrderDto[] } | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -108,47 +110,84 @@ export default function AccountPage() {
 
       <div className="card" style={{ marginBottom: 16 }}>
         <h2 style={{ fontSize: 15, marginBottom: 8 }}>보유 종목</h2>
-        <div style={{ overflowX: 'auto' }}>
-          <table>
-            <thead>
-              <tr>
-                <th className="l">종목</th>
-                <th>수량</th>
-                <th>평단</th>
-                <th>현재가</th>
-                <th>평가금</th>
-                <th>손익</th>
-                <th>일간</th>
-              </tr>
-            </thead>
-            <tbody>
-              {account.holdings.items.map((h) => {
-                const pl = n(h.profitLoss.amount)
-                const dl = n(h.dailyProfitLoss.amount)
-                return (
-                  <tr key={h.symbol}>
-                    <td className="l">
+        {isDesktop ? (
+          <div style={{ overflowX: 'auto' }}>
+            <table>
+              <thead>
+                <tr>
+                  <th className="l">종목</th>
+                  <th>수량</th>
+                  <th>평단</th>
+                  <th>현재가</th>
+                  <th>평가금</th>
+                  <th>손익</th>
+                  <th>일간</th>
+                </tr>
+              </thead>
+              <tbody>
+                {account.holdings.items.map((h) => {
+                  const pl = n(h.profitLoss.amount)
+                  const dl = n(h.dailyProfitLoss.amount)
+                  return (
+                    <tr key={h.symbol}>
+                      <td className="l">
+                        <strong>{h.symbol}</strong>
+                        {h.symbol === 'SOXL' ? ' (무매)' : h.symbol === 'TQQQ' ? ' (VR)' : ''}
+                      </td>
+                      <td>{n(h.quantity).toFixed(6)}</td>
+                      <td>{usd(n(h.averagePurchasePrice))}</td>
+                      <td>{usd(n(h.lastPrice))}</td>
+                      <td>{usd(n(h.marketValue.amount))}</td>
+                      <td style={{ color: pl >= 0 ? 'var(--delta-good)' : 'var(--status-critical)' }}>
+                        {pl >= 0 ? '+' : ''}
+                        {usd(pl)} ({(n(h.profitLoss.rate) * 100).toFixed(2)}%)
+                      </td>
+                      <td style={{ color: dl >= 0 ? 'var(--delta-good)' : 'var(--status-critical)' }}>
+                        {dl >= 0 ? '+' : ''}
+                        {usd(dl)}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="rowcard-list">
+            {account.holdings.items.map((h) => {
+              const pl = n(h.profitLoss.amount)
+              const dl = n(h.dailyProfitLoss.amount)
+              return (
+                <div key={h.symbol} className="rowcard">
+                  <div className="rowcard-row">
+                    <div>
                       <strong>{h.symbol}</strong>
-                      {h.symbol === 'SOXL' ? ' (무매)' : h.symbol === 'TQQQ' ? ' (VR)' : ''}
-                    </td>
-                    <td>{n(h.quantity).toFixed(6)}</td>
-                    <td>{usd(n(h.averagePurchasePrice))}</td>
-                    <td>{usd(n(h.lastPrice))}</td>
-                    <td>{usd(n(h.marketValue.amount))}</td>
-                    <td style={{ color: pl >= 0 ? 'var(--delta-good)' : 'var(--status-critical)' }}>
-                      {pl >= 0 ? '+' : ''}
-                      {usd(pl)} ({(n(h.profitLoss.rate) * 100).toFixed(2)}%)
-                    </td>
-                    <td style={{ color: dl >= 0 ? 'var(--delta-good)' : 'var(--status-critical)' }}>
-                      {dl >= 0 ? '+' : ''}
+                      <span style={{ color: 'var(--text-muted)' }}>
+                        {h.symbol === 'SOXL' ? ' (무매)' : h.symbol === 'TQQQ' ? ' (VR)' : ''}
+                      </span>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div>{usd(n(h.marketValue.amount))}</div>
+                      <div style={{ color: pl >= 0 ? 'var(--delta-good)' : 'var(--status-critical)', fontSize: 12 }}>
+                        {pl >= 0 ? '+' : ''}
+                        {usd(pl)} ({(n(h.profitLoss.rate) * 100).toFixed(2)}%)
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rowcard-meta">
+                    <span>수량 {n(h.quantity).toFixed(6)}</span>
+                    <span>· 평단 {usd(n(h.averagePurchasePrice))}</span>
+                    <span>· 현재가 {usd(n(h.lastPrice))}</span>
+                    <span style={{ color: dl >= 0 ? 'var(--delta-good)' : 'var(--status-critical)' }}>
+                      · 일간 {dl >= 0 ? '+' : ''}
                       {usd(dl)}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
@@ -169,6 +208,47 @@ export default function AccountPage() {
 }
 
 function OrderTable({ rows, tradeLinks }: { rows: TossOrderDto[]; tradeLinks: TradeLinkMap }) {
+  const isDesktop = useIsDesktopNav()
+
+  if (!isDesktop) {
+    return (
+      <div className="rowcard-list">
+        {rows.map((o) => {
+          const link = tradeLinks.get(o.orderId)
+          return (
+            <div key={o.orderId} className="rowcard">
+              <div className="rowcard-row">
+                <div>
+                  <span style={{ color: o.side === 'SELL' ? 'var(--status-critical)' : 'var(--series-1)', fontWeight: 600 }}>
+                    {o.side === 'SELL' ? '매도' : '매수'}
+                  </span>{' '}
+                  {o.symbol}
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div>{o.orderAmount ? usd(n(o.orderAmount)) : `${n(o.quantity).toFixed(4)}주`}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                    {o.execution.filledAmount ? usd(n(o.execution.filledAmount)) : '체결 전'}
+                  </div>
+                </div>
+              </div>
+              <div className="rowcard-meta">
+                <span>{kst(o.orderedAt)}</span>
+                <span>· {o.orderType}</span>
+                <span>· {o.status}</span>
+                <span>· 체결 {n(o.execution.filledQuantity).toFixed(6)}주</span>
+                {link && (
+                  <Link to={`/quant/cycles/${link.cycleNo}/trades/${link.seq}`}>
+                    · {link.cycleNo}-{link.seq}차 →
+                  </Link>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   return (
     <div style={{ overflowX: 'auto' }}>
       <table>

@@ -2,19 +2,21 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { Plus, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/widgets/page-header'
+import { useIsDesktopNav } from '@/shared/hooks/use-media-query'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { Badge } from '@/shared/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/shared/ui/dialog'
+  FormSheet,
+  FormSheetContent,
+  FormSheetFooter,
+  FormSheetHeader,
+  FormSheetTitle,
+  FormSheetTrigger,
+} from '@/shared/ui/form-sheet'
+import { RecordCard, RecordCardList, RecordCardMeta, RecordCardRow } from '@/shared/ui/record-card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import {
   AlertDialog,
@@ -66,16 +68,16 @@ function FillDialog() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <FormSheet open={open} onOpenChange={setOpen}>
+      <FormSheetTrigger asChild>
         <Button>
           <Plus className="mr-1 size-4" /> 체결 등록
         </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>체결 등록</DialogTitle>
-        </DialogHeader>
+      </FormSheetTrigger>
+      <FormSheetContent className="max-w-sm">
+        <FormSheetHeader>
+          <FormSheetTitle>체결 등록</FormSheetTitle>
+        </FormSheetHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label>체결일</Label>
@@ -112,14 +114,14 @@ function FillDialog() {
               />
             </div>
           </div>
-          <DialogFooter>
+          <FormSheetFooter>
             <Button type="submit" disabled={createFill.isPending}>
               등록
             </Button>
-          </DialogFooter>
+          </FormSheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </FormSheetContent>
+    </FormSheet>
   )
 }
 
@@ -149,14 +151,14 @@ function CycleDialog() {
     setForm((f) => ({ ...f, [k]: e.target.value }))
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <FormSheet open={open} onOpenChange={setOpen}>
+      <FormSheetTrigger asChild>
         <Button variant="outline">사이클 수동 등록</Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>사이클 수동 등록</DialogTitle>
-        </DialogHeader>
+      </FormSheetTrigger>
+      <FormSheetContent className="max-w-sm">
+        <FormSheetHeader>
+          <FormSheetTitle>사이클 수동 등록</FormSheetTitle>
+        </FormSheetHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
@@ -180,14 +182,14 @@ function CycleDialog() {
               <Input type="number" step="0.01" value={form.poolStart} onChange={set('poolStart')} required />
             </div>
           </div>
-          <DialogFooter>
+          <FormSheetFooter>
             <Button type="submit" disabled={createCycle.isPending}>
               등록
             </Button>
-          </DialogFooter>
+          </FormSheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </FormSheetContent>
+    </FormSheet>
   )
 }
 
@@ -195,6 +197,7 @@ export default function VrFillsPage() {
   const { data: fillsRes } = useVrFills()
   const { data: cyclesRes } = useVrCycles()
   const deleteFill = useDeleteFill()
+  const isDesktop = useIsDesktopNav()
 
   const fills = fillsRes?.data ?? []
   const cycles = cyclesRes?.data ?? []
@@ -223,6 +226,7 @@ export default function VrFillsPage() {
 
       <div className="mt-6 rounded-lg border bg-card p-4">
         <h2 className="mb-3 text-sm font-semibold">체결 히스토리</h2>
+        {isDesktop ? (
         <Table>
           <TableHeader>
             <TableRow>
@@ -281,10 +285,58 @@ export default function VrFillsPage() {
             ))}
           </TableBody>
         </Table>
+        ) : (
+          <RecordCardList>
+            {fills.length === 0 && (
+              <p className="text-center text-sm text-muted-foreground">체결 기록이 없습니다.</p>
+            )}
+            {fills.map((f) => (
+              <RecordCard key={f.id}>
+                <RecordCardRow>
+                  <div className="min-w-0">
+                    <Badge variant={f.kind === 'SELL' ? 'default' : 'secondary'} className="text-[10px]">
+                      {KIND_LABEL[f.kind]}
+                    </Badge>
+                    <p className="mt-1 text-sm text-muted-foreground">{f.fillDate}</p>
+                  </div>
+                  <div className="flex shrink-0 items-start gap-1">
+                    <div className="text-right">
+                      <p className="font-semibold tabular-nums">{usd(f.amount)}</p>
+                      <p className="text-xs tabular-nums text-muted-foreground">Pool {usd(f.poolAfter)}</p>
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="-mt-1 -mr-2 size-9">
+                          <Trash2 className="size-4 text-muted-foreground" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>체결을 삭제할까요?</AlertDialogTitle>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>취소</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(f.id)}>삭제</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </RecordCardRow>
+                <RecordCardMeta>
+                  <span>가격 {usd(f.price)}</span>
+                  <span>· 수량 {f.quantity}</span>
+                  <span>· 보유 {f.qtyAfter}주</span>
+                  <span>· 평단 {usd(f.avgPriceAfter)}</span>
+                </RecordCardMeta>
+              </RecordCard>
+            ))}
+          </RecordCardList>
+        )}
       </div>
 
       <div className="mt-6 rounded-lg border bg-card p-4">
         <h2 className="mb-3 text-sm font-semibold">사이클 히스토리</h2>
+        {isDesktop ? (
         <Table>
           <TableHeader>
             <TableRow>
@@ -322,6 +374,37 @@ export default function VrFillsPage() {
             ))}
           </TableBody>
         </Table>
+        ) : (
+          <RecordCardList>
+            {cycles.length === 0 && (
+              <p className="text-center text-sm text-muted-foreground">사이클이 없습니다.</p>
+            )}
+            {cycles.map((c) => (
+              <RecordCard key={c.id}>
+                <RecordCardRow>
+                  <div className="min-w-0">
+                    <p className="font-medium">{c.cycleNo}차 사이클</p>
+                    <Badge variant={c.isClosed ? 'secondary' : 'default'} className="mt-1 text-[10px]">
+                      {c.isClosed ? '종료' : '진행 중'}
+                    </Badge>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold tabular-nums">V {usd(c.vValue)}</p>
+                    <p className="text-xs tabular-nums text-muted-foreground">적립 {usd(c.depositAmount)}</p>
+                  </div>
+                </RecordCardRow>
+                <RecordCardMeta>
+                  <span>
+                    {c.startDate} ~ {c.endDate}
+                  </span>
+                  <span>
+                    · Pool {usd(c.poolStart)} → {c.poolEnd !== null ? usd(c.poolEnd) : '—'}
+                  </span>
+                </RecordCardMeta>
+              </RecordCard>
+            ))}
+          </RecordCardList>
+        )}
       </div>
     </div>
   )

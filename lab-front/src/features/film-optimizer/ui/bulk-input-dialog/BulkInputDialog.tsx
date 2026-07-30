@@ -3,13 +3,13 @@ import type { CuttingPieceInput } from '@/shared/types/api'
 import { Alert, AlertDescription } from '@/shared/ui/alert'
 import { Button } from '@/shared/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/shared/ui/dialog'
+  FormSheet,
+  FormSheetContent,
+  FormSheetDescription,
+  FormSheetFooter,
+  FormSheetHeader,
+  FormSheetTitle,
+} from '@/shared/ui/form-sheet'
 import { Textarea } from '@/shared/ui/textarea'
 import { AlertCircle } from 'lucide-react'
 import { parsePiecesInput } from '../../lib/parse-pieces-input'
@@ -75,14 +75,14 @@ export function BulkInputDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={styles.dialog}>
-        <DialogHeader>
-          <DialogTitle>일괄 입력</DialogTitle>
-          <DialogDescription>
+    <FormSheet open={open} onOpenChange={onOpenChange}>
+      <FormSheetContent className={styles.dialog}>
+        <FormSheetHeader>
+          <FormSheetTitle>일괄 입력</FormSheetTitle>
+          <FormSheetDescription>
             여러 조각을 텍스트로 한 번에 입력합니다.
-          </DialogDescription>
-        </DialogHeader>
+          </FormSheetDescription>
+        </FormSheetHeader>
 
         <div className={styles.content}>
           <div className={styles.formatHelp}>
@@ -127,15 +127,15 @@ export function BulkInputDialog({
           )}
         </div>
 
-        <DialogFooter>
+        <FormSheetFooter>
           <Button variant='outline' onClick={handleClose} disabled={disabled}>
             취소
           </Button>
           <Button onClick={handleSubmit} disabled={disabled || !input.trim()}>
             추가
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </FormSheetFooter>
+      </FormSheetContent>
+    </FormSheet>
   )
 }

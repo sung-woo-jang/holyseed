@@ -13,7 +13,7 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { WorklogService } from './worklog.service';
 import { FilesService } from '@shared/files/files.service';
-import { CreateWorklogDto, UpdateWorklogDto, SearchWorklogDto } from './dto/request';
+import { CreateWorklogDto, UpdateWorklogDto, SearchWorklogDto, CreateJobOptionDto } from './dto/request';
 
 const ok = (message: string, data: unknown) => ({
   success: true,
@@ -59,6 +59,25 @@ export class WorklogController {
   async delete(@Param('id', ParseIntPipe) id: number) {
     await this.worklogService.delete(id);
     return ok('근무 기록이 삭제되었습니다.', null);
+  }
+
+  @Get('job-options')
+  @ApiOperation({ summary: '업무 팔레트 조회 (없으면 기본값 자동 시딩)' })
+  async getJobOptions() {
+    return ok('조회 성공', await this.worklogService.getJobOptions());
+  }
+
+  @Post('job-options')
+  @ApiOperation({ summary: '업무 팔레트에 항목 추가' })
+  async createJobOption(@Body() dto: CreateJobOptionDto) {
+    return ok('업무 항목이 추가되었습니다.', await this.worklogService.createJobOption(dto.name));
+  }
+
+  @Post('job-options/:id/delete')
+  @ApiOperation({ summary: '업무 팔레트에서 항목 삭제 (기존 기록의 업무 태그는 유지)' })
+  async deleteJobOption(@Param('id', ParseIntPipe) id: number) {
+    await this.worklogService.deleteJobOption(id);
+    return ok('업무 항목이 삭제되었습니다.', null);
   }
 
   @Post('upload-photos')

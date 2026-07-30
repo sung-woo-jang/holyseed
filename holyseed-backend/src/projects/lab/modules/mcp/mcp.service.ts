@@ -220,10 +220,14 @@ export class McpService {
       {
         title: '근무 기록 추가',
         description:
-          '근무 기록을 추가합니다. 금액은 서버가 공식(공수·초과수당·휴게 점심1시간 기본 차감)대로 자동 계산 — 실수령이 계산과 다르면 amountOverride로 실제 금액을 넣으세요(실수령 우선 원칙). 일급여는 날짜 기준 자동(현재 14만원). 휴무는 payStatus=DAYOFF.',
+          '근무 기록을 추가합니다. category=INTERIOR(기본, 인테리어)면 금액은 서버가 공식(공수·초과수당·휴게 점심1시간 기본 차감)대로 자동 계산 — 실수령이 계산과 다르면 amountOverride로 실제 금액을 넣으세요(실수령 우선 원칙). 일급여는 날짜 기준 자동(현재 14만원). category=COUPANG(쿠팡 일용직)이면 이미 확정된 세후 금액을 amountOverride에 그대로 넣으세요 — 3.3% 재공제 없이 그 금액 그대로 실수령으로 기록됩니다. 휴무는 payStatus=DAYOFF.',
         inputSchema: {
           title: z.string().describe('현장명 (여러 곳이면 / 구분, 휴무면 "휴무")'),
           workDate: z.string().optional().describe('YYYY-MM-DD, 생략 시 오늘'),
+          category: z
+            .enum(['INTERIOR', 'COUPANG'])
+            .optional()
+            .describe('분류 (기본 INTERIOR=인테리어. COUPANG=쿠팡 일용직 — amountOverride를 세후 확정액 그대로 사용, 재공제 안 함)'),
           startTime: z.string().optional().describe('시작 HH:mm (예 08:00)'),
           endTime: z.string().optional().describe('종료 HH:mm'),
           breakHours: z.number().optional().describe('휴게시간 (기본 1)'),
@@ -232,7 +236,7 @@ export class McpService {
             .enum(['RECEIVED', 'EXPECTED', 'UNPAID', 'DAYOFF'])
             .optional()
             .describe('수령여부 (기본 EXPECTED=예상(미수령))'),
-          amountOverride: z.number().optional().describe('실수령액이 계산과 다를 때 수동 금액 (원)'),
+          amountOverride: z.number().optional().describe('실수령액이 계산과 다를 때 수동 금액 (원) — COUPANG이면 필수'),
           address: z.string().optional().describe('주소'),
           memo: z.string().optional().describe('특이사항'),
         },
@@ -252,6 +256,7 @@ export class McpService {
           id: z.number().describe('기록 id (worklog_month로 확인)'),
           title: z.string().optional(),
           workDate: z.string().optional().describe('YYYY-MM-DD'),
+          category: z.enum(['INTERIOR', 'COUPANG']).optional(),
           startTime: z.string().optional(),
           endTime: z.string().optional(),
           breakHours: z.number().optional(),

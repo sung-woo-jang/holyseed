@@ -1,4 +1,10 @@
 export type PayStatus = 'RECEIVED' | 'EXPECTED' | 'UNPAID' | 'DAYOFF'
+export type WorklogCategory = 'INTERIOR' | 'COUPANG'
+
+export interface WorklogJobOption {
+  id: number
+  name: string
+}
 
 export interface WorklogPhoto {
   filename: string
@@ -15,6 +21,7 @@ export interface Worklog {
   breakHours: number
   jobs: string[]
   payStatus: PayStatus
+  category: WorklogCategory
   dailyWage: number
   amount: number
   amountOverride: number | null
@@ -44,6 +51,7 @@ export interface WorklogInput {
   breakHours?: number
   jobs?: string[]
   payStatus?: PayStatus
+  category?: WorklogCategory
   dailyWage?: number
   amountOverride?: number | null
   address?: string

@@ -6,9 +6,11 @@ import { Tile } from '@/features/quant/ui/ui'
 import type { TossOrderDto } from '@/features/quant/lib/types'
 import { api, kst, kstDateOnly, n, usd } from '@/features/quant/lib/types'
 import { useStatus } from '@/features/quant/lib/useStatus'
+import { useIsDesktopNav } from '@/shared/hooks/use-media-query'
 
 export default function TradeDetailPage() {
   const { status } = useStatus()
+  const isDesktop = useIsDesktopNav()
   const { cycleNo, seq } = useParams()
   const [order, setOrder] = useState<TossOrderDto | null>(null)
   const [orderErr, setOrderErr] = useState<string | null>(null)
@@ -95,36 +97,61 @@ export default function TradeDetailPage() {
 
       <div className="card" style={{ marginBottom: 14 }}>
         <h3 style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 6 }}>전후 상태 비교</h3>
-        <div style={{ overflowX: 'auto' }}>
-          <table>
-            <thead>
-              <tr>
-                <th className="l"></th>
-                <th>보유수량</th>
-                <th>평단</th>
-                <th>잔금</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="l" style={{ color: 'var(--text-muted)' }}>
-                  직전
-                </td>
-                <td>{before.qty.toFixed(6)}</td>
-                <td>{before.avg > 0 ? usd(before.avg) : '—'}</td>
-                <td>{usd(before.cash)}</td>
-              </tr>
-              <tr>
-                <td className="l" style={{ fontWeight: 600 }}>
-                  이후
-                </td>
-                <td style={{ fontWeight: 600 }}>{after.qty.toFixed(6)}</td>
-                <td style={{ fontWeight: 600 }}>{usd(after.avg)}</td>
-                <td style={{ fontWeight: 600 }}>{usd(after.cash)}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        {isDesktop ? (
+          <div style={{ overflowX: 'auto' }}>
+            <table>
+              <thead>
+                <tr>
+                  <th className="l"></th>
+                  <th>보유수량</th>
+                  <th>평단</th>
+                  <th>잔금</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="l" style={{ color: 'var(--text-muted)' }}>
+                    직전
+                  </td>
+                  <td>{before.qty.toFixed(6)}</td>
+                  <td>{before.avg > 0 ? usd(before.avg) : '—'}</td>
+                  <td>{usd(before.cash)}</td>
+                </tr>
+                <tr>
+                  <td className="l" style={{ fontWeight: 600 }}>
+                    이후
+                  </td>
+                  <td style={{ fontWeight: 600 }}>{after.qty.toFixed(6)}</td>
+                  <td style={{ fontWeight: 600 }}>{usd(after.avg)}</td>
+                  <td style={{ fontWeight: 600 }}>{usd(after.cash)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="rowcard-list">
+            <div className="rowcard">
+              <div className="rowcard-row">
+                <span style={{ color: 'var(--text-muted)' }}>직전</span>
+                <span>{usd(before.cash)}</span>
+              </div>
+              <div className="rowcard-meta">
+                <span>보유 {before.qty.toFixed(6)}</span>
+                <span>· 평단 {before.avg > 0 ? usd(before.avg) : '—'}</span>
+              </div>
+            </div>
+            <div className="rowcard">
+              <div className="rowcard-row">
+                <span style={{ fontWeight: 600 }}>이후</span>
+                <span style={{ fontWeight: 600 }}>{usd(after.cash)}</span>
+              </div>
+              <div className="rowcard-meta">
+                <span>보유 {after.qty.toFixed(6)}</span>
+                <span>· 평단 {usd(after.avg)}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="card" style={{ marginBottom: 14 }}>
@@ -160,7 +187,7 @@ export default function TradeDetailPage() {
           <p style={{ color: 'var(--status-critical)', fontSize: 13 }}>주문 조회 실패: {orderErr}</p>
         ) : !order ? (
           <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>주문 조회 중…</p>
-        ) : (
+        ) : isDesktop ? (
           <div style={{ overflowX: 'auto' }}>
             <table>
               <thead>
@@ -188,6 +215,31 @@ export default function TradeDetailPage() {
                 </tr>
               </tbody>
             </table>
+            <p style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 6 }}>orderId: {order.orderId}</p>
+          </div>
+        ) : (
+          <div className="rowcard-list">
+            <div className="rowcard">
+              <div className="rowcard-row">
+                <span>
+                  {order.orderType} · {order.status}
+                </span>
+                <div style={{ textAlign: 'right' }}>
+                  <div>{order.orderAmount ? usd(n(order.orderAmount)) : `${n(order.quantity).toFixed(6)}주`}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                    {order.execution.filledAmount ? usd(n(order.execution.filledAmount)) : '체결 전'}
+                  </div>
+                </div>
+              </div>
+              <div className="rowcard-meta">
+                <span>{kst(order.orderedAt)}</span>
+                <span>· 체결 {n(order.execution.filledQuantity).toFixed(6)}주</span>
+                <span>
+                  · 체결가 {order.execution.averageFilledPrice ? usd(n(order.execution.averageFilledPrice)) : '—'}
+                </span>
+                <span>· 수수료 {order.execution.commission ? usd(n(order.execution.commission)) : '—'}</span>
+              </div>
+            </div>
             <p style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 6 }}>orderId: {order.orderId}</p>
           </div>
         )}

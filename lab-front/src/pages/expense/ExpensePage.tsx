@@ -2,13 +2,15 @@ import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/widgets/page-header'
+import { useIsDesktopNav } from '@/shared/hooks/use-media-query'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { Textarea } from '@/shared/ui/textarea'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
+import { FormSheet, FormSheetContent, FormSheetFooter, FormSheetHeader, FormSheetTitle } from '@/shared/ui/form-sheet'
+import { RecordCard, RecordCardList, RecordCardMeta, RecordCardRow } from '@/shared/ui/record-card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import {
   AlertDialog,
@@ -128,11 +130,11 @@ function ExpenseDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{editing ? '지출·수입 기록 수정' : '지출·수입 기록 추가'}</DialogTitle>
-        </DialogHeader>
+    <FormSheet open={open} onOpenChange={(v) => !v && onClose()}>
+      <FormSheetContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+        <FormSheetHeader>
+          <FormSheetTitle>{editing ? '지출·수입 기록 수정' : '지출·수입 기록 추가'}</FormSheetTitle>
+        </FormSheetHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="sm:col-span-2 space-y-2">
@@ -207,14 +209,14 @@ function ExpenseDialog({
             <Textarea rows={2} value={form.memo} onChange={(e) => set('memo', e.target.value)} />
           </div>
 
-          <DialogFooter>
+          <FormSheetFooter>
             <Button type="submit" disabled={create.isPending || update.isPending}>
               {editing ? '수정' : '추가'}
             </Button>
-          </DialogFooter>
+          </FormSheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </FormSheetContent>
+    </FormSheet>
   )
 }
 
@@ -227,6 +229,7 @@ export default function ExpensePage() {
 
   const { data: res, isLoading } = useExpenseMonth(year, month)
   const deleteExpense = useDeleteExpense()
+  const isDesktop = useIsDesktopNav()
 
   const records = res?.data?.records ?? []
   const summary = res?.data?.summary
@@ -306,7 +309,7 @@ export default function ExpensePage() {
       <div className="mt-4 rounded-lg border bg-card p-4">
         {isLoading ? (
           <p className="text-sm text-muted-foreground">불러오는 중…</p>
-        ) : (
+        ) : isDesktop ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -378,6 +381,54 @@ export default function ExpensePage() {
               ))}
             </TableBody>
           </Table>
+        ) : (
+          <RecordCardList>
+            {records.length === 0 && (
+              <p className="text-center text-sm text-muted-foreground">이 달의 기록이 없습니다.</p>
+            )}
+            {records.map((r) => (
+              <RecordCard
+                key={r.id}
+                onClick={() => {
+                  setEditing(r)
+                  setDialogOpen(true)
+                }}
+              >
+                <RecordCardRow>
+                  <div className="min-w-0">
+                    <Badge variant={r.kind === 'INCOME' ? 'default' : 'secondary'} className="text-[10px]">
+                      {r.kind === 'INCOME' ? '수입' : '지출'}
+                    </Badge>
+                    <p className="mt-1 truncate font-medium">{r.title}</p>
+                  </div>
+                  <div className="flex shrink-0 items-start gap-1" onClick={(e) => e.stopPropagation()}>
+                    <p className="font-semibold tabular-nums">{won(r.amount)}</p>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="-mt-1 -mr-2 size-9">
+                          <Trash2 className="size-4 text-muted-foreground" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>기록을 삭제할까요?</AlertDialogTitle>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>취소</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(r.id)}>삭제</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </RecordCardRow>
+                <RecordCardMeta>
+                  <span>{r.date.slice(5)}</span>
+                  <span>· {r.category}</span>
+                  {r.expenseType && <span>· {EXPENSE_TYPE_META[r.expenseType]}</span>}
+                </RecordCardMeta>
+              </RecordCard>
+            ))}
+          </RecordCardList>
         )}
       </div>
 

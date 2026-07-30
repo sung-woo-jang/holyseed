@@ -4,11 +4,13 @@ import { CashChart, TChart } from '@/features/quant/ui/CycleCharts'
 import { Tile } from '@/features/quant/ui/ui'
 import { n, usd, kstDateOnly } from '@/features/quant/lib/types'
 import { useStatus } from '@/features/quant/lib/useStatus'
+import { useIsDesktopNav } from '@/shared/hooks/use-media-query'
 
 export default function CycleDetailPage() {
   const { status } = useStatus()
   const { cycleNo } = useParams()
   const navigate = useNavigate()
+  const isDesktop = useIsDesktopNav()
 
   if (!status)
     return (
@@ -85,32 +87,69 @@ export default function CycleDetailPage() {
         <h3 style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>
           거래 내역 — 행 클릭 시 상세
         </h3>
-        <div style={{ overflowX: 'auto' }}>
-          <table>
-            <thead>
-              <tr>
-                <th className="l">m차</th>
-                <th className="l">날짜</th>
-                <th className="l">구분</th>
-                <th>체결가</th>
-                <th>수량</th>
-                <th>금액</th>
-                <th>T</th>
-                <th>평단</th>
-                <th>잔금</th>
-              </tr>
-            </thead>
-            <tbody>
-              {c.trades.map((t) => (
-                <tr
-                  key={t.id}
-                  title={t.note ?? undefined}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => navigate(`/quant/cycles/${c.cycleNo}/trades/${t.seq}`)}
-                >
-                  <td className="l">{t.seq}</td>
-                  <td className="l">{kstDateOnly(t.date)}</td>
-                  <td className="l">
+        {isDesktop ? (
+          <div style={{ overflowX: 'auto' }}>
+            <table>
+              <thead>
+                <tr>
+                  <th className="l">m차</th>
+                  <th className="l">날짜</th>
+                  <th className="l">구분</th>
+                  <th>체결가</th>
+                  <th>수량</th>
+                  <th>금액</th>
+                  <th>T</th>
+                  <th>평단</th>
+                  <th>잔금</th>
+                </tr>
+              </thead>
+              <tbody>
+                {c.trades.map((t) => (
+                  <tr
+                    key={t.id}
+                    title={t.note ?? undefined}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(`/quant/cycles/${c.cycleNo}/trades/${t.seq}`)}
+                  >
+                    <td className="l">{t.seq}</td>
+                    <td className="l">{kstDateOnly(t.date)}</td>
+                    <td className="l">
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          width: 8,
+                          height: 8,
+                          borderRadius: 4,
+                          marginRight: 6,
+                          background: t.side === 'SELL' ? 'var(--status-critical)' : 'var(--series-1)',
+                        }}
+                      />
+                      {t.kind}
+                    </td>
+                    <td>{usd(n(t.price))}</td>
+                    <td>{n(t.quantity).toFixed(6)}</td>
+                    <td>{usd(n(t.amount))}</td>
+                    <td>
+                      {n(t.tBefore)} → {n(t.tAfter)}
+                    </td>
+                    <td>{usd(n(t.avgAfter))}</td>
+                    <td>{usd(n(t.cashAfter))}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="rowcard-list">
+            {c.trades.map((t) => (
+              <div
+                key={t.id}
+                className="rowcard"
+                onClick={() => navigate(`/quant/cycles/${c.cycleNo}/trades/${t.seq}`)}
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="rowcard-row">
+                  <div>
                     <span
                       style={{
                         display: 'inline-block',
@@ -121,21 +160,25 @@ export default function CycleDetailPage() {
                         background: t.side === 'SELL' ? 'var(--status-critical)' : 'var(--series-1)',
                       }}
                     />
-                    {t.kind}
-                  </td>
-                  <td>{usd(n(t.price))}</td>
-                  <td>{n(t.quantity).toFixed(6)}</td>
-                  <td>{usd(n(t.amount))}</td>
-                  <td>
-                    {n(t.tBefore)} → {n(t.tAfter)}
-                  </td>
-                  <td>{usd(n(t.avgAfter))}</td>
-                  <td>{usd(n(t.cashAfter))}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    {t.seq}차 {t.kind} · {kstDateOnly(t.date)}
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div>{usd(n(t.amount))}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>잔금 {usd(n(t.cashAfter))}</div>
+                  </div>
+                </div>
+                <div className="rowcard-meta">
+                  <span>체결가 {usd(n(t.price))}</span>
+                  <span>· 수량 {n(t.quantity).toFixed(6)}</span>
+                  <span>
+                    · T {n(t.tBefore)}→{n(t.tAfter)}
+                  </span>
+                  <span>· 평단 {usd(n(t.avgAfter))}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </main>
   )

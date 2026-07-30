@@ -24,6 +24,7 @@ import {
 } from '@/features/worklog/api/hooks'
 import type { PayStatus, Worklog, WorklogCategory, WorklogInput, WorklogPhoto } from '@/features/worklog/api/types'
 import { CATEGORY_OPTIONS, calcWorklogAmount, getDailyWage, WITHHOLDING_RATE } from '@/features/worklog/lib/worklog-calc'
+import { useIsDesktopNav } from '@/shared/hooks/use-media-query'
 import { cn } from '@/shared/lib/utils'
 import {
   AlertDialog,
@@ -38,9 +39,10 @@ import {
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Checkbox } from '@/shared/ui/checkbox'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
+import { FormSheet, FormSheetContent, FormSheetFooter, FormSheetHeader, FormSheetTitle } from '@/shared/ui/form-sheet'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
+import { RecordCard, RecordCardList, RecordCardMeta, RecordCardRow } from '@/shared/ui/record-card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 import { Textarea } from '@/shared/ui/textarea'
@@ -271,11 +273,11 @@ function WorklogDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{editing ? '근무 기록 수정' : '근무 기록 추가'}</DialogTitle>
-        </DialogHeader>
+    <FormSheet open={open} onOpenChange={(v) => !v && onClose()}>
+      <FormSheetContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+        <FormSheetHeader>
+          <FormSheetTitle>{editing ? '근무 기록 수정' : '근무 기록 추가'}</FormSheetTitle>
+        </FormSheetHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
@@ -482,14 +484,14 @@ function WorklogDialog({
             </div>
           </div>
 
-          <DialogFooter>
+          <FormSheetFooter>
             <Button type="submit" disabled={create.isPending || update.isPending}>
               {editing ? '수정' : '추가'}
             </Button>
-          </DialogFooter>
+          </FormSheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </FormSheetContent>
+    </FormSheet>
   )
 }
 
@@ -503,6 +505,7 @@ export default function WorklogPage() {
   const { data: res, isLoading } = useWorklogMonth(year, month)
   const deleteWorklog = useDeleteWorklog()
   const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' }>({ key: 'workDate', dir: 'asc' })
+  const isDesktop = useIsDesktopNav()
 
   const records = res?.data?.records ?? []
   const summary = res?.data?.summary
@@ -598,7 +601,7 @@ export default function WorklogPage() {
       <div className="bg-card mt-4 rounded-lg border p-4">
         {isLoading ? (
           <p className="text-muted-foreground text-sm">불러오는 중…</p>
-        ) : (
+        ) : isDesktop ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -688,6 +691,78 @@ export default function WorklogPage() {
               })}
             </TableBody>
           </Table>
+        ) : (
+          <RecordCardList>
+            {sortedRecords.length === 0 && (
+              <p className="text-muted-foreground text-center text-sm">이 달의 기록이 없습니다.</p>
+            )}
+            {sortedRecords.map((r) => {
+              const meta = PAY_STATUS_META[r.payStatus]
+              return (
+                <RecordCard key={r.id} onClick={() => openEdit(r)}>
+                  <RecordCardRow>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span>{r.workDate.slice(5)}</span>
+                        <Badge variant={meta.variant} className="text-[10px]">
+                          {meta.label}
+                        </Badge>
+                      </div>
+                      <p className="mt-1 truncate font-medium">
+                        {r.category === 'COUPANG' && (
+                          <Badge variant="outline" className="mr-1.5 text-[10px]">
+                            쿠팡
+                          </Badge>
+                        )}
+                        {r.title}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-start gap-1" onClick={(e) => e.stopPropagation()}>
+                      <div className="text-right">
+                        <p className="font-semibold tabular-nums">{won(r.netAmount)}</p>
+                        <p className="text-muted-foreground text-xs tabular-nums">
+                          {won(r.effectiveAmount)}
+                          {r.amountOverride !== null && '*'}
+                        </p>
+                      </div>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="-mt-1 -mr-2 size-9">
+                            <Trash2 className="text-muted-foreground size-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>기록을 삭제할까요?</AlertDialogTitle>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>취소</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(r.id)}>삭제</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </RecordCardRow>
+                  <RecordCardMeta>
+                    <span>
+                      {r.payStatus === 'DAYOFF'
+                        ? '휴무'
+                        : r.startTime && r.endTime
+                          ? `${r.startTime}~${r.endTime}`
+                          : '—'}
+                    </span>
+                    {r.jobs.length > 0 && <span>· {r.jobs.join(', ')}</span>}
+                    {r.photos.length > 0 && (
+                      <span className="inline-flex items-center gap-0.5">
+                        <ImagePlus className="size-3.5" />
+                        {r.photos.length}
+                      </span>
+                    )}
+                  </RecordCardMeta>
+                </RecordCard>
+              )
+            })}
+          </RecordCardList>
         )}
         <p className="text-muted-foreground mt-2 text-xs">* 표시는 수동 오버라이드된 금액 (실수령액 우선 원칙)</p>
       </div>

@@ -78,6 +78,34 @@
   padding: 16px;
 }
 
+/* 모바일 카드 리스트 — Table의 각 행 하나를 대체하는 얇은 카드 */
+.quant-scope .rowcard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.quant-scope .rowcard {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+.quant-scope .rowcard-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.quant-scope .rowcard-meta {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
 .quant-scope button {
   font: inherit;
   cursor: pointer;

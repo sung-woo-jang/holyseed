@@ -152,6 +152,7 @@ export function useHouseholdData(): MockPersona {
       fxRate: a.currency !== 'KRW' ? Number(a.latestSnapshot?.fxRateToKRW) || 0 : undefined,
       value: latestKRW,
       isLiability: a.isLiability,
+      ownerUserId: a.ownerUserId ?? null,
       delta,
       deltaPct: delta != null && prevKRW ? (delta / prevKRW) * 100 : null,
       snapshotDate: a.latestSnapshot?.date ?? undefined,

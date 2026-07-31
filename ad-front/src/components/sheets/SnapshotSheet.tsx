@@ -8,6 +8,7 @@ import EmptyState from '../common/EmptyState';
 import DatePicker from '../common/DatePicker';
 import { useTheme } from '../../lib/theme';
 import { useDataSource } from '../../lib/data-source';
+import { useAuthStore } from '../../stores/auth.store';
 import { krw, krwShort } from '../../lib/format';
 import { todayLocal } from '../../lib/date';
 import { getErrorMessage } from '../../lib/error';
@@ -39,6 +40,8 @@ const QUICK_STEPS = [
 export default function SnapshotSheet({ visible, onClose, focusAssetId, onSaved }: SnapshotSheetProps) {
   const theme = useTheme();
   const data = useDataSource();
+  const { user } = useAuthStore();
+  const myId = user ? Number(user.id) : null;
   const [values, setValues] = useState<Record<string, string>>({});
   const [date, setDate] = useState(todayLocal());
   const [datePickerOpen, setDatePickerOpen] = useState(false);
@@ -61,7 +64,7 @@ export default function SnapshotSheet({ visible, onClose, focusAssetId, onSaved 
 
   const assets = focusAssetId
     ? data.assets.filter((a) => a.id === focusAssetId)
-    : data.assets;
+    : data.assets.filter((a) => a.ownerUserId == null || a.ownerUserId === myId);
 
   const getNum = (id: string) => {
     const raw = values[id]?.replace(/[^0-9]/g, '');

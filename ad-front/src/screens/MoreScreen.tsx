@@ -1,50 +1,77 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Button from '../components/ui/Button';
-import ListHeader from '../components/ui/ListHeader';
-import ListRow from '../components/ui/ListRow';
-import Border from '../components/ui/Border';
-import ConfirmDialog from '../components/common/ConfirmDialog';
-import { useTheme } from '../lib/theme';
-import { useDataSource, useMockRole } from '../lib/data-source';
-import { clearTokens } from '../lib/storage';
-import { useAuthStore } from '../stores/auth.store';
-import TossEmoji from '../components/common/TossEmoji';
-import { TE } from '../lib/toss-emoji';
-import styles from './MoreScreen.module.css';
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import ConfirmDialog from '../components/common/ConfirmDialog'
+import TossEmoji from '../components/common/TossEmoji'
+import Border from '../components/ui/Border'
+import Button from '../components/ui/Button'
+import ListHeader from '../components/ui/ListHeader'
+import ListRow from '../components/ui/ListRow'
+import { useDataSource, useMockRole } from '../lib/data-source'
+import { clearTokens } from '../lib/storage'
+import { useTheme } from '../lib/theme'
+import { TE } from '../lib/toss-emoji'
+import { useAuthStore } from '../stores/auth.store'
+import styles from './MoreScreen.module.css'
 
 export default function MoreScreen() {
-  const navigate = useNavigate();
-  const theme = useTheme();
-  const data = useDataSource();
-  const role = useMockRole();
-  const logout = useAuthStore((s) => s.logout);
-  const [logoutConfirm, setLogoutConfirm] = useState(false);
+  const navigate = useNavigate()
+  const theme = useTheme()
+  const data = useDataSource()
+  const role = useMockRole()
+  const logout = useAuthStore((s) => s.logout)
+  const [logoutConfirm, setLogoutConfirm] = useState(false)
 
   async function handleLogout() {
-    await clearTokens();
-    logout();
+    await clearTokens()
+    logout()
   }
 
-  const owner = data.members.find((m) => m.role === 'OWNER');
-  const memberCount = data.members.length;
+  const owner = data.members.find((m) => m.role === 'OWNER')
+  const memberCount = data.members.length
 
   const menuItems = [
-    { emojiCode: TE.people, bgColor: theme.dark ? '#1e2a40' : '#EBF5FB', label: '멤버 관리', detail: `${memberCount}명이 함께하고 있어요`, route: '/more/members' },
-    { emojiCode: TE.money, bgColor: theme.dark ? '#1a2e28' : '#E8F8F5', label: '현금흐름', detail: '수입·지출·저축률 분석', route: '/more/cashflow' },
-    { emojiCode: TE.chartBar, bgColor: theme.dark ? '#1a2340' : '#EEF2FF', label: '연간 비교', detail: '자산군별 증감 워터폴', route: '/more/compare' },
-    { emojiCode: TE.calendar, bgColor: theme.dark ? '#0f2e26' : '#E6F9F3', label: '날짜별 자산 조회', detail: '과거 특정일 총자산 확인', route: '/more/net-worth-at' },
-    { emojiCode: TE.folder, bgColor: theme.dark ? '#2a2010' : '#FEF9E7', label: '카테고리 관리', detail: '우리집만의 카테고리 설정', route: '/more/categories' },
-    { emojiCode: TE.gear, bgColor: theme.dark ? '#221a2e' : '#F5EEF8', label: '설정', detail: '알림, 통화, 테마', route: '/more/settings' },
-  ];
+    {
+      emojiCode: TE.people,
+      bgColor: theme.dark ? '#1e2a40' : '#EBF5FB',
+      label: '멤버 관리',
+      detail: `${memberCount}명이 함께하고 있어요`,
+      route: '/more/members',
+    },
+    {
+      emojiCode: TE.money,
+      bgColor: theme.dark ? '#1a2e28' : '#E8F8F5',
+      label: '현금흐름',
+      detail: '수입·지출·저축률 분석',
+      route: '/more/cashflow',
+    },
+    {
+      emojiCode: TE.chartBar,
+      bgColor: theme.dark ? '#1a2340' : '#EEF2FF',
+      label: '연간 비교',
+      detail: '자산군별 증감 워터폴',
+      route: '/more/compare',
+    },
+    {
+      emojiCode: TE.folder,
+      bgColor: theme.dark ? '#2a2010' : '#FEF9E7',
+      label: '카테고리 관리',
+      detail: '우리집만의 카테고리 설정',
+      route: '/more/categories',
+    },
+    {
+      emojiCode: TE.gear,
+      bgColor: theme.dark ? '#221a2e' : '#F5EEF8',
+      label: '설정',
+      detail: '알림, 통화, 테마',
+      route: '/more/settings',
+    },
+  ]
 
   return (
     <div className={styles.container} style={{ backgroundColor: theme.bg }}>
       {/* Household Banner */}
       <ListHeader
-        title={
-          <ListHeader.TitleParagraph typography="t4">우리집</ListHeader.TitleParagraph>
-        }
+        title={<ListHeader.TitleParagraph typography="t4">우리집</ListHeader.TitleParagraph>}
         lower={
           <ListHeader.DescriptionParagraph>
             {`${memberCount}명 · ${owner?.name ?? '-'} 님이 소유`}
@@ -79,8 +106,12 @@ export default function MoreScreen() {
             }
             contents={
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span className={styles.menuLabel} style={{ color: theme.text }}>{item.label}</span>
-                <span className={styles.menuDetail} style={{ color: theme.textMuted }}>{item.detail}</span>
+                <span className={styles.menuLabel} style={{ color: theme.text }}>
+                  {item.label}
+                </span>
+                <span className={styles.menuDetail} style={{ color: theme.textMuted }}>
+                  {item.detail}
+                </span>
               </div>
             }
             withArrow
@@ -98,7 +129,9 @@ export default function MoreScreen() {
         <Button display="full" size="big" type="danger" style="weak" onPress={() => setLogoutConfirm(true)}>
           로그아웃
         </Button>
-        <span className={styles.footerText} style={{ color: theme.textMuted }}>자산일기 v1.0</span>
+        <span className={styles.footerText} style={{ color: theme.textMuted }}>
+          자산일기 v1.0
+        </span>
       </div>
 
       <ConfirmDialog
@@ -111,5 +144,5 @@ export default function MoreScreen() {
         onClose={() => setLogoutConfirm(false)}
       />
     </div>
-  );
+  )
 }

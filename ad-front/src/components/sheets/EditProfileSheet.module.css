@@ -1,0 +1,54 @@
+.body {
+  padding: 8px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.previewWrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.previewAvatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.previewText {
+  color: #fff;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.colorLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.colorRow {
+  display: flex;
+  gap: 10px;
+}
+
+.colorSwatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.errorText {
+  font-size: 13px;
+  text-align: center;
+}

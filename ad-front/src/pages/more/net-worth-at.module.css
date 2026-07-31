@@ -20,24 +20,38 @@
   padding: 80px 0;
 }
 
-.dateButton {
-  margin: 12px 20px 8px;
-  border-radius: 16px;
-  border: 1px solid;
-  padding: 16px 20px;
+.monthNav {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 14px 20px 8px;
 }
 
-.dateLabel {
+.monthBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.monthArrow {
   font-size: 16px;
+  line-height: 20px;
+}
+
+.monthLabel {
+  font-size: 14px;
   font-weight: 700;
 }
 
-.dateChange {
-  font-size: 13px;
-  font-weight: 600;
+.calCard {
+  margin: 0 20px 12px;
+  border-radius: 14px;
+  border: 1px solid;
+  padding: 12px 0;
 }
 
 .headlineCard {

@@ -6,7 +6,7 @@ import Border from '../../components/ui/Border';
 import Loader from '../../components/ui/Loader';
 import ScreenHeader from '../../components/common/ScreenHeader';
 import EmptyState from '../../components/common/EmptyState';
-import DatePicker from '../../components/common/DatePicker';
+import WorkCalendar from '../../components/WorkCalendar';
 import { useTheme } from '../../lib/theme';
 import { useAuthStore } from '../../stores/auth.store';
 import { dashboardApi } from '../../api';
@@ -44,7 +44,19 @@ export default function NetWorthAtPage() {
   const hid = currentHousehold?.id;
 
   const [date, setDate] = useState(todayLocal());
-  const [pickerVisible, setPickerVisible] = useState(false);
+  const [month, setMonth] = useState(todayLocal().slice(0, 7));
+
+  function shiftMonth(delta: number) {
+    const [yy, mm] = month.split('-').map(Number);
+    const d = new Date(yy!, mm! - 1 + delta, 1);
+    const newMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    const candidate = `${newMonth}-${String(lastDay).padStart(2, '0')}`;
+    const today = todayLocal();
+    setMonth(newMonth);
+    setDate(candidate > today ? today : candidate);
+  }
+  const canGoNext = month < todayLocal().slice(0, 7);
 
   const q = useQuery({
     queryKey: qk.netWorthAt(hid ?? 0, date),
@@ -61,11 +73,21 @@ export default function NetWorthAtPage() {
     <div className={styles.root} style={{ backgroundColor: theme.bg }}>
       <ScreenHeader title="날짜별 자산 조회" onBack={() => navigate(-1)} />
       <div className={styles.scroll}>
-        {/* 날짜 선택 */}
-        <button type="button" className={styles.dateButton} style={{ backgroundColor: theme.card, borderColor: theme.border }} onClick={() => setPickerVisible(true)}>
-          <span className={styles.dateLabel} style={{ color: theme.text }}>{formatDateLabel(date)}</span>
-          <span className={styles.dateChange} style={{ color: theme.brand }}>날짜 변경</span>
-        </button>
+        {/* 월 네비 */}
+        <div className={styles.monthNav}>
+          <button type="button" className={styles.monthBtn} style={{ backgroundColor: theme.card, borderColor: theme.border }} onClick={() => shiftMonth(-1)}>
+            <span className={styles.monthArrow} style={{ color: theme.text }}>‹</span>
+          </button>
+          <span className={styles.monthLabel} style={{ color: theme.text }}>{`${Number(month.slice(5))}월 (${month.slice(0, 4)})`}</span>
+          <button type="button" className={styles.monthBtn} style={{ backgroundColor: theme.card, borderColor: theme.border, opacity: canGoNext ? 1 : 0.3 }} onClick={() => canGoNext && shiftMonth(1)} disabled={!canGoNext}>
+            <span className={styles.monthArrow} style={{ color: theme.text }}>›</span>
+          </button>
+        </div>
+
+        {/* 캘린더 */}
+        <div className={styles.calCard} style={{ backgroundColor: theme.card, borderColor: theme.border }}>
+          <WorkCalendar month={month} logs={[]} selectedDate={date} onSelectDay={setDate} maxDate={todayLocal()} />
+        </div>
 
         {q.isLoading ? (
           <div className={styles.loadingBox}>
@@ -130,15 +152,6 @@ export default function NetWorthAtPage() {
           </>
         )}
       </div>
-
-      <DatePicker
-        visible={pickerVisible}
-        value={date}
-        onSelect={setDate}
-        onClose={() => setPickerVisible(false)}
-        maxDate={todayLocal()}
-        title="조회할 날짜 선택"
-      />
     </div>
   );
 }

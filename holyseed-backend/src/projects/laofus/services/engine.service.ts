@@ -306,13 +306,6 @@ export class LaofusEngineService {
         }
         log(`시간창 OK: ${win.reason} (미국 거래일 ${win.usDate})`);
 
-        // 2거래일 주기 게이트 — 직전 거래일에 이미 판단을 실행했으면 오늘은 스킵 (하락장 원금 소진 페이스 완화)
-        if (row.lastDecisionUsDate && row.lastDecisionUsDate === cal.previousBusinessDay?.date) {
-          const message = `스킵: 2거래일 주기 — 직전 판단일(${row.lastDecisionUsDate}) 다음 거래일`;
-          await this.event('info', message, runId);
-          lines.push(message);
-          return lines;
-        }
         // 오늘 이미 처리됨 — 장중 감시(monitorSell)가 먼저 쿼터매도/전량매도를 확정한 경우 EOD 중복 실행 방지
         if (row.lastDecisionUsDate === win.usDate) {
           const message = `스킵: 오늘(${win.usDate}) 장중 감시에서 이미 처리됨`;

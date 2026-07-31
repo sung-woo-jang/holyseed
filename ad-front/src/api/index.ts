@@ -78,6 +78,7 @@ export const txApi = {
       type: TxType;
       amount: number;
       currency?: string;
+      title?: string;
       memo?: string;
       categoryId?: number;
       fromAssetId?: number;
@@ -86,7 +87,7 @@ export const txApi = {
     },
   ) => api.post<Transaction>(`/households/${householdId}/transactions`, dto).then((r) => r.data),
 
-  update: (id: number, dto: Partial<{ date: string; type: TxType; amount: number; categoryId: number; fromAssetId: number; toAssetId: number; memo: string }>) =>
+  update: (id: number, dto: Partial<{ date: string; type: TxType; amount: number; categoryId: number; fromAssetId: number; toAssetId: number; title: string; memo: string }>) =>
     api.post<Transaction>(`/transactions/${id}/update`, dto).then((r) => r.data),
 
   delete: (id: number) => api.post(`/transactions/${id}/delete`).then((r) => r.data),

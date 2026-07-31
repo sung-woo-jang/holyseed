@@ -158,14 +158,17 @@ export function useHouseholdData(): MockPersona {
     };
   });
 
+  // 카테고리 id → 카테고리 객체 맵 (거래/정기거래 응답엔 categoryId만 오고 관계가 join되어 있지 않음)
+  const categoryById = new Map<number, any>(rawCategories.map((c: any) => [c.id, c]));
+
   // 거래내역
   const transactions = rawTx.map((t: any) => ({
     id: String(t.id),
     date: t.date,
     type: t.type,
     amount: Number(t.amount) || 0,
-    category: t.category?.name ?? '기타',
-    title: t.memo || t.category?.name || '거래',
+    category: categoryById.get(t.categoryId)?.name ?? '기타',
+    title: t.memo || categoryById.get(t.categoryId)?.name || '거래',
     memo: t.memo ?? undefined,
     from: t.fromAssetId != null ? String(t.fromAssetId) : undefined,
     to: t.toAssetId != null ? String(t.toAssetId) : undefined,
@@ -177,7 +180,7 @@ export function useHouseholdData(): MockPersona {
     id: String(r.id),
     title: r.title ?? r.name ?? '항목',
     amount: Number(r.amount) || 0,
-    category: r.category?.name ?? '기타',
+    category: categoryById.get(r.categoryId)?.name ?? '기타',
     dayOfMonth: r.dayOfMonth,
     from: r.fromAssetId != null ? String(r.fromAssetId) : '',
     active: r.active,

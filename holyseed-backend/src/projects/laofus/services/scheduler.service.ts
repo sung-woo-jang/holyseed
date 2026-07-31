@@ -13,6 +13,13 @@ import { LaofusEngineService } from './engine.service';
  *
  * 회수 크론(개장 10분 후, 22:40/23:40)은 고정 — 소수점 주문 개장 배치 체결 회수용.
  *
+ * 장중 쿼터매도/전량매도 즉시 감시(LAOFUS_SELL_MONITOR_CRON, 기본 5분 주기) — 정규장 시간에만
+ * 동작하며, EOD 판단과 lastDecisionUsDate를 공유해 하루 1회로 제한(engine.service.monitorSell 참조).
+ * LAOFUS_SELL_MONITOR=false 로 이 감시만 독립적으로 끌 수 있음(전체는 LAOFUS_SCHEDULER=false).
+ * LAOFUS_SELL_MONITOR_LIVE — 신규 기능이라 EOD(LAOFUS_LIVE)와 별도로 dry-run 검증 기간을 둘 수 있게
+ * 분리된 실주문 스위치(미설정 시 LAOFUS_LIVE를 그대로 따름). 'false'로 두면 EOD는 라이브인 채로
+ * 이 감시만 로그만 남기고(주문 미실행) 지켜볼 수 있다.
+ *
  * env:
  * - LAOFUS_SCHEDULER=false 로 비활성 (기본 활성) — 로컬 dev와 서버 동시 가동 시 중복 방지
  * - LAOFUS_LIVE=true 로 실주문 (기본 dry-run)
@@ -35,6 +42,18 @@ export class LaofusSchedulerService implements OnModuleInit {
     return process.env.LAOFUS_LIVE === 'true';
   }
 
+  private get sellMonitorEnabled(): boolean {
+    return process.env.LAOFUS_SELL_MONITOR !== 'false';
+  }
+
+  /** 미설정 시 LAOFUS_LIVE를 따름 — EOD는 라이브를 유지한 채 이 기능만 별도로 dry-run 검증 가능 */
+  private get sellMonitorLive(): boolean {
+    const override = process.env.LAOFUS_SELL_MONITOR_LIVE;
+    if (override === 'true') return true;
+    if (override === 'false') return false;
+    return this.live;
+  }
+
   /** cron 표현식 'm h * * d'에서 'HH:MM' 슬롯 라벨 추출 */
   private slotOf(cron: string): string {
     const [m, h] = cron.trim().split(/\s+/);
@@ -53,6 +72,21 @@ export class LaofusSchedulerService implements OnModuleInit {
       this.runJobs.push({ slot, name });
       this.logger.log(`매매 크론 등록: ${name} '${spec}' (KST ${slot})`);
     });
+
+    if (this.sellMonitorEnabled) {
+      const spec = process.env.LAOFUS_SELL_MONITOR_CRON ?? '*/5 * * * *';
+      const job = new CronJob(spec, () => void this.sellMonitorTick(), null, false, 'Asia/Seoul');
+      this.registry.addCronJob('laofus-sell-monitor', job);
+      job.start();
+      this.logger.log(`장중 매도 감시 크론 등록: 'laofus-sell-monitor' '${spec}'`);
+    } else {
+      this.logger.log('장중 매도 감시 — LAOFUS_SELL_MONITOR=false, 등록 스킵');
+    }
+  }
+
+  private async sellMonitorTick(): Promise<void> {
+    if (!this.enabled) return;
+    await this.engine.monitorSell({ live: this.sellMonitorLive });
   }
 
   /** 등록된 매매 크론의 다음 발화 시각 (ISO, 오름차순) — 대시보드 카운트다운용 */

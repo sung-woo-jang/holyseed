@@ -69,3 +69,24 @@ export function checkWindow(cal: UsMarketCalendar, now: Date = new Date(), opts:
     closeAt: nearest.closeAt,
   };
 }
+
+export interface RegularSessionCheck {
+  active: boolean;
+  usDate: string | null;
+}
+
+/**
+ * now가 정규장(본장) 시간 안인지 판별 — 장중 매도 감시용.
+ * checkWindow와 동일한 이유(자정 근처 KST 날짜 경계, 2026-07-15 사고 재발 방지)로 3영업일을 모두 검사한다.
+ */
+export function activeRegularSession(cal: UsMarketCalendar, now: Date = new Date()): RegularSessionCheck {
+  const days: UsMarketDay[] = [cal.previousBusinessDay, cal.today, cal.nextBusinessDay];
+  const t = now.getTime();
+  for (const day of days) {
+    if (!day?.regularMarket) continue;
+    const start = new Date(day.regularMarket.startTime).getTime();
+    const end = new Date(day.regularMarket.endTime).getTime();
+    if (t >= start && t <= end) return { active: true, usDate: day.date };
+  }
+  return { active: false, usDate: null };
+}

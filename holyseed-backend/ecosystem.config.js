@@ -71,6 +71,10 @@ module.exports = {
         LAOFUS_RUN_CRON_2: '25 4 * * 2-6',
         LAOFUS_WINDOW_MIN: '90',
         LAOFUS_WINDOW_MAX: '105',
+        // 장중 쿼터매도/전량매도 즉시 감시 — 신규 기능이라 며칠간 dry-run으로 로그만 관찰 후
+        // 문제 없으면 LAOFUS_SELL_MONITOR_LIVE를 'true'로 바꿀 것 (EOD 라이브에는 영향 없음)
+        LAOFUS_SELL_MONITOR: 'true',
+        LAOFUS_SELL_MONITOR_LIVE: 'false',
         VR_LIVE: 'true',
         VR_SCHEDULER: 'true',
         VR_RUN_CRON: '*/5 * * * *',

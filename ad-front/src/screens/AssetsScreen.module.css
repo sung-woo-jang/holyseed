@@ -32,25 +32,6 @@
   letter-spacing: -0.8px;
 }
 
-.pickingBanner {
-  margin: 0 20px 12px;
-  border-radius: 12px;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.pickingText {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.pickingCancel {
-  font-size: 13px;
-  font-weight: 700;
-}
-
 .actionBlock {
   padding: 0 20px 16px;
 }

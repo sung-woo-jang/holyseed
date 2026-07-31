@@ -7,7 +7,6 @@ import EmptyState from '../components/common/EmptyState'
 import TossEmoji from '../components/common/TossEmoji'
 import AddAssetSheet from '../components/sheets/AddAssetSheet'
 import SnapshotSheet from '../components/sheets/SnapshotSheet'
-import Badge from '../components/ui/Badge'
 import Border from '../components/ui/Border'
 import ListRow from '../components/ui/ListRow'
 import { getAssetCategoryMeta } from '../lib/category-meta'
@@ -32,7 +31,6 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
   const data = useDataSource()
   const [snapshotOpen, setSnapshotOpen] = useState(false)
   const [snapshotFocusId, setSnapshotFocusId] = useState<string | undefined>(undefined)
-  const [pickingAsset, setPickingAsset] = useState(false)
   const [addAssetOpen, setAddAssetOpen] = useState(false)
   const [actionAsset, setActionAsset] = useState<MockAsset | null>(null)
   const [editAsset, setEditAsset] = useState<MockAsset | null>(null)
@@ -75,12 +73,6 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
 
   const total = data.assets.reduce((s, a) => s + (a.isLiability ? -a.value : a.value), 0)
 
-  function handlePickAsset(assetId: string) {
-    setSnapshotFocusId(assetId)
-    setSnapshotOpen(true)
-    setPickingAsset(false)
-  }
-
   function handleSnapshotClose() {
     setSnapshotOpen(false)
     setSnapshotFocusId(undefined)
@@ -99,22 +91,8 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
           </span>
         </div>
 
-        {/* 개별입력 피킹 배너 */}
-        {pickingAsset && (
-          <div className={styles.pickingBanner} style={{ backgroundColor: theme.brandSoft }}>
-            <span className={styles.pickingText} style={{ color: theme.brand }}>
-              개별 입력할 자산을 선택하세요
-            </span>
-            <button type="button" onClick={() => setPickingAsset(false)}>
-              <span className={styles.pickingCancel} style={{ color: theme.brand }}>
-                취소
-              </span>
-            </button>
-          </div>
-        )}
-
         {/* Action buttons — 자산이 있을 때만 */}
-        {!isViewer && !pickingAsset && data.assets.length > 0 && (
+        {!isViewer && data.assets.length > 0 && (
           <div className={styles.actionBlock}>
             <div className={styles.actionRow}>
               <button
@@ -128,17 +106,6 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
               >
                 <TossEmoji code={TE.camera} size={18} />
                 <span className={styles.actionBtnPrimary}>일괄 스냅샷</span>
-              </button>
-              <button
-                type="button"
-                className={styles.actionBtn}
-                style={{ backgroundColor: theme.brandSoft }}
-                onClick={() => setPickingAsset(true)}
-              >
-                <TossEmoji code={TE.pencil} size={18} />
-                <span className={styles.actionBtnSoft} style={{ color: theme.brand }}>
-                  개별 입력
-                </span>
               </button>
               <button
                 type="button"
@@ -211,11 +178,7 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
                           >
                             {krw(a.value)}
                           </span>
-                          {pickingAsset ? (
-                            <Badge type="blue" badgeStyle="weak" size="small">
-                              선택
-                            </Badge>
-                          ) : !isViewer ? (
+                          {!isViewer ? (
                             <button
                               type="button"
                               className={styles.kebabBtn}
@@ -231,8 +194,7 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
                           ) : null}
                         </div>
                       }
-                      withArrow={pickingAsset}
-                      onPress={() => (pickingAsset ? handlePickAsset(a.id) : onAssetPress?.(a))}
+                      onPress={() => onAssetPress?.(a)}
                       verticalPadding="small"
                     />
                     {i < items.length - 1 && <Border type="full" />}
@@ -245,7 +207,7 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
       </div>
 
       {/* FAB */}
-      {!isViewer && !pickingAsset && (
+      {!isViewer && (
         <button
           type="button"
           className={styles.fab}

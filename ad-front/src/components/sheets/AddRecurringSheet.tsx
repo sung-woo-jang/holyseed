@@ -48,12 +48,10 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
   const [name, setName] = useState('');
   const [category, setCategory] = useState<{ id: number; name: string } | null>(null);
   const [dayOfMonth, setDayOfMonth] = useState(25);
-  const [asset, setAsset] = useState<{ id: string; name: string } | null>(null);
   const [autoGenerate, setAutoGenerate] = useState(true);
   const [hasEnd, setHasEnd] = useState(false);
   const [endMonths, setEndMonths] = useState(12); // 시작 기준 N개월 후
   const [catPicker, setCatPicker] = useState(false);
-  const [assetPicker, setAssetPicker] = useState(false);
   const [dayPicker, setDayPicker] = useState(false);
   const [endPicker, setEndPicker] = useState(false);
   const [error, setError] = useState('');
@@ -69,8 +67,6 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
     const c = data.categories.find((x) => x.name === editRec.category);
     setCategory(c ? { id: c.id, name: c.name } : { id: 0, name: editRec.category });
     setDayOfMonth(editRec.dayOfMonth);
-    const a = editRec.from ? data.assets.find((x) => x.id === editRec.from) : undefined;
-    setAsset(a ? { id: a.id, name: a.name } : null);
     setHasEnd(!!editRec.endDate);
     setError('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -81,7 +77,6 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
     .filter(([, def]) => def.type === type)
     .map(([n]) => n);
   const apiCategories = data.categories.filter((c) => c.type === type);
-  const assetOptions = data.assets.filter((a) => !a.isLiability);
   const amtNum = Number(amount.replace(/[^0-9]/g, ''));
   const isValid = name.length > 0 && amtNum > 0;
 
@@ -98,7 +93,7 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
 
   function reset() {
     setType('EXPENSE'); setAmount(''); setName(''); setCategory(null);
-    setDayOfMonth(25); setAsset(null); setAutoGenerate(true); setHasEnd(false); setEndMonths(12); setError('');
+    setDayOfMonth(25); setAutoGenerate(true); setHasEnd(false); setEndMonths(12); setError('');
   }
 
   async function handleSave() {
@@ -111,7 +106,6 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
           dto: {
             title: name, type, amount: amtNum, dayOfMonth,
             ...(category && category.id > 0 ? { categoryId: category.id } : {}),
-            ...(asset ? (isIncome ? { toAssetId: Number(asset.id) } : { fromAssetId: Number(asset.id) }) : {}),
             ...(hasEnd ? { endDate: computeEndDate() } : {}),
           },
         });
@@ -122,7 +116,6 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
       await createRecurring.mutateAsync({
         title: name, type, amount: amtNum,
         ...(category && category.id > 0 ? { categoryId: category.id } : {}),
-        ...(asset ? (isIncome ? { toAssetId: Number(asset.id) } : { fromAssetId: Number(asset.id) }) : {}),
         frequency: 'MONTHLY', dayOfMonth, startDate: todayStr,
         ...(hasEnd ? { endDate: computeEndDate() } : {}),
       });
@@ -164,19 +157,6 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
                 />
               );
             })}
-          </PickerOverlay>
-
-          {/* 자산 피커 */}
-          <PickerOverlay visible={assetPicker} title="자산 선택" onClose={() => setAssetPicker(false)}>
-            {assetOptions.map((a) => (
-              <ListRow
-                key={a.id}
-                contents={<span style={{ color: theme.text, fontSize: 15, fontWeight: 500 }}>{a.name}</span>}
-                right={asset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
-                onPress={() => { setAsset({ id: a.id, name: a.name }); setAssetPicker(false); }}
-                verticalPadding="small"
-              />
-            ))}
           </PickerOverlay>
 
           {/* 결제일 피커 */}
@@ -262,7 +242,6 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
         <div className={styles.fieldsCard} style={{ borderColor: theme.border }}>
           <FormRow label="카테고리" value={category?.name || ''} onPress={() => setCatPicker(true)} />
           <FormRow label="결제일" value={`매월 ${dayOfMonth}일`} onPress={() => setDayPicker(true)} />
-          <FormRow label={isIncome ? '입금 자산' : '출금 자산'} value={asset?.name || ''} onPress={() => setAssetPicker(true)} />
         </div>
 
         {/* 종료일 설정 */}
@@ -288,7 +267,7 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
         {isValid && autoGenerate && (
           <div className={styles.previewCard} style={{ borderColor: theme.brand }}>
             <span className={styles.previewText} style={{ color: theme.text }}>
-              <b>{nextDateStr}</b>에 <b>{asset?.name || '선택한 자산'}</b>{isIncome ? '으로 ' : '에서 '}
+              <b>{nextDateStr}</b>에{' '}
               <b style={{ color: isIncome ? theme.brand : theme.danger }}>{isIncome ? '+' : '-'}{krw(amtNum)}</b>이 자동으로 기록돼요
             </span>
           </div>

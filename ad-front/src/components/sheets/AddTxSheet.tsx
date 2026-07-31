@@ -4,7 +4,6 @@ import TextFieldBig from '../ui/TextFieldBig';
 import ListRow from '../ui/ListRow';
 import SegmentedControl from '../ui/SegmentedControl';
 import SheetModal from './SheetModal';
-import EmptyState from '../common/EmptyState';
 import { useTheme } from '../../lib/theme';
 import { useDataSource } from '../../lib/data-source';
 import TossEmoji from '../common/TossEmoji';
@@ -12,9 +11,7 @@ import FormRow from '../common/FormRow';
 import DatePicker from '../common/DatePicker';
 import PickerOverlay from './PickerOverlay';
 import { CATEGORY_DEFS, getCategoryDef } from '../../lib/category-meta';
-import { TE } from '../../lib/toss-emoji';
 import { Icon } from '../common/Icon';
-import { krw } from '../../lib/format';
 import { useCreateTx, useUpdateTx } from '../../queries/mutations';
 import { todayLocal } from '../../lib/date';
 import { getErrorMessage } from '../../lib/error';
@@ -51,14 +48,10 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
   const [type, setType] = useState<TxType>('EXPENSE');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<{ id: number; name: string } | null>(null);
-  const [fromAsset, setFromAsset] = useState<{ id: string; name: string } | null>(null);
-  const [toAsset, setToAsset] = useState<{ id: string; name: string } | null>(null);
   const [title, setTitle] = useState('');
   const [memo, setMemo] = useState('');
   const [txDate, setTxDate] = useState<string>(''); // YYYY-MM-DD (편집 시 표시·조정)
   const [catPicker, setCatPicker] = useState(false);
-  const [fromPicker, setFromPicker] = useState(false);
-  const [toPicker, setToPicker] = useState(false);
   const [datePicker, setDatePicker] = useState(false);
   const [error, setError] = useState('');
   const createTx = useCreateTx();
@@ -72,10 +65,6 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
       setAmount(formatNum(String(editTx.amount)));
       const c = data.categories.find((x) => x.name === editTx.category);
       setCategory({ id: c?.id ?? 0, name: editTx.category });
-      const fromA = editTx.from ? data.assets.find((a) => a.id === editTx.from) : undefined;
-      const toA = editTx.to ? data.assets.find((a) => a.id === editTx.to) : undefined;
-      setFromAsset(fromA ? { id: fromA.id, name: fromA.name } : null);
-      setToAsset(toA ? { id: toA.id, name: toA.name } : null);
       setTitle('');
       setMemo(editTx.memo ?? editTx.title ?? '');
       setTxDate(editTx.date);
@@ -91,7 +80,6 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
     .filter(([, def]) => def.type === type)
     .map(([name]) => name);
 
-  const assetOptions = data.assets.filter((a) => !a.isLiability);
   const rawAmount = Number(amount.replace(/[^0-9]/g, ''));
   const isValid = rawAmount > 0;
 
@@ -99,8 +87,6 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
     setType('EXPENSE');
     setAmount('');
     setCategory(null);
-    setFromAsset(null);
-    setToAsset(null);
     setTitle('');
     setMemo('');
     setError('');
@@ -117,7 +103,6 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
             type,
             amount: rawAmount,
             ...(category && category.id > 0 ? { categoryId: category.id } : {}),
-            ...(type === 'EXPENSE' ? { fromAssetId: fromAsset ? Number(fromAsset.id) : undefined } : { toAssetId: toAsset ? Number(toAsset.id) : undefined }),
             memo: memo || title || undefined,
           },
         });
@@ -130,8 +115,6 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
         type,
         amount: rawAmount,
         ...(category ? { categoryId: category.id } : {}),
-        ...(fromAsset ? { fromAssetId: Number(fromAsset.id) } : {}),
-        ...(toAsset ? { toAssetId: Number(toAsset.id) } : {}),
         memo: memo || title || undefined,
       });
       reset();
@@ -198,41 +181,6 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
                 })
             )}
           </PickerOverlay>
-
-          {/* 출금 자산 피커 */}
-          <PickerOverlay visible={fromPicker} title="자산 선택" onClose={() => setFromPicker(false)}>
-            {assetOptions.length === 0 ? (
-              <EmptyState compact iconCode={TE.piggy} title="선택할 자산이 없어요" desc="자산 탭에서 먼저 자산을 추가해주세요" />
-            ) : assetOptions.map((a) => (
-              <ListRow
-                key={a.id}
-                contents={
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ color: theme.text, fontSize: 15, fontWeight: 500 }}>{a.name}</span>
-                    <span style={{ color: theme.textMuted, fontSize: 12, marginTop: 2 }}>잔액 {krw(a.value)}</span>
-                  </div>
-                }
-                right={fromAsset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
-                onPress={() => { setFromAsset({ id: a.id, name: a.name }); setFromPicker(false); }}
-                verticalPadding="small"
-              />
-            ))}
-          </PickerOverlay>
-
-          {/* 입금 자산 피커 */}
-          <PickerOverlay visible={toPicker} title="자산 선택" onClose={() => setToPicker(false)}>
-            {assetOptions.length === 0 ? (
-              <EmptyState compact iconCode={TE.piggy} title="선택할 자산이 없어요" desc="자산 탭에서 먼저 자산을 추가해주세요" />
-            ) : assetOptions.map((a) => (
-              <ListRow
-                key={a.id}
-                contents={<span style={{ color: theme.text, fontSize: 15, fontWeight: 500 }}>{a.name}</span>}
-                right={toAsset?.id === a.id ? Icon.check(theme.brand, 16) : undefined}
-                onPress={() => { setToAsset({ id: a.id, name: a.name }); setToPicker(false); }}
-                verticalPadding="small"
-              />
-            ))}
-          </PickerOverlay>
         </>
       }
     >
@@ -241,7 +189,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
         <div className={styles.segWrap}>
           <SegmentedControl.Root
             value={type}
-            onChange={(v) => { setType(v as TxType); setCategory(null); setFromAsset(null); setToAsset(null); }}
+            onChange={(v) => { setType(v as TxType); setCategory(null); }}
             name="txType"
             size="large"
             alignment="fixed"
@@ -266,15 +214,10 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
           />
         </div>
 
-        {/* 날짜 / 카테고리 / 자산 (카테고리·자산은 선택사항 — 흐름 기록용) */}
+        {/* 날짜 / 카테고리 (카테고리는 선택사항) */}
         <div className={styles.fieldsCard} style={{ borderColor: theme.border }}>
           <FormRow label="날짜" value={txDate === todayLocal() ? `오늘 (${txDate.slice(5).replace('-', '/')})` : txDate} onPress={() => setDatePicker(true)} />
           <FormRow label="카테고리" value={category?.name || ''} onPress={() => setCatPicker(true)} />
-          {type === 'EXPENSE' ? (
-            <FormRow label="출금 자산" value={fromAsset?.name || ''} onPress={() => setFromPicker(true)} />
-          ) : (
-            <FormRow label="입금 자산" value={toAsset?.name || ''} onPress={() => setToPicker(true)} />
-          )}
         </div>
 
         {/* 제목 / 메모 */}

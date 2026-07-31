@@ -227,7 +227,6 @@ export default function BookScreen() {
   function renderTxRow(tx: MockTransaction, i: number, total: number) {
     const isInc = tx.type === 'INCOME';
     const def = getCategoryDef(tx.category);
-    const from = tx.from ? data.assets.find((a) => a.id === tx.from) : undefined;
     const canEdit = !isViewer && !useMock;
     return (
       <React.Fragment key={tx.id}>
@@ -237,7 +236,7 @@ export default function BookScreen() {
             <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
               <span className={styles.itemTitle} style={{ color: theme.text }}>{tx.title}</span>
               <span className={styles.itemSub} style={{ color: theme.textMuted }}>
-                {tx.category}{from ? ` · ${from.name}` : ''}
+                {tx.category}
               </span>
             </div>
           }

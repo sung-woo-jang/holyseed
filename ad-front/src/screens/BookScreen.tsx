@@ -6,7 +6,7 @@ import Switch from '../components/ui/Switch';
 import { useDataSource, useMockRole } from '../lib/data-source';
 import { useTheme } from '../lib/theme';
 import { useAuthStore } from '../stores/auth.store';
-import { krwShort } from '../lib/format';
+import { krw } from '../lib/format';
 import { TE } from '../lib/toss-emoji';
 import { getCategoryDef } from '../lib/category-meta';
 import TossEmoji from '../components/common/TossEmoji';
@@ -243,7 +243,7 @@ export default function BookScreen() {
           right={
             <div className={styles.recRight}>
               <span className={styles.itemAmount} style={{ color: isInc ? theme.brand : theme.text }}>
-                {isInc ? '+' : '-'}{krwShort(tx.amount)}원
+                {isInc ? '+' : '-'}{krw(tx.amount)}
               </span>
               {canEdit && (
                 <button type="button" className={styles.kebabBtn} onClick={(e) => { e.stopPropagation(); setActionTx(tx); }}>
@@ -268,7 +268,7 @@ export default function BookScreen() {
     const right = (
       <div className={styles.recRight}>
         <span className={styles.itemAmount} style={{ color: isInc ? theme.brand : theme.text }}>
-          {isInc ? '+' : '-'}{krwShort(item.amount)}원
+          {isInc ? '+' : '-'}{krw(item.amount)}
         </span>
         {canEditTx && (
           <button
@@ -319,7 +319,7 @@ export default function BookScreen() {
           right={
             <div className={styles.recRight}>
               <span className={styles.itemAmount} style={{ color: isInc ? theme.brand : theme.text }}>
-                {isInc ? '+' : '-'}{krwShort(r.amount)}원
+                {isInc ? '+' : '-'}{krw(r.amount)}
               </span>
               {!isViewer ? (
                 <>
@@ -361,11 +361,11 @@ export default function BookScreen() {
           <div className={styles.summary} style={{ backgroundColor: theme.brandSoft }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
               <span className={styles.summaryLabel} style={{ color: theme.textMuted }}>수입</span>
-              <span className={styles.summaryValue} style={{ color: theme.brand }}>+{krwShort(monthIncome)}원</span>
+              <span className={styles.summaryValue} style={{ color: theme.brand }}>+{krw(monthIncome)}</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
               <span className={styles.summaryLabel} style={{ color: theme.textMuted }}>지출</span>
-              <span className={styles.summaryValue} style={{ color: theme.danger }}>-{krwShort(monthExpense)}원</span>
+              <span className={styles.summaryValue} style={{ color: theme.danger }}>-{krw(monthExpense)}</span>
             </div>
           </div>
         </div>
@@ -421,7 +421,7 @@ export default function BookScreen() {
                       <div key={c.name} className={styles.statRow}>
                         <div className={styles.statRowTop}>
                           <span className={styles.statName} style={{ color: theme.text }}>{c.name}</span>
-                          <span className={styles.statAmount} style={{ color: theme.textMuted }}>{krwShort(c.value)}원 · {pctW}%</span>
+                          <span className={styles.statAmount} style={{ color: theme.textMuted }}>{krw(c.value)} · {pctW}%</span>
                         </div>
                         <div className={styles.statBarBg} style={{ backgroundColor: theme.bg }}>
                           <div className={styles.statBarFill} style={{ backgroundColor: c.color, width: `${pctW}%` }} />
@@ -446,7 +446,7 @@ export default function BookScreen() {
                         <span className={styles.listDayTitle} style={{ color: theme.textMuted }}>
                           {Number(date.slice(5, 7))}월 {Number(date.slice(8, 10))}일
                         </span>
-                        {dayExp > 0 && <span className={styles.listDayExp} style={{ color: theme.textMuted }}>-{krwShort(dayExp)}원</span>}
+                        {dayExp > 0 && <span className={styles.listDayExp} style={{ color: theme.textMuted }}>-{krw(dayExp)}</span>}
                       </div>
                       <div className={styles.dayCard} style={{ backgroundColor: theme.card, borderColor: theme.border }}>
                         {txs.map((t, i) => renderTxRow(t, i, txs.length))}
@@ -484,7 +484,7 @@ export default function BookScreen() {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
               <span className={styles.recHeaderTitle} style={{ color: theme.text }}>정기 항목 관리</span>
               <span className={styles.recHeaderSub} style={{ color: theme.textMuted }}>
-                수입 +{krwShort(totalRecIncome)} · 지출 -{krwShort(totalRecExpense)}
+                수입 +{krw(totalRecIncome)} · 지출 -{krw(totalRecExpense)}
               </span>
             </div>
             <span className={styles.recChevron} style={{ color: theme.textMuted }}>{recOpen ? '▴' : '▾'}</span>

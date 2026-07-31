@@ -103,8 +103,8 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
             type,
             amount: rawAmount,
             ...(category && category.id > 0 ? { categoryId: category.id } : {}),
-            title: title || undefined,
-            memo: memo || undefined,
+            title,
+            memo,
           },
         });
         onClose();
@@ -116,8 +116,8 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
         type,
         amount: rawAmount,
         ...(category ? { categoryId: category.id } : {}),
-        title: title || undefined,
-        memo: memo || undefined,
+        title,
+        memo,
       });
       reset();
       onClose();

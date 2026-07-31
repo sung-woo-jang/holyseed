@@ -20,6 +20,7 @@ export class UsersService {
   async update(id: number, dto: UpdateUserDto): Promise<AdUser> {
     const user = await this.findById(id);
     Object.assign(user, dto);
+    if (dto.name) user.initial = dto.name.trim().charAt(0) || user.initial;
     return this.userRepo.save(user);
   }
 }

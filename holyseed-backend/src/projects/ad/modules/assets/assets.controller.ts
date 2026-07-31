@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Request, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AssetsService } from './assets.service';
 import { MembershipGuard } from '../../common/guards/membership.guard';
@@ -32,8 +32,12 @@ export class AssetsController {
   @UseGuards(MembershipGuard)
   @RequireMembership({ minRole: MemberRole.EDITOR })
   @ApiOperation({ summary: '자산 생성' })
-  async create(@Param('householdId', ParseIntPipe) householdId: number, @Body() dto: CreateAssetDto) {
-    const data = await this.assetsService.create(householdId, dto);
+  async create(
+    @Param('householdId', ParseIntPipe) householdId: number,
+    @Body() dto: CreateAssetDto,
+    @Request() req: any,
+  ) {
+    const data = await this.assetsService.create(householdId, dto, Number(req.user.userId));
     return { success: true, message: '자산 생성 성공', data, timestamp: new Date().toISOString() };
   }
 
@@ -45,23 +49,23 @@ export class AssetsController {
   }
 
   @Post('assets/:id/update')
-  @ApiOperation({ summary: '자산 수정' })
-  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: Partial<CreateAssetDto>) {
-    const data = await this.assetsService.update(id, dto);
+  @ApiOperation({ summary: '자산 수정 (본인 소유 또는 공동 소유만 가능)' })
+  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: Partial<CreateAssetDto>, @Request() req: any) {
+    const data = await this.assetsService.update(id, dto, Number(req.user.userId));
     return { success: true, message: '수정 성공', data, timestamp: new Date().toISOString() };
   }
 
   @Post('assets/:id/archive')
-  @ApiOperation({ summary: '자산 아카이브' })
-  async archive(@Param('id', ParseIntPipe) id: number) {
-    const data = await this.assetsService.archive(id);
+  @ApiOperation({ summary: '자산 아카이브 (본인 소유 또는 공동 소유만 가능)' })
+  async archive(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    const data = await this.assetsService.archive(id, Number(req.user.userId));
     return { success: true, message: '아카이브 성공', data, timestamp: new Date().toISOString() };
   }
 
   @Post('assets/:id/delete')
-  @ApiOperation({ summary: '자산 삭제' })
-  async delete(@Param('id', ParseIntPipe) id: number) {
-    await this.assetsService.delete(id);
+  @ApiOperation({ summary: '자산 삭제 (본인 소유 또는 공동 소유만 가능)' })
+  async delete(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    await this.assetsService.delete(id, Number(req.user.userId));
     return { success: true, message: '삭제 성공', data: null, timestamp: new Date().toISOString() };
   }
 }

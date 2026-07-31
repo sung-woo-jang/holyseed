@@ -21,11 +21,9 @@ export class AssetSnapshotsController {
   }
 
   @Post('assets/:assetId/snapshots')
-  @UseGuards(MembershipGuard)
-  @RequireMembership({ minRole: MemberRole.EDITOR })
-  @ApiOperation({ summary: '자산 스냅샷 단건 upsert' })
+  @ApiOperation({ summary: '자산 스냅샷 단건 upsert (본인 소유 또는 공동 소유만 가능)' })
   async upsert(@Param('assetId', ParseIntPipe) assetId: number, @Body() dto: UpsertSnapshotDto, @Request() req: any) {
-    const data = await this.snapshotsService.upsert(assetId, dto, req.user?.userId);
+    const data = await this.snapshotsService.upsert(assetId, dto, Number(req.user.userId));
     return { success: true, message: '스냅샷 저장 성공', data, timestamp: new Date().toISOString() };
   }
 
@@ -38,16 +36,14 @@ export class AssetSnapshotsController {
     @Body() dto: BatchUpsertSnapshotsDto,
     @Request() req: any,
   ) {
-    const data = await this.snapshotsService.batchUpsert(householdId, dto, req.user?.userId);
+    const data = await this.snapshotsService.batchUpsert(householdId, dto, Number(req.user.userId));
     return { success: true, message: '일괄 스냅샷 저장 성공', data, timestamp: new Date().toISOString() };
   }
 
   @Post('assets/:assetId/snapshots/delete')
-  @UseGuards(MembershipGuard)
-  @RequireMembership({ minRole: MemberRole.EDITOR })
-  @ApiOperation({ summary: '자산 스냅샷 삭제' })
-  async delete(@Param('assetId', ParseIntPipe) assetId: number, @Body() dto: DeleteSnapshotDto) {
-    await this.snapshotsService.delete(assetId, dto);
+  @ApiOperation({ summary: '자산 스냅샷 삭제 (본인 소유 또는 공동 소유만 가능)' })
+  async delete(@Param('assetId', ParseIntPipe) assetId: number, @Body() dto: DeleteSnapshotDto, @Request() req: any) {
+    await this.snapshotsService.delete(assetId, dto, Number(req.user.userId));
     return { success: true, message: '스냅샷 삭제 성공', data: null, timestamp: new Date().toISOString() };
   }
 }

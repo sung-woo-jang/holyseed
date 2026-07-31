@@ -1,81 +1,89 @@
-import React, { useState } from 'react';
-import Badge from '../components/ui/Badge';
-import Border from '../components/ui/Border';
-import ListRow from '../components/ui/ListRow';
-import { useDataSource, useMockRole } from '../lib/data-source';
-import { useTheme } from '../lib/theme';
-import { krw, krwShort, pct } from '../lib/format';
-import { getAssetCategoryMeta } from '../lib/category-meta';
-import { TE } from '../lib/toss-emoji';
-import TossEmoji from '../components/common/TossEmoji';
-import SnapshotSheet from '../components/sheets/SnapshotSheet';
-import AddAssetSheet from '../components/sheets/AddAssetSheet';
-import EmptyState from '../components/common/EmptyState';
-import ActionSheet from '../components/common/ActionSheet';
-import ConfirmDialog from '../components/common/ConfirmDialog';
-import AppToast from '../components/common/AppToast';
-import { useDeleteAsset } from '../queries/mutations';
-import type { AssetCategory } from '../types/api';
-import type { MockAsset } from '../lib/mock-data';
-import styles from './AssetsScreen.module.css';
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import ActionSheet from '../components/common/ActionSheet'
+import AppToast from '../components/common/AppToast'
+import ConfirmDialog from '../components/common/ConfirmDialog'
+import EmptyState from '../components/common/EmptyState'
+import TossEmoji from '../components/common/TossEmoji'
+import AddAssetSheet from '../components/sheets/AddAssetSheet'
+import SnapshotSheet from '../components/sheets/SnapshotSheet'
+import Badge from '../components/ui/Badge'
+import Border from '../components/ui/Border'
+import ListRow from '../components/ui/ListRow'
+import { getAssetCategoryMeta } from '../lib/category-meta'
+import { useDataSource, useMockRole } from '../lib/data-source'
+import { krw, krwShort, pct } from '../lib/format'
+import type { MockAsset } from '../lib/mock-data'
+import { useTheme } from '../lib/theme'
+import { TE } from '../lib/toss-emoji'
+import { useDeleteAsset } from '../queries/mutations'
+import type { AssetCategory } from '../types/api'
+import styles from './AssetsScreen.module.css'
 
 interface AssetsScreenProps {
-  onAssetPress?: (asset: MockAsset) => void;
+  // eslint-disable-next-line no-unused-vars -- 타입 시그니처의 파라미터명 (base no-unused-vars가 오탐)
+  onAssetPress?: (asset: MockAsset) => void
 }
 
 export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
-  const theme = useTheme();
-  const role = useMockRole();
-  const data = useDataSource();
-  const [snapshotOpen, setSnapshotOpen] = useState(false);
-  const [snapshotFocusId, setSnapshotFocusId] = useState<string | undefined>(undefined);
-  const [pickingAsset, setPickingAsset] = useState(false);
-  const [addAssetOpen, setAddAssetOpen] = useState(false);
-  const [actionAsset, setActionAsset] = useState<MockAsset | null>(null);
-  const [editAsset, setEditAsset] = useState<MockAsset | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<MockAsset | null>(null);
-  const [toast, setToast] = useState('');
-  const deleteAsset = useDeleteAsset();
-  const isViewer = role === 'VIEWER';
+  const theme = useTheme()
+  const navigate = useNavigate()
+  const role = useMockRole()
+  const data = useDataSource()
+  const [snapshotOpen, setSnapshotOpen] = useState(false)
+  const [snapshotFocusId, setSnapshotFocusId] = useState<string | undefined>(undefined)
+  const [pickingAsset, setPickingAsset] = useState(false)
+  const [addAssetOpen, setAddAssetOpen] = useState(false)
+  const [actionAsset, setActionAsset] = useState<MockAsset | null>(null)
+  const [editAsset, setEditAsset] = useState<MockAsset | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<MockAsset | null>(null)
+  const [toast, setToast] = useState('')
+  const deleteAsset = useDeleteAsset()
+  const isViewer = role === 'VIEWER'
 
   function handleAction(value: string) {
-    const a = actionAsset;
-    setActionAsset(null);
-    if (!a) return;
-    if (value === 'snapshot') { setSnapshotFocusId(a.id); setSnapshotOpen(true); }
-    else if (value === 'edit') { setEditAsset(a); }
-    else if (value === 'delete') { setDeleteTarget(a); }
-  }
-
-  async function confirmDelete() {
-    if (!deleteTarget) return;
-    try {
-      await deleteAsset.mutateAsync(Number(deleteTarget.id));
-      setToast('자산을 삭제했어요');
-    } catch {
-      setToast('삭제에 실패했어요');
-    } finally {
-      setDeleteTarget(null);
+    const a = actionAsset
+    setActionAsset(null)
+    if (!a) return
+    if (value === 'snapshot') {
+      setSnapshotFocusId(a.id)
+      setSnapshotOpen(true)
+    } else if (value === 'edit') {
+      setEditAsset(a)
+    } else if (value === 'delete') {
+      setDeleteTarget(a)
     }
   }
 
-  const grouped: Partial<Record<AssetCategory, MockAsset[]>> = {};
-  data.assets.forEach(a => {
-    if (!grouped[a.category]) grouped[a.category] = [];
-    grouped[a.category]!.push(a);
-  });
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    try {
+      await deleteAsset.mutateAsync(Number(deleteTarget.id))
+      setToast('자산을 삭제했어요')
+    } catch {
+      setToast('삭제에 실패했어요')
+    } finally {
+      setDeleteTarget(null)
+    }
+  }
 
-  const total = data.assets.reduce((s, a) => s + (a.isLiability ? -a.value : a.value), 0);
+  const grouped: Partial<Record<AssetCategory, MockAsset[]>> = {}
+  data.assets.forEach((a) => {
+    if (!grouped[a.category]) grouped[a.category] = []
+    grouped[a.category]!.push(a)
+  })
+
+  const total = data.assets.reduce((s, a) => s + (a.isLiability ? -a.value : a.value), 0)
 
   function handlePickAsset(assetId: string) {
-    setSnapshotFocusId(assetId);
-    setSnapshotOpen(true);
-    setPickingAsset(false);
+    setSnapshotFocusId(assetId)
+    setSnapshotOpen(true)
+    setPickingAsset(false)
   }
 
   function handleSnapshotClose() {
-    setSnapshotOpen(false);
-    setSnapshotFocusId(undefined);
+    setSnapshotOpen(false)
+    setSnapshotFocusId(undefined)
   }
 
   return (
@@ -83,16 +91,24 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
       <div className={styles.scroll}>
         {/* Total net worth */}
         <div className={styles.header}>
-          <span className={styles.headerLabel} style={{ color: theme.textMuted }}>총 순자산</span>
-          <span className={styles.headerValue} style={{ color: theme.text }}>{krw(total)}</span>
+          <span className={styles.headerLabel} style={{ color: theme.textMuted }}>
+            총 순자산
+          </span>
+          <span className={styles.headerValue} style={{ color: theme.text }}>
+            {krw(total)}
+          </span>
         </div>
 
         {/* 개별입력 피킹 배너 */}
         {pickingAsset && (
           <div className={styles.pickingBanner} style={{ backgroundColor: theme.brandSoft }}>
-            <span className={styles.pickingText} style={{ color: theme.brand }}>개별 입력할 자산을 선택하세요</span>
+            <span className={styles.pickingText} style={{ color: theme.brand }}>
+              개별 입력할 자산을 선택하세요
+            </span>
             <button type="button" onClick={() => setPickingAsset(false)}>
-              <span className={styles.pickingCancel} style={{ color: theme.brand }}>취소</span>
+              <span className={styles.pickingCancel} style={{ color: theme.brand }}>
+                취소
+              </span>
             </button>
           </div>
         )}
@@ -105,7 +121,10 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
                 type="button"
                 className={styles.actionBtn}
                 style={{ backgroundColor: theme.brand }}
-                onClick={() => { setSnapshotFocusId(undefined); setSnapshotOpen(true); }}
+                onClick={() => {
+                  setSnapshotFocusId(undefined)
+                  setSnapshotOpen(true)
+                }}
               >
                 <TossEmoji code={TE.camera} size={18} />
                 <span className={styles.actionBtnPrimary}>일괄 스냅샷</span>
@@ -117,7 +136,20 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
                 onClick={() => setPickingAsset(true)}
               >
                 <TossEmoji code={TE.pencil} size={18} />
-                <span className={styles.actionBtnSoft} style={{ color: theme.brand }}>개별 입력</span>
+                <span className={styles.actionBtnSoft} style={{ color: theme.brand }}>
+                  개별 입력
+                </span>
+              </button>
+              <button
+                type="button"
+                className={styles.actionBtn}
+                style={{ backgroundColor: theme.brandSoft }}
+                onClick={() => navigate('/more/net-worth-at')}
+              >
+                <TossEmoji code={TE.calendar} size={18} />
+                <span className={styles.actionBtnSoft} style={{ color: theme.brand }}>
+                  날짜별 조회
+                </span>
               </button>
             </div>
           </div>
@@ -134,17 +166,23 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
 
         {/* Asset groups */}
         {(Object.entries(grouped) as [AssetCategory, MockAsset[]][]).map(([cat, items]) => {
-          const meta = getAssetCategoryMeta(cat);
-          const sum = items.reduce((s, a) => s + (a.isLiability ? -a.value : a.value), 0);
+          const meta = getAssetCategoryMeta(cat)
+          const sum = items.reduce((s, a) => s + (a.isLiability ? -a.value : a.value), 0)
           return (
             <div key={cat} className={styles.groupBlock}>
               <div className={styles.groupHeader}>
                 <div className={styles.groupHeaderLeft}>
                   <TossEmoji code={meta.iconCode} size={18} />
-                  <span className={styles.groupLabel} style={{ color: theme.text }}>{meta.label}</span>
-                  <span className={styles.groupCount} style={{ color: theme.textMuted }}>· {items.length}건</span>
+                  <span className={styles.groupLabel} style={{ color: theme.text }}>
+                    {meta.label}
+                  </span>
+                  <span className={styles.groupCount} style={{ color: theme.textMuted }}>
+                    · {items.length}건
+                  </span>
                 </div>
-                <span className={styles.groupSum} style={{ color: theme.textMuted }}>{krwShort(sum)}원</span>
+                <span className={styles.groupSum} style={{ color: theme.textMuted }}>
+                  {krwShort(sum)}원
+                </span>
               </div>
               <div className={styles.groupCard} style={{ backgroundColor: theme.card, borderColor: theme.border }}>
                 {items.map((a, i) => (
@@ -152,11 +190,14 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
                     <ListRow
                       contents={
                         <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                          <span className={styles.assetName} style={{ color: theme.text }}>{a.name}</span>
+                          <span className={styles.assetName} style={{ color: theme.text }}>
+                            {a.name}
+                          </span>
                           {a.delta != null && (
                             <span className={styles.assetMeta}>
                               <span style={{ color: a.delta >= 0 ? theme.brand : theme.danger, fontWeight: 600 }}>
-                                {a.delta > 0 ? '+' : ''}{krwShort(a.delta)} ({pct(a.deltaPct ?? 0)})
+                                {a.delta > 0 ? '+' : ''}
+                                {krwShort(a.delta)} ({pct(a.deltaPct ?? 0)})
                               </span>
                             </span>
                           )}
@@ -164,24 +205,34 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
                       }
                       right={
                         <div className={styles.assetRight}>
-                          <span className={styles.assetValue} style={{ color: a.isLiability ? theme.danger : theme.text }}>
+                          <span
+                            className={styles.assetValue}
+                            style={{ color: a.isLiability ? theme.danger : theme.text }}
+                          >
                             {krw(a.value)}
                           </span>
                           {pickingAsset ? (
-                            <Badge type="blue" badgeStyle="weak" size="small">선택</Badge>
+                            <Badge type="blue" badgeStyle="weak" size="small">
+                              선택
+                            </Badge>
                           ) : !isViewer ? (
                             <button
                               type="button"
                               className={styles.kebabBtn}
-                              onClick={(e) => { e.stopPropagation(); setActionAsset(a); }}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setActionAsset(a)
+                              }}
                             >
-                              <span className={styles.kebabIcon} style={{ color: theme.textMuted }}>⋯</span>
+                              <span className={styles.kebabIcon} style={{ color: theme.textMuted }}>
+                                ⋯
+                              </span>
                             </button>
                           ) : null}
                         </div>
                       }
                       withArrow={pickingAsset}
-                      onPress={() => pickingAsset ? handlePickAsset(a.id) : onAssetPress?.(a)}
+                      onPress={() => (pickingAsset ? handlePickAsset(a.id) : onAssetPress?.(a))}
                       verticalPadding="small"
                     />
                     {i < items.length - 1 && <Border type="full" />}
@@ -189,7 +240,7 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
                 ))}
               </div>
             </div>
-          );
+          )
         })}
       </div>
 
@@ -250,5 +301,5 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
 
       <AppToast open={!!toast} text={toast} onClose={() => setToast('')} />
     </div>
-  );
+  )
 }

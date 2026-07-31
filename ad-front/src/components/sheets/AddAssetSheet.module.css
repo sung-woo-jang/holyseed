@@ -32,6 +32,38 @@
   font-weight: 700;
 }
 
+.ownerRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ownerAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.ownerLabel {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.ownerItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .amountWrap {
   display: flex;
   align-items: baseline;

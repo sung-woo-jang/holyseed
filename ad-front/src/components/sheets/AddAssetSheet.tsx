@@ -6,8 +6,11 @@ import SheetModal from './SheetModal';
 import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
 import TossEmoji from '../common/TossEmoji';
+import { Icon } from '../common/Icon';
 import { ASSET_CATEGORY_META } from '../../lib/category-meta';
 import { useCreateAsset, useUpdateAsset, useUpsertSnapshot } from '../../queries/mutations';
+import { useDataSource } from '../../lib/data-source';
+import { useAuthStore } from '../../stores/auth.store';
 import { todayLocal } from '../../lib/date';
 import { getErrorMessage } from '../../lib/error';
 import type { MockAsset } from '../../lib/mock-data';
@@ -39,24 +42,31 @@ interface AddAssetSheetProps {
 
 export default function AddAssetSheet({ visible, onClose, editAsset, onSaved }: AddAssetSheetProps) {
   const theme = useTheme();
+  const data = useDataSource();
+  const { user } = useAuthStore();
   const isEdit = !!editAsset;
   const [step, setStep] = useState<1 | 2>(1);
   const [assetName, setAssetName] = useState('');
   const [category, setCategory] = useState<AssetCategory | null>(null);
+  const [ownerUserId, setOwnerUserId] = useState<number | null>(null);
   const [amount, setAmount] = useState('');
   const [error, setError] = useState('');
   const createAsset = useCreateAsset();
   const updateAsset = useUpdateAsset();
   const upsertSnapshot = useUpsertSnapshot();
 
-  // 편집 모드 진입 시 폼 프리필
+  // 열릴 때 폼 프리필 — 편집이면 기존 값, 신규면 소유자 기본값 나 자신
   useEffect(() => {
-    if (visible && editAsset) {
+    if (!visible) return;
+    if (editAsset) {
       setAssetName(editAsset.name);
       setCategory(editAsset.category);
+      setOwnerUserId(editAsset.ownerUserId ?? null);
       setStep(1);
+    } else {
+      setOwnerUserId(user ? Number(user.id) : null);
     }
-  }, [visible, editAsset]);
+  }, [visible, editAsset, user]);
 
   const isLiability = category === 'LIABILITY';
   const amtNum = Number(amount.replace(/[^0-9]/g, ''));
@@ -65,7 +75,7 @@ export default function AddAssetSheet({ visible, onClose, editAsset, onSaved }: 
 
   function reset() {
     setStep(1); setAssetName(''); setCategory(null);
-    setAmount(''); setError('');
+    setOwnerUserId(null); setAmount(''); setError('');
   }
 
   function handleClose() { reset(); onClose(); }
@@ -75,7 +85,7 @@ export default function AddAssetSheet({ visible, onClose, editAsset, onSaved }: 
     try {
       await updateAsset.mutateAsync({
         id: Number(editAsset!.id),
-        dto: { name: assetName.trim(), category: category! },
+        dto: { name: assetName.trim(), category: category!, ownerUserId },
       });
       reset();
       onClose();
@@ -94,6 +104,7 @@ export default function AddAssetSheet({ visible, onClose, editAsset, onSaved }: 
         category: category!,
         currency: 'KRW',
         isLiability,
+        ownerUserId,
       });
       const valueToSave = skipAmount ? 0 : amtNum;
       if (valueToSave > 0) {
@@ -167,6 +178,44 @@ export default function AddAssetSheet({ visible, onClose, editAsset, onSaved }: 
                 </button>
               );
             })}
+          </div>
+
+          <span className={styles.fieldLabel} style={{ color: theme.textMuted, marginTop: 20 }}>소유자</span>
+          <div className={styles.ownerRow}>
+            {data.members.map((m) => {
+              const selected = ownerUserId === Number(m.id);
+              return (
+                <div className={styles.ownerItem} key={m.id}>
+                  <button
+                    type="button"
+                    className={styles.ownerAvatar}
+                    style={{ backgroundColor: m.avatar, borderColor: selected ? theme.text : 'transparent' }}
+                    onClick={() => setOwnerUserId(Number(m.id))}
+                  >
+                    {selected ? Icon.check('#fff', 16) : m.initial}
+                  </button>
+                  <span className={styles.ownerLabel} style={{ color: selected ? theme.text : theme.textMuted }}>
+                    {m.name}
+                  </span>
+                </div>
+              );
+            })}
+            <div className={styles.ownerItem}>
+              <button
+                type="button"
+                className={styles.ownerAvatar}
+                style={{
+                  background: `conic-gradient(${theme.brand} 0deg 180deg, ${theme.textMuted} 180deg 360deg)`,
+                  borderColor: ownerUserId === null ? theme.text : 'transparent',
+                }}
+                onClick={() => setOwnerUserId(null)}
+              >
+                {ownerUserId === null && Icon.check('#fff', 16)}
+              </button>
+              <span className={styles.ownerLabel} style={{ color: ownerUserId === null ? theme.text : theme.textMuted }}>
+                공동
+              </span>
+            </div>
           </div>
         </div>
       </SheetModal>

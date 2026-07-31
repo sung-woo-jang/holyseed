@@ -7,6 +7,7 @@ import {
   categoriesApi,
   householdsApi,
   mcpTokensApi,
+  usersApi,
 } from '../api';
 import { useAuthStore } from '../stores/auth.store';
 import type { AssetCategory, CategoryType, MemberRole } from '../types/api';
@@ -24,7 +25,7 @@ export function useCreateAsset() {
   const qc = useQueryClient();
   const hid = useHid();
   return useMutation({
-    mutationFn: (dto: { name: string; category: AssetCategory; currency?: string; isLiability?: boolean }) =>
+    mutationFn: (dto: { name: string; category: AssetCategory; currency?: string; isLiability?: boolean; ownerUserId?: number | null }) =>
       assetsApi.create(hid!, dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.assets(hid!) });
@@ -36,7 +37,7 @@ export function useUpdateAsset() {
   const qc = useQueryClient();
   const hid = useHid();
   return useMutation({
-    mutationFn: ({ id, dto }: { id: number; dto: Partial<{ name: string; category: AssetCategory; currency: string }> }) =>
+    mutationFn: ({ id, dto }: { id: number; dto: Partial<{ name: string; category: AssetCategory; currency: string; ownerUserId: number | null }> }) =>
       assetsApi.update(id, dto),
     onSuccess: (_data, { id }) => {
       qc.invalidateQueries({ queryKey: qk.assets(hid!) });
@@ -287,6 +288,20 @@ export function useRemoveMember() {
   return useMutation({
     mutationFn: (userId: number) => householdsApi.removeMember(hid!, userId),
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.members(hid!) });
+    },
+  });
+}
+
+export function useUpdateProfile() {
+  const qc = useQueryClient();
+  const hid = useHid();
+  const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
+  return useMutation({
+    mutationFn: (dto: { name?: string; avatarColor?: string }) => usersApi.updateMe(dto),
+    onSuccess: (updated) => {
+      if (user) setUser({ ...user, ...updated });
       qc.invalidateQueries({ queryKey: qk.members(hid!) });
     },
   });

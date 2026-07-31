@@ -11,6 +11,7 @@ export interface Asset {
   category: AssetCategory;
   currency: string;
   isLiability: boolean;
+  ownerUserId: number | null;
   archivedAt: string | null;
   latestSnapshot?: { value: number; valueKRW: number; date: string };
 }

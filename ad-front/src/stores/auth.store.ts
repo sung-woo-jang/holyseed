@@ -28,6 +28,7 @@ interface AuthState {
   roleOverride: 'OWNER' | 'EDITOR' | 'VIEWER' | null;
   setReady: () => void;
   setAuth: (tokens: { accessToken: string; refreshToken: string }, user: AdUser) => void;
+  setUser: (user: AdUser) => void;
   setHouseholds: (households: Household[], current?: Household) => void;
   setCurrentHousehold: (household: Household) => void;
   setUseMock: (useMock: boolean) => void;
@@ -57,6 +58,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       refreshToken: tokens.refreshToken,
       user,
     }),
+
+  setUser: (user) => set({ user }),
 
   setHouseholds: (households, current) =>
     set({

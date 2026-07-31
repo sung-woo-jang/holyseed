@@ -32,6 +32,65 @@
   letter-spacing: -0.8px;
 }
 
+.ownerFilterRow {
+  display: flex;
+  gap: 8px;
+  padding: 0 20px 12px;
+  overflow-x: auto;
+}
+
+.ownerChip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 999px;
+  border: 1.4px solid transparent;
+}
+
+.ownerChipAll {
+  padding-left: 12px;
+}
+
+.ownerChipDot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.ownerChipLabel {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.ownerBadge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.assetRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
 .actionBlock {
   padding: 0 20px 16px;
 }

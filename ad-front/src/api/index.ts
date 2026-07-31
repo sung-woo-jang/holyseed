@@ -30,10 +30,13 @@ export const assetsApi = {
 
   get: (id: number) => api.get<Asset>(`/assets/${id}`).then((r) => r.data),
 
-  create: (householdId: number, dto: { name: string; category: AssetCategory; currency?: string; isLiability?: boolean }) =>
+  create: (
+    householdId: number,
+    dto: { name: string; category: AssetCategory; currency?: string; isLiability?: boolean; ownerUserId?: number | null },
+  ) =>
     api.post<Asset>(`/households/${householdId}/assets`, { ...dto, category: toBackendAssetCategory(dto.category) }).then((r) => r.data),
 
-  update: (id: number, dto: Partial<{ name: string; category: AssetCategory; currency: string }>) =>
+  update: (id: number, dto: Partial<{ name: string; category: AssetCategory; currency: string; ownerUserId: number | null }>) =>
     api.post<Asset>(`/assets/${id}/update`, {
       ...dto,
       ...(dto.category ? { category: toBackendAssetCategory(dto.category) } : {}),
@@ -161,6 +164,14 @@ export const householdsApi = {
     api.post<Invitation>(`/households/${householdId}/invitations`, { role }).then((r) => r.data),
 
   revokeInvitation: (id: number) => api.post(`/invitations/${id}/revoke`).then((r) => r.data),
+};
+
+// ─── Users ─────────────────────────────────────────────────────────────────────
+export const usersApi = {
+  updateMe: (dto: { name?: string; avatarColor?: string }) =>
+    api
+      .post<{ id: number; name: string; avatarColor: string; initial: string }>('/users/me/update', dto)
+      .then((r) => r.data),
 };
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────

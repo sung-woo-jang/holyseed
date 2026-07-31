@@ -9,6 +9,8 @@ export interface MockAsset {
   fxRate?: number;
   value: number;
   isLiability: boolean;
+  /** 개인 소유자 id. null/undefined면 공동 소유 */
+  ownerUserId?: number | null;
   /** 직전 스냅샷 대비 증감 — 이전 스냅샷 없으면 null */
   delta: number | null;
   deltaPct: number | null;

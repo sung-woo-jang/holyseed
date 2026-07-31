@@ -15,6 +15,7 @@ import { krw, krwShort, pct } from '../lib/format'
 import type { MockAsset } from '../lib/mock-data'
 import { useTheme } from '../lib/theme'
 import { TE } from '../lib/toss-emoji'
+import { useAuthStore } from '../stores/auth.store'
 import { useDeleteAsset } from '../queries/mutations'
 import type { AssetCategory } from '../types/api'
 import styles from './AssetsScreen.module.css'
@@ -29,6 +30,8 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
   const navigate = useNavigate()
   const role = useMockRole()
   const data = useDataSource()
+  const { user } = useAuthStore()
+  const myId = user ? Number(user.id) : null
   const [snapshotOpen, setSnapshotOpen] = useState(false)
   const [snapshotFocusId, setSnapshotFocusId] = useState<string | undefined>(undefined)
   const [addAssetOpen, setAddAssetOpen] = useState(false)
@@ -36,6 +39,7 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
   const [editAsset, setEditAsset] = useState<MockAsset | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<MockAsset | null>(null)
   const [toast, setToast] = useState('')
+  const [ownerFilter, setOwnerFilter] = useState<'all' | 'joint' | number>('all')
   const deleteAsset = useDeleteAsset()
   const isViewer = role === 'VIEWER'
 
@@ -65,13 +69,31 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
     }
   }
 
+  const filteredAssets = data.assets.filter((a) => {
+    if (ownerFilter === 'all') return true
+    if (ownerFilter === 'joint') return a.ownerUserId == null
+    return a.ownerUserId === ownerFilter
+  })
+
   const grouped: Partial<Record<AssetCategory, MockAsset[]>> = {}
-  data.assets.forEach((a) => {
+  filteredAssets.forEach((a) => {
     if (!grouped[a.category]) grouped[a.category] = []
     grouped[a.category]!.push(a)
   })
 
-  const total = data.assets.reduce((s, a) => s + (a.isLiability ? -a.value : a.value), 0)
+  const total = filteredAssets.reduce((s, a) => s + (a.isLiability ? -a.value : a.value), 0)
+
+  function ownerBadgeStyle(ownerUserId: number | null | undefined) {
+    if (ownerUserId == null) {
+      return { background: `conic-gradient(${theme.brand} 0deg 180deg, ${theme.textMuted} 180deg 360deg)` }
+    }
+    const owner = data.members.find((m) => Number(m.id) === ownerUserId)
+    return { backgroundColor: owner?.avatar ?? theme.textMuted }
+  }
+  function ownerBadgeText(ownerUserId: number | null | undefined) {
+    if (ownerUserId == null) return ''
+    return data.members.find((m) => Number(m.id) === ownerUserId)?.initial ?? '?'
+  }
 
   function handleSnapshotClose() {
     setSnapshotOpen(false)
@@ -90,6 +112,52 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
             {krw(total)}
           </span>
         </div>
+
+        {/* 소유자 필터 — 멤버가 2명 이상일 때만 */}
+        {data.members.length > 1 && data.assets.length > 0 && (
+          <div className={styles.ownerFilterRow}>
+            <button
+              type="button"
+              className={styles.ownerChip}
+              style={{
+                backgroundColor: ownerFilter === 'all' ? theme.brandSoft : theme.card,
+                borderColor: ownerFilter === 'all' ? theme.brand : theme.border,
+              }}
+              onClick={() => setOwnerFilter('all')}
+            >
+              <span
+                className={styles.ownerChipLabel}
+                style={{ color: ownerFilter === 'all' ? theme.brand : theme.text, marginLeft: 6 }}
+              >
+                전체
+              </span>
+            </button>
+            {data.members.map((m) => {
+              const active = ownerFilter === Number(m.id)
+              return (
+                <button
+                  type="button"
+                  key={m.id}
+                  className={styles.ownerChip}
+                  style={{ backgroundColor: active ? theme.brandSoft : theme.card, borderColor: active ? theme.brand : theme.border }}
+                  onClick={() => setOwnerFilter(Number(m.id))}
+                >
+                  <span className={styles.ownerChipDot} style={{ backgroundColor: m.avatar }}>{m.initial}</span>
+                  <span className={styles.ownerChipLabel} style={{ color: active ? theme.brand : theme.text }}>{m.name}</span>
+                </button>
+              )
+            })}
+            <button
+              type="button"
+              className={styles.ownerChip}
+              style={{ backgroundColor: ownerFilter === 'joint' ? theme.brandSoft : theme.card, borderColor: ownerFilter === 'joint' ? theme.brand : theme.border }}
+              onClick={() => setOwnerFilter('joint')}
+            >
+              <span className={styles.ownerChipDot} style={{ background: `conic-gradient(${theme.brand} 0deg 180deg, ${theme.textMuted} 180deg 360deg)` }} />
+              <span className={styles.ownerChipLabel} style={{ color: ownerFilter === 'joint' ? theme.brand : theme.text }}>공동</span>
+            </button>
+          </div>
+        )}
 
         {/* Action buttons — 자산이 있을 때만 */}
         {!isViewer && data.assets.length > 0 && (
@@ -130,6 +198,9 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
             desc={isViewer ? '소유자가 자산을 추가하면 여기에 표시돼요' : '아래 + 버튼으로 첫 자산을 추가해보세요'}
           />
         )}
+        {data.assets.length > 0 && filteredAssets.length === 0 && (
+          <EmptyState compact iconCode={TE.piggy} title="이 소유자의 자산이 없어요" />
+        )}
 
         {/* Asset groups */}
         {(Object.entries(grouped) as [AssetCategory, MockAsset[]][]).map(([cat, items]) => {
@@ -152,9 +223,16 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
                 </span>
               </div>
               <div className={styles.groupCard} style={{ backgroundColor: theme.card, borderColor: theme.border }}>
-                {items.map((a, i) => (
+                {items.map((a, i) => {
+                  const canEdit = !isViewer && (a.ownerUserId == null || a.ownerUserId === myId)
+                  return (
                   <React.Fragment key={a.id}>
                     <ListRow
+                      left={
+                        <div className={styles.ownerBadge} style={ownerBadgeStyle(a.ownerUserId)}>
+                          {ownerBadgeText(a.ownerUserId)}
+                        </div>
+                      }
                       contents={
                         <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                           <span className={styles.assetName} style={{ color: theme.text }}>
@@ -178,7 +256,7 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
                           >
                             {krw(a.value)}
                           </span>
-                          {!isViewer ? (
+                          {canEdit ? (
                             <button
                               type="button"
                               className={styles.kebabBtn}
@@ -199,7 +277,8 @@ export default function AssetsScreen({ onAssetPress }: AssetsScreenProps) {
                     />
                     {i < items.length - 1 && <Border type="full" />}
                   </React.Fragment>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )

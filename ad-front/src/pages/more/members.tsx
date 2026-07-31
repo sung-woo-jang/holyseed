@@ -10,9 +10,11 @@ import RoleBadge from '../../components/common/RoleBadge';
 import InviteSheet from '../../components/sheets/InviteSheet';
 import JoinSheet from '../../components/sheets/JoinSheet';
 import SheetModal from '../../components/sheets/SheetModal';
+import EditProfileSheet from '../../components/sheets/EditProfileSheet';
 import TossEmoji from '../../components/common/TossEmoji';
 import { useTheme } from '../../lib/theme';
 import { useDataSource, useMockRole } from '../../lib/data-source';
+import { useAuthStore } from '../../stores/auth.store';
 import { Icon } from '../../components/common/Icon';
 import { TE } from '../../lib/toss-emoji';
 import { useUpdateRole, useRemoveMember } from '../../queries/mutations';
@@ -30,8 +32,10 @@ export default function MembersPage() {
   const theme = useTheme();
   const data = useDataSource();
   const myRole = useMockRole();
+  const { user } = useAuthStore();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [rolePicker, setRolePicker] = useState<{ memberId: string; currentRole: MemberRole } | null>(null);
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null);
   const [toast, setToast] = useState('');
@@ -68,7 +72,9 @@ export default function MembersPage() {
         </span>
 
         {/* 멤버 리스트 */}
-        {data.members.map((m, idx) => (
+        {data.members.map((m, idx) => {
+          const isMe = m.id === String(user?.id);
+          return (
           <React.Fragment key={m.id}>
             <ListRow
               left={
@@ -85,6 +91,16 @@ export default function MembersPage() {
               right={
                 <div className={styles.rightWrap}>
                   <RoleBadge role={m.role as MemberRole} />
+                  {isMe && (
+                    <button
+                      type="button"
+                      className={styles.roleBtn}
+                      style={{ borderColor: theme.border }}
+                      onClick={() => setEditProfileOpen(true)}
+                    >
+                      <TossEmoji code={TE.pencil} size={14} />
+                    </button>
+                  )}
                   {isOwner && m.role !== 'OWNER' && (
                     <div className={styles.ownerActions}>
                       <button
@@ -111,7 +127,8 @@ export default function MembersPage() {
             />
             {idx < data.members.length - 1 && <Border type="full" />}
           </React.Fragment>
-        ))}
+          );
+        })}
 
         <Border type="full" height={16} />
 
@@ -145,6 +162,11 @@ export default function MembersPage() {
 
       <InviteSheet visible={inviteOpen} onClose={() => setInviteOpen(false)} />
       <JoinSheet visible={joinOpen} onClose={() => setJoinOpen(false)} />
+      <EditProfileSheet
+        visible={editProfileOpen}
+        onClose={() => setEditProfileOpen(false)}
+        onSaved={() => setToast('프로필을 수정했어요')}
+      />
 
       {/* 역할 변경 피커 */}
       <SheetModal visible={!!rolePicker} onClose={() => setRolePicker(null)} header="역할 변경">

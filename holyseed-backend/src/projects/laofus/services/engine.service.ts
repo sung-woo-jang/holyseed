@@ -4,7 +4,7 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { TossClientService, TossOrder } from '@shared/toss/toss-client.service';
 import { applyFill, computeIndicators, decide, Decision, ImuState } from '../core/engine';
-import { checkWindow, UsMarketCalendar } from '../core/marketTime';
+import { activeRegularSession, checkWindow, UsMarketCalendar } from '../core/marketTime';
 import { LaofusEngineState } from '../entities/engine-state.entity';
 import { LaofusCycle } from '../entities/cycle.entity';
 import { LaofusTrade } from '../entities/trade.entity';
@@ -313,6 +313,13 @@ export class LaofusEngineService {
           lines.push(message);
           return lines;
         }
+        // 오늘 이미 처리됨 — 장중 감시(monitorSell)가 먼저 쿼터매도/전량매도를 확정한 경우 EOD 중복 실행 방지
+        if (row.lastDecisionUsDate === win.usDate) {
+          const message = `스킵: 오늘(${win.usDate}) 장중 감시에서 이미 처리됨`;
+          await this.event('info', message, runId);
+          lines.push(message);
+          return lines;
+        }
         await this.stateRepo.update({ symbol: SYMBOL }, { lastDecisionUsDate: win.usDate });
         row.lastDecisionUsDate = win.usDate;
       }
@@ -429,6 +436,103 @@ export class LaofusEngineService {
       await this.event('error', `엔진 오류: ${msg}`, runId);
       lines.push(`오류: ${msg}`);
       return lines;
+    } finally {
+      this.running = false;
+    }
+  }
+
+  /**
+   * 장중 쿼터매도/전량매도 즉시 감시 — 정규장 시간에만, 매도(SELL) 판단일 때만 동작.
+   * 매수/사이클시작 판단은 절대 실행하지 않음(EOD 크론 전담).
+   * lastDecisionUsDate를 EOD와 공유해 하루 1회만 매도가 실행되도록 보장(핵심 안전장치).
+   */
+  async monitorSell(opts: { live: boolean }): Promise<void> {
+    if (this.running) return;
+    this.running = true;
+    const runId = randomUUID();
+    try {
+      // 미회수 주문 먼저 처리 — 직전 틱에서 낸 매도 주문이 아직 PENDING이면 여기서 회수
+      const remainingPending = await this.reconcile(runId, () => {});
+
+      const row = await this.stateRepo.findOne({ where: { symbol: SYMBOL } });
+      if (!row || row.cycleDone) return;
+
+      const cal = (await this.toss.getUsMarketCalendar()) as UsMarketCalendar;
+      const session = activeRegularSession(cal);
+      if (!session.active || !session.usDate) return;
+
+      // 오늘 이미 처리됨(장중 감시 자체의 중복 실행 포함, EOD가 먼저 처리한 경우도 포함) — 하루 1회 제한
+      if (row.lastDecisionUsDate === session.usDate) return;
+
+      const s: ImuState = {
+        cycle: row.cycleNo,
+        T: Number(row.t),
+        quantity: Number(row.quantity),
+        avgPrice: Number(row.avgPrice),
+        cash: Number(row.cash),
+        principal: Number(row.principal),
+      };
+      const price = Number((await this.toss.getPrice(SYMBOL)).lastPrice);
+      const d: Decision = decide(s, price);
+      if (d.action !== 'SELL') return;
+
+      const holding = await this.toss.getHolding(SYMBOL);
+      const actualQty = holding ? Number(holding.quantity) : 0;
+      if (Math.abs(actualQty - s.quantity) > 0.0001) {
+        await this.event(
+          'error',
+          `[장중감시] 계좌 보유수량(${actualQty})과 DB 상태(${s.quantity}) 불일치 — 주문 중단, 수동 확인 필요`,
+          runId,
+        );
+        return;
+      }
+
+      if (remainingPending > 0) {
+        await this.event('warn', `[장중감시] 체결 대기 주문 ${remainingPending}건 미회수 — 신규 주문 스킵`, runId);
+        return;
+      }
+
+      // 여기부터 오늘의 매도를 확정 — dry-run이어도 하루 소진 처리(중복 트리거 방지 검증 포함)
+      await this.stateRepo.update({ symbol: SYMBOL }, { lastDecisionUsDate: session.usDate });
+
+      const desc = `매도(${d.kind}) ${d.quantity}주 → T ${s.T} → ${d.tAfter}`;
+      if (!opts.live) {
+        await this.event('info', `[장중감시][dry] 판단: ${desc} (현재가 $${price}) — 주문 미실행`, runId);
+        return;
+      }
+
+      const clientOrderId = `imu-${kstDate().replaceAll('-', '')}-s-mon`;
+      const placed = await this.toss.sellByQuantity(SYMBOL, String(d.quantity), clientOrderId);
+      await this.event('info', `[장중감시] 주문 접수: ${desc} (현재가 $${price}) — ${placed.orderId}`, runId);
+
+      const cycleRow = await this.cycleRepo.findOne({ where: { symbol: SYMBOL, cycleNo: s.cycle } });
+      const pending = await this.pendingRepo.save({
+        orderId: placed.orderId,
+        clientOrderId,
+        symbol: SYMBOL,
+        side: 'SELL',
+        kind: d.kind,
+        tBefore: String(s.T),
+        tAfter: String(d.tAfter),
+        requestAmount: null,
+        requestQuantity: String(d.quantity),
+        cycleId: cycleRow?.id ?? 0,
+        status: 'PENDING',
+      });
+
+      const filled = await this.waitForFill(placed.orderId);
+      if (filled) {
+        await this.recordFill(d, filled, runId, pending.id);
+      } else {
+        await this.event(
+          'info',
+          `[장중감시] 주문 접수 완료(체결 대기) — 다음 틱/회수 크론이 회수 (주문 ${placed.orderId.slice(0, 12)}…)`,
+          runId,
+        );
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.event('error', `[장중감시] 오류: ${msg}`, runId);
     } finally {
       this.running = false;
     }

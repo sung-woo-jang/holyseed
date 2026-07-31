@@ -38,6 +38,10 @@ module.exports = {
         LAOFUS_RUN_CRON_2: '25 4 * * 2-6', // EST: 마감 06:00 KST → 04:25
         LAOFUS_WINDOW_MIN: '90',
         LAOFUS_WINDOW_MAX: '105',
+        // 장중 쿼터매도/전량매도 즉시 감시 — 신규 기능이라 며칠간 dry-run으로 로그만 관찰 후
+        // 문제 없으면 LAOFUS_SELL_MONITOR_LIVE를 'true'로 바꿀 것 (EOD 라이브에는 영향 없음)
+        LAOFUS_SELL_MONITOR: 'true',
+        LAOFUS_SELL_MONITOR_LIVE: 'false',
         // VR(TQQQ 밸류 리밸런싱) — laofus와 같은 토스 계좌/API 앱을 쓰므로 토큰 경합을 피하려고
         // 같은 프로세스(이 laofus-backend 앱)에서 함께 돈다. 절대 별도 pm2 앱으로 분리하지 말 것.
         VR_LIVE: 'true',

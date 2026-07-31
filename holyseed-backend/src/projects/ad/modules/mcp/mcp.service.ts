@@ -223,11 +223,9 @@ export class McpService {
           date: z.string().optional().describe('YYYY-MM-DD, 생략 시 오늘'),
           memo: z.string().optional().describe('메모/내역'),
           categoryId: z.number().optional().describe('카테고리 id'),
-          fromAssetId: z.number().optional().describe('출금 자산 id (지출)'),
-          toAssetId: z.number().optional().describe('입금 자산 id (수입)'),
         },
       },
-      ({ type, amount, date, memo, categoryId, fromAssetId, toAssetId }) =>
+      ({ type, amount, date, memo, categoryId }) =>
         this.call(user, async (api, hid) =>
           this.unwrap(
             await api.post(`/households/${hid}/transactions`, {
@@ -236,8 +234,6 @@ export class McpService {
               amount,
               memo,
               categoryId,
-              fromAssetId,
-              toAssetId,
             }),
           ),
         ),
@@ -264,12 +260,10 @@ export class McpService {
           amount: z.number().describe('금액 (원)'),
           dayOfMonth: z.number().min(1).max(31).describe('매월 결제일'),
           categoryId: z.number().optional().describe('카테고리 id'),
-          fromAssetId: z.number().optional().describe('출금 자산 id (지출)'),
-          toAssetId: z.number().optional().describe('입금 자산 id (수입)'),
           endDate: z.string().optional().describe('종료일 YYYY-MM-DD'),
         },
       },
-      ({ title, type, amount, dayOfMonth, categoryId, fromAssetId, toAssetId, endDate }) =>
+      ({ title, type, amount, dayOfMonth, categoryId, endDate }) =>
         this.call(user, async (api, hid) =>
           this.unwrap(
             await api.post(`/households/${hid}/recurring`, {
@@ -280,8 +274,6 @@ export class McpService {
               dayOfMonth,
               startDate: this.today(),
               categoryId,
-              fromAssetId,
-              toAssetId,
               endDate,
             }),
           ),

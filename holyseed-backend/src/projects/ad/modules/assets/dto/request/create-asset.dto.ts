@@ -22,6 +22,11 @@ export class CreateAssetDto {
   @IsBoolean()
   isLiability?: boolean;
 
+  @ApiPropertyOptional({ description: '소유자 사용자 id. null이면 공동 소유, 생략 시 생성자 본인' })
+  @IsOptional()
+  @IsNumber()
+  ownerUserId?: number | null;
+
   @ApiPropertyOptional({ description: '메모' })
   @IsOptional()
   @IsString()

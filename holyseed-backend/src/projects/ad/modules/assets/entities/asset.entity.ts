@@ -28,6 +28,10 @@ export class Asset extends BaseEntity {
   @Column({ name: 'is_liability', default: false })
   isLiability: boolean;
 
+  /** 이 자산을 개인적으로 소유한 멤버. null이면 공동 소유(가구 EDITOR 누구나 수정 가능) */
+  @Column({ name: 'owner_user_id', nullable: true })
+  ownerUserId: number | null;
+
   @Column({ type: 'text', nullable: true })
   memo: string;
 

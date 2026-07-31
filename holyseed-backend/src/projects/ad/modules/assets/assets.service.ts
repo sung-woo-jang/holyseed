@@ -1,16 +1,30 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Like, Repository } from 'typeorm';
 import { Asset } from './entities/asset.entity';
 import { CreateAssetDto } from './dto/request/create-asset.dto';
 import { SearchAssetsDto } from './dto/request/search-assets.dto';
+import { Membership, MemberRole } from '../memberships/entities/membership.entity';
 
 @Injectable()
 export class AssetsService {
   constructor(
     @InjectRepository(Asset)
     private readonly assetRepo: Repository<Asset>,
+    @InjectRepository(Membership)
+    private readonly membershipRepo: Repository<Membership>,
   ) {}
+
+  /** EDITOR 이상 + (본인 소유 또는 공동 소유)여야 자산을 수정/삭제할 수 있다 */
+  private async assertCanModify(asset: Asset, userId: number): Promise<void> {
+    const membership = await this.membershipRepo.findOne({ where: { householdId: asset.householdId, userId } });
+    if (!membership || membership.role === MemberRole.VIEWER) {
+      throw new ForbiddenException('이 자산을 수정할 권한이 없습니다.');
+    }
+    if (asset.ownerUserId != null && asset.ownerUserId !== userId) {
+      throw new ForbiddenException('본인 소유 자산만 수정할 수 있어요.');
+    }
+  }
 
   async findByHousehold(householdId: number) {
     const assets = await this.assetRepo.find({
@@ -63,25 +77,29 @@ export class AssetsService {
     return asset;
   }
 
-  async create(householdId: number, dto: CreateAssetDto): Promise<Asset> {
-    const asset = this.assetRepo.create({ ...dto, householdId });
+  async create(householdId: number, dto: CreateAssetDto, userId: number): Promise<Asset> {
+    const ownerUserId = dto.ownerUserId !== undefined ? dto.ownerUserId : userId;
+    const asset = this.assetRepo.create({ ...dto, householdId, ownerUserId });
     return this.assetRepo.save(asset);
   }
 
-  async update(id: number, dto: Partial<CreateAssetDto>): Promise<Asset> {
+  async update(id: number, dto: Partial<CreateAssetDto>, userId: number): Promise<Asset> {
     const asset = await this.findOne(id);
+    await this.assertCanModify(asset, userId);
     Object.assign(asset, dto);
     return this.assetRepo.save(asset);
   }
 
-  async archive(id: number): Promise<Asset> {
+  async archive(id: number, userId: number): Promise<Asset> {
     const asset = await this.findOne(id);
+    await this.assertCanModify(asset, userId);
     asset.archivedAt = new Date();
     return this.assetRepo.save(asset);
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: number, userId: number): Promise<void> {
     const asset = await this.findOne(id);
+    await this.assertCanModify(asset, userId);
     await this.assetRepo.remove(asset);
   }
 }

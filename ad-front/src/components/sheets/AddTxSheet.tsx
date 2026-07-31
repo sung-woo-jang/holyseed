@@ -65,8 +65,8 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
       setAmount(formatNum(String(editTx.amount)));
       const c = data.categories.find((x) => x.name === editTx.category);
       setCategory({ id: c?.id ?? 0, name: editTx.category });
-      setTitle('');
-      setMemo(editTx.memo ?? editTx.title ?? '');
+      setTitle(editTx.rawTitle ?? '');
+      setMemo(editTx.memo ?? '');
       setTxDate(editTx.date);
       setError('');
     } else {
@@ -103,7 +103,8 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
             type,
             amount: rawAmount,
             ...(category && category.id > 0 ? { categoryId: category.id } : {}),
-            memo: memo || title || undefined,
+            title: title || undefined,
+            memo: memo || undefined,
           },
         });
         onClose();
@@ -115,7 +116,8 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
         type,
         amount: rawAmount,
         ...(category ? { categoryId: category.id } : {}),
-        memo: memo || title || undefined,
+        title: title || undefined,
+        memo: memo || undefined,
       });
       reset();
       onClose();

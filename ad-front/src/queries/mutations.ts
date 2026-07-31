@@ -111,6 +111,7 @@ export function useCreateTx() {
       type: 'INCOME' | 'EXPENSE';
       amount: number;
       currency?: string;
+      title?: string;
       memo?: string;
       categoryId?: number;
       fromAssetId?: number;
@@ -130,7 +131,7 @@ export function useUpdateTx() {
   return useMutation({
     mutationFn: ({ id, dto }: {
       id: number;
-      dto: Partial<{ date: string; type: 'INCOME' | 'EXPENSE'; amount: number; categoryId: number; fromAssetId: number; toAssetId: number; memo: string }>;
+      dto: Partial<{ date: string; type: 'INCOME' | 'EXPENSE'; amount: number; categoryId: number; fromAssetId: number; toAssetId: number; title: string; memo: string }>;
     }) => txApi.update(id, dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.transactions(hid!) });

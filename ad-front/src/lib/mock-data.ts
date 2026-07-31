@@ -30,6 +30,8 @@ export interface MockTransaction {
   amount: number;
   category: string;
   title: string;
+  /** 백엔드 원본 title 값 (title은 화면 표시용 폴백 포함 — 수정 폼 프리필엔 이 필드를 사용) */
+  rawTitle?: string;
   memo?: string;
   from?: string;
   to?: string;

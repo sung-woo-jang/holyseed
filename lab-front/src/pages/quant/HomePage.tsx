@@ -202,7 +202,8 @@ export default function HomePage() {
               value={String(s.T)}
               sub={status.state.cycleDone ? '사이클 종료 — 수동 확인' : s.T < 20 ? '전반전' : '후반전'}
             />
-            <Tile label="보유수량" value={s.quantity.toFixed(6)} sub={`평단 ${usd(s.avgPrice)}`} />
+            <Tile label="보유수량" value={s.quantity.toFixed(6)} />
+            <Tile label="평단가" value={usd(s.avgPrice)} />
             <Tile
               label="현재가"
               value={price ? usd(price.price) : '—'}

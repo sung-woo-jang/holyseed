@@ -221,17 +221,19 @@ export class McpService {
           type: z.enum(['INCOME', 'EXPENSE']).describe('수입/지출'),
           amount: z.number().describe('금액 (원)'),
           date: z.string().optional().describe('YYYY-MM-DD, 생략 시 오늘'),
+          title: z.string().optional().describe('제목 (예: 스타벅스, 주유 — 목록에 굵게 표시됨)'),
           memo: z.string().optional().describe('메모/내역'),
           categoryId: z.number().optional().describe('카테고리 id'),
         },
       },
-      ({ type, amount, date, memo, categoryId }) =>
+      ({ type, amount, date, title, memo, categoryId }) =>
         this.call(user, async (api, hid) =>
           this.unwrap(
             await api.post(`/households/${hid}/transactions`, {
               date: date ?? this.today(),
               type,
               amount,
+              title,
               memo,
               categoryId,
             }),

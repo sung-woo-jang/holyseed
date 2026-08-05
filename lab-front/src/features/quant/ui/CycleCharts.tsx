@@ -1,6 +1,7 @@
 import type { TradeDto } from '@/features/quant/lib/types'
-import { n, kstDateOnly } from '@/features/quant/lib/types'
+import { n, usd, kstDateOnly } from '@/features/quant/lib/types'
 import { useContainerWidth } from '@/shared/hooks/use-container-width'
+import { clampLabelY } from '@/features/quant/ui/chartLabel'
 
 /** T값 추이 스텝차트 */
 export function TChart({ trades }: { trades: TradeDto[] }) {
@@ -13,6 +14,12 @@ export function TChart({ trades }: { trades: TradeDto[] }) {
   const tMax = Math.max(20, ...pts.map((t) => n(t.tAfter)))
   const xs = (i: number) => PAD.l + (i / (pts.length - 1)) * (W - PAD.l - PAD.r)
   const ys = (v: number) => PAD.t + (1 - v / tMax) * (H - PAD.t - PAD.b)
+  const tickStep = Math.max(5, Math.round(tMax / 4 / 5) * 5)
+  const ticks: number[] = []
+  for (let v = 0; v <= tMax; v += tickStep) ticks.push(v)
+  const lastT = n(pts[pts.length - 1].tAfter)
+  const rawLabelY = ys(lastT) - 8
+  const labelY = rawLabelY < PAD.t + 8 ? ys(lastT) + 14 : clampLabelY(rawLabelY, PAD.t + 8, H - PAD.b - 2)
   // 스텝: 각 m차에서 tBefore→tAfter 수직 이동
   let d = `M${xs(0)},${ys(n(pts[0].tBefore))}`
   pts.forEach((t, i) => {
@@ -21,18 +28,15 @@ export function TChart({ trades }: { trades: TradeDto[] }) {
   return (
     <div ref={chartRef}>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block' }}>
-        {[0, 10, 20].map(
-          (v) =>
-            v <= tMax && (
-              <g key={v}>
-                <line x1={PAD.l} x2={W - PAD.r} y1={ys(v)} y2={ys(v)} stroke="var(--grid)" strokeWidth="1" />
-                <text x={PAD.l - 6} y={ys(v) + 4} textAnchor="end" fontSize="10" fill="var(--text-muted)">
-                  {v}
-                </text>
-              </g>
-            )
-        )}
-        {n(pts[pts.length - 1].tAfter) < 20 && (
+        {ticks.map((v) => (
+          <g key={v}>
+            <line x1={PAD.l} x2={W - PAD.r} y1={ys(v)} y2={ys(v)} stroke="var(--grid)" strokeWidth="1" />
+            <text x={PAD.l - 6} y={ys(v) + 4} textAnchor="end" fontSize="10" fill="var(--text-muted)">
+              {v}
+            </text>
+          </g>
+        ))}
+        {lastT < 20 && (
           <line
             x1={PAD.l}
             x2={W - PAD.r}
@@ -47,20 +51,14 @@ export function TChart({ trades }: { trades: TradeDto[] }) {
         <path d={d} fill="none" stroke="var(--series-1)" strokeWidth="2" strokeLinejoin="round" />
         <circle
           cx={xs(pts.length - 1)}
-          cy={ys(n(pts[pts.length - 1].tAfter))}
+          cy={ys(lastT)}
           r="4"
           fill="var(--series-1)"
           stroke="var(--surface-1)"
           strokeWidth="2"
         />
-        <text
-          x={xs(pts.length - 1) - 8}
-          y={ys(n(pts[pts.length - 1].tAfter)) - 8}
-          textAnchor="end"
-          fontSize="11"
-          fill="var(--text-secondary)"
-        >
-          T={n(pts[pts.length - 1].tAfter)}
+        <text x={xs(pts.length - 1) - 8} y={labelY} textAnchor="end" fontSize="11" fill="var(--text-secondary)">
+          T={lastT}
         </text>
         {pts.map((t, i) =>
           i % Math.ceil(pts.length / 8) === 0 || i === pts.length - 1 ? (
@@ -130,7 +128,7 @@ export function CashChart({ trades, principal }: { trades: TradeDto[]; principal
           <g key={v}>
             <line x1={PAD.l} x2={W - PAD.r} y1={ys(v)} y2={ys(v)} stroke="var(--grid)" strokeWidth="1" />
             <text x={PAD.l - 6} y={ys(v) + 4} textAnchor="end" fontSize="10" fill="var(--text-muted)">
-              {Math.round(v)}
+              {usd(v, 0)}
             </text>
           </g>
         ))}

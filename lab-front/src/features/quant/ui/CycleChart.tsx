@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { TradeDto } from '@/features/quant/lib/types'
 import { n, usd, kstDateOnly } from '@/features/quant/lib/types'
 import { useContainerWidth } from '@/shared/hooks/use-container-width'
+import { clampLabelY, resolveLabelPair } from '@/features/quant/ui/chartLabel'
 
 /** 사이클 내 체결가 vs 평단 라인차트 (2시리즈, hover 툴팁) */
 export function CycleChart({ trades }: { trades: TradeDto[] }) {
@@ -131,12 +132,20 @@ export function CycleChart({ trades }: { trades: TradeDto[] }) {
               />
             </g>
           ))}
-          <text x={xs(pts.length - 1) + 8} y={ys(n(last.price)) + 4} fontSize="11" fill="var(--text-secondary)">
-            {usd(n(last.price))}
-          </text>
-          <text x={xs(pts.length - 1) + 8} y={ys(n(last.avgAfter)) + 16} fontSize="11" fill="var(--text-secondary)">
-            {usd(n(last.avgAfter))}
-          </text>
+          {(() => {
+            const [priceY, avgY] = resolveLabelPair(ys(n(last.price)), ys(n(last.avgAfter)), 14)
+            const clamp = (y: number) => clampLabelY(y, PAD.t + 8, H - PAD.b - 2)
+            return (
+              <>
+                <text x={xs(pts.length - 1) + 8} y={clamp(priceY) + 4} fontSize="11" fill="var(--text-secondary)">
+                  {usd(n(last.price))}
+                </text>
+                <text x={xs(pts.length - 1) + 8} y={clamp(avgY) + 4} fontSize="11" fill="var(--text-secondary)">
+                  {usd(n(last.avgAfter))}
+                </text>
+              </>
+            )
+          })()}
         </svg>
       </div>
       {hv && (

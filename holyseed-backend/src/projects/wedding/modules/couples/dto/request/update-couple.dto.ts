@@ -1,6 +1,28 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsOptional, IsString, MaxLength } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsDateString, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+
+class AccountInfoDto {
+  @ApiPropertyOptional({ description: '관계 (신랑측/신부측 등)' })
+  @IsOptional()
+  @IsString()
+  relation?: string;
+
+  @ApiPropertyOptional({ description: '예금주' })
+  @IsOptional()
+  @IsString()
+  holder?: string;
+
+  @ApiPropertyOptional({ description: '은행명' })
+  @IsOptional()
+  @IsString()
+  bank?: string;
+
+  @ApiPropertyOptional({ description: '계좌번호' })
+  @IsOptional()
+  @IsString()
+  account?: string;
+}
 
 export class UpdateCoupleDto {
   @ApiPropertyOptional({ description: '신랑 이름' })
@@ -28,7 +50,9 @@ export class UpdateCoupleDto {
 
   @ApiPropertyOptional({ description: '계좌 정보 배열' })
   @IsOptional()
-  accountInfo?: Record<string, any>[];
+  @ValidateNested({ each: true })
+  @Type(() => AccountInfoDto)
+  accountInfo?: AccountInfoDto[];
 
   @ApiPropertyOptional({ description: '테마 설정' })
   @IsOptional()

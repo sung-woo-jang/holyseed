@@ -24,14 +24,6 @@ import styles from './InvitationPage.module.css'
 
 const NaverMap = lazy(() => import('@/shared/ui/NaverMap'))
 
-const GALLERY_IMAGES = [
-  '/wedding/스크린샷 2026-03-24 오전 9.09.21.png',
-  '/wedding/스크린샷 2026-03-24 오전 9.09.30.png',
-  '/wedding/스크린샷 2026-03-24 오전 9.09.38.png',
-  '/wedding/스크린샷 2026-03-24 오전 9.09.50.png',
-  '/wedding/스크린샷 2026-03-24 오전 9.10.25.png',
-]
-
 function InvitationContent() {
   const { couple, isLoading, error } = useCouple()
   const toast = useToast()
@@ -45,6 +37,7 @@ function InvitationContent() {
   const [venueModalOpen, setVenueModalOpen] = useState(false)
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false)
   const [dynamicContentRows, setDynamicContentRows] = useState<any[]>([])
+  const [heroIndex, setHeroIndex] = useState(0)
   const swiperRef = useRef<SwiperType | null>(null)
 
   useEffect(() => {
@@ -77,6 +70,16 @@ function InvitationContent() {
       .catch((e) => console.warn('하객 미디어 조회 실패', e))
   }, [couple?.id])
 
+  // Hero 배경 자동 전환 (5초 간격 크로스페이드)
+  useEffect(() => {
+    if (guestMedia.length <= 1) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const timer = setInterval(() => {
+      setHeroIndex((i) => (i + 1) % guestMedia.length)
+    }, 5000)
+    return () => clearInterval(timer)
+  }, [guestMedia.length])
+
   useEffect(() => {
     if (!couple?.id) return
     api.post('/content-rows/search', { coupleId: couple.id, includeHidden: false })
@@ -102,11 +105,8 @@ function InvitationContent() {
   const accountInfo: AccountInfo[] = Array.isArray(rawAccount) ? (rawAccount as AccountInfo[]) : []
   const weddingDate = couple.weddingDate ? new Date(couple.weddingDate) : null
 
-  // TOP 5: 승인된 하객 사진 우선, 없으면 기본 웨딩 사진으로 채움
-  const topSources = [
-    ...guestMedia.map((m) => mediaResizedUrl(m.id)),
-    ...GALLERY_IMAGES,
-  ].slice(0, 5)
+  // TOP 5: 승인된 하객 사진만 사용 (5장 미만이면 있는 만큼만 표시)
+  const topSources = guestMedia.map((m) => mediaResizedUrl(m.id)).slice(0, 5)
   const topItems = topSources.map((src, i) => ({ type: 'top-ranked', src, rank: i + 1, alt: `Top ${i + 1}` }))
 
   const openLightbox = (index: number) => { setLightboxIndex(index); setCurrentSlideIndex(index) }
@@ -169,7 +169,14 @@ function InvitationContent() {
         {/* Hero */}
         <section className={styles.hero}>
           <div className={styles.heroImage}>
-            <img src="/wedding/스크린샷 2026-03-24 오전 9.09.21.png" alt={`${couple.groomName} & ${couple.brideName}`} className={styles.heroPhoto} />
+            {guestMedia.map((m, i) => (
+              <img
+                key={m.id}
+                src={mediaResizedUrl(m.id)}
+                alt={`${couple.groomName} & ${couple.brideName}`}
+                className={cn(styles.heroPhoto, { [styles.heroPhotoActive]: i === heroIndex })}
+              />
+            ))}
             <div className={styles.heroOverlay} />
           </div>
           <div className={styles.heroContent}>

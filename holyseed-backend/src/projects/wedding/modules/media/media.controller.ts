@@ -3,6 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
+import { resolve as resolvePath } from 'path';
 import { Public } from '@common/decorators/public.decorator';
 import { MediaService } from './media.service';
 import { SearchMediaDto } from './dto/request/search-media.dto';
@@ -56,9 +57,9 @@ export class MediaController {
   @ApiOperation({ summary: '썸네일 이미지 (공개)' })
   async thumbnail(@Param('id') id: string, @Res() res: Response) {
     const { path, mimeType } = await this.mediaService.getFilePath(id, 'thumbnail');
-    res.setHeader('Content-Type', mimeType);
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    return res.sendFile(path, { root: '.' });
+    return res.sendFile(resolvePath(path), {
+      headers: { 'Content-Type': mimeType, 'Cache-Control': 'public, max-age=31536000, immutable' },
+    });
   }
 
   @Get(':id/resized')
@@ -66,9 +67,9 @@ export class MediaController {
   @ApiOperation({ summary: '리사이즈 이미지 (APPROVED)' })
   async resized(@Param('id') id: string, @Res() res: Response) {
     const { path, mimeType } = await this.mediaService.getFilePath(id, 'resized');
-    res.setHeader('Content-Type', mimeType);
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    return res.sendFile(path, { root: '.' });
+    return res.sendFile(resolvePath(path), {
+      headers: { 'Content-Type': mimeType, 'Cache-Control': 'public, max-age=31536000, immutable' },
+    });
   }
 
   @Get(':id/original')
@@ -76,9 +77,9 @@ export class MediaController {
   @ApiOperation({ summary: '원본 파일 (APPROVED)' })
   async original(@Param('id') id: string, @Res() res: Response) {
     const { path, mimeType } = await this.mediaService.getFilePath(id, 'original');
-    res.setHeader('Content-Type', mimeType);
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    return res.sendFile(path, { root: '.' });
+    return res.sendFile(resolvePath(path), {
+      headers: { 'Content-Type': mimeType, 'Cache-Control': 'public, max-age=31536000, immutable' },
+    });
   }
 
   @Post(':id/moderate')

@@ -97,6 +97,13 @@ export default function AdminDashboardPage() {
               </div>
               <span className={styles.actionArrow}>→</span>
             </Link>
+            <a href={`/${couple.slug}`} target="_blank" rel="noopener noreferrer" className={styles.actionCard}>
+              <div>
+                <div className={styles.actionTitle}>청첩장 미리보기</div>
+                <div className={styles.actionDesc}>하객이 보는 실제 페이지 열기</div>
+              </div>
+              <span className={styles.actionArrow}>→</span>
+            </a>
           </div>
         </div>
 

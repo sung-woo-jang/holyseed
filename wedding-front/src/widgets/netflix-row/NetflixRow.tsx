@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import styles from './NetflixRow.module.css';
+import { RANK_GLYPHS } from './rankGlyphs';
 
 type RowItemType = 'image' | 'video' | 'info-card' | 'calendar-card' | 'account-card' | 'upload-card' | 'top-ranked';
 
@@ -220,31 +221,60 @@ export default function NetflixRow({ title, items, onItemClick, onVideoClick, ro
           </div>
         );
 
-      case 'top-ranked':
+      case 'top-ranked': {
+        const glyph = RANK_GLYPHS[item.rank];
+        const gradientId = `rankGradient-${item.rank}`;
         return (
           <div
             className={styles.topRankedCard}
             onClick={() => onItemClick?.(index)}
           >
-            <svg
-              className={styles.rankNumberSvg}
-              viewBox="0 0 140 200"
-              preserveAspectRatio="xMidYMax meet"
-            >
-              <text
-                x="0"
-                y="175"
-                fill="transparent"
-                stroke="#464646"
-                strokeWidth="8"
-                strokeLinejoin="round"
-                fontSize="200"
-                fontWeight="900"
-                fontFamily="Helvetica Neue, Arial, sans-serif"
+            {glyph ? (
+              <svg
+                className={styles.rankNumberSvg}
+                viewBox="0 0 85 148"
+                fill="none"
+                opacity={glyph.opacity}
+                preserveAspectRatio="xMaxYMid meet"
               >
-                {item.rank}
-              </text>
-            </svg>
+                <g transform={`translate(${glyph.offsetX ?? 0}, 0)`}>
+                  <path fillRule="evenodd" clipRule="evenodd" d={glyph.d} fill={`url(#${gradientId})`} />
+                </g>
+                <defs>
+                  <linearGradient
+                    id={gradientId}
+                    x1={glyph.gradient.x1}
+                    y1={glyph.gradient.y1}
+                    x2={glyph.gradient.x2}
+                    y2={glyph.gradient.y2}
+                    gradientUnits="userSpaceOnUse"
+                  >
+                    <stop stopColor="white" />
+                    <stop offset="1" stopColor="white" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            ) : (
+              <svg
+                className={styles.rankNumberSvg}
+                viewBox="0 0 140 200"
+                preserveAspectRatio="xMidYMax meet"
+              >
+                <text
+                  x="0"
+                  y="175"
+                  fill="#464646"
+                  stroke="#6e6e6e"
+                  strokeWidth="2"
+                  strokeLinejoin="round"
+                  fontSize="200"
+                  fontWeight="900"
+                  fontFamily="Helvetica Neue, Arial, sans-serif"
+                >
+                  {item.rank}
+                </text>
+              </svg>
+            )}
             <div className={styles.topRankedImageWrapper}>
               <img
                 src={item.src}
@@ -255,6 +285,7 @@ export default function NetflixRow({ title, items, onItemClick, onVideoClick, ro
             </div>
           </div>
         );
+      }
 
       default:
         return null;

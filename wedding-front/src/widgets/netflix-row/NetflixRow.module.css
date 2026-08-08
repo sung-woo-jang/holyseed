@@ -367,7 +367,6 @@
 }
 
 .accountCard:hover {
-  transform: scale(1.05);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8);
 }
 
@@ -484,6 +483,7 @@
   align-items: flex-end;
   gap: 0;
   height: clamp(250px, 35vw, 450px);
+  margin-right: 2rem;
 }
 
 .topRankedCard:hover {
@@ -495,16 +495,15 @@
   flex-shrink: 0;
   height: 100%;
   width: auto;
-  max-width: clamp(80px, 12vw, 140px);
+  aspect-ratio: 85 / 148;
   pointer-events: none;
   user-select: none;
-  filter: drop-shadow(3px 3px 0 #141414) drop-shadow(-1px -1px 0 #141414);
 }
 
 .topRankedImageWrapper {
   position: relative;
   width: clamp(150px, 22vw, 250px);
-  height: 85%;
+  height: 100%;
   border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
@@ -587,10 +586,6 @@
     height: clamp(200px, 40vw, 350px);
   }
 
-  .rankNumberSvg {
-    max-width: clamp(60px, 15vw, 100px);
-  }
-
   .topRankedImageWrapper {
     width: clamp(100px, 25vw, 180px);
     margin-left: -10px;
@@ -600,10 +595,6 @@
 @media (min-width: 641px) and (max-width: 1024px) {
   .topRankedCard {
     height: clamp(280px, 38vw, 400px);
-  }
-
-  .rankNumberSvg {
-    max-width: clamp(90px, 14vw, 120px);
   }
 
   .topRankedImageWrapper {

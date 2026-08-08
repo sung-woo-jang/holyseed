@@ -126,18 +126,13 @@ function InvitationContent() {
       items: [
         venue ? { type: 'info-card', icon: '📍', title: venue.name, subtitle: venue.hall || '', content: venue.address, action: { label: '자세히 보기', onClick: () => { if (venue.lat && venue.lng) setVenueModalOpen(true); else document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth' }) } } } : null,
         weddingDate ? { type: 'calendar-card', year: format(weddingDate, 'yyyy'), month: format(weddingDate, 'MMMM', { locale: ko }).toUpperCase(), day: format(weddingDate, 'd'), dayName: format(weddingDate, 'EEEE', { locale: ko }), time: format(weddingDate, 'a h:mm', { locale: ko }) } : null,
+        ...(accountInfo?.map((account) => ({
+          type: 'account-card', icon: '🎁', relation: account.relation, holder: account.holder, bank: account.bank, account: account.account,
+          action: { label: '계좌번호 복사', onClick: () => { navigator.clipboard.writeText(account.account).then(() => toast.success('계좌번호가 복사되었습니다.')).catch(() => toast.error('계좌번호 복사에 실패했습니다.')) } },
+        })) ?? []),
         { type: 'info-card', icon: '✉️', title: '참석 여부', subtitle: '알려주세요', content: '소중한 시간 함께 해주시는 모든 분들께 감사드립니다', action: { label: '참석 응답하기', onClick: () => setAttendanceModalOpen(true) } },
       ].filter(Boolean),
     },
-    ...(accountInfo?.length > 0 ? [{
-      id: 'account-info',
-      title: '축의금 안내',
-      type: 'account-card-row',
-      items: accountInfo.map((account) => ({
-        type: 'account-card', icon: '🎁', relation: account.relation, holder: account.holder, bank: account.bank, account: account.account,
-        action: { label: '계좌번호 복사', onClick: () => { navigator.clipboard.writeText(account.account).then(() => toast.success('계좌번호가 복사되었습니다.')).catch(() => toast.error('계좌번호 복사에 실패했습니다.')) } },
-      })),
-    }] : []),
     {
       id: 'upload-cta',
       title: '함께 만드는 우리의 앨범',

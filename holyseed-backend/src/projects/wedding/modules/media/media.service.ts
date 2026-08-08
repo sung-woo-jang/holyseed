@@ -82,7 +82,12 @@ export class MediaService {
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 8);
     const ext = isImage ? 'webp' : file.originalname.split('.').pop();
-    const baseKey = `wedding/${coupleId}/${timestamp}_${random}`;
+    // dev(holyseed_dev)와 prod(holyseed)가 UPLOAD_PATH를 공유하므로, dev 업로드는
+    // 별도 하위 폴더로 격리해 prod 파일과 섞이지 않게 한다. prod 경로는 그대로 유지.
+    const isProdDb = this.configService.get<string>('database.database') === 'holyseed';
+    const baseKey = isProdDb
+      ? `wedding/${coupleId}/${timestamp}_${random}`
+      : `dev/wedding/${coupleId}/${timestamp}_${random}`;
 
     let localOriginalPath: string | undefined;
     let localResizedPath: string | undefined;

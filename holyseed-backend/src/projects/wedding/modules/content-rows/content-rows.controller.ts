@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Param, Post, Request } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Request, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Public } from '@common/decorators/public.decorator';
+import { OptionalJwtAuthGuard } from '@common/guards';
 import { ContentRowsService } from './content-rows.service';
 import { CreateContentRowDto } from './dto/request/create-content-row.dto';
 import { UpdateContentRowDto } from './dto/request/update-content-row.dto';
@@ -8,6 +9,7 @@ import { SearchContentRowsDto } from './dto/request/search-content-rows.dto';
 
 @ApiTags('Wedding 콘텐츠 행')
 @Controller('wedding/content-rows')
+@UseGuards(OptionalJwtAuthGuard)
 export class ContentRowsController {
   constructor(private readonly contentRowsService: ContentRowsService) {}
 

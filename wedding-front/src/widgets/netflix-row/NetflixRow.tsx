@@ -118,6 +118,7 @@ export default function NetflixRow({ title, items, onItemClick, onVideoClick, ro
               alt={item.alt || ''}
               className={styles.cardImage}
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              loading="lazy"
             />
           </div>
         );
@@ -281,6 +282,7 @@ export default function NetflixRow({ title, items, onItemClick, onVideoClick, ro
                 alt={item.alt || `Top ${item.rank}`}
                 className={styles.topRankedImage}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                loading="lazy"
               />
             </div>
           </div>

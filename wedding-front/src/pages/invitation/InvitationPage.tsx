@@ -70,15 +70,16 @@ function InvitationContent() {
       .catch((e) => console.warn('하객 미디어 조회 실패', e))
   }, [couple?.id])
 
-  // Hero 배경 자동 전환 (5초 간격 크로스페이드)
+  // Hero 배경 자동 전환 (5초 간격 크로스페이드) — 동시 로딩 부담을 줄이기 위해 앞쪽 6장만 순환
+  const heroPoolSize = Math.min(guestMedia.length, 6)
   useEffect(() => {
-    if (guestMedia.length <= 1) return
+    if (heroPoolSize <= 1) return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     const timer = setInterval(() => {
-      setHeroIndex((i) => (i + 1) % guestMedia.length)
+      setHeroIndex((i) => (i + 1) % heroPoolSize)
     }, 5000)
     return () => clearInterval(timer)
-  }, [guestMedia.length])
+  }, [heroPoolSize])
 
   useEffect(() => {
     if (!couple?.id) return
@@ -164,12 +165,13 @@ function InvitationContent() {
         {/* Hero */}
         <section className={styles.hero}>
           <div className={styles.heroImage}>
-            {guestMedia.map((m, i) => (
+            {guestMedia.slice(0, 6).map((m, i) => (
               <img
                 key={m.id}
                 src={mediaResizedUrl(m.id)}
                 alt={`${couple.groomName} & ${couple.brideName}`}
                 className={cn(styles.heroPhoto, { [styles.heroPhotoActive]: i === heroIndex })}
+                loading={i === 0 ? 'eager' : 'lazy'}
               />
             ))}
             <div className={styles.heroOverlay} />

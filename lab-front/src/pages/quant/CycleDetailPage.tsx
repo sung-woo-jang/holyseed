@@ -29,6 +29,7 @@ export default function CycleDetailPage() {
       </main>
     )
 
+  const sortedTrades = [...c.trades].reverse()
   const real = c.trades.filter((t) => t.kind !== '이월')
   const buys = real.filter((t) => t.side === 'BUY').reduce((a, t) => a + n(t.amount), 0)
   const sells = real.filter((t) => t.side === 'SELL').reduce((a, t) => a + n(t.amount), 0)
@@ -104,7 +105,7 @@ export default function CycleDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {c.trades.map((t) => (
+                {sortedTrades.map((t) => (
                   <tr
                     key={t.id}
                     title={t.note ?? undefined}
@@ -141,7 +142,7 @@ export default function CycleDetailPage() {
           </div>
         ) : (
           <div className="rowcard-list">
-            {c.trades.map((t) => (
+            {sortedTrades.map((t) => (
               <div
                 key={t.id}
                 className="rowcard"

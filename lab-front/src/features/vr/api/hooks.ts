@@ -8,12 +8,14 @@ import type {
   VrCandleRange,
   VrCycle,
   VrFill,
+  VrPriceDto,
   VrState,
   VrStatusDto,
 } from './types'
 
 const KEYS = {
   state: ['vr', 'state'],
+  price: ['vr', 'price'],
   status: ['vr', 'status'],
   fills: ['vr', 'fills'],
   cycles: ['vr', 'cycles'],
@@ -28,6 +30,15 @@ export function useVrState() {
   return useStandardQuery<VrState>({
     queryKey: KEYS.state,
     queryFn: async () => (await axiosInstance.get<VrState>(VR_API.STATE)).data,
+  })
+}
+
+/** TQQQ 실시간 시세 — 60초 폴링 (서버도 60초 캐시) */
+export function useVrPrice() {
+  return useStandardQuery<VrPriceDto>({
+    queryKey: KEYS.price,
+    queryFn: async () => (await axiosInstance.get<VrPriceDto>(VR_API.PRICE)).data,
+    refetchInterval: 60_000,
   })
 }
 

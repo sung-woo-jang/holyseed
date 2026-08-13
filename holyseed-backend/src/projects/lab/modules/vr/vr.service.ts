@@ -68,7 +68,23 @@ export class VrService {
       maxBand,
       usablePool: round2(pool * (settings.poolLimitPct / 100)),
       v2Preview: currentCycle ? computeV2(v, pool, settings.gFactor, settings.depositAmount) : null,
+      investedPrincipal: round2(await this.getInvestedPrincipal()),
     };
+  }
+
+  /**
+   * 누적 입금액 = DEPOSIT 체결(최초 자금 포함) 합계. 매수/매도 내부 이동은 제외.
+   * cycle.poolStart는 신뢰하지 않음 — 최초 DEPOSIT 체결(fills 테이블)이 이미 첫 입금을 포함하고 있어
+   * poolStart를 별도로 더하면 이중계산됨(실데이터로 확인: 최초 DEPOSIT $5217.62의 poolAfter가 그대로
+   * $5217.62이고, cycle1.poolStart=$4600은 그 이후 초기매수 8건이 반영된 시점 값).
+   */
+  private async getInvestedPrincipal(): Promise<number> {
+    const { sum } = await this.fillRepo
+      .createQueryBuilder('f')
+      .select('COALESCE(SUM(f.amount), 0)', 'sum')
+      .where('f.kind = :kind', { kind: VrFillKind.DEPOSIT })
+      .getRawOne<{ sum: string }>();
+    return Number(sum);
   }
 
   // ==================== Fills ====================

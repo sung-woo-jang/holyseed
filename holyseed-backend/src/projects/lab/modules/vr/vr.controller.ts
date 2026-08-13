@@ -28,6 +28,12 @@ export class VrController {
     return ok('조회 성공', await this.vrService.getState());
   }
 
+  @Get('price')
+  @ApiOperation({ summary: 'TQQQ 실시간 시세 (60초 캐시)' })
+  async getPrice() {
+    return ok('조회 성공', await this.status.getPrice());
+  }
+
   @Get('status')
   @ApiOperation({ summary: '엔진 상태 + 사이클 + 이벤트 + 활성 세션 + 시장 캘린더' })
   async getStatus() {

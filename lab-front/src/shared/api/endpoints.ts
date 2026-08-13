@@ -13,6 +13,7 @@ export const AUTH_API = {
 // ===== VR API =====
 export const VR_API = {
   STATE: '/vr/state',
+  PRICE: '/vr/price',
   STATUS: '/vr/status',
   RUN: '/vr/run',
   FILLS: '/vr/fills',

@@ -485,14 +485,14 @@ export class LaofusEngineService {
         return;
       }
 
-      // 여기부터 오늘의 매도를 확정 — dry-run이어도 하루 소진 처리(중복 트리거 방지 검증 포함)
-      await this.stateRepo.update({ symbol: SYMBOL }, { lastDecisionUsDate: session.usDate });
-
       const desc = `매도(${d.kind}) ${d.quantity}주 → T ${s.T} → ${d.tAfter}`;
       if (!opts.live) {
         await this.event('info', `[장중감시][dry] 판단: ${desc} (현재가 $${price}) — 주문 미실행`, runId);
         return;
       }
+
+      // 여기부터 오늘의 매도를 확정 (실거래만) — EOD 크론과 lastDecisionUsDate 공유로 하루 1회 제한
+      await this.stateRepo.update({ symbol: SYMBOL }, { lastDecisionUsDate: session.usDate });
 
       const clientOrderId = `imu-${kstDate().replaceAll('-', '')}-s-mon`;
       const placed = await this.toss.sellByQuantity(SYMBOL, String(d.quantity), clientOrderId);

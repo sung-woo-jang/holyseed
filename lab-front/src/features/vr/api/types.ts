@@ -48,6 +48,12 @@ export interface VrState {
   maxBand: number
   usablePool: number
   v2Preview: number | null
+  investedPrincipal: number
+}
+
+export interface VrPriceDto {
+  price: number
+  ts: string
 }
 
 export interface CreateFillInput {

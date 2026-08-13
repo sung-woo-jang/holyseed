@@ -22,6 +22,7 @@ export interface VrLastRun {
 export class VrStatusService {
   private calendarCache: { data: UsMarketCalendar; at: number } | null = null;
   private candleCache = new Map<string, { data: unknown; at: number }>();
+  private priceCache: { price: number; ts: string; at: number } | null = null;
 
   constructor(
     private readonly toss: TossClientService,
@@ -36,6 +37,13 @@ export class VrStatusService {
     const data = (await this.toss.getUsMarketCalendar()) as UsMarketCalendar;
     this.calendarCache = { data, at: Date.now() };
     return data;
+  }
+
+  async getPrice(): Promise<{ price: number; ts: string }> {
+    if (this.priceCache && Date.now() - this.priceCache.at < 60_000) return this.priceCache;
+    const p = await this.toss.getPrice('TQQQ');
+    this.priceCache = { price: Number(p.lastPrice), ts: p.timestamp, at: Date.now() };
+    return this.priceCache;
   }
 
   async getCandles(range: string): Promise<unknown> {

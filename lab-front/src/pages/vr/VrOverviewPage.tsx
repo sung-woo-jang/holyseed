@@ -1,10 +1,7 @@
-import { useState } from 'react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/widgets/page-header'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
-import { Input } from '@/shared/ui/input'
-import { Label } from '@/shared/ui/label'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/shared/ui/alert-dialog'
-import { useRollover, useVrState } from '@/features/vr/api/hooks'
+import { useRollover, useVrPrice, useVrState } from '@/features/vr/api/hooks'
 import { VrEngineStatusBar } from '@/features/vr/ui/VrEngineStatusBar'
 
 const usd = (n: number | null | undefined) =>
@@ -34,12 +31,13 @@ function StatCard({ label, value, hint }: { label: string; value: string; hint?:
 
 export default function VrOverviewPage() {
   const { data: res, isLoading } = useVrState()
+  const { data: priceRes } = useVrPrice()
   const rollover = useRollover()
-  const [currentPrice, setCurrentPrice] = useState('')
 
   const state = res?.data
-  const price = parseFloat(currentPrice)
-  const marketValue = state && !isNaN(price) ? state.quantity * price : null
+  const price = priceRes?.data?.price ?? null
+  const marketValue = state && price !== null ? state.quantity * price : null
+  const profit = state && marketValue !== null ? marketValue - state.investedPrincipal : null
 
   let verdict: { label: string; variant: 'default' | 'destructive' | 'secondary' } | null = null
   if (state && marketValue !== null && state.vValue > 0) {
@@ -99,6 +97,31 @@ export default function VrOverviewPage() {
       {state && (
         <>
           <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatCard label="투자원금" value={usd(state.investedPrincipal)} hint="누적 입금액 (최초 입금 + 적립금)" />
+            <StatCard
+              label="평가금"
+              value={marketValue !== null ? usd(marketValue) : '조회 중…'}
+              hint={price !== null ? `${state.quantity}주 × ${usd(price)}` : undefined}
+            />
+            <StatCard
+              label="손익"
+              value={profit !== null ? `${profit >= 0 ? '+' : ''}${usd(profit)}` : '—'}
+              hint={
+                profit !== null && state.investedPrincipal > 0
+                  ? `${((profit / state.investedPrincipal) * 100).toFixed(2)}%`
+                  : undefined
+              }
+            />
+            {verdict && (
+              <div className="flex items-center rounded-lg border bg-card p-4">
+                <Badge variant={verdict.variant} className="text-sm">
+                  {verdict.label}
+                </Badge>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatCard label="V" value={usd(state.vValue)} hint={`V₂ 예정 ${usd(state.v2Preview)}`} />
             <StatCard label="최소 밴드 (V×0.85)" value={usd(state.minBand)} />
             <StatCard label="최대 밴드 (V×1.15)" value={usd(state.maxBand)} />
@@ -113,34 +136,11 @@ export default function VrOverviewPage() {
             <StatCard label="G (기울기)" value={String(state.settings.gFactor)} />
           </div>
 
-          <div className="mt-6 rounded-lg border bg-card p-4">
-            <div className="flex flex-wrap items-end gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="price">현재 {state.settings.symbol} 가격 ($)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  className="w-40"
-                  value={currentPrice}
-                  onChange={(e) => setCurrentPrice(e.target.value)}
-                  placeholder="예: 71.25"
-                />
-              </div>
-              {marketValue !== null && (
-                <div className="flex items-center gap-3 pb-1">
-                  <span className="text-sm text-muted-foreground">
-                    평가금 = {state.quantity}주 × {usd(price)} = <b className="tabular-nums">{usd(marketValue)}</b>
-                  </span>
-                  {verdict && <Badge variant={verdict.variant}>{verdict.label}</Badge>}
-                </div>
-              )}
-            </div>
-            <p className="mt-3 text-xs text-muted-foreground">
-              평가금 &lt; {usd(state.minBand)} → 매수 · 평가금 &gt; {usd(state.maxBand)} → 매도 · 그 외 홀딩 (평단은
-              판단에 사용하지 않음)
-            </p>
-          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            현재 {state.settings.symbol} 가격 {price !== null ? usd(price) : '조회 중…'} (60초 자동 갱신) · 평가금 &lt;{' '}
+            {usd(state.minBand)} → 매수 · 평가금 &gt; {usd(state.maxBand)} → 매도 · 그 외 홀딩 (평단은 판단에 사용하지
+            않음)
+          </p>
         </>
       )}
     </div>

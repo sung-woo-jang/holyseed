@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowDown,
   ArrowUp,
@@ -44,6 +44,7 @@ import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { RecordCard, RecordCardList, RecordCardMeta, RecordCardRow } from '@/shared/ui/record-card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
+import { Separator } from '@/shared/ui/separator'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
 import { Textarea } from '@/shared/ui/textarea'
 import { PageHeader } from '@/widgets/page-header'
@@ -517,6 +518,7 @@ export default function WorklogPage() {
   const deleteWorklog = useDeleteWorklog()
   const [sort, setSort] = useState<Sort>({ key: 'workDate', dir: 'desc' })
   const isDesktop = useIsDesktopNav()
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
 
   const records = res?.data?.records ?? []
   const summary = res?.data?.summary
@@ -525,6 +527,36 @@ export default function WorklogPage() {
     const sign = sort.dir === 'asc' ? 1 : -1
     return [...records].sort((a, b) => sign * compareWorklogs(a, b, sort.key))
   }, [records, sort])
+
+  useEffect(() => {
+    setSelectedIds(new Set())
+  }, [year, month])
+
+  function toggleSelect(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const allSelected = sortedRecords.length > 0 && sortedRecords.every((r) => selectedIds.has(r.id))
+
+  function toggleSelectAll() {
+    setSelectedIds(allSelected ? new Set() : new Set(sortedRecords.map((r) => r.id)))
+  }
+
+  const selectedSum = useMemo(
+    () =>
+      records
+        .filter((r) => selectedIds.has(r.id))
+        .reduce(
+          (acc, r) => ({ amount: acc.amount + r.effectiveAmount, net: acc.net + r.netAmount }),
+          { amount: 0, net: 0 }
+        ),
+    [records, selectedIds]
+  )
 
   function handleSort(key: SortKey) {
     setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }))
@@ -557,7 +589,7 @@ export default function WorklogPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className={cn('p-6', selectedIds.size > 0 && 'pb-24')}>
       <PageHeader
         title="근무일지"
         description="근무 기록·급여 계산·수령 관리 (원천징수 3.3%)"
@@ -611,7 +643,10 @@ export default function WorklogPage() {
 
       <div className="bg-card mt-4 rounded-lg border p-4">
         {!isDesktop && !isLoading && (
-          <div className="mb-3 flex justify-end">
+          <div className="mb-3 flex items-center justify-between">
+            <Button variant="ghost" size="sm" onClick={toggleSelectAll} disabled={sortedRecords.length === 0}>
+              {allSelected ? '선택 해제' : '전체 선택'}
+            </Button>
             <Select
               value={`${sort.key}:${sort.dir}`}
               onValueChange={(v) => {
@@ -638,6 +673,9 @@ export default function WorklogPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-8">
+                  <Checkbox checked={allSelected} onCheckedChange={toggleSelectAll} aria-label="전체 선택" />
+                </TableHead>
                 <SortableHead label="날짜" sortKey="workDate" sort={sort} onSort={handleSort} />
                 <SortableHead label="현장" sortKey="title" sort={sort} onSort={handleSort} />
                 <TableHead>근무시간</TableHead>
@@ -652,7 +690,7 @@ export default function WorklogPage() {
             <TableBody>
               {sortedRecords.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-muted-foreground text-center">
+                  <TableCell colSpan={10} className="text-muted-foreground text-center">
                     이 달의 기록이 없습니다.
                   </TableCell>
                 </TableRow>
@@ -661,6 +699,13 @@ export default function WorklogPage() {
                 const meta = PAY_STATUS_META[r.payStatus]
                 return (
                   <TableRow key={r.id} className="cursor-pointer" onClick={() => openEdit(r)}>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selectedIds.has(r.id)}
+                        onCheckedChange={() => toggleSelect(r.id)}
+                        aria-label="선택"
+                      />
+                    </TableCell>
                     <TableCell>{r.workDate.slice(5)}</TableCell>
                     <TableCell className="max-w-40 truncate" title={r.memo ?? undefined}>
                       {r.category === 'COUPANG' && (
@@ -734,21 +779,30 @@ export default function WorklogPage() {
               return (
                 <RecordCard key={r.id} onClick={() => openEdit(r)}>
                   <RecordCardRow>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <span>{r.workDate.slice(5)}</span>
-                        <Badge variant={meta.variant} className="text-[10px]">
-                          {meta.label}
-                        </Badge>
+                    <div className="flex min-w-0 items-start gap-2">
+                      <div onClick={(e) => e.stopPropagation()} className="pt-0.5">
+                        <Checkbox
+                          checked={selectedIds.has(r.id)}
+                          onCheckedChange={() => toggleSelect(r.id)}
+                          aria-label="선택"
+                        />
                       </div>
-                      <p className="mt-1 truncate font-medium">
-                        {r.category === 'COUPANG' && (
-                          <Badge variant="outline" className="mr-1.5 text-[10px]">
-                            쿠팡
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <span>{r.workDate.slice(5)}</span>
+                          <Badge variant={meta.variant} className="text-[10px]">
+                            {meta.label}
                           </Badge>
-                        )}
-                        {r.title}
-                      </p>
+                        </div>
+                        <p className="mt-1 truncate font-medium">
+                          {r.category === 'COUPANG' && (
+                            <Badge variant="outline" className="mr-1.5 text-[10px]">
+                              쿠팡
+                            </Badge>
+                          )}
+                          {r.title}
+                        </p>
+                      </div>
                     </div>
                     <div className="flex shrink-0 items-start gap-1" onClick={(e) => e.stopPropagation()}>
                       <div className="text-right">
@@ -806,6 +860,32 @@ export default function WorklogPage() {
         editing={editing}
         defaultDate={defaultDate}
       />
+
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl border bg-background/95 p-3 shadow-xl backdrop-blur-lg supports-[backdrop-filter]:bg-background/60">
+          <div className="flex items-center gap-3 text-sm">
+            <Badge className="min-w-8 rounded-lg">{selectedIds.size}</Badge>
+            <span className="text-muted-foreground">건 선택</span>
+            <Separator orientation="vertical" className="h-5" />
+            <span className="text-muted-foreground">
+              세전 <b className="text-foreground tabular-nums">{won(selectedSum.amount)}</b>
+            </span>
+            <span className="text-muted-foreground">
+              실수령 <b className="text-foreground tabular-nums">{won(selectedSum.net)}</b>
+            </span>
+            <Separator orientation="vertical" className="h-5" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7"
+              onClick={() => setSelectedIds(new Set())}
+              aria-label="선택 해제"
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -10,12 +10,6 @@ export enum PayStatus {
   DAYOFF = 'DAYOFF',
 }
 
-/** 인테리어(공수 공식 계산) / 쿠팡 일용직(이미 확정된 세후 금액 — 재공제 없이 그대로 사용) */
-export enum WorklogCategory {
-  INTERIOR = 'INTERIOR',
-  COUPANG = 'COUPANG',
-}
-
 export class WorklogPhoto {
   @ApiProperty({ example: 'a1b2c3.webp' })
   filename: string;
@@ -63,14 +57,9 @@ export class Worklog extends BaseEntity {
   })
   payStatus: PayStatus;
 
-  @ApiProperty({ description: '분류 (인테리어/쿠팡)', enum: WorklogCategory })
-  @Column({
-    type: 'enum',
-    enum: WorklogCategory,
-    enumName: 'lab_worklog_category',
-    default: WorklogCategory.INTERIOR,
-  })
-  category: WorklogCategory;
+  @ApiProperty({ description: '분류 (사용자가 직접 추가/관리)', example: '인테리어' })
+  @Column({ length: 50, default: '인테리어' })
+  category: string;
 
   @ApiProperty({ description: '일급여 (원)', example: 140000 })
   @Column({ name: 'daily_wage', type: 'int' })

@@ -9,13 +9,9 @@ export function calcWorklogAmount(params: {
   breakHours: number
   dailyWage: number
   isDayoff?: boolean
-  isCoupang?: boolean
-  amountOverride?: number
 }): number {
-  const { startTime, endTime, breakHours, dailyWage, isDayoff, isCoupang, amountOverride } = params
+  const { startTime, endTime, breakHours, dailyWage, isDayoff } = params
   if (isDayoff) return 0
-  // 쿠팡 일용직은 이미 확정된 세후 금액만 존재 — 공수 공식 미적용
-  if (isCoupang) return amountOverride ?? 0
   if (!startTime || !endTime) return dailyWage
 
   const toHours = (t: string) => {
@@ -37,8 +33,3 @@ export function getDailyWage(date: string): number {
 }
 
 export const WITHHOLDING_RATE = 0.033
-
-export const CATEGORY_OPTIONS = [
-  { value: 'INTERIOR', label: '인테리어' },
-  { value: 'COUPANG', label: '쿠팡' },
-] as const

@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
-import { Worklog, PayStatus, WorklogCategory, WorklogJobOption } from './entities';
+import { Worklog, PayStatus, WorklogJobOption, WorklogCategoryOption } from './entities';
 import { CreateWorklogDto, UpdateWorklogDto, SearchWorklogDto } from './dto/request';
 
 /** 일당 기준 이력 — 변경 시 여기에 구간 추가 */
@@ -12,8 +12,13 @@ const DAILY_WAGE_HISTORY: { from: string; wage: number }[] = [
 
 const WITHHOLDING_RATE = 0.033; // 원천징수 3.3%
 
-/** "업무" 체크박스 팔레트 초기값 — worklog_job_options 테이블이 비어 있을 때만 1회 시딩 */
+const DEFAULT_CATEGORY = '인테리어';
+
+/** "업무" 체크박스 팔레트 초기값 — worklog_job_options 테이블이 비어 있을 때만 1회 시딩 (인테리어 소속) */
 const DEFAULT_JOB_OPTIONS = ['도배', '필름', '퍼티', '철거', '페인트', '세팅'];
+
+/** "분류" 팔레트 초기값 — worklog_category_options 테이블이 비어 있을 때만 1회 시딩 */
+const DEFAULT_CATEGORY_OPTIONS = ['인테리어', '쿠팡'];
 
 export interface WorklogView extends Worklog {
   /** 유효 금액 (오버라이드 우선) */
@@ -29,6 +34,8 @@ export class WorklogService {
     private readonly worklogRepo: Repository<Worklog>,
     @InjectRepository(WorklogJobOption)
     private readonly jobOptionRepo: Repository<WorklogJobOption>,
+    @InjectRepository(WorklogCategoryOption)
+    private readonly categoryOptionRepo: Repository<WorklogCategoryOption>,
   ) {}
 
   getDailyWage(date: string): number {
@@ -45,14 +52,9 @@ export class WorklogService {
    * 공수 = 1 + 초과/8, 금액 = 공수×일급 + 초과×시급×0.1
    */
   calcAmount(
-    log: Pick<
-      Worklog,
-      'startTime' | 'endTime' | 'breakHours' | 'dailyWage' | 'payStatus' | 'category' | 'amountOverride'
-    >,
+    log: Pick<Worklog, 'startTime' | 'endTime' | 'breakHours' | 'dailyWage' | 'payStatus'>,
   ): number {
     if (log.payStatus === PayStatus.DAYOFF) return 0;
-    // 쿠팡 일용직은 이미 확정된 세후 금액만 존재 — 공수 공식 적용 대상이 아님
-    if (log.category === WorklogCategory.COUPANG) return log.amountOverride ?? 0;
     if (!log.startTime || !log.endTime) return log.dailyWage;
 
     const toHours = (t: string) => {
@@ -70,11 +72,7 @@ export class WorklogService {
 
   private toView(log: Worklog): WorklogView {
     const effectiveAmount = log.amountOverride ?? log.amount;
-    // 쿠팡은 이미 세후 확정 금액이라 원천징수를 다시 적용하지 않음
-    const netAmount =
-      log.category === WorklogCategory.COUPANG
-        ? effectiveAmount
-        : Math.round(effectiveAmount * (1 - WITHHOLDING_RATE));
+    const netAmount = Math.round(effectiveAmount * (1 - WITHHOLDING_RATE));
     return { ...log, effectiveAmount, netAmount };
   }
 
@@ -123,7 +121,7 @@ export class WorklogService {
       photos: dto.photos ?? [],
       breakHours: dto.breakHours ?? 1,
       payStatus: dto.payStatus ?? PayStatus.EXPECTED,
-      category: dto.category ?? WorklogCategory.INTERIOR,
+      category: dto.category ?? DEFAULT_CATEGORY,
       dailyWage,
       amountOverride: dto.amountOverride ?? null,
     });
@@ -150,24 +148,48 @@ export class WorklogService {
     await this.worklogRepo.remove(log);
   }
 
-  /** 업무 팔레트 조회 — 최초 호출 시(테이블이 비어있으면) 기본 6개 자동 시딩 */
+  /** 업무 팔레트 조회 — 최초 호출 시(테이블이 비어있으면) 기본 6개(인테리어 소속) 자동 시딩 */
   async getJobOptions(): Promise<WorklogJobOption[]> {
     const count = await this.jobOptionRepo.count();
     if (count === 0) {
-      await this.jobOptionRepo.save(DEFAULT_JOB_OPTIONS.map((name) => this.jobOptionRepo.create({ name })));
+      await this.jobOptionRepo.save(
+        DEFAULT_JOB_OPTIONS.map((name) => this.jobOptionRepo.create({ name, category: DEFAULT_CATEGORY })),
+      );
     }
     return this.jobOptionRepo.find({ order: { id: 'ASC' } });
   }
 
-  async createJobOption(name: string): Promise<WorklogJobOption> {
-    const exists = await this.jobOptionRepo.findOne({ where: { name } });
+  async createJobOption(name: string, category: string): Promise<WorklogJobOption> {
+    const exists = await this.jobOptionRepo.findOne({ where: { name, category } });
     if (exists) throw new BadRequestException('이미 있는 업무입니다.');
-    return this.jobOptionRepo.save(this.jobOptionRepo.create({ name }));
+    return this.jobOptionRepo.save(this.jobOptionRepo.create({ name, category }));
   }
 
   async deleteJobOption(id: number): Promise<void> {
     const option = await this.jobOptionRepo.findOne({ where: { id } });
     if (!option) throw new NotFoundException('업무 항목을 찾을 수 없습니다.');
     await this.jobOptionRepo.remove(option);
+  }
+
+  /**
+   * 분류 팔레트 조회 — 최초 호출 시(테이블이 비어있으면) 기본 2개 자동 시딩 + 레거시 enum 값
+   * ('INTERIOR'/'COUPANG') → 새 분류명('인테리어'/'쿠팡') 1회 백필. 이미 변환된 경우 매칭 0건이라 안전.
+   */
+  async getCategoryOptions(): Promise<WorklogCategoryOption[]> {
+    const count = await this.categoryOptionRepo.count();
+    if (count === 0) {
+      await this.categoryOptionRepo.save(
+        DEFAULT_CATEGORY_OPTIONS.map((name) => this.categoryOptionRepo.create({ name })),
+      );
+      await this.worklogRepo.update({ category: 'INTERIOR' }, { category: '인테리어' });
+      await this.worklogRepo.update({ category: 'COUPANG' }, { category: '쿠팡' });
+    }
+    return this.categoryOptionRepo.find({ order: { id: 'ASC' } });
+  }
+
+  async createCategoryOption(name: string): Promise<WorklogCategoryOption> {
+    const exists = await this.categoryOptionRepo.findOne({ where: { name } });
+    if (exists) throw new BadRequestException('이미 있는 분류입니다.');
+    return this.categoryOptionRepo.save(this.categoryOptionRepo.create({ name }));
   }
 }

@@ -1,7 +1,13 @@
 export type PayStatus = 'RECEIVED' | 'EXPECTED' | 'UNPAID' | 'DAYOFF'
-export type WorklogCategory = 'INTERIOR' | 'COUPANG'
+export type WorklogCategory = string
 
 export interface WorklogJobOption {
+  id: number
+  name: string
+  category: string
+}
+
+export interface WorklogCategoryOption {
   id: number
   name: string
 }

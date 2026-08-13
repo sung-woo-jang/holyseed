@@ -13,17 +13,19 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
+  useCreateCategoryOption,
   useCreateJobOption,
   useCreateWorklog,
   useDeleteJobOption,
   useDeleteWorklog,
   useUpdateWorklog,
   useUploadWorklogPhotos,
+  useWorklogCategoryOptions,
   useWorklogJobOptions,
   useWorklogMonth,
 } from '@/features/worklog/api/hooks'
 import type { PayStatus, Worklog, WorklogCategory, WorklogInput, WorklogPhoto } from '@/features/worklog/api/types'
-import { CATEGORY_OPTIONS, calcWorklogAmount, getDailyWage, WITHHOLDING_RATE } from '@/features/worklog/lib/worklog-calc'
+import { calcWorklogAmount, getDailyWage, WITHHOLDING_RATE } from '@/features/worklog/lib/worklog-calc'
 import { useIsDesktopNav } from '@/shared/hooks/use-media-query'
 import { cn } from '@/shared/lib/utils'
 import {
@@ -131,7 +133,7 @@ interface FormState {
 const emptyForm = (date: string): FormState => ({
   title: '',
   workDate: date,
-  category: 'INTERIOR',
+  category: '인테리어',
   startTime: '08:00',
   endTime: '17:00',
   breakHours: '1',
@@ -166,11 +168,18 @@ function WorklogDialog({
   const deleteJobOption = useDeleteJobOption()
   const [newJobName, setNewJobName] = useState('')
 
+  const { data: categoryOptionsRes } = useWorklogCategoryOptions()
+  const categoryOptions = categoryOptionsRes?.data ?? []
+  const createCategoryOption = useCreateCategoryOption()
+  const [newCategoryName, setNewCategoryName] = useState('')
+
+  const categoryJobOptions = jobOptions.filter((o) => o.category === form.category)
+
   async function addJobOption() {
     const name = newJobName.trim()
     if (!name) return
     try {
-      await createJobOption.mutateAsync(name)
+      await createJobOption.mutateAsync({ name, category: form.category })
       set('jobs', [...form.jobs, name])
       setNewJobName('')
     } catch (err: any) {
@@ -184,6 +193,19 @@ function WorklogDialog({
       set('jobs', form.jobs.filter((j) => j !== name))
     } catch (err: any) {
       toast.error(err?.response?.data?.message ?? '업무 삭제에 실패했습니다.')
+    }
+  }
+
+  async function addCategoryOption() {
+    const name = newCategoryName.trim()
+    if (!name) return
+    try {
+      await createCategoryOption.mutateAsync(name)
+      set('category', name)
+      set('jobs', [])
+      setNewCategoryName('')
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? '분류 추가에 실패했습니다.')
     }
   }
 
@@ -237,19 +259,15 @@ function WorklogDialog({
     )
   }
 
-  const isCoupang = form.category === 'COUPANG'
   const preview = calcWorklogAmount({
     startTime: form.startTime || undefined,
     endTime: form.endTime || undefined,
     breakHours: parseFloat(form.breakHours) || 0,
     dailyWage: parseInt(form.dailyWage, 10) || 0,
     isDayoff: form.payStatus === 'DAYOFF',
-    isCoupang,
-    amountOverride: parseInt(form.amountOverride, 10) || 0,
   })
   const effective = form.amountOverride !== '' ? parseInt(form.amountOverride, 10) || 0 : preview
-  // 쿠팡은 이미 세후 확정 금액이라 원천징수를 다시 적용하지 않음
-  const net = isCoupang ? effective : Math.round(effective * (1 - WITHHOLDING_RATE))
+  const net = Math.round(effective * (1 - WITHHOLDING_RATE))
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((f) => ({ ...f, [k]: v }))
 
@@ -303,18 +321,47 @@ function WorklogDialog({
             </div>
             <div className="space-y-2">
               <Label>분류</Label>
-              <Select value={form.category} onValueChange={(v) => set('category', v as WorklogCategory)}>
+              <Select
+                value={form.category}
+                onValueChange={(v) => {
+                  set('category', v as WorklogCategory)
+                  set('jobs', [])
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORY_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
+                  {categoryOptions.map((opt) => (
+                    <SelectItem key={opt.id} value={opt.name}>
+                      {opt.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <div className="flex gap-2">
+                <Input
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      addCategoryOption()
+                    }
+                  }}
+                  placeholder="새 분류 (예: 청소)"
+                  className="h-8 text-sm"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={addCategoryOption}
+                  disabled={!newCategoryName.trim()}
+                >
+                  추가
+                </Button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>날짜</Label>
@@ -343,92 +390,84 @@ function WorklogDialog({
                 </SelectContent>
               </Select>
             </div>
-            {!isCoupang && (
-              <>
-                <div className="space-y-2">
-                  <Label>시작</Label>
-                  <Input type="time" value={form.startTime} onChange={(e) => set('startTime', e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>종료</Label>
-                  <Input type="time" value={form.endTime} onChange={(e) => set('endTime', e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>휴게 (시간)</Label>
-                  <Input
-                    type="number"
-                    step="0.5"
-                    min="0"
-                    value={form.breakHours}
-                    onChange={(e) => set('breakHours', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>일급여 (원)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="10000"
-                    value={form.dailyWage}
-                    onChange={(e) => set('dailyWage', e.target.value)}
-                  />
-                </div>
-              </>
-            )}
+            <div className="space-y-2">
+              <Label>시작</Label>
+              <Input type="time" value={form.startTime} onChange={(e) => set('startTime', e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>종료</Label>
+              <Input type="time" value={form.endTime} onChange={(e) => set('endTime', e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>휴게 (시간)</Label>
+              <Input
+                type="number"
+                step="0.5"
+                min="0"
+                value={form.breakHours}
+                onChange={(e) => set('breakHours', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>일급여 (원)</Label>
+              <Input
+                type="number"
+                min="0"
+                step="10000"
+                value={form.dailyWage}
+                onChange={(e) => set('dailyWage', e.target.value)}
+              />
+            </div>
           </div>
 
-          {!isCoupang && (
-            <div className="space-y-2">
-              <Label>업무</Label>
-              <div className="flex flex-wrap items-center gap-4">
-                {jobOptions?.map((opt) => (
-                  <span key={opt.id} className="group flex items-center gap-1 text-sm">
-                    <label className="flex items-center gap-1.5">
-                      <Checkbox
-                        checked={form.jobs.includes(opt.name)}
-                        onCheckedChange={(checked) =>
-                          set('jobs', checked ? [...form.jobs, opt.name] : form.jobs.filter((j) => j !== opt.name))
-                        }
-                      />
-                      {opt.name}
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => removeJobOption(opt.id, opt.name)}
-                      className="text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
-                      aria-label={`${opt.name} 삭제`}
-                    >
-                      <X className="size-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  value={newJobName}
-                  onChange={(e) => setNewJobName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      addJobOption()
-                    }
-                  }}
-                  placeholder="새 업무 (예: 타일)"
-                  className="h-8 max-w-40 text-sm"
-                />
-                <Button type="button" size="sm" variant="outline" onClick={addJobOption} disabled={!newJobName.trim()}>
-                  추가
-                </Button>
-              </div>
+          <div className="space-y-2">
+            <Label>업무</Label>
+            <div className="flex flex-wrap items-center gap-4">
+              {categoryJobOptions.map((opt) => (
+                <span key={opt.id} className="group flex items-center gap-1 text-sm">
+                  <label className="flex items-center gap-1.5">
+                    <Checkbox
+                      checked={form.jobs.includes(opt.name)}
+                      onCheckedChange={(checked) =>
+                        set('jobs', checked ? [...form.jobs, opt.name] : form.jobs.filter((j) => j !== opt.name))
+                      }
+                    />
+                    {opt.name}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => removeJobOption(opt.id, opt.name)}
+                    className="text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
+                    aria-label={`${opt.name} 삭제`}
+                  >
+                    <X className="size-3" />
+                  </button>
+                </span>
+              ))}
             </div>
-          )}
+            <div className="flex gap-2">
+              <Input
+                value={newJobName}
+                onChange={(e) => setNewJobName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    addJobOption()
+                  }
+                }}
+                placeholder="새 업무 (예: 타일)"
+                className="h-8 max-w-40 text-sm"
+              />
+              <Button type="button" size="sm" variant="outline" onClick={addJobOption} disabled={!newJobName.trim()}>
+                추가
+              </Button>
+            </div>
+          </div>
 
-          {!isCoupang && (
-            <div className="space-y-2">
-              <Label>주소</Label>
-              <Input value={form.address} onChange={(e) => set('address', e.target.value)} />
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label>주소</Label>
+            <Input value={form.address} onChange={(e) => set('address', e.target.value)} />
+          </div>
           <div className="space-y-2">
             <Label>메모</Label>
             <Textarea rows={2} value={form.memo} onChange={(e) => set('memo', e.target.value)} />
@@ -473,25 +512,22 @@ function WorklogDialog({
           </div>
 
           <div className="bg-muted/40 rounded-md border p-3 text-sm">
-            {!isCoupang && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">계산 금액</span>
-                <b className="tabular-nums">{won(preview)}</b>
-              </div>
-            )}
-            <div className={cn('flex items-center justify-between gap-3', !isCoupang && 'mt-2')}>
-              <span className="text-muted-foreground">{isCoupang ? '실수령액 (세후 확정)' : '실수령 오버라이드'}</span>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">계산 금액</span>
+              <b className="tabular-nums">{won(preview)}</b>
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">실수령 오버라이드</span>
               <Input
                 type="number"
                 className="h-8 w-36 text-right"
-                placeholder={isCoupang ? '82380' : '(선택)'}
-                required={isCoupang}
+                placeholder="(선택)"
                 value={form.amountOverride}
                 onChange={(e) => set('amountOverride', e.target.value)}
               />
             </div>
             <div className="mt-2 flex justify-between border-t pt-2">
-              <span className="text-muted-foreground">{isCoupang ? '실수령 (공제 없음)' : '실수령 (3.3% 공제)'}</span>
+              <span className="text-muted-foreground">실수령 (3.3% 공제)</span>
               <b className="tabular-nums">{won(net)}</b>
             </div>
           </div>
@@ -708,7 +744,7 @@ export default function WorklogPage() {
                     </TableCell>
                     <TableCell>{r.workDate.slice(5)}</TableCell>
                     <TableCell className="max-w-40 truncate" title={r.memo ?? undefined}>
-                      {r.category === 'COUPANG' && (
+                      {r.category === '쿠팡' && (
                         <Badge variant="outline" className="mr-1.5 text-[10px]">
                           쿠팡
                         </Badge>
@@ -795,7 +831,7 @@ export default function WorklogPage() {
                           </Badge>
                         </div>
                         <p className="mt-1 truncate font-medium">
-                          {r.category === 'COUPANG' && (
+                          {r.category === '쿠팡' && (
                             <Badge variant="outline" className="mr-1.5 text-[10px]">
                               쿠팡
                             </Badge>

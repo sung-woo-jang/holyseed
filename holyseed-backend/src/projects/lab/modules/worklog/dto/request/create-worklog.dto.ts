@@ -13,7 +13,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { PayStatus, WorklogCategory, WorklogPhoto } from '../../entities';
+import { PayStatus, WorklogPhoto } from '../../entities';
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -55,10 +55,11 @@ export class CreateWorklogDto {
   @IsEnum(PayStatus)
   payStatus?: PayStatus;
 
-  @ApiPropertyOptional({ description: '분류 (인테리어/쿠팡)', enum: WorklogCategory, default: WorklogCategory.INTERIOR })
+  @ApiPropertyOptional({ description: '분류 (사용자가 직접 추가/관리)', example: '인테리어', default: '인테리어' })
   @IsOptional()
-  @IsEnum(WorklogCategory)
-  category?: WorklogCategory;
+  @IsString()
+  @MaxLength(50)
+  category?: string;
 
   @ApiPropertyOptional({ description: '일급여 (미지정 시 날짜 기준 자동)', example: 140000 })
   @IsOptional()

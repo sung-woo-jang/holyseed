@@ -9,4 +9,11 @@ export class CreateJobOptionDto {
   @MaxLength(50)
   @Transform(({ value }) => value?.trim())
   name: string;
+
+  @ApiProperty({ description: '소속 분류', example: '인테리어' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(50)
+  @Transform(({ value }) => value?.trim())
+  category: string;
 }

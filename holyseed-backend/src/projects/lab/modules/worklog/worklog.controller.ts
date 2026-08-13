@@ -13,7 +13,13 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { WorklogService } from './worklog.service';
 import { FilesService } from '@shared/files/files.service';
-import { CreateWorklogDto, UpdateWorklogDto, SearchWorklogDto, CreateJobOptionDto } from './dto/request';
+import {
+  CreateWorklogDto,
+  UpdateWorklogDto,
+  SearchWorklogDto,
+  CreateJobOptionDto,
+  CreateCategoryOptionDto,
+} from './dto/request';
 
 const ok = (message: string, data: unknown) => ({
   success: true,
@@ -68,9 +74,9 @@ export class WorklogController {
   }
 
   @Post('job-options')
-  @ApiOperation({ summary: '업무 팔레트에 항목 추가' })
+  @ApiOperation({ summary: '업무 팔레트에 항목 추가 (분류별)' })
   async createJobOption(@Body() dto: CreateJobOptionDto) {
-    return ok('업무 항목이 추가되었습니다.', await this.worklogService.createJobOption(dto.name));
+    return ok('업무 항목이 추가되었습니다.', await this.worklogService.createJobOption(dto.name, dto.category));
   }
 
   @Post('job-options/:id/delete')
@@ -78,6 +84,18 @@ export class WorklogController {
   async deleteJobOption(@Param('id', ParseIntPipe) id: number) {
     await this.worklogService.deleteJobOption(id);
     return ok('업무 항목이 삭제되었습니다.', null);
+  }
+
+  @Get('category-options')
+  @ApiOperation({ summary: '분류 팔레트 조회 (없으면 기본값 자동 시딩)' })
+  async getCategoryOptions() {
+    return ok('조회 성공', await this.worklogService.getCategoryOptions());
+  }
+
+  @Post('category-options')
+  @ApiOperation({ summary: '분류 팔레트에 항목 추가' })
+  async createCategoryOption(@Body() dto: CreateCategoryOptionDto) {
+    return ok('분류가 추가되었습니다.', await this.worklogService.createCategoryOption(dto.name));
   }
 
   @Post('upload-photos')

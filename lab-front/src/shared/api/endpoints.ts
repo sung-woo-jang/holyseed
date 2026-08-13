@@ -36,6 +36,8 @@ export const WORKLOG_API = {
   JOB_OPTIONS: '/worklog/job-options',
   CREATE_JOB_OPTION: '/worklog/job-options',
   DELETE_JOB_OPTION: (id: number | string) => `/worklog/job-options/${id}/delete`,
+  CATEGORY_OPTIONS: '/worklog/category-options',
+  CREATE_CATEGORY_OPTION: '/worklog/category-options',
 } as const
 
 // ===== 지출내역 API =====

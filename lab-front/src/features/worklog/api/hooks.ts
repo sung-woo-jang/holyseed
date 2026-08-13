@@ -1,7 +1,14 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { axiosInstance, WORKLOG_API } from '@/shared/api'
 import { useStandardQuery, useStandardMutation } from '@/shared/hooks/custom-query'
-import type { Worklog, WorklogInput, WorklogJobOption, WorklogPhoto, WorklogSearchResult } from './types'
+import type {
+  Worklog,
+  WorklogCategoryOption,
+  WorklogInput,
+  WorklogJobOption,
+  WorklogPhoto,
+  WorklogSearchResult,
+} from './types'
 
 export function useWorklogMonth(year: number, month: number) {
   return useStandardQuery<WorklogSearchResult>({
@@ -58,9 +65,9 @@ export function useWorklogJobOptions() {
 
 export function useCreateJobOption() {
   const qc = useQueryClient()
-  return useStandardMutation<WorklogJobOption, Error, string>({
-    mutationFn: async (name) =>
-      (await axiosInstance.post<WorklogJobOption>(WORKLOG_API.CREATE_JOB_OPTION, { name })).data,
+  return useStandardMutation<WorklogJobOption, Error, { name: string; category: string }>({
+    mutationFn: async (input) =>
+      (await axiosInstance.post<WorklogJobOption>(WORKLOG_API.CREATE_JOB_OPTION, input)).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['worklog', 'job-options'] }),
   })
 }
@@ -70,5 +77,21 @@ export function useDeleteJobOption() {
   return useStandardMutation<null, Error, number>({
     mutationFn: async (id) => (await axiosInstance.post<null>(WORKLOG_API.DELETE_JOB_OPTION(id))).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['worklog', 'job-options'] }),
+  })
+}
+
+export function useWorklogCategoryOptions() {
+  return useStandardQuery<WorklogCategoryOption[]>({
+    queryKey: ['worklog', 'category-options'],
+    queryFn: async () => (await axiosInstance.get<WorklogCategoryOption[]>(WORKLOG_API.CATEGORY_OPTIONS)).data,
+  })
+}
+
+export function useCreateCategoryOption() {
+  const qc = useQueryClient()
+  return useStandardMutation<WorklogCategoryOption, Error, string>({
+    mutationFn: async (name) =>
+      (await axiosInstance.post<WorklogCategoryOption>(WORKLOG_API.CREATE_CATEGORY_OPTION, { name })).data,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['worklog', 'category-options'] }),
   })
 }

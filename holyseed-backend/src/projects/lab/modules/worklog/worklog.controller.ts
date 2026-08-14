@@ -17,6 +17,7 @@ import {
   CreateWorklogDto,
   UpdateWorklogDto,
   SearchWorklogDto,
+  QueryWorklogDto,
   CreateJobOptionDto,
   CreateCategoryOptionDto,
 } from './dto/request';
@@ -46,6 +47,12 @@ export class WorklogController {
   @ApiOperation({ summary: '월별 조회 + 집계 (근무일수/총액/실수령/수령·미수령)' })
   async search(@Body() dto: SearchWorklogDto) {
     return ok('조회 성공', await this.worklogService.search(dto));
+  }
+
+  @Post('query')
+  @ApiOperation({ summary: '기간(월 또는 from~to)·분류·수령여부·업무·현장명 필터 조회 + 집계 (MCP 등 범용 조회용)' })
+  async query(@Body() dto: QueryWorklogDto) {
+    return ok('조회 성공', await this.worklogService.query(dto));
   }
 
   @Post()

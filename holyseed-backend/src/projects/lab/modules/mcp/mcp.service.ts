@@ -202,17 +202,41 @@ export class McpService {
     // ==================== 근무일지 ====================
 
     registerTool(
-      'worklog_month',
+      'worklog_query',
       {
-        title: '근무일지 월별 조회',
+        title: '근무일지 조회 (기간·분류·수령여부·업무·현장명 필터)',
         description:
-          '해당 월의 근무 기록과 집계(근무일수/총액/실수령 합계/수령·미수령 분리)를 조회합니다. 실수령 = 금액 × 0.967 (원천징수 3.3%).',
+          '근무 기록을 조회합니다. year+month(기본 이번 달) 또는 from~to(YYYY-MM-DD, 월 경계 넘는 범위도 가능) 중 하나로 기간을 지정하고, category/payStatus/jobs/titleContains로 좁힐 수 있습니다. 응답에 집계(근무일수/합계/실수령/수령·미수령)도 함께 옵니다. 실수령 = 금액 × 0.967 (원천징수 3.3%).',
         inputSchema: {
-          year: z.number().describe('연도 (예: 2026)'),
-          month: z.number().min(1).max(12).describe('월 (1~12)'),
+          year: z.number().optional().describe('연도 (from/to 없을 때, 기본 올해)'),
+          month: z.number().min(1).max(12).optional().describe('월 1~12 (from/to 없을 때, 기본 이번 달)'),
+          from: z.string().optional().describe('조회 시작일 YYYY-MM-DD, 지정하면 year/month보다 우선'),
+          to: z.string().optional().describe('조회 종료일 YYYY-MM-DD, from만 있으면 오늘까지'),
+          category: z.string().optional().describe('분류명으로 필터 (worklog_options로 등록된 값 확인)'),
+          payStatus: z.enum(['RECEIVED', 'EXPECTED', 'UNPAID', 'DAYOFF']).optional().describe('수령여부 필터'),
+          jobs: z.array(z.string()).optional().describe('이 업무 중 하나라도 포함된 기록만'),
+          titleContains: z.string().optional().describe('현장명 부분 검색'),
         },
       },
-      ({ year, month }) => this.call(async (api) => this.unwrap(await api.post('/worklog/search', { year, month }))),
+      (args) => this.call(async (api) => this.unwrap(await api.post('/worklog/query', args))),
+    );
+
+    registerTool(
+      'worklog_options',
+      {
+        title: '근무일지 분류/업무 팔레트 조회',
+        description:
+          '등록된 분류(category) 목록과 업무(jobs) 목록을 조회합니다. worklog_add/worklog_update/worklog_query에 넣을 값을 확인할 때 사용하세요.',
+        inputSchema: {},
+      },
+      () =>
+        this.call(async (api) => {
+          const [categories, jobs] = await Promise.all([
+            this.unwrap(await api.get('/worklog/category-options')),
+            this.unwrap(await api.get('/worklog/job-options')),
+          ]);
+          return { categories, jobs };
+        }),
     );
 
     registerTool(
@@ -220,11 +244,11 @@ export class McpService {
       {
         title: '근무 기록 추가',
         description:
-          '근무 기록을 추가합니다. 금액은 항상 서버가 공식(공수·초과수당·휴게 점심1시간 기본 차감)대로 자동 계산하고 3.3% 원천징수 후 실수령으로 표시됩니다 — 실수령이 계산과 다르면 amountOverride로 실제 금액을 넣으세요(실수령 우선 원칙). 일급여는 날짜 기준 자동(현재 14만원). 분류(category)는 자유 문자열이며 사용자가 UI에서 직접 추가한 값을 쓸 수 있습니다 — 현재 등록된 분류는 worklog_month 응답으로 확인하세요 (기본값 인테리어). 휴무는 payStatus=DAYOFF.',
+          '근무 기록을 추가합니다. 금액은 항상 서버가 공식(공수·초과수당·휴게 점심1시간 기본 차감)대로 자동 계산하고 3.3% 원천징수 후 실수령으로 표시됩니다 — 실수령이 계산과 다르면 amountOverride로 실제 금액을 넣으세요(실수령 우선 원칙). 일급여는 날짜 기준 자동(현재 14만원). 분류(category)는 자유 문자열이며 사용자가 UI에서 직접 추가한 값을 쓸 수 있습니다 — 현재 등록된 분류는 worklog_options로 확인하세요 (기본값 인테리어). 휴무는 payStatus=DAYOFF.',
         inputSchema: {
           title: z.string().describe('현장명 (여러 곳이면 / 구분, 휴무면 "휴무")'),
           workDate: z.string().optional().describe('YYYY-MM-DD, 생략 시 오늘'),
-          category: z.string().optional().describe('분류명 (기본 인테리어). 등록된 분류는 worklog_month 응답으로 확인'),
+          category: z.string().optional().describe('분류명 (기본 인테리어). 등록된 분류는 worklog_options로 확인'),
           startTime: z.string().optional().describe('시작 HH:mm (예 08:00)'),
           endTime: z.string().optional().describe('종료 HH:mm'),
           breakHours: z.number().optional().describe('휴게시간 (기본 1)'),

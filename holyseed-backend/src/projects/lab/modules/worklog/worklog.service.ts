@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { Between, FindOptionsWhere, Repository } from 'typeorm';
 import { Worklog, PayStatus, WorklogJobOption, WorklogCategoryOption } from './entities';
-import { CreateWorklogDto, UpdateWorklogDto, SearchWorklogDto } from './dto/request';
+import { CreateWorklogDto, UpdateWorklogDto, SearchWorklogDto, QueryWorklogDto } from './dto/request';
 
 /** 일당 기준 이력 — 변경 시 여기에 구간 추가 */
 const DAILY_WAGE_HISTORY: { from: string; wage: number }[] = [
@@ -51,9 +51,7 @@ export class WorklogService {
    * 실근무 = 총근무 − 휴게, 초과 = max(0, 실근무 − 8)
    * 공수 = 1 + 초과/8, 금액 = 공수×일급 + 초과×시급×0.1
    */
-  calcAmount(
-    log: Pick<Worklog, 'startTime' | 'endTime' | 'breakHours' | 'dailyWage' | 'payStatus'>,
-  ): number {
+  calcAmount(log: Pick<Worklog, 'startTime' | 'endTime' | 'breakHours' | 'dailyWage' | 'payStatus'>): number {
     if (log.payStatus === PayStatus.DAYOFF) return 0;
     if (!log.startTime || !log.endTime) return log.dailyWage;
 
@@ -92,24 +90,61 @@ export class WorklogService {
     });
     const records = logs.map((log) => this.toView(log));
 
+    return { records, summary: this.summarizeRecords(records) };
+  }
+
+  /**
+   * 기간(달력 월 또는 from~to)·분류·수령여부·업무·현장명으로 유연하게 조회 (MCP 등 범용 조회용).
+   * jobs/titleContains는 DB 레벨 매칭이 번거로워(jobs는 simple-array) 조회 후 JS로 추가 필터링한다.
+   */
+  async query(dto: QueryWorklogDto) {
+    let from: string;
+    let to: string;
+    if (dto.from || dto.to) {
+      from = dto.from ?? '0000-01-01';
+      to = dto.to ?? new Date().toISOString().slice(0, 10);
+    } else {
+      const year = dto.year ?? new Date().getFullYear();
+      const month = dto.month ?? new Date().getMonth() + 1;
+      from = `${year}-${String(month).padStart(2, '0')}-01`;
+      const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+      to = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+    }
+
+    const where: FindOptionsWhere<Worklog> = { workDate: Between(from, to) };
+    if (dto.category) where.category = dto.category;
+    if (dto.payStatus) where.payStatus = dto.payStatus;
+
+    const logs = await this.worklogRepo.find({ where, order: { workDate: 'ASC', id: 'ASC' } });
+    let records = logs.map((log) => this.toView(log));
+
+    if (dto.titleContains) {
+      const q = dto.titleContains.toLowerCase();
+      records = records.filter((r) => r.title.toLowerCase().includes(q));
+    }
+    if (dto.jobs?.length) {
+      records = records.filter((r) => dto.jobs!.some((j) => r.jobs.includes(j)));
+    }
+
+    return { records, summary: this.summarizeRecords(records) };
+  }
+
+  private summarizeRecords(records: WorklogView[]) {
     const workRecords = records.filter((r) => r.payStatus !== PayStatus.DAYOFF);
     const sum = (rows: WorklogView[], pick: (r: WorklogView) => number) => rows.reduce((acc, r) => acc + pick(r), 0);
 
     return {
-      records,
-      summary: {
-        workDays: workRecords.length,
-        totalAmount: sum(workRecords, (r) => r.effectiveAmount),
-        totalNet: sum(workRecords, (r) => r.netAmount),
-        receivedNet: sum(
-          workRecords.filter((r) => r.payStatus === PayStatus.RECEIVED),
-          (r) => r.netAmount,
-        ),
-        pendingNet: sum(
-          workRecords.filter((r) => r.payStatus === PayStatus.EXPECTED || r.payStatus === PayStatus.UNPAID),
-          (r) => r.netAmount,
-        ),
-      },
+      workDays: workRecords.length,
+      totalAmount: sum(workRecords, (r) => r.effectiveAmount),
+      totalNet: sum(workRecords, (r) => r.netAmount),
+      receivedNet: sum(
+        workRecords.filter((r) => r.payStatus === PayStatus.RECEIVED),
+        (r) => r.netAmount,
+      ),
+      pendingNet: sum(
+        workRecords.filter((r) => r.payStatus === PayStatus.EXPECTED || r.payStatus === PayStatus.UNPAID),
+        (r) => r.netAmount,
+      ),
     };
   }
 

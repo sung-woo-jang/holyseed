@@ -20,4 +20,7 @@ export class LabUser extends BaseEntity {
 
   @Column({ name: 'locked_until', type: 'timestamp', nullable: true })
   lockedUntil: Date | null;
+
+  @Column({ name: 'worklog_sort_pref', type: 'jsonb', nullable: true })
+  worklogSortPref: { key: string; dir: 'asc' | 'desc' } | null;
 }

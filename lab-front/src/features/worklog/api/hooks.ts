@@ -95,3 +95,18 @@ export function useCreateCategoryOption() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['worklog', 'category-options'] }),
   })
 }
+
+export function useWorklogSortPref() {
+  return useStandardQuery<{ key: string; dir: 'asc' | 'desc' } | null>({
+    queryKey: ['worklog', 'sort-pref'],
+    queryFn: async () =>
+      (await axiosInstance.get<{ key: string; dir: 'asc' | 'desc' } | null>(WORKLOG_API.SORT_PREF)).data,
+  })
+}
+
+export function useSaveWorklogSortPref() {
+  return useStandardMutation<{ key: string; dir: 'asc' | 'desc' }, Error, { key: string; dir: 'asc' | 'desc' }>({
+    mutationFn: async (pref) =>
+      (await axiosInstance.post<{ key: string; dir: 'asc' | 'desc' }>(WORKLOG_API.SORT_PREF, pref)).data,
+  })
+}

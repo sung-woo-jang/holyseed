@@ -6,12 +6,14 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Request,
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { WorklogService } from './worklog.service';
+import { UsersService } from '../users/users.service';
 import { FilesService } from '@shared/files/files.service';
 import {
   CreateWorklogDto,
@@ -20,6 +22,7 @@ import {
   QueryWorklogDto,
   CreateJobOptionDto,
   CreateCategoryOptionDto,
+  SaveSortPrefDto,
 } from './dto/request';
 
 const ok = (message: string, data: unknown) => ({
@@ -35,6 +38,7 @@ export class WorklogController {
   constructor(
     private readonly worklogService: WorklogService,
     private readonly filesService: FilesService,
+    private readonly usersService: UsersService,
   ) {}
 
   @Get()
@@ -103,6 +107,18 @@ export class WorklogController {
   @ApiOperation({ summary: '분류 팔레트에 항목 추가' })
   async createCategoryOption(@Body() dto: CreateCategoryOptionDto) {
     return ok('분류가 추가되었습니다.', await this.worklogService.createCategoryOption(dto.name));
+  }
+
+  @Get('sort-pref')
+  @ApiOperation({ summary: '로그인 사용자의 마지막 근무일지 정렬 상태 조회' })
+  async getSortPref(@Request() req: any) {
+    return ok('조회 성공', await this.usersService.getWorklogSortPref(req.user.userId));
+  }
+
+  @Post('sort-pref')
+  @ApiOperation({ summary: '근무일지 정렬 상태 저장' })
+  async saveSortPref(@Request() req: any, @Body() dto: SaveSortPrefDto) {
+    return ok('정렬 상태가 저장되었습니다.', await this.usersService.saveWorklogSortPref(req.user.userId, dto));
   }
 
   @Post('upload-photos')

@@ -15,4 +15,16 @@ export class UsersService {
     if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
     return user;
   }
+
+  async getWorklogSortPref(id: number): Promise<{ key: string; dir: 'asc' | 'desc' } | null> {
+    return (await this.findById(id)).worklogSortPref;
+  }
+
+  async saveWorklogSortPref(
+    id: number,
+    pref: { key: string; dir: 'asc' | 'desc' },
+  ): Promise<{ key: string; dir: 'asc' | 'desc' }> {
+    await this.userRepo.update(id, { worklogSortPref: pref });
+    return pref;
+  }
 }

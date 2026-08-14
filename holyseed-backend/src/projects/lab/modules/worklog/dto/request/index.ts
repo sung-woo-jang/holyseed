@@ -4,3 +4,4 @@ export * from './search-worklog.dto';
 export * from './query-worklog.dto';
 export * from './create-job-option.dto';
 export * from './create-category-option.dto';
+export * from './save-sort-pref.dto';

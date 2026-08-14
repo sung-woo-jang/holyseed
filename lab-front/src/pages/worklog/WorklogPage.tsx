@@ -18,11 +18,13 @@ import {
   useCreateWorklog,
   useDeleteJobOption,
   useDeleteWorklog,
+  useSaveWorklogSortPref,
   useUpdateWorklog,
   useUploadWorklogPhotos,
   useWorklogCategoryOptions,
   useWorklogJobOptions,
   useWorklogMonth,
+  useWorklogSortPref,
 } from '@/features/worklog/api/hooks'
 import type { PayStatus, Worklog, WorklogCategory, WorklogInput, WorklogPhoto } from '@/features/worklog/api/types'
 import { calcWorklogAmount, getDailyWage, WITHHOLDING_RATE } from '@/features/worklog/lib/worklog-calc'
@@ -53,13 +55,14 @@ import { PageHeader } from '@/widgets/page-header'
 
 const won = (n: number) => `${n.toLocaleString('ko-KR')}원`
 
-type SortKey = 'workDate' | 'title' | 'amount' | 'net'
+type SortKey = 'workDate' | 'title' | 'amount' | 'net' | 'category'
 type Sort = { key: SortKey; dir: 'asc' | 'desc' }
 
 const SORT_OPTIONS: { value: string; label: string; sort: Sort }[] = [
   { value: 'workDate:desc', label: '최신순', sort: { key: 'workDate', dir: 'desc' } },
   { value: 'workDate:asc', label: '오래된순', sort: { key: 'workDate', dir: 'asc' } },
   { value: 'title:asc', label: '현장명순', sort: { key: 'title', dir: 'asc' } },
+  { value: 'category:asc', label: '분류순', sort: { key: 'category', dir: 'asc' } },
   { value: 'amount:desc', label: '금액 높은순', sort: { key: 'amount', dir: 'desc' } },
   { value: 'amount:asc', label: '금액 낮은순', sort: { key: 'amount', dir: 'asc' } },
   { value: 'net:desc', label: '실수령 높은순', sort: { key: 'net', dir: 'desc' } },
@@ -72,6 +75,8 @@ function compareWorklogs(a: Worklog, b: Worklog, key: SortKey): number {
       return a.workDate.localeCompare(b.workDate) || a.id - b.id
     case 'title':
       return a.title.localeCompare(b.title)
+    case 'category':
+      return a.category.localeCompare(b.category)
     case 'amount':
       return a.effectiveAmount - b.effectiveAmount
     case 'net':
@@ -553,6 +558,9 @@ export default function WorklogPage() {
   const { data: res, isLoading } = useWorklogMonth(year, month)
   const deleteWorklog = useDeleteWorklog()
   const [sort, setSort] = useState<Sort>({ key: 'workDate', dir: 'desc' })
+  const { data: sortPrefRes, isSuccess: sortPrefLoaded } = useWorklogSortPref()
+  const saveSortPref = useSaveWorklogSortPref()
+  const appliedInitialSort = useRef(false)
   const isDesktop = useIsDesktopNav()
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
 
@@ -567,6 +575,12 @@ export default function WorklogPage() {
   useEffect(() => {
     setSelectedIds(new Set())
   }, [year, month])
+
+  useEffect(() => {
+    if (appliedInitialSort.current || !sortPrefLoaded) return
+    appliedInitialSort.current = true
+    if (sortPrefRes?.data) setSort(sortPrefRes.data as Sort)
+  }, [sortPrefLoaded, sortPrefRes])
 
   function toggleSelect(id: number) {
     setSelectedIds((prev) => {
@@ -595,7 +609,11 @@ export default function WorklogPage() {
   )
 
   function handleSort(key: SortKey) {
-    setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }))
+    setSort((s) => {
+      const next: Sort = s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }
+      saveSortPref.mutate(next)
+      return next
+    })
   }
 
   function openEdit(r: Worklog) {
@@ -687,7 +705,10 @@ export default function WorklogPage() {
               value={`${sort.key}:${sort.dir}`}
               onValueChange={(v) => {
                 const opt = SORT_OPTIONS.find((o) => o.value === v)
-                if (opt) setSort(opt.sort)
+                if (opt) {
+                  setSort(opt.sort)
+                  saveSortPref.mutate(opt.sort)
+                }
               }}
             >
               <SelectTrigger className="h-8 w-36 text-sm">
@@ -714,6 +735,7 @@ export default function WorklogPage() {
                 </TableHead>
                 <SortableHead label="날짜" sortKey="workDate" sort={sort} onSort={handleSort} />
                 <SortableHead label="현장" sortKey="title" sort={sort} onSort={handleSort} />
+                <SortableHead label="분류" sortKey="category" sort={sort} onSort={handleSort} />
                 <TableHead>근무시간</TableHead>
                 <TableHead>업무</TableHead>
                 <SortableHead label="금액" sortKey="amount" sort={sort} onSort={handleSort} className="text-right" />
@@ -726,7 +748,7 @@ export default function WorklogPage() {
             <TableBody>
               {sortedRecords.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-muted-foreground text-center">
+                  <TableCell colSpan={11} className="text-muted-foreground text-center">
                     이 달의 기록이 없습니다.
                   </TableCell>
                 </TableRow>
@@ -744,13 +766,9 @@ export default function WorklogPage() {
                     </TableCell>
                     <TableCell>{r.workDate.slice(5)}</TableCell>
                     <TableCell className="max-w-40 truncate" title={r.memo ?? undefined}>
-                      {r.category === '쿠팡' && (
-                        <Badge variant="outline" className="mr-1.5 text-[10px]">
-                          쿠팡
-                        </Badge>
-                      )}
                       {r.title}
                     </TableCell>
+                    <TableCell>{r.category}</TableCell>
                     <TableCell>
                       {r.payStatus === 'DAYOFF'
                         ? '휴무'
@@ -831,11 +849,9 @@ export default function WorklogPage() {
                           </Badge>
                         </div>
                         <p className="mt-1 truncate font-medium">
-                          {r.category === '쿠팡' && (
-                            <Badge variant="outline" className="mr-1.5 text-[10px]">
-                              쿠팡
-                            </Badge>
-                          )}
+                          <Badge variant="outline" className="mr-1.5 text-[10px]">
+                            {r.category}
+                          </Badge>
                           {r.title}
                         </p>
                       </div>

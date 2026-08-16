@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsArray, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class UpdateSettingsDto {
   @ApiPropertyOptional({ description: '종목' })
@@ -27,4 +27,10 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsNumber()
   poolLimitPct?: number;
+
+  @ApiPropertyOptional({ description: 'Overview 페이지 통계 카드 표시 순서 (카드 id 배열)' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  cardOrder?: string[];
 }

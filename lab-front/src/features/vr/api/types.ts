@@ -7,6 +7,7 @@ export interface VrSettings {
   bandPct: number
   depositAmount: number
   poolLimitPct: number
+  cardOrder: string[] | null
 }
 
 export interface VrCycle {
@@ -48,6 +49,7 @@ export interface VrState {
   maxBand: number
   usablePool: number
   v2Preview: number | null
+  initialCapital: number
   investedPrincipal: number
 }
 
@@ -62,6 +64,10 @@ export interface CreateFillInput {
   price: number
   quantity: number
   note?: string
+}
+
+export interface UpdateVrSettingsInput {
+  cardOrder?: string[]
 }
 
 export interface CreateCycleInput {

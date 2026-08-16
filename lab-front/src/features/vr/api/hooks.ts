@@ -4,11 +4,13 @@ import { useStandardQuery, useStandardMutation } from '@/shared/hooks/custom-que
 import type {
   CreateCycleInput,
   CreateFillInput,
+  UpdateVrSettingsInput,
   VrCandlesData,
   VrCandleRange,
   VrCycle,
   VrFill,
   VrPriceDto,
+  VrSettings,
   VrState,
   VrStatusDto,
 } from './types'
@@ -102,6 +104,14 @@ export function useCreateCycle() {
   const qc = useQueryClient()
   return useStandardMutation<VrCycle, Error, CreateCycleInput>({
     mutationFn: async (input) => (await axiosInstance.post<VrCycle>(VR_API.CYCLES, input)).data,
+    onSuccess: () => invalidateAll(qc),
+  })
+}
+
+export function useUpdateVrSettings() {
+  const qc = useQueryClient()
+  return useStandardMutation<VrSettings, Error, UpdateVrSettingsInput>({
+    mutationFn: async (input) => (await axiosInstance.post<VrSettings>(VR_API.SETTINGS_UPDATE, input)).data,
     onSuccess: () => invalidateAll(qc),
   })
 }

@@ -24,4 +24,8 @@ export class VrSetting extends BaseEntity {
   @ApiProperty({ description: 'Pool 사용 한도 (%)', example: 75 })
   @Column({ name: 'pool_limit_pct', type: 'decimal', precision: 5, scale: 2, default: 75, transformer: numeric })
   poolLimitPct: number;
+
+  @ApiProperty({ description: 'Overview 페이지 통계 카드 표시 순서 (카드 id 배열)', required: false, nullable: true })
+  @Column({ name: 'card_order', type: 'jsonb', nullable: true })
+  cardOrder: string[] | null;
 }

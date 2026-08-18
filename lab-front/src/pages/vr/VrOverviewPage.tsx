@@ -92,13 +92,13 @@ export default function VrOverviewPage() {
         id: 'initialCapital',
         label: '초기 투입금액',
         value: usd(state.initialCapital),
-        hint: '처음 시작한 금액 (이후 적립금 제외)',
+        hint: '최초 입금액 (2026-06-03)',
       },
       {
         id: 'investedPrincipal',
         label: '투자원금',
         value: usd(state.investedPrincipal),
-        hint: '누적 입금액 (최초 입금 + 적립금)',
+        hint: '누적 입금액 (최초 입금 + 적립금 전체)',
       },
       {
         id: 'costBasis',

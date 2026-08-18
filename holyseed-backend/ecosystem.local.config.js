@@ -42,6 +42,11 @@ module.exports = {
         // 문제 없으면 LAOFUS_SELL_MONITOR_LIVE를 'true'로 바꿀 것 (EOD 라이브에는 영향 없음)
         LAOFUS_SELL_MONITOR: 'true',
         LAOFUS_SELL_MONITOR_LIVE: 'false',
+        // 기본 '*/5 * * * *'(매 5분, :00/:05/.../:25/.../:40/.../:55)는 EOD run(:25)·회수(:40)
+        // 크론과 분 단위로 겹쳐 this.running 락을 공유하는 run()/reconcileOnly()가 조용히(이벤트도
+        // 안 남기고) 스킵되는 사고가 실제 발생함(2026-08-18, 전날 마감 쿼터매도가 두 번 다 증발).
+        // :25/:40을 피하도록 2분 오프셋 — 감시 주기(5분)는 그대로 유지.
+        LAOFUS_SELL_MONITOR_CRON: '2-59/5 * * * *',
         // VR(TQQQ 밸류 리밸런싱) — laofus와 같은 토스 계좌/API 앱을 쓰므로 토큰 경합을 피하려고
         // 같은 프로세스(이 laofus-backend 앱)에서 함께 돈다. 절대 별도 pm2 앱으로 분리하지 말 것.
         VR_LIVE: 'true',

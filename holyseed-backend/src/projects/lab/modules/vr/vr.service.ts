@@ -73,25 +73,22 @@ export class VrService {
   }
 
   /**
-   * initialCapital = 1차 사이클 시작 시점 Pool(poolStart) — "처음 얼마로 시작했는지" 1회성 금액.
-   * investedPrincipal(누적 입금액) = initialCapital + 그 이후(사이클1 시작일 이후) 적립금(DEPOSIT) 합계.
-   * 최초 DEPOSIT($5217.62, 2026-06-03)은 VR을 이 앱으로 옮겨오기 전 다른 앱에서 있었던 활동을
-   * 과거 기록용으로 백필한 것이라 "이 앱에서의 투자원금"에서 제외 — cycle1.poolStart($4600)가
-   * 정확히 "최초입금 − 초기매수 8건"과 일치해 이미 그 활동을 반영한 시작점이므로, poolStart 이전
-   * 날짜의 DEPOSIT은 걸러내야 이중계산되지 않는다.
+   * initialCapital = 최초 DEPOSIT 체결액(2026-06-03, $5217.62) — 계좌 개설 이래 처음 넣은 금액.
+   * investedPrincipal(누적 입금액) = DEPOSIT 체결 전체 합계.
+   * 증권 계좌는 처음부터 계속 동일(바뀐 건 기록용 앱뿐)이라 최초입금을 제외할 이유가 없음 — 보유수량/
+   * 평가금/총자산이 항상 계좌 전체(최초 매수분 포함) 기준인 것과 정합을 맞추기 위해 투자원금도 전체
+   * 누적입금 기준으로 계산해야 총손익이 정확해진다.
    */
   private async getPrincipalSummary(): Promise<{ initialCapital: number; investedPrincipal: number }> {
-    const firstCycle = await this.cycleRepo.findOne({ where: {}, order: { cycleNo: 'ASC' } });
-    const initialCapital = firstCycle?.poolStart ?? 0;
-    const { sum } = await this.fillRepo
-      .createQueryBuilder('f')
-      .select('COALESCE(SUM(f.amount), 0)', 'sum')
-      .where('f.kind = :kind', { kind: VrFillKind.DEPOSIT })
-      .andWhere('f.fill_date >= :startDate', { startDate: firstCycle?.startDate ?? '1970-01-01' })
-      .getRawOne<{ sum: string }>();
+    const deposits = await this.fillRepo.find({
+      where: { kind: VrFillKind.DEPOSIT },
+      order: { fillDate: 'ASC', id: 'ASC' },
+    });
+    const initialCapital = deposits.length ? Number(deposits[0].amount) : 0;
+    const investedPrincipal = deposits.reduce((sum, d) => sum + Number(d.amount), 0);
     return {
       initialCapital: round2(initialCapital),
-      investedPrincipal: round2(initialCapital + Number(sum)),
+      investedPrincipal: round2(investedPrincipal),
     };
   }
 

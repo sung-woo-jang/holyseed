@@ -4,13 +4,14 @@ import { api } from '../../lib/api';
 import { useAuthStore } from '../../stores/auth.store';
 import { useTheme } from '../../lib/theme';
 import Loader from '../../components/ui/Loader';
+import JoinSheet from '../../components/sheets/JoinSheet';
 
-// 초대 코드로 합류하기는 더보기 탭까지 포팅한 뒤(6단계) 함께 붙인다.
 export default function OnboardingScreen() {
   const theme = useTheme();
   const { setHouseholds } = useAuthStore();
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
 
   async function createHousehold() {
     if (!name.trim()) return;
@@ -48,10 +49,12 @@ export default function OnboardingScreen() {
         >
           {loading ? <Loader color="#fff" /> : <Text style={styles.submitBtnText}>가구 만들기</Text>}
         </Pressable>
-        <Text style={[styles.note, { color: theme.textMuted }]}>
-          초대 코드로 합류하기는 곧 지원될 예정이에요
-        </Text>
+        <Pressable style={styles.joinLink} onPress={() => setJoinOpen(true)}>
+          <Text style={[styles.joinLinkText, { color: theme.brand }]}>초대 코드로 합류하기</Text>
+        </Pressable>
       </View>
+
+      <JoinSheet visible={joinOpen} onClose={() => setJoinOpen(false)} />
     </KeyboardAvoidingView>
   );
 }
@@ -64,5 +67,6 @@ const styles = StyleSheet.create({
   input: { height: 48, borderBottomWidth: 1, fontSize: 16, marginBottom: 16 },
   submitBtn: { height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   submitBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  note: { fontSize: 12, textAlign: 'center', marginTop: 14 },
+  joinLink: { alignItems: 'center', marginTop: 14, padding: 4 },
+  joinLinkText: { fontSize: 13, fontWeight: '600' },
 });

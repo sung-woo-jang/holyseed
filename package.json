@@ -18,7 +18,9 @@
     "reset": "yarn clean && yarn install",
     "dev:lab": "yarn --cwd lab-front dev",
     "build:lab": "yarn --cwd lab-front build",
-    "typecheck:lab": "yarn --cwd lab-front typecheck"
+    "typecheck:lab": "yarn --cwd lab-front typecheck",
+    "dev:ad-native": "yarn --cwd ad-native start",
+    "typecheck:ad-native": "yarn --cwd ad-native typecheck"
   },
   "devDependencies": {
     "turbo": "^2.5.4",

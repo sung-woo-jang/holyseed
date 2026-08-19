@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, arrayMove, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import {
   ArrowDown,
   ArrowUp,
@@ -13,9 +16,6 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
-import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
-import { SortableContext, arrayMove, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import { toast } from 'sonner'
 import {
   useCreateCategoryOption,
@@ -41,6 +41,7 @@ import type {
   WorklogPhoto,
 } from '@/features/worklog/api/types'
 import { calcWorklogAmount, getDailyWage, WITHHOLDING_RATE } from '@/features/worklog/lib/worklog-calc'
+import { WorklogCalendarGrid } from '@/features/worklog/ui/WorklogCalendarGrid'
 import { useIsDesktopNav } from '@/shared/hooks/use-media-query'
 import { cn } from '@/shared/lib/utils'
 import {
@@ -170,10 +171,10 @@ function SortableCategoryRow({ option }: { option: WorklogCategoryOption }) {
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center gap-2 rounded-md border bg-card px-3 py-2">
+    <div ref={setNodeRef} style={style} className="bg-card flex items-center gap-2 rounded-md border px-3 py-2">
       <button
         type="button"
-        className="cursor-grab touch-none text-muted-foreground active:cursor-grabbing"
+        className="text-muted-foreground cursor-grab touch-none active:cursor-grabbing"
         aria-label="순서 변경"
         {...attributes}
         {...listeners}
@@ -277,7 +278,10 @@ function WorklogDialog({
   async function removeJobOption(id: number, name: string) {
     try {
       await deleteJobOption.mutateAsync(id)
-      set('jobs', form.jobs.filter((j) => j !== name))
+      set(
+        'jobs',
+        form.jobs.filter((j) => j !== name)
+      )
     } catch (err: any) {
       toast.error(err?.response?.data?.message ?? '업무 삭제에 실패했습니다.')
     }
@@ -527,7 +531,7 @@ function WorklogDialog({
                   <button
                     type="button"
                     onClick={() => removeJobOption(opt.id, opt.name)}
-                    className="text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
+                    className="text-muted-foreground hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
                     aria-label={`${opt.name} 삭제`}
                   >
                     <X className="size-3" />
@@ -639,6 +643,8 @@ export default function WorklogPage() {
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Worklog | null>(null)
+  const [view, setView] = useState<'list' | 'calendar'>('list')
+  const [pickedDate, setPickedDate] = useState<string | null>(null)
 
   const { data: res, isLoading } = useWorklogMonth(year, month)
   const deleteWorklog = useDeleteWorklog()
@@ -686,10 +692,10 @@ export default function WorklogPage() {
     () =>
       records
         .filter((r) => selectedIds.has(r.id))
-        .reduce(
-          (acc, r) => ({ amount: acc.amount + r.effectiveAmount, net: acc.net + r.netAmount }),
-          { amount: 0, net: 0 }
-        ),
+        .reduce((acc, r) => ({ amount: acc.amount + r.effectiveAmount, net: acc.net + r.netAmount }), {
+          amount: 0,
+          net: 0,
+        }),
     [records, selectedIds]
   )
 
@@ -703,14 +709,26 @@ export default function WorklogPage() {
 
   function openEdit(r: Worklog) {
     setEditing(r)
+    setPickedDate(null)
     setDialogOpen(true)
   }
 
-  const defaultDate = useMemo(() => {
+  function openDay(date: string, existing: Worklog | null) {
+    if (existing) {
+      openEdit(existing)
+      return
+    }
+    setEditing(null)
+    setPickedDate(date)
+    setDialogOpen(true)
+  }
+
+  const monthDefaultDate = useMemo(() => {
     const m = String(month).padStart(2, '0')
     const today = now.toISOString().slice(0, 10)
     return today.startsWith(`${year}-${m}`) ? today : `${year}-${m}-01`
   }, [year, month]) // eslint-disable-line react-hooks/exhaustive-deps
+  const defaultDate = pickedDate ?? monthDefaultDate
 
   function moveMonth(delta: number) {
     const d = new Date(year, month - 1 + delta, 1)
@@ -736,6 +754,7 @@ export default function WorklogPage() {
           <Button
             onClick={() => {
               setEditing(null)
+              setPickedDate(null)
               setDialogOpen(true)
             }}
           >
@@ -744,16 +763,36 @@ export default function WorklogPage() {
         }
       />
 
-      <div className="mt-6 flex items-center gap-2">
-        <Button variant="outline" size="icon" onClick={() => moveMonth(-1)}>
-          <ChevronLeft className="size-4" />
-        </Button>
-        <span className="w-28 text-center text-sm font-semibold">
-          {year}년 {month}월
-        </span>
-        <Button variant="outline" size="icon" onClick={() => moveMonth(1)}>
-          <ChevronRight className="size-4" />
-        </Button>
+      <div className="mt-6 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={() => moveMonth(-1)}>
+            <ChevronLeft className="size-4" />
+          </Button>
+          <span className="w-28 text-center text-sm font-semibold">
+            {year}년 {month}월
+          </span>
+          <Button variant="outline" size="icon" onClick={() => moveMonth(1)}>
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
+        <div className="flex items-center gap-1 rounded-lg border p-0.5">
+          <Button
+            variant={view === 'list' ? 'default' : 'ghost'}
+            size="sm"
+            className="h-7"
+            onClick={() => setView('list')}
+          >
+            목록
+          </Button>
+          <Button
+            variant={view === 'calendar' ? 'default' : 'ghost'}
+            size="sm"
+            className="h-7"
+            onClick={() => setView('calendar')}
+          >
+            캘린더
+          </Button>
+        </div>
       </div>
 
       {summary && (
@@ -780,114 +819,185 @@ export default function WorklogPage() {
         </div>
       )}
 
-      <div className="bg-card mt-4 rounded-lg border p-4">
-        {!isDesktop && !isLoading && (
-          <div className="mb-3 flex items-center justify-between">
-            <Button variant="ghost" size="sm" onClick={toggleSelectAll} disabled={sortedRecords.length === 0}>
-              {allSelected ? '선택 해제' : '전체 선택'}
-            </Button>
-            <Select
-              value={`${sort.key}:${sort.dir}`}
-              onValueChange={(v) => {
-                const opt = SORT_OPTIONS.find((o) => o.value === v)
-                if (opt) {
-                  setSort(opt.sort)
-                  saveSortPref.mutate(opt.sort)
-                }
-              }}
-            >
-              <SelectTrigger className="h-8 w-36 text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SORT_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-        {isLoading ? (
-          <p className="text-muted-foreground text-sm">불러오는 중…</p>
-        ) : isDesktop ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-8">
-                  <Checkbox checked={allSelected} onCheckedChange={toggleSelectAll} aria-label="전체 선택" />
-                </TableHead>
-                <SortableHead label="날짜" sortKey="workDate" sort={sort} onSort={handleSort} />
-                <SortableHead label="현장" sortKey="title" sort={sort} onSort={handleSort} />
-                <SortableHead label="분류" sortKey="category" sort={sort} onSort={handleSort} />
-                <TableHead>근무시간</TableHead>
-                <TableHead>업무</TableHead>
-                <SortableHead label="금액" sortKey="amount" sort={sort} onSort={handleSort} className="text-right" />
-                <SortableHead label="실수령" sortKey="net" sort={sort} onSort={handleSort} className="text-right" />
-                <TableHead>수령</TableHead>
-                <TableHead>사진</TableHead>
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedRecords.length === 0 && (
+      {view === 'calendar' && (
+        <div className="mt-4">
+          <WorklogCalendarGrid year={year} month={month} records={records} onDayClick={openDay} />
+        </div>
+      )}
+
+      {view === 'list' && (
+        <div className="bg-card mt-4 rounded-lg border p-4">
+          {!isDesktop && !isLoading && (
+            <div className="mb-3 flex items-center justify-between">
+              <Button variant="ghost" size="sm" onClick={toggleSelectAll} disabled={sortedRecords.length === 0}>
+                {allSelected ? '선택 해제' : '전체 선택'}
+              </Button>
+              <Select
+                value={`${sort.key}:${sort.dir}`}
+                onValueChange={(v) => {
+                  const opt = SORT_OPTIONS.find((o) => o.value === v)
+                  if (opt) {
+                    setSort(opt.sort)
+                    saveSortPref.mutate(opt.sort)
+                  }
+                }}
+              >
+                <SelectTrigger className="h-8 w-36 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SORT_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {isLoading ? (
+            <p className="text-muted-foreground text-sm">불러오는 중…</p>
+          ) : isDesktop ? (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={11} className="text-muted-foreground text-center">
-                    이 달의 기록이 없습니다.
-                  </TableCell>
+                  <TableHead className="w-8">
+                    <Checkbox checked={allSelected} onCheckedChange={toggleSelectAll} aria-label="전체 선택" />
+                  </TableHead>
+                  <SortableHead label="날짜" sortKey="workDate" sort={sort} onSort={handleSort} />
+                  <SortableHead label="현장" sortKey="title" sort={sort} onSort={handleSort} />
+                  <SortableHead label="분류" sortKey="category" sort={sort} onSort={handleSort} />
+                  <TableHead>근무시간</TableHead>
+                  <TableHead>업무</TableHead>
+                  <SortableHead label="금액" sortKey="amount" sort={sort} onSort={handleSort} className="text-right" />
+                  <SortableHead label="실수령" sortKey="net" sort={sort} onSort={handleSort} className="text-right" />
+                  <TableHead>수령</TableHead>
+                  <TableHead>사진</TableHead>
+                  <TableHead />
                 </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedRecords.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={11} className="text-muted-foreground text-center">
+                      이 달의 기록이 없습니다.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {sortedRecords.map((r) => {
+                  const meta = PAY_STATUS_META[r.payStatus]
+                  return (
+                    <TableRow key={r.id} className="cursor-pointer" onClick={() => openEdit(r)}>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={selectedIds.has(r.id)}
+                          onCheckedChange={() => toggleSelect(r.id)}
+                          aria-label="선택"
+                        />
+                      </TableCell>
+                      <TableCell>{r.workDate.slice(5)}</TableCell>
+                      <TableCell className="max-w-40 truncate" title={r.memo ?? undefined}>
+                        {r.title}
+                      </TableCell>
+                      <TableCell>{r.category}</TableCell>
+                      <TableCell>
+                        {r.payStatus === 'DAYOFF'
+                          ? '휴무'
+                          : r.startTime && r.endTime
+                            ? `${r.startTime}~${r.endTime}`
+                            : '—'}
+                      </TableCell>
+                      <TableCell>{r.jobs.join(', ') || '—'}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {won(r.effectiveAmount)}
+                        {r.amountOverride !== null && <span className="text-muted-foreground ml-1 text-xs">*</span>}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{won(r.netAmount)}</TableCell>
+                      <TableCell>
+                        <Badge variant={meta.variant}>{meta.label}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {r.photos.length > 0 ? (
+                          <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
+                            <ImagePlus className="size-3.5" />
+                            {r.photos.length}
+                          </span>
+                        ) : (
+                          '—'
+                        )}
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" className="size-7" onClick={() => openEdit(r)}>
+                            <Pencil className="text-muted-foreground size-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="size-7">
+                                <Trash2 className="text-muted-foreground size-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>기록을 삭제할까요?</AlertDialogTitle>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>취소</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(r.id)}>삭제</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          ) : (
+            <RecordCardList>
+              {sortedRecords.length === 0 && (
+                <p className="text-muted-foreground text-center text-sm">이 달의 기록이 없습니다.</p>
               )}
               {sortedRecords.map((r) => {
                 const meta = PAY_STATUS_META[r.payStatus]
                 return (
-                  <TableRow key={r.id} className="cursor-pointer" onClick={() => openEdit(r)}>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Checkbox
-                        checked={selectedIds.has(r.id)}
-                        onCheckedChange={() => toggleSelect(r.id)}
-                        aria-label="선택"
-                      />
-                    </TableCell>
-                    <TableCell>{r.workDate.slice(5)}</TableCell>
-                    <TableCell className="max-w-40 truncate" title={r.memo ?? undefined}>
-                      {r.title}
-                    </TableCell>
-                    <TableCell>{r.category}</TableCell>
-                    <TableCell>
-                      {r.payStatus === 'DAYOFF'
-                        ? '휴무'
-                        : r.startTime && r.endTime
-                          ? `${r.startTime}~${r.endTime}`
-                          : '—'}
-                    </TableCell>
-                    <TableCell>{r.jobs.join(', ') || '—'}</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {won(r.effectiveAmount)}
-                      {r.amountOverride !== null && <span className="text-muted-foreground ml-1 text-xs">*</span>}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">{won(r.netAmount)}</TableCell>
-                    <TableCell>
-                      <Badge variant={meta.variant}>{meta.label}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {r.photos.length > 0 ? (
-                        <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
-                          <ImagePlus className="size-3.5" />
-                          {r.photos.length}
-                        </span>
-                      ) : (
-                        '—'
-                      )}
-                    </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" className="size-7" onClick={() => openEdit(r)}>
-                          <Pencil className="text-muted-foreground size-4" />
-                        </Button>
+                  <RecordCard key={r.id} onClick={() => openEdit(r)}>
+                    <RecordCardRow>
+                      <div className="flex min-w-0 items-start gap-2">
+                        <div onClick={(e) => e.stopPropagation()} className="pt-0.5">
+                          <Checkbox
+                            checked={selectedIds.has(r.id)}
+                            onCheckedChange={() => toggleSelect(r.id)}
+                            aria-label="선택"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
+                            <span>{r.workDate.slice(5)}</span>
+                            <Badge variant={meta.variant} className="text-[10px]">
+                              {meta.label}
+                            </Badge>
+                          </div>
+                          <p className="mt-1 truncate font-medium">
+                            <Badge variant="outline" className="mr-1.5 text-[10px]">
+                              {r.category}
+                            </Badge>
+                            {r.title}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-start gap-1" onClick={(e) => e.stopPropagation()}>
+                        <div className="text-right">
+                          <p className="font-semibold tabular-nums">{won(r.netAmount)}</p>
+                          <p className="text-muted-foreground text-xs tabular-nums">
+                            {won(r.effectiveAmount)}
+                            {r.amountOverride !== null && '*'}
+                          </p>
+                        </div>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-7">
+                            <Button variant="ghost" size="icon" className="-mt-1 -mr-2 size-9">
                               <Trash2 className="text-muted-foreground size-4" />
                             </Button>
                           </AlertDialogTrigger>
@@ -902,104 +1012,44 @@ export default function WorklogPage() {
                           </AlertDialogContent>
                         </AlertDialog>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </RecordCardRow>
+                    <RecordCardMeta>
+                      <span>
+                        {r.payStatus === 'DAYOFF'
+                          ? '휴무'
+                          : r.startTime && r.endTime
+                            ? `${r.startTime}~${r.endTime}`
+                            : '—'}
+                      </span>
+                      {r.jobs.length > 0 && <span>· {r.jobs.join(', ')}</span>}
+                      {r.photos.length > 0 && (
+                        <span className="inline-flex items-center gap-0.5">
+                          <ImagePlus className="size-3.5" />
+                          {r.photos.length}
+                        </span>
+                      )}
+                    </RecordCardMeta>
+                  </RecordCard>
                 )
               })}
-            </TableBody>
-          </Table>
-        ) : (
-          <RecordCardList>
-            {sortedRecords.length === 0 && (
-              <p className="text-muted-foreground text-center text-sm">이 달의 기록이 없습니다.</p>
-            )}
-            {sortedRecords.map((r) => {
-              const meta = PAY_STATUS_META[r.payStatus]
-              return (
-                <RecordCard key={r.id} onClick={() => openEdit(r)}>
-                  <RecordCardRow>
-                    <div className="flex min-w-0 items-start gap-2">
-                      <div onClick={(e) => e.stopPropagation()} className="pt-0.5">
-                        <Checkbox
-                          checked={selectedIds.has(r.id)}
-                          onCheckedChange={() => toggleSelect(r.id)}
-                          aria-label="선택"
-                        />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <span>{r.workDate.slice(5)}</span>
-                          <Badge variant={meta.variant} className="text-[10px]">
-                            {meta.label}
-                          </Badge>
-                        </div>
-                        <p className="mt-1 truncate font-medium">
-                          <Badge variant="outline" className="mr-1.5 text-[10px]">
-                            {r.category}
-                          </Badge>
-                          {r.title}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex shrink-0 items-start gap-1" onClick={(e) => e.stopPropagation()}>
-                      <div className="text-right">
-                        <p className="font-semibold tabular-nums">{won(r.netAmount)}</p>
-                        <p className="text-muted-foreground text-xs tabular-nums">
-                          {won(r.effectiveAmount)}
-                          {r.amountOverride !== null && '*'}
-                        </p>
-                      </div>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="-mt-1 -mr-2 size-9">
-                            <Trash2 className="text-muted-foreground size-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>기록을 삭제할까요?</AlertDialogTitle>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>취소</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(r.id)}>삭제</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </RecordCardRow>
-                  <RecordCardMeta>
-                    <span>
-                      {r.payStatus === 'DAYOFF'
-                        ? '휴무'
-                        : r.startTime && r.endTime
-                          ? `${r.startTime}~${r.endTime}`
-                          : '—'}
-                    </span>
-                    {r.jobs.length > 0 && <span>· {r.jobs.join(', ')}</span>}
-                    {r.photos.length > 0 && (
-                      <span className="inline-flex items-center gap-0.5">
-                        <ImagePlus className="size-3.5" />
-                        {r.photos.length}
-                      </span>
-                    )}
-                  </RecordCardMeta>
-                </RecordCard>
-              )
-            })}
-          </RecordCardList>
-        )}
-        <p className="text-muted-foreground mt-2 text-xs">* 표시는 수동 오버라이드된 금액 (실수령액 우선 원칙)</p>
-      </div>
+            </RecordCardList>
+          )}
+          <p className="text-muted-foreground mt-2 text-xs">* 표시는 수동 오버라이드된 금액 (실수령액 우선 원칙)</p>
+        </div>
+      )}
 
       <WorklogDialog
         open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
+        onClose={() => {
+          setDialogOpen(false)
+          setPickedDate(null)
+        }}
         editing={editing}
         defaultDate={defaultDate}
       />
 
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl border bg-background/95 p-3 shadow-xl backdrop-blur-lg supports-[backdrop-filter]:bg-background/60">
+        <div className="bg-background/95 supports-[backdrop-filter]:bg-background/60 fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl border p-3 shadow-xl backdrop-blur-lg">
           <div className="flex items-center gap-3 text-sm">
             <Badge className="min-w-8 rounded-lg">{selectedIds.size}</Badge>
             <span className="text-muted-foreground">건 선택</span>

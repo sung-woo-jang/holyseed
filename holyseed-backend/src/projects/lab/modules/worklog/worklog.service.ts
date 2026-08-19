@@ -126,16 +126,25 @@ export class WorklogService {
       records = records.filter((r) => dto.jobs!.some((j) => r.jobs.includes(j)));
     }
 
-    return { records, summary: this.summarizeRecords(records) };
+    const withholding = dto.withholding ?? true;
+    const outputRecords = withholding ? records : records.map(({ netAmount: _netAmount, ...rest }) => rest);
+
+    return { records: outputRecords, summary: this.summarizeRecords(records, withholding) };
   }
 
-  private summarizeRecords(records: WorklogView[]) {
+  /** withholding=false면 원천징수(netAmount) 파생 집계(totalNet/receivedNet/pendingNet)를 제외한다. */
+  private summarizeRecords(records: WorklogView[], withholding = true) {
     const workRecords = records.filter((r) => r.payStatus !== PayStatus.DAYOFF);
     const sum = (rows: WorklogView[], pick: (r: WorklogView) => number) => rows.reduce((acc, r) => acc + pick(r), 0);
 
-    return {
+    const base = {
       workDays: workRecords.length,
       totalAmount: sum(workRecords, (r) => r.effectiveAmount),
+    };
+    if (!withholding) return base;
+
+    return {
+      ...base,
       totalNet: sum(workRecords, (r) => r.netAmount),
       receivedNet: sum(
         workRecords.filter((r) => r.payStatus === PayStatus.RECEIVED),
@@ -219,12 +228,23 @@ export class WorklogService {
       await this.worklogRepo.update({ category: 'INTERIOR' }, { category: '인테리어' });
       await this.worklogRepo.update({ category: 'COUPANG' }, { category: '쿠팡' });
     }
-    return this.categoryOptionRepo.find({ order: { id: 'ASC' } });
+    return this.categoryOptionRepo.find({ order: { sortOrder: 'ASC', id: 'ASC' } });
   }
 
   async createCategoryOption(name: string): Promise<WorklogCategoryOption> {
     const exists = await this.categoryOptionRepo.findOne({ where: { name } });
     if (exists) throw new BadRequestException('이미 있는 분류입니다.');
-    return this.categoryOptionRepo.save(this.categoryOptionRepo.create({ name }));
+    const maxOrder = await this.categoryOptionRepo.maximum('sortOrder');
+    return this.categoryOptionRepo.save(this.categoryOptionRepo.create({ name, sortOrder: (maxOrder ?? -1) + 1 }));
+  }
+
+  /** 분류 순서 재배치 — 전달된 id 배열의 인덱스를 sortOrder로 일괄 반영 */
+  async reorderCategoryOptions(ids: number[]): Promise<WorklogCategoryOption[]> {
+    const options = await this.categoryOptionRepo.find();
+    if (ids.length !== options.length || !options.every((o) => ids.includes(o.id))) {
+      throw new BadRequestException('전달된 분류 목록이 현재 분류 전체와 일치하지 않습니다.');
+    }
+    await Promise.all(ids.map((id, index) => this.categoryOptionRepo.update({ id }, { sortOrder: index })));
+    return this.getCategoryOptions();
   }
 }

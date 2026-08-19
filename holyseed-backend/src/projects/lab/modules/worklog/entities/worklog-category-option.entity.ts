@@ -12,4 +12,8 @@ export class WorklogCategoryOption {
   @ApiProperty({ description: '분류 이름', example: '인테리어' })
   @Column({ length: 50 })
   name: string;
+
+  @ApiProperty({ description: '표시 순서 (오름차순)', example: 0 })
+  @Column({ name: 'sort_order', type: 'int', default: 0 })
+  sortOrder: number;
 }

@@ -96,6 +96,15 @@ export function useCreateCategoryOption() {
   })
 }
 
+export function useReorderCategoryOptions() {
+  const qc = useQueryClient()
+  return useStandardMutation<WorklogCategoryOption[], Error, number[]>({
+    mutationFn: async (ids) =>
+      (await axiosInstance.post<WorklogCategoryOption[]>(WORKLOG_API.REORDER_CATEGORY_OPTIONS, { ids })).data,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['worklog', 'category-options'] }),
+  })
+}
+
 export function useWorklogSortPref() {
   return useStandardQuery<{ key: string; dir: 'asc' | 'desc' } | null>({
     queryKey: ['worklog', 'sort-pref'],

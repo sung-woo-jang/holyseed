@@ -10,6 +10,7 @@ import { RegisterDto } from './dto/request/register.dto';
 import { LoginDto } from './dto/request/login.dto';
 
 export type OAuthProvider = 'google';
+export type OAuthPlatform = 'web' | 'app';
 
 interface OAuthProfile {
   providerId: string;
@@ -25,6 +26,8 @@ export class AuthService {
   /** OAuth redirect_uri 베이스 — 기본은 프론트 dev 프록시 경유 */
   private readonly oauthCallbackBase: string;
   readonly frontUrl: string;
+  /** 앱(RN) 로그인 성공 후 돌아갈 커스텀 스킴 — ad-native의 app.json scheme과 일치해야 함 */
+  private readonly appAuthScheme: string;
 
   constructor(
     private readonly configService: ConfigService,
@@ -36,6 +39,7 @@ export class AuthService {
     this.googleClientSecret = configService.get('AD_GOOGLE_CLIENT_SECRET') || '';
     this.oauthCallbackBase = configService.get('AD_OAUTH_CALLBACK_BASE') || 'http://localhost:3400/api/ad';
     this.frontUrl = configService.get('AD_FRONT_URL') || 'http://localhost:3400';
+    this.appAuthScheme = configService.get('AD_APP_AUTH_SCHEME') || 'adnative';
   }
 
   // ─── 소셜 로그인 (Google) ─────────────────────────────────────────────────────
@@ -44,10 +48,14 @@ export class AuthService {
     return `${this.oauthCallbackBase}/auth/${provider}/callback`;
   }
 
-  /** CSRF 방지용 state — 10분짜리 서명 JWT */
-  private issueState(provider: OAuthProvider): string {
+  /**
+   * CSRF 방지용 state — 10분짜리 서명 JWT.
+   * platform은 콜백에서 리다이렉트 대상(웹/앱)을 가르는 데, appRedirectUri는 앱이 요청 시점에 알려준
+   * 자기 자신의 딥링크 주소를 그대로 돌려주는 데 씀 (Expo Go에서는 세션마다 주소가 달라져서 고정 스킴으로 못 돌려보냄)
+   */
+  private issueState(provider: OAuthProvider, platform: OAuthPlatform, appRedirectUri?: string): string {
     return this.jwtService.sign(
-      { p: provider, purpose: 'oauth-state' },
+      { p: provider, purpose: 'oauth-state', platform, r: appRedirectUri },
       { secret: this.configService.get('jwt.secret'), expiresIn: '10m' },
     );
   }
@@ -62,8 +70,14 @@ export class AuthService {
     }
   }
 
-  authorizeUrl(provider: OAuthProvider): string {
-    const state = this.issueState(provider);
+  /** 검증을 통과한 state에서 platform/appRedirectUri만 꺼내 씀 (콜백 리다이렉트 분기용) */
+  decodeAppState(state: string): { platform: OAuthPlatform; appRedirectUri?: string } {
+    const payload = this.jwtService.decode(state) as { platform?: OAuthPlatform; r?: string } | null;
+    return { platform: payload?.platform === 'app' ? 'app' : 'web', appRedirectUri: payload?.r };
+  }
+
+  authorizeUrl(provider: OAuthProvider, platform: OAuthPlatform = 'web', appRedirectUri?: string): string {
+    const state = this.issueState(provider, platform, appRedirectUri);
     if (!this.googleClientId) throw new UnauthorizedException('Google OAuth가 설정되지 않았습니다.');
     const q = new URLSearchParams({
       client_id: this.googleClientId,
@@ -73,6 +87,17 @@ export class AuthService {
       state,
     });
     return `https://accounts.google.com/o/oauth2/v2/auth?${q.toString()}`;
+  }
+
+  /** 앱(RN)용 로그인 성공 리다이렉트 URL — appRedirectUri가 있으면 그대로, 없으면 고정 스킴으로 폴백 */
+  appCallbackUrl(accessToken: string, refreshToken: string, appRedirectUri?: string): string {
+    const base = appRedirectUri || `${this.appAuthScheme}://auth/callback`;
+    return `${base}?accessToken=${accessToken}&refreshToken=${refreshToken}`;
+  }
+
+  appErrorCallbackUrl(appRedirectUri?: string): string {
+    const base = appRedirectUri || `${this.appAuthScheme}://auth/callback`;
+    return `${base}?error=oauth`;
   }
 
   async oauthLogin(provider: OAuthProvider, code: string, state: string) {

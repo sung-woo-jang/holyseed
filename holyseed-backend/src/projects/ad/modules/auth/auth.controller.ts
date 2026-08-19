@@ -44,8 +44,12 @@ export class AuthController {
   @Get('google')
   @Public()
   @ApiOperation({ summary: '구글 로그인 시작 (인증 페이지로 리다이렉트)' })
-  googleStart(@Res() res: Response) {
-    res.redirect(this.authService.authorizeUrl('google'));
+  googleStart(
+    @Query('platform') platform: 'web' | 'app' | undefined,
+    @Query('redirectUri') redirectUri: string | undefined,
+    @Res() res: Response,
+  ) {
+    res.redirect(this.authService.authorizeUrl('google', platform === 'app' ? 'app' : 'web', redirectUri));
   }
 
   @Get('google/callback')
@@ -57,15 +61,21 @@ export class AuthController {
 
   private async handleOAuthCallback(provider: OAuthProvider, code: string, state: string, res: Response) {
     const front = this.authService.frontUrl;
+    const { platform, appRedirectUri } = this.authService.decodeAppState(state ?? '');
     if (!code) {
+      if (platform === 'app') return res.redirect(this.authService.appErrorCallbackUrl(appRedirectUri));
       return res.redirect(`${front}/login?error=oauth`);
     }
     try {
       const { accessToken, refreshToken } = await this.authService.oauthLogin(provider, code, state ?? '');
-      // 토큰은 fragment로 전달 — 서버 로그/리퍼러에 남지 않음
+      if (platform === 'app') {
+        return res.redirect(this.authService.appCallbackUrl(accessToken, refreshToken, appRedirectUri));
+      }
+      // 웹은 토큰을 fragment로 전달 — 서버 로그/리퍼러에 남지 않음
       return res.redirect(`${front}/auth/callback#accessToken=${accessToken}&refreshToken=${refreshToken}`);
     } catch (err) {
       this.logger.error(`OAuth 콜백 처리 실패 (${provider}): ${err instanceof Error ? err.message : err}`);
+      if (platform === 'app') return res.redirect(this.authService.appErrorCallbackUrl(appRedirectUri));
       return res.redirect(`${front}/login?error=oauth`);
     }
   }

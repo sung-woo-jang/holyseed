@@ -22,6 +22,7 @@ import {
   QueryWorklogDto,
   CreateJobOptionDto,
   CreateCategoryOptionDto,
+  ReorderCategoryOptionsDto,
   SaveSortPrefDto,
 } from './dto/request';
 
@@ -107,6 +108,12 @@ export class WorklogController {
   @ApiOperation({ summary: '분류 팔레트에 항목 추가' })
   async createCategoryOption(@Body() dto: CreateCategoryOptionDto) {
     return ok('분류가 추가되었습니다.', await this.worklogService.createCategoryOption(dto.name));
+  }
+
+  @Post('category-options/reorder')
+  @ApiOperation({ summary: '분류 팔레트 순서 재배치' })
+  async reorderCategoryOptions(@Body() dto: ReorderCategoryOptionsDto) {
+    return ok('분류 순서가 변경되었습니다.', await this.worklogService.reorderCategoryOptions(dto.ids));
   }
 
   @Get('sort-pref')

@@ -5,12 +5,17 @@ import {
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
+  GripVertical,
   ImagePlus,
+  ListOrdered,
   Pencil,
   Plus,
   Trash2,
   X,
 } from 'lucide-react'
+import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, arrayMove, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { toast } from 'sonner'
 import {
   useCreateCategoryOption,
@@ -18,6 +23,7 @@ import {
   useCreateWorklog,
   useDeleteJobOption,
   useDeleteWorklog,
+  useReorderCategoryOptions,
   useSaveWorklogSortPref,
   useUpdateWorklog,
   useUploadWorklogPhotos,
@@ -26,7 +32,14 @@ import {
   useWorklogMonth,
   useWorklogSortPref,
 } from '@/features/worklog/api/hooks'
-import type { PayStatus, Worklog, WorklogCategory, WorklogInput, WorklogPhoto } from '@/features/worklog/api/types'
+import type {
+  PayStatus,
+  Worklog,
+  WorklogCategory,
+  WorklogCategoryOption,
+  WorklogInput,
+  WorklogPhoto,
+} from '@/features/worklog/api/types'
 import { calcWorklogAmount, getDailyWage, WITHHOLDING_RATE } from '@/features/worklog/lib/worklog-calc'
 import { useIsDesktopNav } from '@/shared/hooks/use-media-query'
 import { cn } from '@/shared/lib/utils'
@@ -43,6 +56,7 @@ import {
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Checkbox } from '@/shared/ui/checkbox'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/ui/dialog'
 import { FormSheet, FormSheetContent, FormSheetFooter, FormSheetHeader, FormSheetTitle } from '@/shared/ui/form-sheet'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
@@ -150,6 +164,74 @@ const emptyForm = (date: string): FormState => ({
   memo: '',
   photos: [],
 })
+
+function SortableCategoryRow({ option }: { option: WorklogCategoryOption }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: option.id })
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2 rounded-md border bg-card px-3 py-2">
+      <button
+        type="button"
+        className="cursor-grab touch-none text-muted-foreground active:cursor-grabbing"
+        aria-label="순서 변경"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="size-4" />
+      </button>
+      <span className="text-sm">{option.name}</span>
+    </div>
+  )
+}
+
+function CategoryManageDialog({ categoryOptions }: { categoryOptions: WorklogCategoryOption[] }) {
+  const [open, setOpen] = useState(false)
+  const [order, setOrder] = useState<WorklogCategoryOption[]>(categoryOptions)
+  const reorder = useReorderCategoryOptions()
+
+  useEffect(() => {
+    if (open) setOrder(categoryOptions)
+  }, [open])
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    setOrder((prev) => {
+      const oldIndex = prev.findIndex((o) => o.id === active.id)
+      const newIndex = prev.findIndex((o) => o.id === over.id)
+      const next = arrayMove(prev, oldIndex, newIndex)
+      reorder.mutate(next.map((o) => o.id))
+      return next
+    })
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button type="button" size="icon" variant="ghost" className="h-6 w-6" aria-label="분류 관리">
+          <ListOrdered className="size-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>분류 순서 관리</DialogTitle>
+        </DialogHeader>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={order.map((o) => o.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-2">
+              {order.map((option) => (
+                <SortableCategoryRow key={option.id} option={option} />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 function WorklogDialog({
   open,
@@ -325,7 +407,10 @@ function WorklogDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label>분류</Label>
+              <div className="flex items-center justify-between">
+                <Label>분류</Label>
+                <CategoryManageDialog categoryOptions={categoryOptions} />
+              </div>
               <Select
                 value={form.category}
                 onValueChange={(v) => {

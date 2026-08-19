@@ -1,5 +1,16 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsDateString, IsEnum, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { PayStatus } from '../../entities';
 
 export class QueryWorklogDto {
@@ -52,4 +63,13 @@ export class QueryWorklogDto {
   @IsString()
   @MaxLength(200)
   titleContains?: string;
+
+  @ApiPropertyOptional({
+    description:
+      '원천징수(3.3%) 적용 여부. false면 응답에서 netAmount 및 집계의 totalNet/receivedNet/pendingNet을 제외하고 세전 금액(amount/effectiveAmount)만 반환. 기본 true',
+    default: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  withholding?: boolean;
 }

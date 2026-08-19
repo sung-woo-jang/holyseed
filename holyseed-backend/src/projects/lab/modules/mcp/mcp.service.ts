@@ -206,7 +206,7 @@ export class McpService {
       {
         title: '근무일지 조회 (기간·분류·수령여부·업무·현장명 필터)',
         description:
-          '근무 기록을 조회합니다. year+month(기본 이번 달) 또는 from~to(YYYY-MM-DD, 월 경계 넘는 범위도 가능) 중 하나로 기간을 지정하고, category/payStatus/jobs/titleContains로 좁힐 수 있습니다. 응답에 집계(근무일수/합계/실수령/수령·미수령)도 함께 옵니다. 실수령 = 금액 × 0.967 (원천징수 3.3%).',
+          '근무 기록을 조회합니다. year+month(기본 이번 달) 또는 from~to(YYYY-MM-DD, 월 경계 넘는 범위도 가능) 중 하나로 기간을 지정하고, category/payStatus/jobs/titleContains로 좁힐 수 있습니다. 응답에 집계(근무일수/합계/실수령/수령·미수령)도 함께 옵니다. 실수령 = 금액 × 0.967 (원천징수 3.3%) — withholding=false로 끌 수 있습니다.',
         inputSchema: {
           year: z.number().optional().describe('연도 (from/to 없을 때, 기본 올해)'),
           month: z.number().min(1).max(12).optional().describe('월 1~12 (from/to 없을 때, 기본 이번 달)'),
@@ -216,6 +216,12 @@ export class McpService {
           payStatus: z.enum(['RECEIVED', 'EXPECTED', 'UNPAID', 'DAYOFF']).optional().describe('수령여부 필터'),
           jobs: z.array(z.string()).optional().describe('이 업무 중 하나라도 포함된 기록만'),
           titleContains: z.string().optional().describe('현장명 부분 검색'),
+          withholding: z
+            .boolean()
+            .optional()
+            .describe(
+              '원천징수(3.3%) 적용 여부, 기본 true. false면 세전 금액(amount)만 오고 netAmount·totalNet·receivedNet·pendingNet은 응답에서 빠짐',
+            ),
         },
       },
       (args) => this.call(async (api) => this.unwrap(await api.post('/worklog/query', args))),

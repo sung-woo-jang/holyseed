@@ -39,7 +39,9 @@ export class UpdatesService {
 
   constructor(private readonly configService: ConfigService) {
     this.updatesDir = this.configService.get<string>('app.adNativeUpdatesDir')!;
-    this.publicBaseUrl = this.configService.get<string>('app.publicBaseUrl')!;
+    // app.publicBaseUrl(PUBLIC_BASE_URL)은 다른 프로젝트와 공유하는 값이라 이 배포 환경의 실제 라우팅 도메인
+    // (ad.holyseed.p-e.kr, nginx가 서브도메인 기준으로 이 백엔드까지 연결)과 달라서 별도 env로 분리
+    this.publicBaseUrl = process.env.AD_NATIVE_UPDATES_PUBLIC_URL || 'https://ad.holyseed.p-e.kr';
   }
 
   private readIndex(): UpdatesIndex {

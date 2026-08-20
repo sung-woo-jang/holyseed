@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import * as Updates from 'expo-updates';
 import Border from '../../components/ui/Border';
 import Button from '../../components/ui/Button';
 import ListHeader from '../../components/ui/ListHeader';
@@ -19,6 +20,29 @@ export default function SettingsScreen() {
   const [tokenSheetVisible, setTokenSheetVisible] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; label: string } | null>(null);
   const [toast, setToast] = useState('');
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+
+  const updateLabel = Updates.isEmbeddedLaunch ? '내장 빌드 (OTA 미적용)' : `업데이트 적용됨 · ${Updates.updateId?.slice(0, 8) ?? '?'}`;
+
+  async function handleCheckUpdate() {
+    setCheckingUpdate(true);
+    try {
+      const result = await Updates.checkForUpdateAsync();
+      if (!result.isAvailable) {
+        Alert.alert('최신 버전', '이미 최신 버전을 쓰고 있어요.');
+        return;
+      }
+      await Updates.fetchUpdateAsync();
+      Alert.alert('업데이트 발견', '새 버전을 받았어요. 지금 적용할까요?', [
+        { text: '나중에', style: 'cancel' },
+        { text: '지금 적용', onPress: () => Updates.reloadAsync() },
+      ]);
+    } catch (e) {
+      Alert.alert('확인 실패', e instanceof Error ? e.message : '알 수 없는 오류예요.');
+    } finally {
+      setCheckingUpdate(false);
+    }
+  }
 
   async function confirmDeleteToken() {
     if (!deleteTarget) return;
@@ -81,6 +105,16 @@ export default function SettingsScreen() {
         <View style={{ padding: 20 }}>
           <Button display="full" size="big" type="primary" style="weak" onPress={() => setTokenSheetVisible(true)}>
             + 토큰 발급
+          </Button>
+        </View>
+
+        <Border type="full" height={16} />
+
+        <ListHeader title={<ListHeader.TitleParagraph typography="t5">업데이트</ListHeader.TitleParagraph>} />
+        <View style={{ paddingHorizontal: 20 }}>
+          <Text style={{ color: theme.textMuted, fontSize: 12, marginBottom: 10 }}>{updateLabel}</Text>
+          <Button display="full" size="medium" type="primary" style="weak" loading={checkingUpdate} onPress={handleCheckUpdate}>
+            지금 업데이트 확인
           </Button>
         </View>
 

@@ -23,6 +23,7 @@ export class VrStatusService {
   private calendarCache: { data: UsMarketCalendar; at: number } | null = null;
   private candleCache = new Map<string, { data: unknown; at: number }>();
   private priceCache: { price: number; ts: string; at: number } | null = null;
+  private cashCache: { cash: number; ts: string; at: number } | null = null;
 
   constructor(
     private readonly toss: TossClientService,
@@ -44,6 +45,14 @@ export class VrStatusService {
     const p = await this.toss.getPrice('TQQQ');
     this.priceCache = { price: Number(p.lastPrice), ts: p.timestamp, at: Date.now() };
     return this.priceCache;
+  }
+
+  /** 실제 계좌 예수금(USD) — 체결 시에만 바뀌는 값이라 가격보다 긴 5분 캐시로 토스 API 호출 절약 */
+  async getCashBalance(): Promise<{ cash: number; ts: string }> {
+    if (this.cashCache && Date.now() - this.cashCache.at < 5 * 60_000) return this.cashCache;
+    const cash = Number(await this.toss.getBuyingPower('USD'));
+    this.cashCache = { cash, ts: new Date().toISOString(), at: Date.now() };
+    return this.cashCache;
   }
 
   async getCandles(range: string): Promise<unknown> {

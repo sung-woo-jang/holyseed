@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/shared/ui/alert-dialog'
-import { useRollover, useUpdateVrSettings, useVrPrice, useVrState } from '@/features/vr/api/hooks'
+import { useRollover, useUpdateVrSettings, useVrCash, useVrPrice, useVrState } from '@/features/vr/api/hooks'
 import { VrEngineStatusBar } from '@/features/vr/ui/VrEngineStatusBar'
 
 const usd = (n: number | null | undefined) =>
@@ -40,6 +40,7 @@ const ALL_CARD_IDS = [
   'totalAssets',
   'profit',
   'pool',
+  'cashBalance',
   'quantity',
   'vValue',
   'minBand',
@@ -74,11 +75,14 @@ function SortableStatCard({ card }: { card: CardDef }) {
 export default function VrOverviewPage() {
   const { data: res, isLoading } = useVrState()
   const { data: priceRes } = useVrPrice()
+  const { data: cashRes } = useVrCash()
   const rollover = useRollover()
   const updateSettings = useUpdateVrSettings()
 
   const state = res?.data
   const price = priceRes?.data?.price ?? null
+  const cash = cashRes?.data?.cash ?? null
+  const cashDiff = state && cash !== null ? cash - state.pool : null
   const marketValue = state && price !== null ? state.quantity * price : null
   const costBasis = state ? state.avgPrice * state.quantity : null
   const unrealizedProfit = marketValue !== null && costBasis !== null ? marketValue - costBasis : null
@@ -139,6 +143,13 @@ export default function VrOverviewPage() {
         value: usd(state.pool),
         hint: `사용가능 (${state.settings.poolLimitPct}%) ${usd(state.usablePool)}`,
       },
+      {
+        id: 'cashBalance',
+        label: '실제 예수금',
+        value: cash !== null ? usd(cash) : '조회 중…',
+        hint:
+          cashDiff !== null ? `Pool ${usd(state.pool)} 대비 ${cashDiff >= 0 ? '+' : ''}${usd(cashDiff)}` : undefined,
+      },
       { id: 'quantity', label: '보유수량', value: `${state.quantity}주` },
       { id: 'vValue', label: 'V', value: usd(state.vValue), hint: `V₂ 예정 ${usd(state.v2Preview)}` },
       { id: 'minBand', label: '최소 밴드 (V×0.85)', value: usd(state.minBand) },
@@ -147,7 +158,7 @@ export default function VrOverviewPage() {
       { id: 'depositAmount', label: '적립금 / 사이클', value: usd(state.settings.depositAmount) },
       { id: 'gFactor', label: 'G (기울기)', value: String(state.settings.gFactor) },
     ]
-  }, [state, price, marketValue, costBasis, unrealizedProfit, totalAssets, profit])
+  }, [state, price, cash, cashDiff, marketValue, costBasis, unrealizedProfit, totalAssets, profit])
 
   const cardMap = useMemo(() => new Map(cards.map((c) => [c.id, c])), [cards])
 

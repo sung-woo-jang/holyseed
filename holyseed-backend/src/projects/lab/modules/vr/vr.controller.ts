@@ -34,6 +34,12 @@ export class VrController {
     return ok('조회 성공', await this.status.getPrice());
   }
 
+  @Get('cash-balance')
+  @ApiOperation({ summary: '실제 계좌 예수금 (USD, 5분 캐시)' })
+  async getCashBalance() {
+    return ok('조회 성공', await this.status.getCashBalance());
+  }
+
   @Get('status')
   @ApiOperation({ summary: '엔진 상태 + 사이클 + 이벤트 + 활성 세션 + 시장 캘린더' })
   async getStatus() {

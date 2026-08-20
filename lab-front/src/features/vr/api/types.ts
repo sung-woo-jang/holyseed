@@ -58,6 +58,11 @@ export interface VrPriceDto {
   ts: string
 }
 
+export interface VrCashDto {
+  cash: number
+  ts: string
+}
+
 export interface CreateFillInput {
   fillDate: string
   kind: VrFillKind

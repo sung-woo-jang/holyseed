@@ -22,6 +22,7 @@ import { JwtStrategy } from '@common/strategies/jwt.strategy';
 // Modules
 import { SharedModule } from '@/shared/shared.module';
 import { AdModule } from '@/projects/ad/ad.module';
+import { AdNativeModule } from '@/projects/ad-native/ad-native.module';
 import { WeddingModule } from '@/projects/wedding/wedding.module';
 import { LaofusModule } from '@/projects/laofus/laofus.module';
 import { LabModule } from '@/projects/lab/lab.module';
@@ -72,6 +73,7 @@ import { LabModule } from '@/projects/lab/lab.module';
     // Feature modules
     SharedModule, // 공유 모듈 (files, health, address)
     AdModule, // Asset Diary 프로젝트 통합 모듈 (/api/ad/* 경로)
+    AdNativeModule, // 자산일기 RN 앱 OTA 업데이트 서버 (/api/ad-native/* 경로)
     WeddingModule, // 결혼식 아카이브 (/api/wedding/* 경로)
     LaofusModule, // SOXL 무한매수법 자동매매 (/api/laofus/* 경로)
     LabModule, // 개인 다목적 대시보드 (/api/lab/* 경로)

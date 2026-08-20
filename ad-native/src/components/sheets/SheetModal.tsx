@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { useTheme } from '../../lib/theme';
 
 interface SheetModalProps {
@@ -36,9 +36,14 @@ export default function SheetModal({ visible, onClose, header, cta, children, ov
             <Text style={[styles.headerText, { color: theme.text }]}>{header}</Text>
           </View>
         )}
-        <BottomSheetScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-          {children}
-        </BottomSheetScrollView>
+        {/* BottomSheetScrollView는 New Architecture 환경에서 present()는 성공해도 실제로는
+            안 뜨는 알려진 버그가 있어(gorhom/react-native-bottom-sheet #2035) BottomSheetView +
+            일반 ScrollView 조합으로 우회 */}
+        <BottomSheetView style={styles.sheetView}>
+          <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+            {children}
+          </ScrollView>
+        </BottomSheetView>
         {cta && <View style={[styles.ctaWrap, { borderTopColor: theme.border, backgroundColor: theme.card }]}>{cta}</View>}
       </BottomSheetModal>
       {overlay}
@@ -49,6 +54,7 @@ export default function SheetModal({ visible, onClose, header, cta, children, ov
 const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingBottom: 14, borderBottomWidth: 1 },
   headerText: { fontSize: 17, fontWeight: '700' },
+  sheetView: { flex: 1 },
   body: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 24 },
   ctaWrap: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20, borderTopWidth: 1, gap: 8 },
 });

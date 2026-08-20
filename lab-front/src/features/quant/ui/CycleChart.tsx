@@ -1,13 +1,20 @@
-import { useState } from 'react'
+import { useState, type RefObject, type UIEvent } from 'react'
 import type { TradeDto } from '@/features/quant/lib/types'
 import { n, usd, kstDateOnly } from '@/features/quant/lib/types'
-import { useContainerWidth } from '@/shared/hooks/use-container-width'
 import { clampLabelY, resolveLabelPair } from '@/features/quant/ui/chartLabel'
 
-/** 사이클 내 체결가 vs 평단 라인차트 (2시리즈, hover 툴팁) */
-export function CycleChart({ trades }: { trades: TradeDto[] }) {
+interface CycleChartProps {
+  trades: TradeDto[]
+  /** 표시할 폭(px) — 거래수×최소폭과 컨테이너 실측폭 중 큰 값을 부모가 계산해 전달 */
+  width: number
+  /** 가로 스크롤 동기화용 — 부모가 다른 차트와 scrollLeft를 맞추는 데 사용 */
+  scrollRef?: RefObject<HTMLDivElement | null>
+  onScroll?: (e: UIEvent<HTMLDivElement>) => void
+}
+
+/** 사이클 내 체결가 vs 평단 라인차트 (2시리즈, hover 툴팁) — width는 부모가 계산해 전달 (가로 스크롤 지원) */
+export function CycleChart({ trades, width, scrollRef, onScroll }: CycleChartProps) {
   const [hover, setHover] = useState<number | null>(null)
-  const { ref: chartRef, width } = useContainerWidth<HTMLDivElement>(720)
   const pts = trades.filter((t) => t.kind !== '이월')
   if (pts.length < 2) return null
 
@@ -58,10 +65,12 @@ export function CycleChart({ trades }: { trades: TradeDto[] }) {
           평단
         </span>
       </div>
-      <div ref={chartRef}>
+      <div ref={scrollRef} onScroll={onScroll} style={{ overflowX: 'auto' }}>
         <svg
           viewBox={`0 0 ${W} ${H}`}
-          style={{ width: '100%', display: 'block' }}
+          width={W}
+          height={H}
+          style={{ display: 'block' }}
           onMouseLeave={() => setHover(null)}
           onMouseMove={(e) => {
             const rect = e.currentTarget.getBoundingClientRect()

@@ -43,7 +43,7 @@ export default function ListRow({ left, contents, right, withArrow = false, onPr
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20 },
   left: { flexShrink: 0 },
   contents: { flex: 1, minWidth: 0 },
   right: { flexShrink: 0, alignItems: 'flex-end' },

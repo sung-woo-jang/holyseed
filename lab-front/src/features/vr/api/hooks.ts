@@ -7,6 +7,7 @@ import type {
   UpdateVrSettingsInput,
   VrCandlesData,
   VrCandleRange,
+  VrCashDto,
   VrCycle,
   VrFill,
   VrPriceDto,
@@ -18,6 +19,7 @@ import type {
 const KEYS = {
   state: ['vr', 'state'],
   price: ['vr', 'price'],
+  cash: ['vr', 'cash'],
   status: ['vr', 'status'],
   fills: ['vr', 'fills'],
   cycles: ['vr', 'cycles'],
@@ -41,6 +43,15 @@ export function useVrPrice() {
     queryKey: KEYS.price,
     queryFn: async () => (await axiosInstance.get<VrPriceDto>(VR_API.PRICE)).data,
     refetchInterval: 60_000,
+  })
+}
+
+/** 실제 계좌 예수금(USD) — 5분 폴링 (서버도 5분 캐시) */
+export function useVrCash() {
+  return useStandardQuery<VrCashDto>({
+    queryKey: KEYS.cash,
+    queryFn: async () => (await axiosInstance.get<VrCashDto>(VR_API.CASH_BALANCE)).data,
+    refetchInterval: 5 * 60_000,
   })
 }
 

@@ -14,6 +14,7 @@ export const AUTH_API = {
 export const VR_API = {
   STATE: '/vr/state',
   PRICE: '/vr/price',
+  CASH_BALANCE: '/vr/cash-balance',
   STATUS: '/vr/status',
   RUN: '/vr/run',
   FILLS: '/vr/fills',

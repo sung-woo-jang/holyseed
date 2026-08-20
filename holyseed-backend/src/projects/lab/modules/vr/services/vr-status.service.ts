@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
 import { TossClientService } from '@shared/toss/toss-client.service';
+import { LaofusEngineState } from '@/projects/laofus/entities/engine-state.entity';
 import { VrService } from '../vr.service';
 import { VrEngineService } from './vr-engine.service';
 import { VrSchedulerService } from './vr-scheduler.service';
@@ -23,7 +24,7 @@ export class VrStatusService {
   private calendarCache: { data: UsMarketCalendar; at: number } | null = null;
   private candleCache = new Map<string, { data: unknown; at: number }>();
   private priceCache: { price: number; ts: string; at: number } | null = null;
-  private cashCache: { cash: number; ts: string; at: number } | null = null;
+  private cashCache: { totalCash: number; laofusCash: number; vrCash: number; ts: string; at: number } | null = null;
 
   constructor(
     private readonly toss: TossClientService,
@@ -31,6 +32,7 @@ export class VrStatusService {
     private readonly engine: VrEngineService,
     private readonly scheduler: VrSchedulerService,
     @InjectRepository(VrEvent) private readonly eventRepo: Repository<VrEvent>,
+    @InjectRepository(LaofusEngineState) private readonly laofusEngineRepo: Repository<LaofusEngineState>,
   ) {}
 
   private async getCalendar(): Promise<UsMarketCalendar> {
@@ -47,11 +49,20 @@ export class VrStatusService {
     return this.priceCache;
   }
 
-  /** 실제 계좌 예수금(USD) — 체결 시에만 바뀌는 값이라 가격보다 긴 5분 캐시로 토스 API 호출 절약 */
-  async getCashBalance(): Promise<{ cash: number; ts: string }> {
+  /**
+   * VR 몫 실제현금 = 계좌 전체 실제 예수금 − 라오어 몫(engine_state.cash 합계, 같은 계좌를 라오어와 공유).
+   * 체결 시에만 바뀌는 값이라 가격보다 긴 5분 캐시로 토스 API 호출 절약.
+   */
+  async getCashBalance(): Promise<{ totalCash: number; laofusCash: number; vrCash: number; ts: string }> {
     if (this.cashCache && Date.now() - this.cashCache.at < 5 * 60_000) return this.cashCache;
-    const cash = Number(await this.toss.getBuyingPower('USD'));
-    this.cashCache = { cash, ts: new Date().toISOString(), at: Date.now() };
+    const [totalCashStr, laofusStates] = await Promise.all([
+      this.toss.getBuyingPower('USD'),
+      this.laofusEngineRepo.find(),
+    ]);
+    const totalCash = Number(totalCashStr);
+    const laofusCash = laofusStates.reduce((sum, s) => sum + Number(s.cash), 0);
+    const vrCash = totalCash - laofusCash;
+    this.cashCache = { totalCash, laofusCash, vrCash, ts: new Date().toISOString(), at: Date.now() };
     return this.cashCache;
   }
 

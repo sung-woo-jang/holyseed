@@ -59,7 +59,9 @@ export interface VrPriceDto {
 }
 
 export interface VrCashDto {
-  cash: number
+  totalCash: number
+  laofusCash: number
+  vrCash: number
   ts: string
 }
 

@@ -26,10 +26,20 @@
     "extra": {
       "apiBaseUrl": "https://ad.holyseed.p-e.kr/api/ad"
     },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://ad.holyseed.p-e.kr/api/ad-native/updates/manifest",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
     "plugins": [
       "expo-secure-store",
       "expo-web-browser",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-updates"
     ]
   }
 }

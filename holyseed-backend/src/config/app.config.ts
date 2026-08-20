@@ -1,3 +1,5 @@
+import { homedir } from 'os';
+import { join } from 'path';
 import { registerAs } from '@nestjs/config';
 
 export default registerAs('app', () => ({
@@ -6,6 +8,8 @@ export default registerAs('app', () => ({
   uploadPath: process.env.UPLOAD_PATH || './uploads',
   maxFileSize: parseInt(process.env.MAX_FILE_SIZE, 10) || 10 * 1024 * 1024, // 10MB
   publicBaseUrl: process.env.PUBLIC_BASE_URL || 'http://localhost:8000',
+  // ad-native(RN 앱) OTA 업데이트 번들 저장 경로 — 배포 시 git clean으로 지워지지 않도록 레포 밖(홈 디렉토리)을 기본값으로 둠
+  adNativeUpdatesDir: process.env.AD_NATIVE_UPDATES_DIR || join(homedir(), 'ad-native-updates'),
 
   // NCP Object Storage
   ncp: {

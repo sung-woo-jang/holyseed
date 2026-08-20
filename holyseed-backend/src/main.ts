@@ -51,6 +51,11 @@ async function bootstrap() {
     prefix: '/uploads/',
   });
 
+  // ad-native(RN 앱) OTA 업데이트 번들 — 레포 밖 경로라 배포 시 git clean에 영향받지 않음
+  app.useStaticAssets(configService.get<string>('app.adNativeUpdatesDir'), {
+    prefix: '/ad-native-updates/',
+  });
+
   // Swagger 설정 (개발 환경에서만)
   if (environment === 'development') {
     // ========================================

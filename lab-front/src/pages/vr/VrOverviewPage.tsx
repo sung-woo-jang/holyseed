@@ -81,8 +81,10 @@ export default function VrOverviewPage() {
 
   const state = res?.data
   const price = priceRes?.data?.price ?? null
-  const cash = cashRes?.data?.cash ?? null
-  const cashDiff = state && cash !== null ? cash - state.pool : null
+  const vrCash = cashRes?.data?.vrCash ?? null
+  const totalCash = cashRes?.data?.totalCash ?? null
+  const laofusCash = cashRes?.data?.laofusCash ?? null
+  const cashDiff = state && vrCash !== null ? vrCash - state.pool : null
   const marketValue = state && price !== null ? state.quantity * price : null
   const costBasis = state ? state.avgPrice * state.quantity : null
   const unrealizedProfit = marketValue !== null && costBasis !== null ? marketValue - costBasis : null
@@ -145,10 +147,12 @@ export default function VrOverviewPage() {
       },
       {
         id: 'cashBalance',
-        label: '실제 예수금',
-        value: cash !== null ? usd(cash) : '조회 중…',
+        label: 'VR 몫 예수금',
+        value: vrCash !== null ? usd(vrCash) : '조회 중…',
         hint:
-          cashDiff !== null ? `Pool ${usd(state.pool)} 대비 ${cashDiff >= 0 ? '+' : ''}${usd(cashDiff)}` : undefined,
+          cashDiff !== null
+            ? `Pool 대비 ${cashDiff >= 0 ? '+' : ''}${usd(cashDiff)} (계좌 ${usd(totalCash)} − 라오어 ${usd(laofusCash)})`
+            : undefined,
       },
       { id: 'quantity', label: '보유수량', value: `${state.quantity}주` },
       { id: 'vValue', label: 'V', value: usd(state.vValue), hint: `V₂ 예정 ${usd(state.v2Preview)}` },
@@ -158,7 +162,19 @@ export default function VrOverviewPage() {
       { id: 'depositAmount', label: '적립금 / 사이클', value: usd(state.settings.depositAmount) },
       { id: 'gFactor', label: 'G (기울기)', value: String(state.settings.gFactor) },
     ]
-  }, [state, price, cash, cashDiff, marketValue, costBasis, unrealizedProfit, totalAssets, profit])
+  }, [
+    state,
+    price,
+    vrCash,
+    totalCash,
+    laofusCash,
+    cashDiff,
+    marketValue,
+    costBasis,
+    unrealizedProfit,
+    totalAssets,
+    profit,
+  ])
 
   const cardMap = useMemo(() => new Map(cards.map((c) => [c.id, c])), [cards])
 

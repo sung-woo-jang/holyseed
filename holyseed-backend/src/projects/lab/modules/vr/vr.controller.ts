@@ -35,7 +35,7 @@ export class VrController {
   }
 
   @Get('cash-balance')
-  @ApiOperation({ summary: '실제 계좌 예수금 (USD, 5분 캐시)' })
+  @ApiOperation({ summary: '실제 계좌 예수금 중 VR 몫 (라오어 몫 제외, 5분 캐시)' })
   async getCashBalance() {
     return ok('조회 성공', await this.status.getCashBalance());
   }

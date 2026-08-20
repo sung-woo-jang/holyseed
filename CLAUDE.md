@@ -20,6 +20,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 holyseed/
 ├── ad-front/                # 자산일기 웹앱 (Vite + React)
 │
+├── ad-native/                # 자산일기 RN 앱 (Expo, Android 사이드로드 + OTA)
+│
 ├── wedding-front/           # 결혼식 아카이브 웹앱 (Vite + React)
 │
 └── holyseed-backend/    # API 서버 (NestJS)
@@ -62,6 +64,17 @@ holyseed/
 - 섹션 추가 = `src/app/nav/sections.tsx`의 SECTIONS 항목 + `App.tsx` 라우트 추가
 - 섹션 6개: **무한매수법**(구 laofus-front 흡수 — `/laofus`, `.laofus-scope` 스타일 격리, 자체 fetch로 `/api/laofus/*` 무인증 호출, laofus-core alias), TQQQ VR, 근무일지, 일정, 저축, 필름 재단
 - 무한매수법 판단 로직은 `packages/laofus-core` 공유 (백엔드와 동일 순수함수)
+
+### 2-2. ad-native (자산일기 React Native 앱)
+
+- Expo(managed) + React Native. `ad-front`와 데이터 레이어(auth store, TanStack Query 훅, API 클라이언트)·화면 구성(홈/자산/거래장부/더보기 4탭)을 동일하게 유지하며 네이티브로 재구현한 개인용 Android 사이드로드 앱
+- 개발 서버: `cd ad-native && npx expo start` (Expo Go로 QR 스캔) — 임의로 백그라운드 실행 금지, 필요할 때마다 확인 후 포그라운드로 실행
+- 로컬 프록시 없이 실기기에서 항상 `https://ad.holyseed.p-e.kr/api/ad`를 직접 호출 (`app.json`의 `extra.apiBaseUrl`)
+- **⚠️ 자동 업데이트(OTA) 배포 — ad-native 코드를 수정했다면 반드시 세트로 실행할 것, 사용자에게 재확인 없이 진행**:
+  1. `cd ad-native && npm run typecheck`
+  2. `npm run publish-update` — `expo export`로 뽑은 JS 번들을 자체 호스팅 Expo Updates 서버(`holyseed-backend`의 `/api/ad-native/updates/manifest`)에 등록. 사용자는 앱을 완전히 껐다 켜기만 하면 재설치 없이 반영됨(핫스왑 아님, 다음 실행부터 적용)
+  - 네이티브 모듈 추가·권한 변경·`app.json`의 `scheme`/`updates`/`android.package` 등 네이티브 설정 변경처럼 OTA로 반영 안 되는 경우만 예외: `npx expo prebuild -p android --clean` → `cd android && ./gradlew assembleRelease`로 APK를 다시 빌드하고, 이 경우엔 사용자에게 새 APK 파일을 직접 전달해 재설치를 요청할 것
+- 백엔드 쪽 구현: `holyseed-backend/src/projects/ad-native/modules/updates/` (Expo Updates 프로토콜 v1, 코드 서명 없음). 관련 env: `AD_NATIVE_UPDATES_DIR`(업데이트 번들 저장 위치, 기본 `~/ad-native-updates` — 배포 시 git clean에 안 지워지도록 레포 밖 경로), `AD_NATIVE_UPDATES_PUBLIC_URL`(에셋 다운로드 URL 베이스, 기본 `https://ad.holyseed.p-e.kr` — 공유 `PUBLIC_BASE_URL`과 실제 라우팅 도메인이 달라 재사용하면 404 남, 절대 재사용하지 말 것)
 
 ### 3. holyseed-backend (API 서버)
 
@@ -107,7 +120,7 @@ holyseed/
 | 린트    | `yarn lint`      | `npm run lint`      |
 | 테스트   | -                | `npm run test`      |
 
-루트에서: `yarn dev:ad`, `yarn dev:back`, `yarn build:ad`, `yarn typecheck:ad`, `yarn dev:lab`, `yarn build:lab`, `yarn typecheck:lab`
+루트에서: `yarn dev:ad`, `yarn dev:back`, `yarn build:ad`, `yarn typecheck:ad`, `yarn dev:lab`, `yarn build:lab`, `yarn typecheck:lab`, `yarn dev:ad-native`, `yarn typecheck:ad-native`
 
 ---
 

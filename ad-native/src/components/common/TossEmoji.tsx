@@ -26,10 +26,10 @@ export default function TossEmoji({ code, size = 40, bg, borderRadius }: TossEmo
           justifyContent: 'center',
         }}
       >
-        <SvgUri uri={uri} width={innerSize} height={innerSize} />
+        <SvgUri uri={uri} width={innerSize} height={innerSize} pointerEvents="none" />
       </View>
     );
   }
 
-  return <SvgUri uri={uri} width={size} height={size} />;
+  return <SvgUri uri={uri} width={size} height={size} pointerEvents="none" />;
 }

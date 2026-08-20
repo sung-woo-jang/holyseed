@@ -8,6 +8,7 @@ export interface VrSettings {
   depositAmount: number
   poolLimitPct: number
   cardOrder: string[] | null
+  hiddenCards: string[] | null
 }
 
 export interface VrCycle {
@@ -75,6 +76,7 @@ export interface CreateFillInput {
 
 export interface UpdateVrSettingsInput {
   cardOrder?: string[]
+  hiddenCards?: string[]
 }
 
 export interface CreateCycleInput {

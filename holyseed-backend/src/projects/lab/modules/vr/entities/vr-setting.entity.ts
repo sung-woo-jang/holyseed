@@ -28,4 +28,8 @@ export class VrSetting extends BaseEntity {
   @ApiProperty({ description: 'Overview 페이지 통계 카드 표시 순서 (카드 id 배열)', required: false, nullable: true })
   @Column({ name: 'card_order', type: 'jsonb', nullable: true })
   cardOrder: string[] | null;
+
+  @ApiProperty({ description: 'Overview 페이지에서 숨긴 통계 카드 id 목록', required: false, nullable: true })
+  @Column({ name: 'hidden_cards', type: 'jsonb', nullable: true })
+  hiddenCards: string[] | null;
 }

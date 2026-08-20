@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { toast } from 'sonner'
-import { GripVertical } from 'lucide-react'
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { PageHeader } from '@/widgets/page-header'
-import { Button } from '@/shared/ui/button'
+import { GripVertical, Settings2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { useRollover, useUpdateVrSettings, useVrCash, useVrPrice, useVrState } from '@/features/vr/api/hooks'
+import { VrEngineStatusBar } from '@/features/vr/ui/VrEngineStatusBar'
+import { cn } from '@/shared/lib/utils'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,17 +18,22 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/shared/ui/alert-dialog'
-import { useRollover, useUpdateVrSettings, useVrCash, useVrPrice, useVrState } from '@/features/vr/api/hooks'
-import { VrEngineStatusBar } from '@/features/vr/ui/VrEngineStatusBar'
+import { Button } from '@/shared/ui/button'
+import { Checkbox } from '@/shared/ui/checkbox'
+import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover'
+import { PageHeader } from '@/widgets/page-header'
 
 const usd = (n: number | null | undefined) =>
-  n === null || n === undefined ? '—' : `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  n === null || n === undefined
+    ? '—'
+    : `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 interface CardDef {
   id: string
   label: string
   value: string
   hint?: string
+  tone?: 'positive' | 'negative'
 }
 
 /** 기본 표시 순서 — 서버에 저장된 순서(state.settings.cardOrder)가 없을 때 사용 */
@@ -41,8 +47,10 @@ const ALL_CARD_IDS = [
   'profit',
   'pool',
   'cashBalance',
+  'cashRatio',
   'quantity',
   'vValue',
+  'growthRate',
   'minBand',
   'maxBand',
   'avgPrice',
@@ -55,19 +63,27 @@ function SortableStatCard({ card }: { card: CardDef }) {
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
 
   return (
-    <div ref={setNodeRef} style={style} className="relative rounded-lg border bg-card p-4">
+    <div ref={setNodeRef} style={style} className="bg-card relative rounded-lg border p-4">
       <button
         type="button"
-        className="absolute right-2 top-2 cursor-grab touch-none text-muted-foreground active:cursor-grabbing"
+        className="text-muted-foreground absolute top-2 right-2 cursor-grab touch-none active:cursor-grabbing"
         aria-label="카드 순서 변경"
         {...attributes}
         {...listeners}
       >
         <GripVertical className="size-4" />
       </button>
-      <p className="pr-5 text-xs text-muted-foreground">{card.label}</p>
-      <p className="mt-1 text-lg font-semibold tabular-nums">{card.value}</p>
-      {card.hint && <p className="mt-0.5 text-xs text-muted-foreground">{card.hint}</p>}
+      <p className="text-muted-foreground pr-5 text-xs">{card.label}</p>
+      <p
+        className={cn(
+          'mt-1 text-lg font-semibold tabular-nums',
+          card.tone === 'positive' && 'text-emerald-600 dark:text-emerald-400',
+          card.tone === 'negative' && 'text-red-600 dark:text-red-400'
+        )}
+      >
+        {card.value}
+      </p>
+      {card.hint && <p className="text-muted-foreground mt-0.5 text-xs">{card.hint}</p>}
     </div>
   )
 }
@@ -82,14 +98,17 @@ export default function VrOverviewPage() {
   const state = res?.data
   const price = priceRes?.data?.price ?? null
   const vrCash = cashRes?.data?.vrCash ?? null
-  const totalCash = cashRes?.data?.totalCash ?? null
-  const laofusCash = cashRes?.data?.laofusCash ?? null
   const cashDiff = state && vrCash !== null ? vrCash - state.pool : null
+  const growthRate =
+    state && state.v2Preview !== null && state.vValue > 0
+      ? ((state.v2Preview - state.vValue) / state.vValue) * 100
+      : null
   const marketValue = state && price !== null ? state.quantity * price : null
   const costBasis = state ? state.avgPrice * state.quantity : null
   const unrealizedProfit = marketValue !== null && costBasis !== null ? marketValue - costBasis : null
   const totalAssets = state && marketValue !== null ? state.pool + marketValue : null
   const profit = state && totalAssets !== null ? totalAssets - state.investedPrincipal : null
+  const cashRatio = state && totalAssets !== null && totalAssets > 0 ? (state.pool / totalAssets) * 100 : null
 
   const cards = useMemo<CardDef[]>(() => {
     if (!state) return []
@@ -123,6 +142,7 @@ export default function VrOverviewPage() {
         label: '미실현손익',
         value: unrealizedProfit !== null ? `${unrealizedProfit >= 0 ? '+' : ''}${usd(unrealizedProfit)}` : '—',
         hint: '평가금 − 매수원가 (주식 자체의 평가차익)',
+        tone: unrealizedProfit === null ? undefined : unrealizedProfit >= 0 ? 'positive' : 'negative',
       },
       {
         id: 'totalAssets',
@@ -138,6 +158,7 @@ export default function VrOverviewPage() {
           profit !== null && state.investedPrincipal > 0
             ? `${((profit / state.investedPrincipal) * 100).toFixed(2)}% (총자산 − 투자원금)`
             : undefined,
+        tone: profit === null ? undefined : profit >= 0 ? 'positive' : 'negative',
       },
       {
         id: 'pool',
@@ -147,15 +168,26 @@ export default function VrOverviewPage() {
       },
       {
         id: 'cashBalance',
-        label: 'VR 몫 예수금',
-        value: vrCash !== null ? usd(vrCash) : '조회 중…',
-        hint:
-          cashDiff !== null
-            ? `Pool 대비 ${cashDiff >= 0 ? '+' : ''}${usd(cashDiff)} (계좌 ${usd(totalCash)} − 라오어 ${usd(laofusCash)})`
-            : undefined,
+        label: '예수금 차이',
+        value: cashDiff !== null ? `${cashDiff >= 0 ? '+' : ''}${usd(cashDiff)}` : vrCash === null ? '조회 중…' : '—',
+        hint: vrCash !== null ? `실제 ${usd(vrCash)} / 있어야 할 ${usd(state.pool)}` : undefined,
+        tone: cashDiff === null ? undefined : cashDiff >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'cashRatio',
+        label: '현금 비중',
+        value: cashRatio !== null ? `${cashRatio.toFixed(1)}%` : '조회 중…',
+        hint: totalAssets !== null ? `Pool ${usd(state.pool)} / 총자산 ${usd(totalAssets)}` : undefined,
       },
       { id: 'quantity', label: '보유수량', value: `${state.quantity}주` },
       { id: 'vValue', label: 'V', value: usd(state.vValue), hint: `V₂ 예정 ${usd(state.v2Preview)}` },
+      {
+        id: 'growthRate',
+        label: '상승률',
+        value: growthRate !== null ? `${growthRate >= 0 ? '+' : ''}${growthRate.toFixed(2)}%` : '—',
+        hint: state.v2Preview !== null ? `V ${usd(state.vValue)} → V₂ ${usd(state.v2Preview)}` : undefined,
+        tone: growthRate === null ? undefined : growthRate >= 0 ? 'positive' : 'negative',
+      },
       { id: 'minBand', label: '최소 밴드 (V×0.85)', value: usd(state.minBand) },
       { id: 'maxBand', label: '최대 밴드 (V×1.15)', value: usd(state.maxBand) },
       { id: 'avgPrice', label: '평단 (기록용)', value: usd(state.avgPrice) },
@@ -166,14 +198,14 @@ export default function VrOverviewPage() {
     state,
     price,
     vrCash,
-    totalCash,
-    laofusCash,
     cashDiff,
+    growthRate,
     marketValue,
     costBasis,
     unrealizedProfit,
     totalAssets,
     profit,
+    cashRatio,
   ])
 
   const cardMap = useMemo(() => new Map(cards.map((c) => [c.id, c])), [cards])
@@ -196,6 +228,27 @@ export default function VrOverviewPage() {
       setOrder(ALL_CARD_IDS)
     }
   }, [state?.settings.cardOrder])
+
+  const [hidden, setHidden] = useState<Set<string>>(new Set())
+  const appliedHiddenKey = useRef<string | null>(null)
+
+  useEffect(() => {
+    const saved = state?.settings.hiddenCards
+    const key = saved && saved.length ? [...saved].sort().join(',') : ''
+    if (key === appliedHiddenKey.current) return
+    appliedHiddenKey.current = key
+    setHidden(new Set(saved ?? []))
+  }, [state?.settings.hiddenCards])
+
+  function toggleCardVisibility(id: string) {
+    setHidden((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      updateSettings.mutate({ hiddenCards: Array.from(next) })
+      return next
+    })
+  }
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -220,7 +273,9 @@ export default function VrOverviewPage() {
     }
   }
 
-  if (isLoading) return <div className="p-6 text-sm text-muted-foreground">불러오는 중…</div>
+  if (isLoading) return <div className="text-muted-foreground p-6 text-sm">불러오는 중…</div>
+
+  const visibleOrder = order.filter((id) => !hidden.has(id))
 
   return (
     <div className="p-6">
@@ -232,26 +287,50 @@ export default function VrOverviewPage() {
             : '진행 중인 사이클이 없습니다. 체결·사이클 탭에서 사이클을 등록하세요.'
         }
         action={
-          state?.cycle && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button disabled={rollover.isPending}>V 갱신 실행</Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>V 갱신을 실행할까요?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    현재 사이클 {state.cycle.cycleNo}을 종료하고 V₂ = {usd(state.v2Preview)} 로 새 사이클을
-                    시작합니다. 적립금 {usd(state.settings.depositAmount)}이 Pool에 반영됩니다.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>취소</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleRolloverConfirm}>갱신 실행</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="icon" aria-label="카드 표시 설정">
+                  <Settings2 className="size-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-64">
+                <p className="mb-2 text-sm font-medium">카드 표시 설정</p>
+                <div className="max-h-80 space-y-2 overflow-y-auto">
+                  {ALL_CARD_IDS.map((id) => {
+                    const card = cardMap.get(id)
+                    if (!card) return null
+                    return (
+                      <label key={id} className="flex items-center gap-2 text-sm">
+                        <Checkbox checked={!hidden.has(id)} onCheckedChange={() => toggleCardVisibility(id)} />
+                        {card.label}
+                      </label>
+                    )
+                  })}
+                </div>
+              </PopoverContent>
+            </Popover>
+            {state?.cycle && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button disabled={rollover.isPending}>V 갱신 실행</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>V 갱신을 실행할까요?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      현재 사이클 {state.cycle.cycleNo}을 종료하고 V₂ = {usd(state.v2Preview)} 로 새 사이클을
+                      시작합니다. 적립금 {usd(state.settings.depositAmount)}이 Pool에 반영됩니다.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>취소</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleRolloverConfirm}>갱신 실행</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
         }
       />
 
@@ -262,9 +341,9 @@ export default function VrOverviewPage() {
       {state && (
         <>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={order} strategy={rectSortingStrategy}>
+            <SortableContext items={visibleOrder} strategy={rectSortingStrategy}>
               <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                {order.map((id) => {
+                {visibleOrder.map((id) => {
                   const card = cardMap.get(id)
                   return card ? <SortableStatCard key={id} card={card} /> : null
                 })}
@@ -272,10 +351,10 @@ export default function VrOverviewPage() {
             </SortableContext>
           </DndContext>
 
-          <p className="mt-3 text-xs text-muted-foreground">
+          <p className="text-muted-foreground mt-3 text-xs">
             현재 {state.settings.symbol} 가격 {price !== null ? usd(price) : '조회 중…'} (60초 자동 갱신) · 평가금 &lt;{' '}
             {usd(state.minBand)} → 매수 · 평가금 &gt; {usd(state.maxBand)} → 매도 · 그 외 홀딩 (평단은 판단에 사용하지
-            않음) · 카드 우측 상단 손잡이를 드래그하면 순서를 바꿀 수 있어요
+            않음) · 카드 우측 상단 손잡이를 드래그하면 순서를, 헤더의 톱니바퀴 버튼으로 표시 여부를 바꿀 수 있어요
           </p>
         </>
       )}

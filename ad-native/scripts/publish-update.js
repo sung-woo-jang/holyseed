@@ -83,7 +83,17 @@ function main() {
   }
 
   const launchAsset = publishFile(platformMeta.bundle, null);
-  const assets = platformMeta.assets.map((a) => publishFile(a.path, a.ext));
+  // metadata.json의 assets 배열엔 같은 파일이 여러 번(동일 리소스가 여러 컴포넌트에서 참조될 때) 중복 등장함 —
+  // 매니페스트에 중복 키로 나가면 클라이언트가 같은 로컬 캐시 경로에 동시에 쓰다 충돌해 fetchUpdateAsync가
+  // "Failed to download new update"로 실패할 수 있어 해시 기준으로 dedupe
+  const seenHashes = new Set();
+  const assets = platformMeta.assets
+    .map((a) => publishFile(a.path, a.ext))
+    .filter((a) => {
+      if (seenHashes.has(a.hash)) return false;
+      seenHashes.add(a.hash);
+      return true;
+    });
 
   const indexPath = path.join(updatesDir, 'index.json');
   const index = fs.existsSync(indexPath) ? JSON.parse(fs.readFileSync(indexPath, 'utf-8')) : {};

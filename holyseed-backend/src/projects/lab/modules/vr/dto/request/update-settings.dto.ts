@@ -33,4 +33,10 @@ export class UpdateSettingsDto {
   @IsArray()
   @IsString({ each: true })
   cardOrder?: string[];
+
+  @ApiPropertyOptional({ description: 'Overview 페이지에서 숨길 카드 id 목록' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  hiddenCards?: string[];
 }

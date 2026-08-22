@@ -13,6 +13,13 @@ export interface NaverMarker {
   addListener(event: string, handler: (...args: unknown[]) => void): void
 }
 
+export interface NaverMarkerIcon {
+  content?: string
+  url?: string
+  size?: unknown
+  anchor?: unknown
+}
+
 export interface NaverGeocodeAddress {
   roadAddress: string
   jibunAddress: string
@@ -51,9 +58,17 @@ interface NaverMapsService {
 
 interface NaverMaps {
   LatLng: new (lat: number, lng: number) => NaverLatLng
+  Point: new (x: number, y: number) => unknown
+  Size: new (width: number, height: number) => unknown
   Map: new (container: HTMLElement, options: { center: NaverLatLng; zoom: number }) => NaverMapInstance
-  Marker: new (options: { position: NaverLatLng; map: unknown; draggable?: boolean }) => NaverMarker
-  InfoWindow: new (options: { content: string }) => { open: (map: unknown, marker: unknown) => void }
+  Marker: new (options: { position: NaverLatLng; map: unknown; draggable?: boolean; icon?: NaverMarkerIcon }) => NaverMarker
+  InfoWindow: new (options: {
+    content: string
+    borderWidth?: number
+    backgroundColor?: string
+    anchorSize?: unknown
+    pixelOffset?: unknown
+  }) => { open: (map: unknown, marker: unknown) => void }
   Service: NaverMapsService
 }
 

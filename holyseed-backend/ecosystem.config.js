@@ -13,7 +13,7 @@ module.exports = {
       env_production: {
         NODE_ENV: 'production',
         PORT: 8000,
-        CORS_ORIGINS: 'https://holyseed.p-e.kr,https://ad.holyseed.p-e.kr,https://wedding.holyseed.p-e.kr,https://lab.holyseed.p-e.kr',
+        CORS_ORIGINS: 'https://holyseed.p-e.kr,https://ad.holyseed.p-e.kr,https://wedding.holyseed.p-e.kr,https://lab.holyseed.p-e.kr,http://localhost:8081',
       },
 
       // 로그 설정

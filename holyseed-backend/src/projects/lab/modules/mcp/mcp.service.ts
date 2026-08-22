@@ -377,28 +377,6 @@ export class McpService {
       ({ id }) => this.call(async (api) => this.unwrap(await api.post(`/expense/${id}/delete`))),
     );
 
-    // ==================== 필름 재단 ====================
-
-    registerTool(
-      'film_list_projects',
-      {
-        title: '재단 프로젝트 목록',
-        description: '인테리어 필름 재단 프로젝트 목록 (필름지/조각 수/손실율).',
-        inputSchema: {},
-      },
-      () => this.call(async (api) => this.unwrap(await api.get('/film-optimizer/projects'))),
-    );
-
-    registerTool(
-      'film_get_project',
-      {
-        title: '재단 프로젝트 상세',
-        description: '프로젝트 상세: 필름지 정보, 재단 조각 목록(치수/수량/완료 여부), 패킹 결과.',
-        inputSchema: { projectId: z.number().describe('프로젝트 id (film_list_projects로 확인)') },
-      },
-      ({ projectId }) => this.call(async (api) => this.unwrap(await api.get(`/film-optimizer/projects/${projectId}`))),
-    );
-
     return server;
   }
 }

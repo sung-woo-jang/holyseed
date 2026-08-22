@@ -4,7 +4,6 @@ import AuthBootstrap from '@/components/AuthBootstrap'
 import LoginPage from '@/pages/auth/LoginPage'
 import FinanceDashboardPage from '@/pages/dashboard/FinanceDashboardPage'
 import ExpensePage from '@/pages/expense/ExpensePage'
-import { FilmCuttingPage, FilmCuttingFormPage } from '@/pages/film-cutting'
 import AccountPage from '@/pages/quant/AccountPage'
 import ChartPage from '@/pages/quant/ChartPage'
 import CycleDetailPage from '@/pages/quant/CycleDetailPage'
@@ -52,9 +51,6 @@ export default function App() {
           <Route path="/worklog" element={<WorklogPage />} />
           <Route path="/worklog/expense" element={<ExpensePage />} />
 
-          <Route path="/film-cutting" element={<FilmCuttingPage />} />
-          <Route path="/film-cutting/new" element={<FilmCuttingFormPage />} />
-          <Route path="/film-cutting/:projectId" element={<FilmCuttingFormPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

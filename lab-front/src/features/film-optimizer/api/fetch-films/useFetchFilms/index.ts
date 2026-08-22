@@ -1,1 +1,0 @@
-export { useFetchFilms } from './useFetchFilms'

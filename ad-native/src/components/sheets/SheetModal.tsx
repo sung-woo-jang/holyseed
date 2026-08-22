@@ -74,7 +74,7 @@ export default function SheetModal({ visible, onClose, header, cta, children, ov
 
   return (
     <>
-      <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+      <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
         <Pressable style={styles.scrim} onPress={onClose}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.kav}>
             <AnimatedPressable

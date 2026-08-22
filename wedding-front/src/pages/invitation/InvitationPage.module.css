@@ -670,6 +670,8 @@
   height: 50px;
   border-radius: 50%;
   font-size: 2rem;
+  line-height: 1;
+  padding: 0;
   cursor: pointer;
   display: flex;
   align-items: center;

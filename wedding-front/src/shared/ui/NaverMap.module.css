@@ -76,15 +76,6 @@
   transition: all 0.2s ease;
 }
 
-.buttonNaver {
-  background-color: #03c75a;
-  color: #fff;
-}
-
-.buttonNaver:hover {
-  background-color: #02b350;
-}
-
 .buttonMap {
   background-color: #fff;
   border: 1px solid var(--color-border);

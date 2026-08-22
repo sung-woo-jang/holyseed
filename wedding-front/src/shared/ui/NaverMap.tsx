@@ -82,10 +82,6 @@ export default function NaverMap({ lat, lng, venueName, address, photoUrl, weddi
     }
   }, [lat, lng, venueName, photoUrl, weddingDateLabel])
 
-  const openNaverNavi = () => {
-    window.open(`https://map.naver.com/p/directions/-/${lng},${lat},${encodeURIComponent(venueName)}/-/car`, '_blank')
-  }
-
   const openNaverMap = () => {
     window.open(`https://map.naver.com/p/search/${encodeURIComponent(venueName)}`, '_blank')
   }
@@ -109,12 +105,6 @@ export default function NaverMap({ lat, lng, venueName, address, photoUrl, weddi
         </button>
       </div>
       <div className={styles.buttons}>
-        <button type="button" onClick={openNaverNavi} className={cn(styles.button, styles.buttonNaver)}>
-          <span role="img" aria-label="navi">
-            🚗
-          </span>{' '}
-          네이버내비
-        </button>
         <button type="button" onClick={openNaverMap} className={cn(styles.button, styles.buttonMap)}>
           <span role="img" aria-label="map">
             🗺️

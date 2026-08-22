@@ -237,7 +237,7 @@ export function useCreateCategory() {
   const qc = useQueryClient();
   const hid = useHid();
   return useMutation({
-    mutationFn: (dto: { type: CategoryType; name: string; icon: string; color?: string; parentId?: number }) =>
+    mutationFn: (dto: { type: CategoryType; name: string; icon?: string; color?: string; parentId?: number }) =>
       categoriesApi.create(hid!, dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.categories(hid!) });
@@ -254,6 +254,12 @@ export function useUpdateCategory() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.categories(hid!) });
     },
+  });
+}
+
+export function useUploadCategoryIcon() {
+  return useMutation({
+    mutationFn: (file: { uri: string; name: string; type: string }) => categoriesApi.uploadIcon(file),
   });
 }
 

@@ -14,6 +14,7 @@ export type MoreStackParamList = {
   MoreHome: undefined;
   Cashflow: undefined;
   Categories: undefined;
+  CategoryEdit: { mode: 'add'; type: 'INCOME' | 'EXPENSE' } | { mode: 'edit'; categoryId: number };
   Compare: undefined;
   Members: undefined;
   NetWorthAt: undefined;

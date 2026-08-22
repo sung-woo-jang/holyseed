@@ -28,4 +28,7 @@ export class Category extends BaseEntity {
 
   @Column({ name: 'sort_order', default: 0 })
   sortOrder: number;
+
+  @Column({ name: 'parent_id', nullable: true })
+  parentId?: number | null;
 }

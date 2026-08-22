@@ -43,6 +43,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
   const [memo, setMemo] = useState('');
   const [txDate, setTxDate] = useState<string>('');
   const [catPicker, setCatPicker] = useState(false);
+  const [expandedCatId, setExpandedCatId] = useState<number | null>(null);
   const [datePicker, setDatePicker] = useState(false);
   const [error, setError] = useState('');
   const createTx = useCreateTx();
@@ -103,7 +104,8 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
     }
   }
 
-  const catListSource = data.categories.filter((c) => c.type === type);
+  const catListSource = data.categories.filter((c) => c.type === type && !c.parentId);
+  const childrenOf = (id: number) => data.categories.filter((c) => c.parentId === id);
 
   return (
     <SheetModal
@@ -125,18 +127,45 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
             {catListSource.length > 0
               ? catListSource.map((c) => {
                   const def = getCategoryDef(c.name);
+                  const kids = childrenOf(c.id);
+                  const isExpanded = expandedCatId === c.id;
                   return (
-                    <ListRow
-                      key={c.id}
-                      left={<TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />}
-                      contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{c.name}</Text>}
-                      right={category?.id === c.id ? Icon.check(theme.brand, 16) : undefined}
-                      onPress={() => {
-                        setCategory({ id: c.id, name: c.name });
-                        setCatPicker(false);
-                      }}
-                      verticalPadding="small"
-                    />
+                    <View key={c.id}>
+                      <ListRow
+                        left={<TossEmoji code={c.icon || def.iconCode} size={28} bg={(c.color || def.color) + '22'} />}
+                        contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{c.name}</Text>}
+                        right={
+                          kids.length > 0 ? (
+                            <Text style={{ color: theme.textMuted, fontSize: 13 }}>{isExpanded ? '▴' : '▾'}</Text>
+                          ) : category?.id === c.id ? (
+                            Icon.check(theme.brand, 16)
+                          ) : undefined
+                        }
+                        onPress={() => {
+                          if (kids.length > 0) {
+                            setExpandedCatId(isExpanded ? null : c.id);
+                            return;
+                          }
+                          setCategory({ id: c.id, name: c.name });
+                          setCatPicker(false);
+                        }}
+                        verticalPadding="small"
+                      />
+                      {isExpanded &&
+                        kids.map((k) => (
+                          <ListRow
+                            key={k.id}
+                            left={<View style={{ width: 28 }} />}
+                            contents={<Text style={{ color: theme.text, fontSize: 14, fontWeight: '500', marginLeft: 12 }}>{k.name}</Text>}
+                            right={category?.id === k.id ? Icon.check(theme.brand, 16) : undefined}
+                            onPress={() => {
+                              setCategory({ id: k.id, name: k.name });
+                              setCatPicker(false);
+                            }}
+                            verticalPadding="small"
+                          />
+                        ))}
+                    </View>
                   );
                 })
               : catOptions.map((name) => {
@@ -166,6 +195,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
           onChange={(v) => {
             setType(v === '지출' ? 'EXPENSE' : 'INCOME');
             setCategory(null);
+            setExpandedCatId(null);
           }}
         />
       </View>

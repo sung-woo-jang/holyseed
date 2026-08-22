@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import Border from '../components/ui/Border';
 import ListRow from '../components/ui/ListRow';
@@ -45,6 +45,7 @@ type DayItem =
 
 export default function BookScreen() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const data = useHouseholdData();
   const currentHousehold = useAuthStore((s) => s.currentHousehold);
   const isViewer = currentHousehold?.role === 'VIEWER';
@@ -53,6 +54,8 @@ export default function BookScreen() {
   const [month, setMonth] = useState(todayMonth());
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'INCOME' | 'EXPENSE'>('all');
+  const [catFilter, setCatFilter] = useState<Set<string>>(new Set());
   const [recOpen, setRecOpen] = useState(false);
 
   const [addTxVisible, setAddTxVisible] = useState(false);
@@ -100,6 +103,27 @@ export default function BookScreen() {
 
   const monthTx = useMemo(() => data.transactions.filter((t) => t.date.startsWith(month)), [data.transactions, month]);
 
+  const monthCats = useMemo(
+    () => [...new Set((typeFilter === 'all' ? monthTx : monthTx.filter((t) => t.type === typeFilter)).map((t) => t.category))],
+    [monthTx, typeFilter],
+  );
+
+  function handleTypeFilter(v: 'all' | 'INCOME' | 'EXPENSE') {
+    setTypeFilter(v);
+    const scopedCats = new Set((v === 'all' ? monthTx : monthTx.filter((t) => t.type === v)).map((t) => t.category));
+    setCatFilter((prev) => new Set([...prev].filter((c) => scopedCats.has(c))));
+  }
+
+  const filteredTx = useMemo(
+    () =>
+      monthTx.filter((t) => {
+        if (typeFilter !== 'all' && t.type !== typeFilter) return false;
+        if (catFilter.size > 0 && !catFilter.has(t.category)) return false;
+        return true;
+      }),
+    [monthTx, typeFilter, catFilter],
+  );
+
   const recurring = data.recurring;
   const [y, m] = month.split('-').map(Number);
   const lastDay = new Date(y!, m!, 0).getDate();
@@ -113,21 +137,32 @@ export default function BookScreen() {
     const d = new Date(yy, mm - 1 + delta, 1);
     setMonth(`${d.getFullYear()}-${pad(d.getMonth() + 1)}`);
     setSelectedDate(undefined);
+    setTypeFilter('all');
+    setCatFilter(new Set());
   }
   const monthLabel = `${Number(month.slice(5))}월 (${month.slice(0, 4)})`;
 
   const monthIncome = monthTx.filter((t) => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
   const monthExpense = monthTx.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
 
+  const catBreakdown = useMemo(() => {
+    const sums = new Map<string, number>();
+    for (const t of filteredTx) {
+      if (t.type !== 'EXPENSE') continue;
+      sums.set(t.category, (sums.get(t.category) ?? 0) + t.amount);
+    }
+    return [...sums.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  }, [filteredTx]);
+
   const groupedTx = useMemo(() => {
     const map = new Map<string, HouseholdTransaction[]>();
-    for (const t of monthTx) {
+    for (const t of filteredTx) {
       const arr = map.get(t.date) ?? [];
       arr.push(t);
       map.set(t.date, arr);
     }
     return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
-  }, [monthTx]);
+  }, [filteredTx]);
 
   const calLogs: CalLog[] = useMemo(() => {
     const out: CalLog[] = [];
@@ -169,6 +204,19 @@ export default function BookScreen() {
 
   function handleSelectDay(date: string) {
     setSelectedDate((cur) => (cur === date ? undefined : date));
+  }
+
+  function toggleCatFilter(cat: string) {
+    setCatFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  }
+  function resetFilters() {
+    setTypeFilter('all');
+    setCatFilter(new Set());
   }
 
   function openAddForDay() {
@@ -405,26 +453,86 @@ export default function BookScreen() {
             )}
           </>
         ) : (
-          <View style={styles.sectionPad}>
-            {groupedTx.length === 0 ? (
-              <EmptyState compact iconCode={TE.ledger} title="이 달 거래가 없어요" desc={isViewer ? undefined : 'FAB로 추가해보세요'} />
-            ) : (
-              groupedTx.map(([date, txs]) => {
-                const dayExp = txs.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
-                return (
-                  <View key={date} style={{ marginBottom: 12 }}>
-                    <View style={styles.dayHeader}>
-                      <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '700' }}>
-                        {Number(date.slice(5, 7))}월 {Number(date.slice(8, 10))}일
-                      </Text>
-                      {dayExp > 0 && <Text style={{ color: theme.textMuted, fontSize: 12 }}>-{krw(dayExp)}</Text>}
-                    </View>
-                    <View style={[styles.dayCard, { backgroundColor: theme.card, borderColor: theme.border }]}>{txs.map((t, i) => renderTxRow(t, i, txs.length))}</View>
-                  </View>
-                );
-              })
+          <>
+            <View style={styles.sectionPad}>
+              <Segmented
+                options={['전체', '수입', '지출']}
+                value={typeFilter === 'all' ? '전체' : typeFilter === 'INCOME' ? '수입' : '지출'}
+                onChange={(v) => handleTypeFilter(v === '전체' ? 'all' : v === '수입' ? 'INCOME' : 'EXPENSE')}
+                small
+                alignment="fluid"
+              />
+              {monthCats.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow} style={{ marginTop: 8 }}>
+                  {monthCats.map((cat) => {
+                    const active = catFilter.has(cat);
+                    const def = getCategoryDef(cat);
+                    return (
+                      <Pressable
+                        key={cat}
+                        onPress={() => toggleCatFilter(cat)}
+                        style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
+                      >
+                        <View style={[styles.chipDot, { backgroundColor: def.color }]} />
+                        <Text style={{ fontSize: 11.5, fontWeight: '700', color: active ? theme.brand : theme.textMuted }}>{cat}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              )}
+            </View>
+
+            {catBreakdown.length > 0 && (
+              <View style={styles.sectionPad}>
+                <View style={[styles.catCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                  <Text style={[styles.catCardTitle, { color: theme.text }]}>카테고리별 지출</Text>
+                  {catBreakdown.map(([cat, amt], i) => {
+                    const def = getCategoryDef(cat);
+                    const max = catBreakdown[0]![1];
+                    return (
+                      <View key={cat} style={[styles.catBarRow, i === catBreakdown.length - 1 && { marginBottom: 0 }]}>
+                        <Text style={[styles.catBarName, { color: theme.textMuted }]} numberOfLines={1}>
+                          {cat}
+                        </Text>
+                        <View style={[styles.catBarTrack, { backgroundColor: theme.bg }]}>
+                          <View style={[styles.catBarFill, { width: `${(amt / max) * 100}%`, backgroundColor: def.color }]} />
+                        </View>
+                        <Text style={[styles.catBarAmt, { color: theme.textMuted }]}>{krw(amt)}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
             )}
-          </View>
+
+            <View style={styles.sectionPad}>
+              {monthTx.length === 0 ? (
+                <EmptyState compact iconCode={TE.ledger} title="이 달 거래가 없어요" desc={isViewer ? undefined : 'FAB로 추가해보세요'} />
+              ) : groupedTx.length === 0 ? (
+                <View style={{ alignItems: 'center' }}>
+                  <EmptyState compact iconCode={TE.ledger} title="조건에 맞는 거래가 없어요" />
+                  <Pressable onPress={resetFilters} style={[styles.resetBtn, { borderColor: theme.brand }]}>
+                    <Text style={{ color: theme.brand, fontSize: 12, fontWeight: '700' }}>필터 초기화</Text>
+                  </Pressable>
+                </View>
+              ) : (
+                groupedTx.map(([date, txs]) => {
+                  const dayExp = txs.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
+                  return (
+                    <View key={date} style={{ marginBottom: 12 }}>
+                      <View style={styles.dayHeader}>
+                        <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '700' }}>
+                          {Number(date.slice(5, 7))}월 {Number(date.slice(8, 10))}일
+                        </Text>
+                        {dayExp > 0 && <Text style={{ color: theme.textMuted, fontSize: 12 }}>-{krw(dayExp)}</Text>}
+                      </View>
+                      <View style={[styles.dayCard, { backgroundColor: theme.card, borderColor: theme.border }]}>{txs.map((t, i) => renderTxRow(t, i, txs.length))}</View>
+                    </View>
+                  );
+                })
+              )}
+            </View>
+          </>
         )}
 
         <View style={styles.sectionPad}>
@@ -476,7 +584,7 @@ export default function BookScreen() {
       </ScrollView>
 
       {!isViewer && (
-        <Pressable style={[styles.fab, { backgroundColor: theme.brand }]} onPress={openAddForDay}>
+        <Pressable style={[styles.fab, { bottom: 20 + insets.bottom, backgroundColor: theme.brand }]} onPress={openAddForDay}>
           {Icon.plus('#fff')}
         </Pressable>
       )}
@@ -572,4 +680,15 @@ const styles = StyleSheet.create({
   recSectionTitle: { fontSize: 12, fontWeight: '700', marginTop: 12, marginBottom: 8, color: '#8B95A1' },
   recAddBtn: { borderWidth: 1.4, borderRadius: 12, alignItems: 'center', paddingVertical: 12, marginTop: 12 },
   fab: { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', elevation: 4 },
+  chipRow: { flexDirection: 'row', gap: 6 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderWidth: 1 },
+  chipDot: { width: 6, height: 6, borderRadius: 3 },
+  catCard: { borderRadius: 14, borderWidth: 1, padding: 14 },
+  catCardTitle: { fontSize: 12.5, fontWeight: '700', marginBottom: 10 },
+  catBarRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 7 },
+  catBarName: { fontSize: 11, width: 46 },
+  catBarTrack: { flex: 1, height: 7, borderRadius: 4, overflow: 'hidden' },
+  catBarFill: { height: '100%', borderRadius: 4 },
+  catBarAmt: { fontSize: 10.5, minWidth: 58, textAlign: 'right' },
+  resetBtn: { marginTop: 4, borderWidth: 1.4, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
 });

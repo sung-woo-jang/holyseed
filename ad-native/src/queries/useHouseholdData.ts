@@ -275,6 +275,8 @@ export function useHouseholdData(): HouseholdData {
     type: c.type,
     name: c.name,
     icon: c.icon,
+    color: c.color ?? null,
+    parentId: c.parentId ?? null,
     isBuiltin: c.isBuiltin ?? false,
   }));
 

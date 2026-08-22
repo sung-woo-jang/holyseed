@@ -48,6 +48,7 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
   const [hasEnd, setHasEnd] = useState(false);
   const [endMonths, setEndMonths] = useState(12);
   const [catPicker, setCatPicker] = useState(false);
+  const [expandedCatId, setExpandedCatId] = useState<number | null>(null);
   const [dayPicker, setDayPicker] = useState(false);
   const [endPicker, setEndPicker] = useState(false);
   const [error, setError] = useState('');
@@ -71,7 +72,8 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
   const localCategories = Object.entries(CATEGORY_DEFS)
     .filter(([, def]) => def.type === type)
     .map(([n]) => n);
-  const apiCategories = data.categories.filter((c) => c.type === type);
+  const apiCategories = data.categories.filter((c) => c.type === type && !c.parentId);
+  const childrenOf = (id: number) => data.categories.filter((c) => c.parentId === id);
   const amtNum = Number(amount.replace(/[^0-9]/g, ''));
   const isValid = name.length > 0 && amtNum > 0;
 
@@ -127,8 +129,6 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
     }
   }
 
-  const catListSource = apiCategories.length > 0 ? apiCategories.map((c) => ({ id: c.id, name: c.name })) : localCategories.map((n) => ({ id: 0, name: n }));
-
   return (
     <SheetModal
       visible={visible}
@@ -145,22 +145,66 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
       overlay={
         <>
           <PickerOverlay visible={catPicker} title="카테고리 선택" onClose={() => setCatPicker(false)}>
-            {catListSource.map((c) => {
-              const def = getCategoryDef(c.name);
-              return (
-                <ListRow
-                  key={c.id || c.name}
-                  left={<TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />}
-                  contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{c.name}</Text>}
-                  right={category?.name === c.name ? Icon.check(theme.brand, 16) : undefined}
-                  onPress={() => {
-                    setCategory({ id: c.id, name: c.name });
-                    setCatPicker(false);
-                  }}
-                  verticalPadding="small"
-                />
-              );
-            })}
+            {apiCategories.length > 0
+              ? apiCategories.map((c) => {
+                  const def = getCategoryDef(c.name);
+                  const kids = childrenOf(c.id);
+                  const isExpanded = expandedCatId === c.id;
+                  return (
+                    <View key={c.id}>
+                      <ListRow
+                        left={<TossEmoji code={c.icon || def.iconCode} size={28} bg={(c.color || def.color) + '22'} />}
+                        contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{c.name}</Text>}
+                        right={
+                          kids.length > 0 ? (
+                            <Text style={{ color: theme.textMuted, fontSize: 13 }}>{isExpanded ? '▴' : '▾'}</Text>
+                          ) : category?.id === c.id ? (
+                            Icon.check(theme.brand, 16)
+                          ) : undefined
+                        }
+                        onPress={() => {
+                          if (kids.length > 0) {
+                            setExpandedCatId(isExpanded ? null : c.id);
+                            return;
+                          }
+                          setCategory({ id: c.id, name: c.name });
+                          setCatPicker(false);
+                        }}
+                        verticalPadding="small"
+                      />
+                      {isExpanded &&
+                        kids.map((k) => (
+                          <ListRow
+                            key={k.id}
+                            left={<View style={{ width: 28 }} />}
+                            contents={<Text style={{ color: theme.text, fontSize: 14, fontWeight: '500', marginLeft: 12 }}>{k.name}</Text>}
+                            right={category?.id === k.id ? Icon.check(theme.brand, 16) : undefined}
+                            onPress={() => {
+                              setCategory({ id: k.id, name: k.name });
+                              setCatPicker(false);
+                            }}
+                            verticalPadding="small"
+                          />
+                        ))}
+                    </View>
+                  );
+                })
+              : localCategories.map((n) => {
+                  const def = getCategoryDef(n);
+                  return (
+                    <ListRow
+                      key={n}
+                      left={<TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />}
+                      contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{n}</Text>}
+                      right={category?.name === n ? Icon.check(theme.brand, 16) : undefined}
+                      onPress={() => {
+                        setCategory({ id: 0, name: n });
+                        setCatPicker(false);
+                      }}
+                      verticalPadding="small"
+                    />
+                  );
+                })}
           </PickerOverlay>
 
           <PickerOverlay visible={dayPicker} title="결제일 선택" onClose={() => setDayPicker(false)}>
@@ -204,6 +248,7 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
           onChange={(v) => {
             setType(v === '지출' ? 'EXPENSE' : 'INCOME');
             setCategory(null);
+            setExpandedCatId(null);
           }}
         />
       </View>

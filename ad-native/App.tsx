@@ -6,7 +6,6 @@ import { NavigationContainer } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import * as WebBrowser from 'expo-web-browser';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import RootNavigator from './src/navigation/RootNavigator';
 
 // 구글 로그인 인앱 브라우저 세션이 앱 복귀 시 제대로 닫히도록 앱 시작 시 1회 호출
@@ -29,12 +28,10 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
-          <BottomSheetModalProvider>
-            <NavigationContainer>
-              <RootNavigator />
-              <StatusBar style="auto" />
-            </NavigationContainer>
-          </BottomSheetModalProvider>
+          <NavigationContainer>
+            <RootNavigator />
+            <StatusBar style="auto" />
+          </NavigationContainer>
         </SafeAreaProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>

@@ -31,6 +31,8 @@ export interface Category {
   type: CategoryType;
   name: string;
   icon: string;
+  color: string | null;
+  parentId: number | null;
   isBuiltin: boolean;
 }
 

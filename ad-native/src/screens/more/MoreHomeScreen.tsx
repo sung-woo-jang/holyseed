@@ -32,7 +32,7 @@ export default function MoreHomeScreen({ navigation }: Props) {
   const owner = data.members.find((m) => m.role === 'OWNER');
   const memberCount = data.members.length;
 
-  const menuItems: { emojiCode: string; bgColor: string; label: string; detail: string; route: keyof MoreStackParamList }[] = [
+  const menuItems: { emojiCode: string; bgColor: string; label: string; detail: string; route: 'Members' | 'Cashflow' | 'Compare' | 'Categories' | 'Settings' }[] = [
     { emojiCode: TE.people, bgColor: theme.dark ? '#1e2a40' : '#EBF5FB', label: '멤버 관리', detail: `${memberCount}명이 함께하고 있어요`, route: 'Members' },
     { emojiCode: TE.money, bgColor: theme.dark ? '#1a2e28' : '#E8F8F5', label: '현금흐름', detail: '수입·지출·저축률 분석', route: 'Cashflow' },
     { emojiCode: TE.chartBar, bgColor: theme.dark ? '#1a2340' : '#EEF2FF', label: '연간 비교', detail: '자산군별 증감 워터폴', route: 'Compare' },

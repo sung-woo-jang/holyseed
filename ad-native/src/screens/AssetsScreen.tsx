@@ -143,9 +143,7 @@ export default function AssetsScreen({ navigation }: Props) {
           <View style={styles.actionRow}>
             <Pressable
               style={[styles.actionBtn, { backgroundColor: theme.brand }]}
-              onPress={() => {
-                setSnapshotOpen(true);
-              }}
+              onPress={() => setSnapshotOpen(true)}
             >
               <TossEmoji code={TE.camera} size={18} />
               <Text style={styles.actionBtnPrimary}>일괄 스냅샷</Text>

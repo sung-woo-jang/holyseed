@@ -26,4 +26,9 @@ export class CreateCategoryDto {
   @IsOptional()
   @IsNumber()
   sortOrder?: number;
+
+  @ApiPropertyOptional({ description: '상위 카테고리 ID (지정 시 소분류로 생성)' })
+  @IsOptional()
+  @IsNumber()
+  parentId?: number;
 }

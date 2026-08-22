@@ -1,105 +1,52 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Border from '../../components/ui/Border';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Button from '../../components/ui/Button';
-import ListHeader from '../../components/ui/ListHeader';
-import ListRow from '../../components/ui/ListRow';
-import TextField from '../../components/ui/TextField';
-import SheetModal from '../../components/sheets/SheetModal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import AppToast from '../../components/common/AppToast';
 import TossEmoji from '../../components/common/TossEmoji';
 import Segmented from '../../components/common/Segmented';
 import { useTheme } from '../../lib/theme';
-import { useHouseholdData } from '../../queries/useHouseholdData';
+import { useHouseholdData, type HouseholdData } from '../../queries/useHouseholdData';
 import { useAuthStore } from '../../stores/auth.store';
 import { getCategoryDef } from '../../lib/category-meta';
-import { CATEGORY_ICON_CHOICES } from '../../lib/toss-emoji';
-import { useCreateCategory, useDeleteCategory } from '../../queries/mutations';
+import { useDeleteCategory } from '../../queries/mutations';
 import type { CategoryType } from '../../types/api';
+import type { MoreStackParamList } from '../../navigation/types';
+
+type Props = NativeStackScreenProps<MoreStackParamList, 'Categories'>;
+type CategoryItem = HouseholdData['categories'][number];
 
 const TYPE_LABELS: Record<CategoryType, string> = { INCOME: '수입', EXPENSE: '지출' };
-const COLORS = ['#3182F6', '#0AB39C', '#F59E0B', '#EF4444', '#A78BFA', '#EC4899', '#06B6D4', '#8B5CF6'];
 
-function AddCategorySheet({ visible, onClose, onAdd }: { visible: boolean; onClose: () => void; onAdd: (dto: { type: CategoryType; name: string; icon: string }) => Promise<void> }) {
-  const theme = useTheme();
-  const [name, setName] = useState('');
-  const [type, setType] = useState<CategoryType>('EXPENSE');
-  const [iconCode, setIconCode] = useState(CATEGORY_ICON_CHOICES[0]?.code ?? '1F381');
-  const [saving, setSaving] = useState(false);
-
-  async function handleAdd() {
-    if (!name.trim()) return;
-    setSaving(true);
-    try {
-      await onAdd({ type, name: name.trim(), icon: iconCode });
-      setName('');
-      setType('EXPENSE');
-      setIconCode(CATEGORY_ICON_CHOICES[0]?.code ?? '1F381');
-      onClose();
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <SheetModal
-      visible={visible}
-      onClose={onClose}
-      header="카테고리 추가"
-      cta={
-        <Button display="full" size="big" type="primary" disabled={!name.trim()} loading={saving} onPress={handleAdd}>
-          추가하기
-        </Button>
-      }
-    >
-      <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>이름</Text>
-      <TextField variant="line" placeholder="카테고리 이름" value={name} onChangeText={setName} style={{ marginBottom: 16 }} />
-
-      <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>유형</Text>
-      <View style={{ marginBottom: 16 }}>
-        <Segmented
-          options={['수입', '지출']}
-          value={TYPE_LABELS[type]}
-          onChange={(v) => {
-            const t = Object.entries(TYPE_LABELS).find(([, label]) => label === v)?.[0] as CategoryType;
-            if (t) setType(t);
-          }}
-        />
-      </View>
-
-      <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>아이콘</Text>
-      <View style={styles.iconGrid}>
-        {CATEGORY_ICON_CHOICES.map((c) => (
-          <Pressable
-            key={c.id}
-            style={[styles.iconCell, { backgroundColor: iconCode === c.code ? theme.brandSoft : theme.bg, borderColor: iconCode === c.code ? theme.brand : theme.border }]}
-            onPress={() => setIconCode(c.code)}
-          >
-            <TossEmoji code={c.code} size={32} />
-          </Pressable>
-        ))}
-      </View>
-    </SheetModal>
-  );
+function iconAndColor(c: CategoryItem) {
+  const def = getCategoryDef(c.name);
+  return { icon: c.icon || def.iconCode, color: c.color || def.color };
 }
 
-export default function CategoriesScreen() {
+export default function CategoriesScreen({ navigation }: Props) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const data = useHouseholdData();
   const role = useAuthStore((s) => s.currentHousehold?.role);
   const canEdit = role !== 'VIEWER';
-  const [addVisible, setAddVisible] = useState(false);
+  const [tab, setTab] = useState<CategoryType>('EXPENSE');
+  const [deleteMode, setDeleteMode] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
   const [toast, setToast] = useState('');
-  const createCategory = useCreateCategory();
   const deleteCategory = useDeleteCategory();
 
-  const typeOrder: CategoryType[] = ['INCOME', 'EXPENSE'];
+  const topLevel = data.categories.filter((c) => c.type === tab && !c.parentId);
+  const childCount = (id: number) => data.categories.filter((c) => c.parentId === id).length;
 
-  async function handleAdd(dto: { type: CategoryType; name: string; icon: string }) {
-    await createCategory.mutateAsync(dto);
-    setToast('카테고리를 추가했어요');
+  function handleCellPress(c: CategoryItem) {
+    if (deleteMode) {
+      if (c.isBuiltin) return;
+      setDeleteTarget({ id: c.id, name: c.name });
+      return;
+    }
+    navigation.navigate('CategoryEdit', { mode: 'edit', categoryId: c.id });
   }
 
   async function confirmDelete() {
@@ -114,76 +61,64 @@ export default function CategoriesScreen() {
     }
   }
 
-  const hasApiCategories = data.categories.length > 0;
-  const builtinByType: Record<CategoryType, string[]> = {
-    INCOME: ['급여', '투자수익', '사업소득', '기타수입'],
-    EXPENSE: ['주거', '식비', '교통', '의료', '쇼핑', '여가', '교육', '보험료', '구독', '기타'],
-  };
-
   return (
-    <ScrollView style={[styles.root, { backgroundColor: theme.bg }]}>
-      <Text style={[styles.subtitle, { color: theme.textMuted }]}>기본 카테고리에 더해, 우리집만의 카테고리를 만들 수 있어요.</Text>
+    <View style={[styles.root, { backgroundColor: theme.bg }]}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 110 }}>
+        <Text style={[styles.subtitle, { color: theme.textMuted }]}>기본 카테고리에 더해, 우리집만의 카테고리와 소분류를 만들 수 있어요.</Text>
 
-      {typeOrder.map((t) => {
-        const items = hasApiCategories
-          ? data.categories.filter((c) => c.type === t).map((c) => {
-              const def = getCategoryDef(c.name);
-              return { id: c.id, name: c.name, isBuiltin: c.isBuiltin, iconCode: def.iconCode, color: def.color };
-            })
-          : builtinByType[t].map((name) => ({ id: 0, name, isBuiltin: true, iconCode: getCategoryDef(name).iconCode, color: getCategoryDef(name).color }));
+        <View style={styles.sectionPad}>
+          <Segmented
+            options={['수입', '지출']}
+            value={TYPE_LABELS[tab]}
+            onChange={(v) => {
+              setTab(v === '수입' ? 'INCOME' : 'EXPENSE');
+              setDeleteMode(false);
+            }}
+          />
+        </View>
 
-        return (
-          <View key={t}>
-            <ListHeader title={<ListHeader.TitleParagraph typography="t5">{TYPE_LABELS[t]} ({items.length})</ListHeader.TitleParagraph>} />
-            {items.map((item, idx) => (
-              <View key={item.id || item.name}>
-                <ListRow
-                  left={
-                    <View style={[styles.catIconBox, { backgroundColor: item.color + '22' }]}>
-                      <TossEmoji code={item.iconCode} size={28} />
-                    </View>
-                  }
-                  contents={
-                    <View>
-                      <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{item.name}</Text>
-                      <Text style={{ color: theme.textMuted, fontSize: 11 }}>{item.isBuiltin ? '기본' : '커스텀'}</Text>
-                    </View>
-                  }
-                  right={
-                    <View style={styles.catRight}>
-                      <View style={[styles.colorDot, { backgroundColor: item.color }]} />
-                      {!item.isBuiltin && canEdit && item.id > 0 && (
-                        <Pressable onPress={() => setDeleteTarget({ id: item.id, name: item.name })}>
-                          <Text style={{ color: theme.danger, fontSize: 12, fontWeight: '700' }}>삭제</Text>
-                        </Pressable>
-                      )}
-                    </View>
-                  }
-                  verticalPadding="small"
-                />
-                {idx < items.length - 1 && <Border type="full" />}
-              </View>
-            ))}
-            <Border type="full" height={16} />
-          </View>
-        );
-      })}
+        <View style={styles.grid}>
+          {topLevel.map((c) => {
+            const { icon, color } = iconAndColor(c);
+            return (
+              <Pressable key={c.id} style={styles.cell} onPress={() => handleCellPress(c)}>
+                {deleteMode && !c.isBuiltin && (
+                  <View style={[styles.xBadge, { backgroundColor: theme.danger }]}>
+                    <Text style={styles.xBadgeText}>×</Text>
+                  </View>
+                )}
+                <View style={[styles.iconBox, { backgroundColor: color + '22' }]}>
+                  <TossEmoji code={icon} size={26} />
+                </View>
+                <Text style={[styles.cellName, { color: theme.text }]} numberOfLines={1}>
+                  {c.name}
+                </Text>
+                <Text style={[styles.cellSub, { color: theme.textMuted }]}>소분류 {childCount(c.id)}개</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </ScrollView>
 
       {canEdit && (
-        <View style={{ paddingHorizontal: 20, paddingVertical: 12 }}>
-          <Button display="full" size="big" type="primary" style="weak" onPress={() => setAddVisible(true)}>
-            + 카테고리 추가
-          </Button>
+        <View style={[styles.footer, { paddingBottom: 16 + insets.bottom, backgroundColor: theme.bg, borderTopColor: theme.border }]}>
+          <View style={{ flex: 1 }}>
+            <Button display="full" size="big" type="primary" style="weak" onPress={() => navigation.navigate('CategoryEdit', { mode: 'add', type: tab })}>
+              추가
+            </Button>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button display="full" size="big" type={deleteMode ? 'danger' : 'primary'} onPress={() => setDeleteMode((v) => !v)}>
+              {deleteMode ? '완료' : '편집'}
+            </Button>
+          </View>
         </View>
       )}
 
-      <View style={{ height: 32 }} />
-
-      <AddCategorySheet visible={addVisible} onClose={() => setAddVisible(false)} onAdd={handleAdd} />
       <ConfirmDialog
         visible={!!deleteTarget}
         title="카테고리를 삭제할까요?"
-        description={deleteTarget ? `"${deleteTarget.name}" 카테고리가 삭제돼요.` : undefined}
+        description={deleteTarget ? `"${deleteTarget.name}" 및 하위 소분류가 함께 삭제돼요.` : undefined}
         confirmText="삭제하기"
         danger
         loading={deleteCategory.isPending}
@@ -191,17 +126,20 @@ export default function CategoriesScreen() {
         onClose={() => setDeleteTarget(null)}
       />
       <AppToast open={!!toast} text={toast} onClose={() => setToast('')} />
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  subtitle: { fontSize: 12.5, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  fieldLabel: { fontSize: 12, fontWeight: '600', marginBottom: 8 },
-  iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  iconCell: { width: 52, height: 52, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  catIconBox: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  catRight: { alignItems: 'flex-end', gap: 6 },
-  colorDot: { width: 12, height: 12, borderRadius: 6 },
+  subtitle: { fontSize: 12.5, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 },
+  sectionPad: { paddingHorizontal: 20, paddingTop: 12 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12, paddingTop: 20 },
+  cell: { width: '25%', alignItems: 'center', paddingVertical: 10, position: 'relative' },
+  iconBox: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  cellName: { fontSize: 12, fontWeight: '700', marginTop: 6, maxWidth: 68, textAlign: 'center' },
+  cellSub: { fontSize: 9.5, marginTop: 2 },
+  xBadge: { position: 'absolute', top: 2, right: 10, width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
+  xBadgeText: { color: '#fff', fontSize: 12, fontWeight: '800', lineHeight: 14 },
+  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', gap: 8, padding: 16, borderTopWidth: 1 },
 });

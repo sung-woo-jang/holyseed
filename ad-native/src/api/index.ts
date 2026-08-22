@@ -137,10 +137,10 @@ export const categoriesApi = {
   list: (householdId: number) =>
     api.get<Category[]>(`/households/${householdId}/categories`).then((r) => r.data),
 
-  create: (householdId: number, dto: { type: CategoryType; name: string; icon: string }) =>
+  create: (householdId: number, dto: { type: CategoryType; name: string; icon: string; color?: string; parentId?: number }) =>
     api.post<Category>(`/households/${householdId}/categories`, dto).then((r) => r.data),
 
-  update: (id: number, dto: Partial<{ name: string; icon: string }>) =>
+  update: (id: number, dto: Partial<{ name: string; icon: string; color: string; parentId: number }>) =>
     api.post<Category>(`/categories/${id}/update`, dto).then((r) => r.data),
 
   delete: (id: number) => api.post(`/categories/${id}/delete`).then((r) => r.data),

@@ -17,31 +17,44 @@
   justify-content: space-between;
   gap: var(--spacing-sm);
   margin-top: var(--spacing-md);
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--netflix-dark-gray, #1f1f1f);
 }
 
 .addressText {
-  font-size: var(--font-size-sm);
-  color: var(--color-text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--netflix-white, #ffffff);
 }
 
 .copyButton {
   flex-shrink: 0;
-  padding: 6px 12px;
+  padding: 8px 14px;
   border-radius: 8px;
-  border: 1px solid var(--color-border);
-  background: #fff;
-  color: var(--color-text);
-  font-size: var(--font-size-sm);
-  font-weight: 500;
+  border: none;
+  background: #ffffff;
+  color: #141414;
+  font-size: 0.85rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: opacity 0.2s ease;
 }
 
 .copyButton:hover {
-  background-color: var(--color-background-alt);
+  opacity: 0.85;
+}
+
+@media (max-width: 480px) {
+  .addressRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .copyButton {
+    width: 100%;
+  }
 }
 
 .buttons {

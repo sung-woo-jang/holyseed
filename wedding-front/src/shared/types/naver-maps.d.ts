@@ -65,12 +65,14 @@ interface NaverMaps {
     options: {
       center: NaverLatLng
       zoom: number
+      draggable?: boolean
       scrollWheel?: boolean
       pinchZoom?: boolean
       disableDoubleClickZoom?: boolean
       disableDoubleTapZoom?: boolean
       disableTwoFingerTapZoom?: boolean
       zoomControl?: boolean
+      keyboardShortcuts?: boolean
     },
   ) => NaverMapInstance
   Marker: new (options: { position: NaverLatLng; map: unknown; draggable?: boolean; icon?: NaverMarkerIcon }) => NaverMarker

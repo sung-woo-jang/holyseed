@@ -32,6 +32,12 @@ interface SheetModalProps {
  * 보호를 받지 못하는 완전히 별도의 창이라, 시스템 네비게이션 바(뒤로가기/홈/최근앱) 영역까지
  * 그대로 침범해서 그려진다 — 그래서 이 컴포넌트 자체에는 하단 세이프에어리어 패딩이 필요하다
  * (반면 화면 자체의 하단 고정 버튼은 탭바가 이미 보호하므로 중복 패딩을 넣으면 안 된다).
+ *
+ * 드래그 가능 영역은 유튜브 댓글창과 동일하게 3단으로 나뉜다:
+ * 1) 손잡이+헤더 — 어디를 터치해서 드래그해도 항상 시트가 반응 (headerPanResponder)
+ * 2) 본문(ScrollView) — 스크롤이 맨 위(0)일 때 아래로 당기면 그 순간부터 시트 드래그로 전환,
+ *    그 외엔 평범하게 스크롤됨 (bodyPanResponder, capture 단계에서만 조건부로 가로챔)
+ * 3) CTA 영역 — 드래그 핸들러를 아예 안 붙여서 항상 그대로 버튼으로만 동작
  */
 const DISMISS_DISTANCE = 120;
 const DISMISS_VELOCITY = 0.8; // PanResponder의 vy는 px/ms 단위
@@ -41,6 +47,7 @@ export default function SheetModal({ visible, onClose, header, cta, children, ov
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const dragY = useRef(new Animated.Value(0)).current;
+  const scrollYRef = useRef(0);
 
   useEffect(() => {
     if (visible) dragY.setValue(0);
@@ -53,24 +60,38 @@ export default function SheetModal({ visible, onClose, header, cta, children, ov
     return close;
   }, [visible]);
 
-  const panResponder = useRef(
+  const onDragMove = Animated.event([null, { dy: dragY }], { useNativeDriver: false });
+  function onDragRelease(_: unknown, gesture: { dy: number; vy: number }) {
+    if (gesture.dy > DISMISS_DISTANCE || gesture.vy > DISMISS_VELOCITY) {
+      // Modal이 실제로 사라지기 전에 dragY를 0으로 되돌리면 그 찰나에 시트가 열린 위치로
+      // 튀어 보였다가 사라지는 깜빡임이 생긴다 — onClose 이후 visible이 false가 되어
+      // Modal이 언마운트된 다음(useEffect에서) 리셋되도록 여기서는 리셋하지 않는다.
+      Animated.timing(dragY, { toValue: 800, duration: 200, useNativeDriver: false }).start(onClose);
+    } else {
+      Animated.spring(dragY, { toValue: 0, useNativeDriver: false, bounciness: 0 }).start();
+    }
+  }
+
+  const headerPanResponder = useRef(
     PanResponder.create({
-      // 손잡이 View가 바깥 Pressable(스크림/전파차단)보다 더 깊은 자식이라, 터치 시작 즉시
-      // 여기서 responder를 선점해야 Pressable의 onPress 협상에 뺏기지 않는다.
+      // 손잡이+헤더 아래엔 스크롤 콘텐츠가 없어서, 터치 시작 즉시 여기서 responder를 선점해도
+      // (바깥 Pressable의 onPress 협상에 뺏기지 않도록) 스크롤과 충돌할 일이 없다.
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderTerminationRequest: () => false,
-      onPanResponderMove: Animated.event([null, { dy: dragY }], { useNativeDriver: false }),
-      onPanResponderRelease: (_, gesture) => {
-        if (gesture.dy > DISMISS_DISTANCE || gesture.vy > DISMISS_VELOCITY) {
-          // Modal이 실제로 사라지기 전에 dragY를 0으로 되돌리면 그 찰나에 시트가 열린 위치로
-          // 튀어 보였다가 사라지는 깜빡임이 생긴다 — onClose 이후 visible이 false가 되어
-          // Modal이 언마운트된 다음(useEffect에서) 리셋되도록 여기서는 리셋하지 않는다.
-          Animated.timing(dragY, { toValue: 800, duration: 200, useNativeDriver: false }).start(onClose);
-        } else {
-          Animated.spring(dragY, { toValue: 0, useNativeDriver: false, bounciness: 0 }).start();
-        }
-      },
+      onPanResponderMove: onDragMove,
+      onPanResponderRelease: onDragRelease,
+    }),
+  ).current;
+
+  const bodyPanResponder = useRef(
+    PanResponder.create({
+      // capture 단계에서만 조건부로 가로챈다: 스크롤이 맨 위(0)이고 아래로 당기는 제스처일 때만
+      // 시트 드래그로 넘기고, 그 외엔 false를 반환해 ScrollView가 평소처럼 스크롤하게 둔다.
+      onMoveShouldSetPanResponderCapture: (_, gesture) => scrollYRef.current <= 0 && gesture.dy > 6 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderMove: onDragMove,
+      onPanResponderRelease: onDragRelease,
     }),
   ).current;
 
@@ -85,15 +106,25 @@ export default function SheetModal({ visible, onClose, header, cta, children, ov
               onPress={(e) => e.stopPropagation()}
               style={[styles.sheet, { backgroundColor: theme.card, transform: [{ translateY }] }]}
             >
-              <View style={styles.handleWrap} hitSlop={{ top: 12, bottom: 12, left: 40, right: 40 }} {...panResponder.panHandlers}>
-                <View style={[styles.handleBar, { backgroundColor: theme.border }]} />
-              </View>
-              {header && (
-                <View style={[styles.header, { borderBottomColor: theme.border }]}>
-                  <Text style={[styles.headerText, { color: theme.text }]}>{header}</Text>
+              <View {...headerPanResponder.panHandlers}>
+                <View style={styles.handleWrap}>
+                  <View style={[styles.handleBar, { backgroundColor: theme.border }]} />
                 </View>
-              )}
-              <ScrollView contentContainerStyle={[styles.body, !cta && { paddingBottom: 24 + insets.bottom }]} keyboardShouldPersistTaps="handled">
+                {header && (
+                  <View style={[styles.header, { borderBottomColor: theme.border }]}>
+                    <Text style={[styles.headerText, { color: theme.text }]}>{header}</Text>
+                  </View>
+                )}
+              </View>
+              <ScrollView
+                contentContainerStyle={[styles.body, !cta && { paddingBottom: 24 + insets.bottom }]}
+                keyboardShouldPersistTaps="handled"
+                onScroll={(e) => {
+                  scrollYRef.current = e.nativeEvent.contentOffset.y;
+                }}
+                scrollEventThrottle={16}
+                {...bodyPanResponder.panHandlers}
+              >
                 {children}
               </ScrollView>
               {cta && (

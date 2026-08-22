@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import Border from '../components/ui/Border';
 import ListRow from '../components/ui/ListRow';
@@ -45,7 +45,6 @@ type DayItem =
 
 export default function BookScreen() {
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
   const data = useHouseholdData();
   const currentHousehold = useAuthStore((s) => s.currentHousehold);
   const isViewer = currentHousehold?.role === 'VIEWER';
@@ -584,7 +583,7 @@ export default function BookScreen() {
       </ScrollView>
 
       {!isViewer && (
-        <Pressable style={[styles.fab, { bottom: 20 + insets.bottom, backgroundColor: theme.brand }]} onPress={openAddForDay}>
+        <Pressable style={[styles.fab, { backgroundColor: theme.brand }]} onPress={openAddForDay}>
           {Icon.plus('#fff')}
         </Pressable>
       )}

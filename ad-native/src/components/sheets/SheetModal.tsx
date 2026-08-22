@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Animated, KeyboardAvoidingView, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../lib/theme';
 import { useSheetStore } from '../../stores/sheet.store';
 
@@ -27,8 +28,10 @@ interface SheetModalProps {
  * 대신 RN 코어 내장 PanResponder로 재구현 — 별도 네이티브 뷰/루트가 필요 없는 순수 JS 터치
  * responder라 Modal 안에서도 추가 래핑 없이 안전하게 동작한다.
  *
- * 하단 세이프에어리어 패딩은 일부러 안 넣는다 — 이 앱은 어느 화면에서도 하단 탭바가 사라지지
- * 않고, 탭바 자체가 이미 제스처 네비게이션 바 영역을 흡수하므로 시트는 애초에 거기 닿지 않는다.
+ * Modal은 앱의 일반 화면과 달리 하단 탭바(제스처 네비게이션 바 영역을 이미 흡수하고 있는)의
+ * 보호를 받지 못하는 완전히 별도의 창이라, 시스템 네비게이션 바(뒤로가기/홈/최근앱) 영역까지
+ * 그대로 침범해서 그려진다 — 그래서 이 컴포넌트 자체에는 하단 세이프에어리어 패딩이 필요하다
+ * (반면 화면 자체의 하단 고정 버튼은 탭바가 이미 보호하므로 중복 패딩을 넣으면 안 된다).
  */
 const DISMISS_DISTANCE = 120;
 const DISMISS_VELOCITY = 0.8; // PanResponder의 vy는 px/ms 단위
@@ -36,6 +39,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function SheetModal({ visible, onClose, header, cta, children, overlay }: SheetModalProps) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const dragY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -89,11 +93,11 @@ export default function SheetModal({ visible, onClose, header, cta, children, ov
                   <Text style={[styles.headerText, { color: theme.text }]}>{header}</Text>
                 </View>
               )}
-              <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+              <ScrollView contentContainerStyle={[styles.body, !cta && { paddingBottom: 24 + insets.bottom }]} keyboardShouldPersistTaps="handled">
                 {children}
               </ScrollView>
               {cta && (
-                <View style={[styles.ctaWrap, { borderTopColor: theme.border, backgroundColor: theme.card }]}>
+                <View style={[styles.ctaWrap, { paddingBottom: 20 + insets.bottom, borderTopColor: theme.border, backgroundColor: theme.card }]}>
                   {cta}
                 </View>
               )}

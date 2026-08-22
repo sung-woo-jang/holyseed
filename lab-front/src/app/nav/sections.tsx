@@ -1,9 +1,4 @@
-import {
-  Infinity as InfinityIcon,
-  Scissors,
-  Wallet,
-  type LucideIcon,
-} from 'lucide-react'
+import { Infinity as InfinityIcon, Wallet, type LucideIcon } from 'lucide-react'
 
 export interface LabPage {
   /** 라우트 경로 */
@@ -90,13 +85,6 @@ export const SECTIONS: LabSection[] = [
         ],
       },
     ],
-  },
-  {
-    id: 'film',
-    label: '필름 재단',
-    icon: Scissors,
-    basePaths: ['/film-cutting'],
-    groups: [{ pages: [{ path: '/film-cutting', label: '재단 프로젝트', end: false }] }],
   },
 ]
 

@@ -15,7 +15,7 @@ const MARKER_SIZE = 64
 
 const buildMarkerIcon = (photoUrl: string) => ({
   content: `
-    <div style="width:${MARKER_SIZE}px;height:${MARKER_SIZE}px;border-radius:50%;overflow:hidden;background:#fff;box-shadow:0 0 0 3px #ffffff,0 6px 14px rgba(0,0,0,0.35);">
+    <div style="width:${MARKER_SIZE}px;height:${MARKER_SIZE}px;border-radius:50%;overflow:hidden;background:#fff;box-shadow:0 0 0 1px #000000,0 6px 14px rgba(0,0,0,0.35);">
       <img src="${photoUrl}" style="width:100%;height:100%;object-fit:cover;display:block;" />
     </div>
   `,

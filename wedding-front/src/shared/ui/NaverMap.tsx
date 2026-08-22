@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import cn from 'classnames'
+import { useToast } from '@/shared/ui/toast'
 import styles from './NaverMap.module.css'
 
 interface NaverMapProps {
@@ -30,8 +31,9 @@ const buildInfoWindowContent = (venueName: string, weddingDateLabel?: string) =>
   </div>
 `
 
-export default function NaverMap({ lat, lng, venueName, photoUrl, weddingDateLabel }: NaverMapProps) {
+export default function NaverMap({ lat, lng, venueName, address, photoUrl, weddingDateLabel }: NaverMapProps) {
   const mapRef = useRef<HTMLDivElement>(null)
+  const toast = useToast()
 
   useEffect(() => {
     const loadNaverMap = () => {
@@ -88,9 +90,24 @@ export default function NaverMap({ lat, lng, venueName, photoUrl, weddingDateLab
     window.open(`https://map.naver.com/p/search/${encodeURIComponent(venueName)}`, '_blank')
   }
 
+  const handleCopyAddress = async () => {
+    try {
+      await navigator.clipboard.writeText(address)
+      toast.success('주소가 복사되었습니다.')
+    } catch {
+      toast.error('주소 복사에 실패했습니다.')
+    }
+  }
+
   return (
     <div className={styles.wrapper}>
       <div ref={mapRef} className={styles.map}></div>
+      <div className={styles.addressRow}>
+        <span className={styles.addressText}>{address}</span>
+        <button type="button" onClick={handleCopyAddress} className={styles.copyButton}>
+          주소 복사
+        </button>
+      </div>
       <div className={styles.buttons}>
         <button type="button" onClick={openNaverNavi} className={cn(styles.button, styles.buttonNaver)}>
           <span role="img" aria-label="navi">

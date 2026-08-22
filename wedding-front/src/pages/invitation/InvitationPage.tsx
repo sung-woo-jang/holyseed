@@ -17,7 +17,6 @@ import { Media, WeddingVenue, AccountInfo, mediaResizedUrl } from '@/shared/type
 import NetflixIntro from '@/widgets/netflix-intro/NetflixIntro'
 import NetflixNav from '@/shared/ui/NetflixNav'
 import NetflixRow from '@/widgets/netflix-row/NetflixRow'
-import VenueModal from '@/shared/ui/VenueModal'
 import AttendanceModal from '@/features/rsvp/AttendanceModal'
 import NaverMapScript from '@/shared/ui/NaverMapScript'
 import { useToast } from '@/shared/ui/toast'
@@ -43,7 +42,6 @@ function InvitationContent() {
   const [videoLightbox, setVideoLightbox] = useState<string | null>(null)
   const [guestMedia, setGuestMedia] = useState<Media[]>([])
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
-  const [venueModalOpen, setVenueModalOpen] = useState(false)
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false)
   const [dynamicContentRows, setDynamicContentRows] = useState<any[]>([])
   const [heroIndex, setHeroIndex] = useState(0)
@@ -65,7 +63,6 @@ function InvitationContent() {
       if (e.key === 'Escape') {
         setLightboxIndex(null)
         setVideoLightbox(null)
-        setVenueModalOpen(false)
         setAttendanceModalOpen(false)
       }
     }
@@ -74,13 +71,13 @@ function InvitationContent() {
   }, [])
 
   useEffect(() => {
-    if (lightboxIndex !== null || videoLightbox !== null || venueModalOpen || attendanceModalOpen) {
+    if (lightboxIndex !== null || videoLightbox !== null || attendanceModalOpen) {
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = ''
     }
     return () => { document.body.style.overflow = '' }
-  }, [lightboxIndex, videoLightbox, venueModalOpen, attendanceModalOpen])
+  }, [lightboxIndex, videoLightbox, attendanceModalOpen])
 
   useEffect(() => {
     if (!couple?.id) return
@@ -237,7 +234,6 @@ function InvitationContent() {
       title: '웨딩데이 정보',
       type: 'info-card-row',
       items: [
-        venue ? { type: 'info-card', icon: '📍', title: venue.name, subtitle: venue.hall || '', content: venue.address, action: { label: '자세히 보기', onClick: () => { if (venue.lat && venue.lng) setVenueModalOpen(true); else document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth' }) } } } : null,
         weddingDate ? { type: 'calendar-card', year: format(weddingDate, 'yyyy'), month: format(weddingDate, 'MMMM', { locale: ko }).toUpperCase(), day: format(weddingDate, 'd'), dayName: format(weddingDate, 'EEEE', { locale: ko }), time: format(weddingDate, 'a h:mm', { locale: ko }) } : null,
         ...(accountInfo?.map((account) => ({
           type: 'account-card', icon: '🎁', relation: account.relation, holder: account.holder, bank: account.bank, account: account.account,
@@ -394,9 +390,6 @@ function InvitationContent() {
         )}
 
         {/* Modals */}
-        {venue?.lat && venue?.lng && (
-          <VenueModal isOpen={venueModalOpen} onClose={() => setVenueModalOpen(false)} venueName={venue.name} venueHall={venue.hall} address={venue.address} lat={venue.lat} lng={venue.lng} />
-        )}
         <AttendanceModal isOpen={attendanceModalOpen} onClose={() => setAttendanceModalOpen(false)} coupleId={couple.id} groomName={couple.groomName} brideName={couple.brideName} />
       </div>
     </>

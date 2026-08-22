@@ -35,9 +35,16 @@ interface SheetModalProps {
  *
  * 드래그 가능 영역은 유튜브 댓글창과 동일하게 3단으로 나뉜다:
  * 1) 손잡이+헤더 — 어디를 터치해서 드래그해도 항상 시트가 반응 (headerPanResponder)
- * 2) 본문(ScrollView) — 스크롤이 맨 위(0)일 때 아래로 당기면 그 순간부터 시트 드래그로 전환,
- *    그 외엔 평범하게 스크롤됨 (bodyPanResponder, capture 단계에서만 조건부로 가로챔)
+ * 2) 본문(ScrollView) — 스크롤이 맨 위(0)일 때 아래로 당기면 그 순간부터 시트가 같이 내려감
  * 3) CTA 영역 — 드래그 핸들러를 아예 안 붙여서 항상 그대로 버튼으로만 동작
+ *
+ * 2번은 원래 PanResponder의 capture 단계로 ScrollView의 터치를 가로채려 했으나 동작하지
+ * 않았다 — 안드로이드 ScrollView는 손가락이 조금만 움직여도 곧바로
+ * `requestDisallowInterceptTouchEvent(true)`를 호출해 네이티브 레벨에서 부모의 터치 가로채기
+ * 자체를 막아버리기 때문에(JS 레벨 PanResponder capture로는 우회 불가), 대신 ScrollView의
+ * onScroll이 보고하는 오버스크롤(맨 위에서 더 당겼을 때의 음수 contentOffset)을 그대로
+ * dragY에 반영하는 방식으로 구현 — 터치를 가로채지 않고 ScrollView가 처리한 결과를 관찰만
+ * 하므로 네이티브 터치 소유권 다툼이 아예 없다.
  */
 const DISMISS_DISTANCE = 120;
 const DISMISS_VELOCITY = 0.8; // PanResponder의 vy는 px/ms 단위
@@ -84,16 +91,18 @@ export default function SheetModal({ visible, onClose, header, cta, children, ov
     }),
   ).current;
 
-  const bodyPanResponder = useRef(
-    PanResponder.create({
-      // capture 단계에서만 조건부로 가로챈다: 스크롤이 맨 위(0)이고 아래로 당기는 제스처일 때만
-      // 시트 드래그로 넘기고, 그 외엔 false를 반환해 ScrollView가 평소처럼 스크롤하게 둔다.
-      onMoveShouldSetPanResponderCapture: (_, gesture) => scrollYRef.current <= 0 && gesture.dy > 6 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
-      onPanResponderTerminationRequest: () => false,
-      onPanResponderMove: onDragMove,
-      onPanResponderRelease: onDragRelease,
-    }),
-  ).current;
+  function onBodyScroll(y: number) {
+    scrollYRef.current = y;
+    // 맨 위에서 더 당긴 만큼(음수 오버스크롤)을 그대로 시트 드래그 거리로 반영
+    if (y < 0) dragY.setValue(-y);
+  }
+
+  function onBodyScrollEndDrag() {
+    if (scrollYRef.current < -DISMISS_DISTANCE) {
+      Animated.timing(dragY, { toValue: 800, duration: 200, useNativeDriver: false }).start(onClose);
+    }
+    // 임계값 미만이면 별도 처리 불필요 — ScrollView 자체가 0으로 되돌아오면서 dragY도 같이 0으로 따라옴
+  }
 
   const translateY = dragY.interpolate({ inputRange: [0, 1], outputRange: [0, 1], extrapolateLeft: 'clamp' });
 
@@ -119,11 +128,10 @@ export default function SheetModal({ visible, onClose, header, cta, children, ov
               <ScrollView
                 contentContainerStyle={[styles.body, !cta && { paddingBottom: 24 + insets.bottom }]}
                 keyboardShouldPersistTaps="handled"
-                onScroll={(e) => {
-                  scrollYRef.current = e.nativeEvent.contentOffset.y;
-                }}
+                overScrollMode="always"
+                onScroll={(e) => onBodyScroll(e.nativeEvent.contentOffset.y)}
+                onScrollEndDrag={onBodyScrollEndDrag}
                 scrollEventThrottle={16}
-                {...bodyPanResponder.panHandlers}
               >
                 {children}
               </ScrollView>

@@ -9,21 +9,6 @@ interface NaverMapProps {
   address: string
 }
 
-interface NaverMaps {
-  LatLng: new (lat: number, lng: number) => unknown
-  Map: new (container: HTMLElement, options: { center: unknown; zoom: number }) => unknown
-  Marker: new (options: { position: unknown; map: unknown }) => unknown
-  InfoWindow: new (options: { content: string }) => { open: (map: unknown, marker: unknown) => void }
-}
-
-declare global {
-  interface Window {
-    naver: {
-      maps: NaverMaps
-    }
-  }
-}
-
 export default function NaverMap({ lat, lng, venueName }: NaverMapProps) {
   const mapRef = useRef<HTMLDivElement>(null)
 

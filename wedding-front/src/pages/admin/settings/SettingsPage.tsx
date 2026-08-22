@@ -3,6 +3,8 @@ import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { api, TOKEN_KEY } from '@/shared/api'
+import NaverMapScript from '@/shared/ui/NaverMapScript'
+import VenueAddressPicker from '@/shared/ui/VenueAddressPicker'
 import styles from './SettingsPage.module.css'
 import adminStyles from '../admin-page.module.css'
 
@@ -21,6 +23,8 @@ const settingsSchema = z.object({
   venueAddress: z.string().optional(),
   venueHall: z.string().optional(),
   venueFloor: z.string().optional(),
+  venueLat: z.number().optional(),
+  venueLng: z.number().optional(),
   accountInfo: z.array(accountSchema).optional(),
 })
 
@@ -32,7 +36,7 @@ export default function AdminSettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<SettingsFormData>({ resolver: zodResolver(settingsSchema) })
+  const { register, handleSubmit, reset, control, setValue, watch, formState: { errors } } = useForm<SettingsFormData>({ resolver: zodResolver(settingsSchema) })
   const { fields, append, remove } = useFieldArray({ control, name: 'accountInfo' })
 
   useEffect(() => {
@@ -52,6 +56,8 @@ export default function AdminSettingsPage() {
           venueAddress: c.weddingVenue?.address ?? '',
           venueHall: c.weddingVenue?.hall ?? '',
           venueFloor: c.weddingVenue?.floor ?? '',
+          venueLat: c.weddingVenue?.lat,
+          venueLng: c.weddingVenue?.lng,
           accountInfo: Array.isArray(c.accountInfo) ? c.accountInfo : [],
         })
       })
@@ -69,7 +75,7 @@ export default function AdminSettingsPage() {
         groomName: data.groomName,
         brideName: data.brideName,
         weddingDate: data.weddingDate ? new Date(data.weddingDate).toISOString() : undefined,
-        weddingVenue: data.venueName ? { name: data.venueName, address: data.venueAddress ?? '', hall: data.venueHall ?? '', floor: data.venueFloor ?? '' } : undefined,
+        weddingVenue: data.venueName ? { name: data.venueName, address: data.venueAddress ?? '', hall: data.venueHall ?? '', floor: data.venueFloor ?? '', lat: data.venueLat, lng: data.venueLng } : undefined,
         accountInfo: accounts,
       })
       setMessage({ type: 'success', text: '저장되었습니다.' })
@@ -84,6 +90,7 @@ export default function AdminSettingsPage() {
 
   return (
     <div className={adminStyles.pageContainer}>
+      <NaverMapScript />
       <div className={styles.container}>
         <div className={adminStyles.pageHeader}>
           <h1 className={adminStyles.title}>청첩장 설정</h1>
@@ -120,6 +127,19 @@ export default function AdminSettingsPage() {
               <div className={styles.formGroupFull}><label htmlFor="venueAddress" className={styles.label}>주소</label><input {...register('venueAddress')} type="text" id="venueAddress" className={styles.input} /></div>
               <div className={styles.formGroup}><label htmlFor="venueHall" className={styles.label}>홀 이름</label><input {...register('venueHall')} type="text" id="venueHall" className={styles.input} /></div>
               <div className={styles.formGroup}><label htmlFor="venueFloor" className={styles.label}>층</label><input {...register('venueFloor')} type="text" id="venueFloor" className={styles.input} /></div>
+              <div className={styles.formGroupFull}>
+                <label className={styles.label}>지도에서 위치 찾기</label>
+                <VenueAddressPicker
+                  initialAddress={watch('venueAddress')}
+                  initialLat={watch('venueLat')}
+                  initialLng={watch('venueLng')}
+                  onChange={({ address, lat, lng }) => {
+                    setValue('venueAddress', address)
+                    setValue('venueLat', lat)
+                    setValue('venueLng', lng)
+                  }}
+                />
+              </div>
             </div>
           </section>
 

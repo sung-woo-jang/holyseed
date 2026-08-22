@@ -1,0 +1,69 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.searchRow {
+  display: flex;
+  gap: 8px;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 11px 13px;
+  border: 1px solid var(--w-border-strong);
+  border-radius: 9px;
+  font-size: 0.9rem;
+  background: var(--w-input);
+  color: var(--w-ink);
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--w-accent);
+}
+
+.searchButton {
+  flex-shrink: 0;
+  padding: 0 20px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--w-ink);
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.searchButton:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.searchButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.errorText {
+  font-size: 0.8rem;
+  color: var(--w-rejected-fg);
+  margin: 0;
+}
+
+.map {
+  width: 100%;
+  height: 260px;
+  border-radius: 9px;
+  border: 1px solid var(--w-border);
+  overflow: hidden;
+}
+
+.hint {
+  font-size: 0.78rem;
+  color: var(--w-muted);
+  margin: 0;
+}

@@ -32,6 +32,7 @@ interface SheetModalProps {
  */
 const DISMISS_DISTANCE = 120;
 const DISMISS_VELOCITY = 0.8; // PanResponder의 vy는 px/ms 단위
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function SheetModal({ visible, onClose, header, cta, children, overlay }: SheetModalProps) {
   const theme = useTheme();
@@ -76,26 +77,27 @@ export default function SheetModal({ visible, onClose, header, cta, children, ov
       <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
         <Pressable style={styles.scrim} onPress={onClose}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.kav}>
-            <Pressable onPress={(e) => e.stopPropagation()}>
-              <Animated.View style={[styles.sheet, { backgroundColor: theme.card, transform: [{ translateY }] }]}>
-                <View style={styles.handleWrap} hitSlop={{ top: 12, bottom: 12, left: 40, right: 40 }} {...panResponder.panHandlers}>
-                  <View style={[styles.handleBar, { backgroundColor: theme.border }]} />
+            <AnimatedPressable
+              onPress={(e) => e.stopPropagation()}
+              style={[styles.sheet, { backgroundColor: theme.card, transform: [{ translateY }] }]}
+            >
+              <View style={styles.handleWrap} hitSlop={{ top: 12, bottom: 12, left: 40, right: 40 }} {...panResponder.panHandlers}>
+                <View style={[styles.handleBar, { backgroundColor: theme.border }]} />
+              </View>
+              {header && (
+                <View style={[styles.header, { borderBottomColor: theme.border }]}>
+                  <Text style={[styles.headerText, { color: theme.text }]}>{header}</Text>
                 </View>
-                {header && (
-                  <View style={[styles.header, { borderBottomColor: theme.border }]}>
-                    <Text style={[styles.headerText, { color: theme.text }]}>{header}</Text>
-                  </View>
-                )}
-                <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-                  {children}
-                </ScrollView>
-                {cta && (
-                  <View style={[styles.ctaWrap, { borderTopColor: theme.border, backgroundColor: theme.card }]}>
-                    {cta}
-                  </View>
-                )}
-              </Animated.View>
-            </Pressable>
+              )}
+              <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+                {children}
+              </ScrollView>
+              {cta && (
+                <View style={[styles.ctaWrap, { borderTopColor: theme.border, backgroundColor: theme.card }]}>
+                  {cta}
+                </View>
+              )}
+            </AnimatedPressable>
           </KeyboardAvoidingView>
         </Pressable>
       </Modal>

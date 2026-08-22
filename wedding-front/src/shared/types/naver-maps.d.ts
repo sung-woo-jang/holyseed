@@ -60,7 +60,19 @@ interface NaverMaps {
   LatLng: new (lat: number, lng: number) => NaverLatLng
   Point: new (x: number, y: number) => unknown
   Size: new (width: number, height: number) => unknown
-  Map: new (container: HTMLElement, options: { center: NaverLatLng; zoom: number }) => NaverMapInstance
+  Map: new (
+    container: HTMLElement,
+    options: {
+      center: NaverLatLng
+      zoom: number
+      scrollWheel?: boolean
+      pinchZoom?: boolean
+      disableDoubleClickZoom?: boolean
+      disableDoubleTapZoom?: boolean
+      disableTwoFingerTapZoom?: boolean
+      zoomControl?: boolean
+    },
+  ) => NaverMapInstance
   Marker: new (options: { position: NaverLatLng; map: unknown; draggable?: boolean; icon?: NaverMarkerIcon }) => NaverMarker
   InfoWindow: new (options: {
     content: string

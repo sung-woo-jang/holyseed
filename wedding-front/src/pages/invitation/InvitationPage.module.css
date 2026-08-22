@@ -703,7 +703,7 @@
 
 .lightboxCounter {
   position: absolute;
-  bottom: -3rem;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   left: 50%;
   transform: translateX(-50%);
   color: white;
@@ -712,6 +712,7 @@
   opacity: 0.9;
   font-family: var(--netflix-font);
   font-weight: 600;
+  z-index: 10001;
 }
 
 /* Mobile lightbox adjustments */
@@ -744,7 +745,7 @@
   }
 
   .lightboxCounter {
-    bottom: -2.5rem;
+    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
     font-size: 0.9rem;
   }
 }

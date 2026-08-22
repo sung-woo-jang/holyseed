@@ -48,12 +48,14 @@ export default function NaverMap({ lat, lng, venueName, address, photoUrl, weddi
       const map = new window.naver.maps.Map(mapRef.current, {
         center,
         zoom: 16,
+        draggable: false,
         scrollWheel: false,
         pinchZoom: false,
         disableDoubleClickZoom: true,
         disableDoubleTapZoom: true,
         disableTwoFingerTapZoom: true,
         zoomControl: false,
+        keyboardShortcuts: false,
       })
 
       const marker = new window.naver.maps.Marker({

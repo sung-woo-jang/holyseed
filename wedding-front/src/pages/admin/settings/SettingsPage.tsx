@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { api, TOKEN_KEY } from '@/shared/api'
 import NaverMapScript from '@/shared/ui/NaverMapScript'
 import VenueAddressPicker from '@/shared/ui/VenueAddressPicker'
+import { useToast } from '@/shared/ui/toast'
 import styles from './SettingsPage.module.css'
 import adminStyles from '../admin-page.module.css'
 
@@ -31,6 +32,7 @@ const settingsSchema = z.object({
 type SettingsFormData = z.infer<typeof settingsSchema>
 
 export default function AdminSettingsPage() {
+  const toast = useToast()
   const [coupleId, setCoupleId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -79,8 +81,10 @@ export default function AdminSettingsPage() {
         accountInfo: accounts,
       })
       setMessage({ type: 'success', text: '저장되었습니다.' })
+      toast.success('저장되었습니다.')
     } catch {
       setMessage({ type: 'error', text: '저장에 실패했습니다.' })
+      toast.error('저장에 실패했습니다.')
     } finally {
       setIsSaving(false)
     }

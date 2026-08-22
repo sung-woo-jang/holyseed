@@ -8,30 +8,29 @@ interface NaverMapProps {
   venueName: string
   address: string
   photoUrl?: string
+  weddingDateLabel?: string
 }
 
-const MARKER_SIZE = 72
+const MARKER_SIZE = 64
 
 const buildMarkerIcon = (photoUrl: string) => ({
   content: `
-    <div style="position:relative;width:${MARKER_SIZE}px;height:${MARKER_SIZE}px;">
-      <div style="position:absolute;top:0;left:4px;width:64px;height:64px;border-radius:50%;overflow:hidden;background:#fff;box-shadow:0 0 0 3px #e50914,0 6px 14px rgba(0,0,0,0.35);">
-        <img src="${photoUrl}" style="width:100%;height:100%;object-fit:cover;display:block;" />
-      </div>
-      <div style="position:absolute;top:56px;left:27px;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:16px solid #ffffff;filter:drop-shadow(0 2px 2px rgba(0,0,0,0.25));"></div>
+    <div style="width:${MARKER_SIZE}px;height:${MARKER_SIZE}px;border-radius:50%;overflow:hidden;background:#fff;box-shadow:0 0 0 3px #ffffff,0 6px 14px rgba(0,0,0,0.35);">
+      <img src="${photoUrl}" style="width:100%;height:100%;object-fit:cover;display:block;" />
     </div>
   `,
 })
 
-const buildInfoWindowContent = (venueName: string) => `
+const buildInfoWindowContent = (venueName: string, weddingDateLabel?: string) => `
   <div style="position:relative;padding:12px 18px;background:#ffffff;border-radius:20px;box-shadow:0 8px 20px rgba(0,0,0,0.2);white-space:nowrap;font-family:inherit;">
     <div style="font-size:13px;font-weight:700;color:#222;">💌 ${venueName}</div>
-    <div style="margin-top:2px;font-size:11px;font-weight:600;color:#e50914;">우리 결혼식이 열리는 곳이에요</div>
+    <div style="margin-top:2px;font-size:11px;font-weight:600;color:#666;">우리 결혼식이 열리는 곳이에요</div>
+    ${weddingDateLabel ? `<div style="margin-top:2px;font-size:10px;color:#999;">${weddingDateLabel}에 결혼합니다</div>` : ''}
     <div style="position:absolute;left:50%;bottom:-8px;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:9px solid #ffffff;"></div>
   </div>
 `
 
-export default function NaverMap({ lat, lng, venueName, photoUrl }: NaverMapProps) {
+export default function NaverMap({ lat, lng, venueName, photoUrl, weddingDateLabel }: NaverMapProps) {
   const mapRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -53,12 +52,12 @@ export default function NaverMap({ lat, lng, venueName, photoUrl }: NaverMapProp
         position: center,
         map,
         icon: photoUrl
-          ? { ...buildMarkerIcon(photoUrl), size: new window.naver.maps.Size(MARKER_SIZE, MARKER_SIZE), anchor: new window.naver.maps.Point(MARKER_SIZE / 2, MARKER_SIZE) }
+          ? { ...buildMarkerIcon(photoUrl), size: new window.naver.maps.Size(MARKER_SIZE, MARKER_SIZE), anchor: new window.naver.maps.Point(MARKER_SIZE / 2, MARKER_SIZE / 2) }
           : undefined,
       })
 
       const infowindow = new window.naver.maps.InfoWindow({
-        content: buildInfoWindowContent(venueName),
+        content: buildInfoWindowContent(venueName, weddingDateLabel),
         borderWidth: 0,
         backgroundColor: 'transparent',
         anchorSize: new window.naver.maps.Size(0, 0),
@@ -79,7 +78,7 @@ export default function NaverMap({ lat, lng, venueName, photoUrl }: NaverMapProp
 
       return () => clearInterval(checkInterval)
     }
-  }, [lat, lng, venueName, photoUrl])
+  }, [lat, lng, venueName, photoUrl, weddingDateLabel])
 
   const openNaverNavi = () => {
     window.open(`https://map.naver.com/p/directions/-/${lng},${lat},${encodeURIComponent(venueName)}/-/car`, '_blank')

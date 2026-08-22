@@ -326,7 +326,14 @@ function InvitationContent() {
             <div className={styles.mapContainer}>
               {venue.lat && venue.lng ? (
                 <Suspense fallback={<p>지도 로딩 중...</p>}>
-                  <NaverMap lat={venue.lat} lng={venue.lng} venueName={venue.name} address={venue.address} photoUrl={guestMedia[0] ? mediaResizedUrl(guestMedia[0].id) : undefined} />
+                  <NaverMap
+                    lat={venue.lat}
+                    lng={venue.lng}
+                    venueName={venue.name}
+                    address={venue.address}
+                    photoUrl={guestMedia[0] ? mediaResizedUrl(guestMedia[0].id) : undefined}
+                    weddingDateLabel={weddingDate ? format(weddingDate, 'yyyy. MM. dd', { locale: ko }) : undefined}
+                  />
                 </Suspense>
               ) : (
                 <div className={styles.mapFallback}>

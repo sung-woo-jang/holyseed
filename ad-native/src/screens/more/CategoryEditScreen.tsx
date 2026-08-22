@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Button from '../../components/ui/Button';
 import Border from '../../components/ui/Border';
@@ -27,7 +26,6 @@ interface SubDraft {
 
 export default function CategoryEditScreen({ navigation, route }: Props) {
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
   const data = useHouseholdData();
   const { mode } = route.params;
   const categoryId = mode === 'edit' ? route.params.categoryId : undefined;
@@ -197,7 +195,7 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
         )}
       </ScrollView>
 
-      <View style={[styles.ctaWrap, { paddingBottom: 20 + insets.bottom, backgroundColor: theme.card, borderTopColor: theme.border }]}>
+      <View style={[styles.ctaWrap, { backgroundColor: theme.card, borderTopColor: theme.border }]}>
         <Button display="full" size="big" type="primary" disabled={!name.trim()} loading={saving} onPress={handleSave}>
           저장하기
         </Button>

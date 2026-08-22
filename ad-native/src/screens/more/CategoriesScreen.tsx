@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Button from '../../components/ui/Button';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
@@ -27,7 +26,6 @@ function iconAndColor(c: CategoryItem) {
 
 export default function CategoriesScreen({ navigation }: Props) {
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
   const data = useHouseholdData();
   const role = useAuthStore((s) => s.currentHousehold?.role);
   const canEdit = role !== 'VIEWER';
@@ -101,7 +99,7 @@ export default function CategoriesScreen({ navigation }: Props) {
       </ScrollView>
 
       {canEdit && (
-        <View style={[styles.footer, { paddingBottom: 16 + insets.bottom, backgroundColor: theme.bg, borderTopColor: theme.border }]}>
+        <View style={[styles.footer, { backgroundColor: theme.bg, borderTopColor: theme.border }]}>
           <View style={{ flex: 1 }}>
             <Button display="full" size="big" type="primary" style="weak" onPress={() => navigation.navigate('CategoryEdit', { mode: 'add', type: tab })}>
               추가

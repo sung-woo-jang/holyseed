@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Button from '../../components/ui/Button';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import AppToast from '../../components/common/AppToast';
-import TossEmoji from '../../components/common/TossEmoji';
+import CategoryIcon from '../../components/common/CategoryIcon';
 import Segmented from '../../components/common/Segmented';
 import { useTheme } from '../../lib/theme';
 import { useHouseholdData, type HouseholdData } from '../../queries/useHouseholdData';
@@ -86,7 +86,7 @@ export default function CategoriesScreen({ navigation }: Props) {
                   </View>
                 )}
                 <View style={[styles.iconBox, { backgroundColor: color + '22' }]}>
-                  <TossEmoji code={icon} size={26} />
+                  <CategoryIcon icon={icon} size={26} />
                 </View>
                 <Text style={[styles.cellName, { color: theme.text }]} numberOfLines={1}>
                   {c.name}

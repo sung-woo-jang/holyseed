@@ -7,7 +7,7 @@ import Segmented from '../common/Segmented';
 import SheetModal from './SheetModal';
 import { useTheme } from '../../lib/theme';
 import { useHouseholdData, type HouseholdTransaction } from '../../queries/useHouseholdData';
-import TossEmoji from '../common/TossEmoji';
+import CategoryIcon from '../common/CategoryIcon';
 import FormRow from '../common/FormRow';
 import DatePicker from '../common/DatePicker';
 import PickerOverlay from './PickerOverlay';
@@ -132,7 +132,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
                   return (
                     <View key={c.id}>
                       <ListRow
-                        left={<TossEmoji code={c.icon || def.iconCode} size={28} bg={(c.color || def.color) + '22'} />}
+                        left={<CategoryIcon icon={c.icon || def.iconCode} size={28} bg={(c.color || def.color) + '22'} />}
                         contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{c.name}</Text>}
                         right={
                           kids.length > 0 ? (
@@ -155,7 +155,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
                         kids.map((k) => (
                           <ListRow
                             key={k.id}
-                            left={<View style={{ width: 28 }} />}
+                            left={<CategoryIcon icon={k.icon || c.icon || def.iconCode} size={22} bg={(c.color || def.color) + '22'} />}
                             contents={<Text style={{ color: theme.text, fontSize: 14, fontWeight: '500', marginLeft: 12 }}>{k.name}</Text>}
                             right={category?.id === k.id ? Icon.check(theme.brand, 16) : undefined}
                             onPress={() => {
@@ -173,7 +173,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
                   return (
                     <ListRow
                       key={name}
-                      left={<TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />}
+                      left={<CategoryIcon icon={def.iconCode} size={28} bg={def.color + '22'} />}
                       contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{name}</Text>}
                       right={category?.name === name ? Icon.check(theme.brand, 16) : undefined}
                       onPress={() => {

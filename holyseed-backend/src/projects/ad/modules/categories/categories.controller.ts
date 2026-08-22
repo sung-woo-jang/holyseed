@@ -1,5 +1,8 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { BadRequestException, Body, Controller, Get, Param, ParseIntPipe, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { FilesService } from '@shared/files/files.service';
+import { ERROR_MESSAGES } from '@common/constants';
 import { CategoriesService } from './categories.service';
 import { MembershipGuard } from '../../common/guards/membership.guard';
 import { RequireMembership } from '../../common/decorators/require-membership.decorator';
@@ -9,7 +12,20 @@ import { CreateCategoryDto } from './dto/request/create-category.dto';
 @ApiTags('AD 카테고리')
 @Controller('ad')
 export class CategoriesController {
-  constructor(private readonly categoriesService: CategoriesService) {}
+  constructor(
+    private readonly categoriesService: CategoriesService,
+    private readonly filesService: FilesService,
+  ) {}
+
+  @Post('categories/icon-upload')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: '카테고리 아이콘 이미지 업로드' })
+  async uploadIcon(@UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException(ERROR_MESSAGES.FILES.NOT_SELECTED);
+    const { url } = await this.filesService.uploadImage(file, 'category-icons');
+    return { success: true, message: '업로드 성공', data: { url }, timestamp: new Date().toISOString() };
+  }
 
   @Get('households/:householdId/categories')
   @UseGuards(MembershipGuard)

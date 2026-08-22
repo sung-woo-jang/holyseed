@@ -137,13 +137,21 @@ export const categoriesApi = {
   list: (householdId: number) =>
     api.get<Category[]>(`/households/${householdId}/categories`).then((r) => r.data),
 
-  create: (householdId: number, dto: { type: CategoryType; name: string; icon: string; color?: string; parentId?: number }) =>
+  create: (householdId: number, dto: { type: CategoryType; name: string; icon?: string; color?: string; parentId?: number }) =>
     api.post<Category>(`/households/${householdId}/categories`, dto).then((r) => r.data),
 
   update: (id: number, dto: Partial<{ name: string; icon: string; color: string; parentId: number }>) =>
     api.post<Category>(`/categories/${id}/update`, dto).then((r) => r.data),
 
   delete: (id: number) => api.post(`/categories/${id}/delete`).then((r) => r.data),
+
+  uploadIcon: (file: { uri: string; name: string; type: string }) => {
+    const form = new FormData();
+    form.append('file', file as unknown as Blob);
+    return api
+      .post<{ url: string }>(`/categories/icon-upload`, form, { headers: { 'Content-Type': 'multipart/form-data' } })
+      .then((r) => r.data);
+  },
 };
 
 // ─── Households / Members / Invitations ───────────────────────────────────────

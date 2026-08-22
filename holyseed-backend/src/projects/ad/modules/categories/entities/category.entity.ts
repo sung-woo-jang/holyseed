@@ -17,7 +17,7 @@ export class Category extends BaseEntity {
   @Column({ length: 50 })
   name: string;
 
-  @Column({ length: 50, nullable: true })
+  @Column({ length: 500, nullable: true })
   icon: string;
 
   @Column({ length: 20, nullable: true })

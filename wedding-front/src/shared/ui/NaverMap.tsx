@@ -48,6 +48,12 @@ export default function NaverMap({ lat, lng, venueName, address, photoUrl, weddi
       const map = new window.naver.maps.Map(mapRef.current, {
         center,
         zoom: 16,
+        scrollWheel: false,
+        pinchZoom: false,
+        disableDoubleClickZoom: true,
+        disableDoubleTapZoom: true,
+        disableTwoFingerTapZoom: true,
+        zoomControl: false,
       })
 
       const marker = new window.naver.maps.Marker({
@@ -100,11 +106,11 @@ export default function NaverMap({ lat, lng, venueName, address, photoUrl, weddi
       <div ref={mapRef} className={styles.map}></div>
       <div className={styles.addressRow}>
         <span className={styles.addressText}>{address}</span>
-        <button type="button" onClick={handleCopyAddress} className={styles.copyButton}>
-          주소 복사
-        </button>
       </div>
       <div className={styles.buttons}>
+        <button type="button" onClick={handleCopyAddress} className={cn(styles.button, styles.buttonMap)}>
+          주소 복사
+        </button>
         <button type="button" onClick={openNaverMap} className={cn(styles.button, styles.buttonMap)}>
           <span role="img" aria-label="map">
             🗺️

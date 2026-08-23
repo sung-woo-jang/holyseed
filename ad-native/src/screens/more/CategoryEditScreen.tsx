@@ -105,8 +105,9 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
       });
       if (result.canceled || !result.assets[0]) return;
       asset = result.assets[0];
-    } catch {
-      setToast('사진을 불러오지 못했어요. 다른 사진으로 시도해보세요');
+    } catch (e: any) {
+      // 원인 파악 전까지 임시로 실제 에러 메시지를 그대로 노출 (추후 원인 확정되면 사용자 친화 문구로 교체 예정)
+      setToast(`사진을 불러오지 못했어요: ${e?.message ?? String(e)}`);
       return;
     }
 
@@ -115,10 +116,14 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
       // 비-ASCII 문자가 들어가 네트워크 요청 자체가 만들어지는 시점에 실패한다 — 백엔드가 어차피
       // 파일명을 새로 매겨 저장하므로 원본 이름을 보존할 필요가 없어, mimeType 기반 고정 ASCII 이름 사용
       const ext = (asset.mimeType?.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+      console.log('[icon-upload] asset:', { uri: asset.uri, mimeType: asset.mimeType, fileName: asset.fileName, fileSize: asset.fileSize });
       const { url } = await uploadIcon.mutateAsync({ uri: asset.uri, name: `icon.${ext}`, type: asset.mimeType || 'image/jpeg' });
       applyIcon(url);
-    } catch (e) {
-      setToast(getErrorMessage(e, '업로드에 실패했어요. 다른 사진으로 시도해보세요'));
+    } catch (e: any) {
+      console.log('[icon-upload] failed:', e?.message, e?.code, e?.response?.status, e?.response?.data);
+      // 원인 파악 전까지 임시로 실제 에러 메시지를 그대로 노출 (추후 원인 확정되면 사용자 친화 문구로 교체 예정)
+      const detail = e?.message ? ` (${e.message})` : '';
+      setToast(getErrorMessage(e, `업로드에 실패했어요${detail}`));
     }
   }
 

@@ -27,6 +27,7 @@ export interface HouseholdTransaction {
   type: 'INCOME' | 'EXPENSE';
   amount: number;
   category: string;
+  categoryId: number | null;
   title: string;
   rawTitle?: string;
   memo?: string;
@@ -40,6 +41,7 @@ export interface HouseholdRecurring {
   title: string;
   amount: number;
   category: string;
+  categoryId: number | null;
   dayOfMonth: number;
   from: string;
   active: boolean;
@@ -236,6 +238,7 @@ export function useHouseholdData(): HouseholdData {
     type: t.type,
     amount: Number(t.amount) || 0,
     category: categoryById.get(t.categoryId)?.name ?? '기타',
+    categoryId: t.categoryId ?? null,
     title: t.title || t.memo || categoryById.get(t.categoryId)?.name || '거래',
     rawTitle: t.title || undefined,
     memo: t.memo ?? undefined,
@@ -250,6 +253,7 @@ export function useHouseholdData(): HouseholdData {
     title: r.title ?? r.name ?? '항목',
     amount: Number(r.amount) || 0,
     category: categoryById.get(r.categoryId)?.name ?? '기타',
+    categoryId: r.categoryId ?? null,
     dayOfMonth: r.dayOfMonth,
     from: r.fromAssetId != null ? String(r.fromAssetId) : '',
     active: r.active,

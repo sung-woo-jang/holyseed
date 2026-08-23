@@ -10,8 +10,9 @@ import { useTheme } from '../lib/theme';
 import { useAuthStore } from '../stores/auth.store';
 import { krw } from '../lib/format';
 import { TE } from '../lib/toss-emoji';
-import { getCategoryDef } from '../lib/category-meta';
+import { getCategoryDef, resolveCategoryVisual } from '../lib/category-meta';
 import TossEmoji from '../components/common/TossEmoji';
+import CategoryIcon from '../components/common/CategoryIcon';
 import { Icon } from '../components/common/Icon';
 import WorkCalendar, { type CalLog } from '../components/WorkCalendar';
 import Segmented from '../components/common/Segmented';
@@ -40,7 +41,7 @@ function recurringActiveOn(r: HouseholdRecurring, dateStr: string): boolean {
 }
 
 type DayItem =
-  | { kind: 'tx'; id: string; title: string; amount: number; type: 'INCOME' | 'EXPENSE'; category: string; sub?: string }
+  | { kind: 'tx'; id: string; title: string; amount: number; type: 'INCOME' | 'EXPENSE'; category: string; categoryId: number | null; sub?: string }
   | { kind: 'rec'; id: string; title: string; amount: number; type: 'INCOME' | 'EXPENSE'; rec: HouseholdRecurring };
 
 export default function BookScreen() {
@@ -166,7 +167,7 @@ export default function BookScreen() {
   const calLogs: CalLog[] = useMemo(() => {
     const out: CalLog[] = [];
     for (const t of monthTx) {
-      out.push({ id: `t${t.id}`, date: t.date, colorLabel: getCategoryDef(t.category).color, settled: true });
+      out.push({ id: `t${t.id}`, date: t.date, colorLabel: resolveCategoryVisual(t.categoryId, t.category, data.categories).color, settled: true });
     }
     for (const r of recurring) {
       const d = recDateForMonth(r);
@@ -176,7 +177,7 @@ export default function BookScreen() {
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monthTx, recurring, month, theme]);
+  }, [monthTx, recurring, month, theme, data.categories]);
 
   const dayItems: DayItem[] = useMemo(() => {
     if (!selectedDate) return [];
@@ -185,7 +186,7 @@ export default function BookScreen() {
       .filter((t) => t.date === selectedDate)
       .forEach((t) => {
         const from = data.assets.find((a) => a.id === t.from);
-        items.push({ kind: 'tx', id: t.id, title: t.title, amount: t.amount, type: t.type === 'INCOME' ? 'INCOME' : 'EXPENSE', category: t.category, sub: from ? from.name : undefined });
+        items.push({ kind: 'tx', id: t.id, title: t.title, amount: t.amount, type: t.type === 'INCOME' ? 'INCOME' : 'EXPENSE', category: t.category, categoryId: t.categoryId, sub: from ? from.name : undefined });
       });
     recurring
       .filter((r) => recDateForMonth(r) === selectedDate && recurringActiveOn(r, selectedDate))
@@ -261,14 +262,14 @@ export default function BookScreen() {
 
   function renderTxRow(tx: HouseholdTransaction, i: number, total: number) {
     const isInc = tx.type === 'INCOME';
-    const def = getCategoryDef(tx.category);
+    const visual = resolveCategoryVisual(tx.categoryId, tx.category, data.categories);
     const canEdit = !isViewer;
     return (
       <View key={tx.id}>
         <ListRow
           left={
             <View style={[styles.itemIcon, { backgroundColor: theme.bg }]}>
-              <TossEmoji code={def.iconCode} size={18} />
+              <CategoryIcon icon={visual.icon} size={18} />
             </View>
           }
           contents={
@@ -300,15 +301,17 @@ export default function BookScreen() {
 
   function renderDayItem(item: DayItem, i: number, total: number) {
     const isInc = item.type === 'INCOME';
-    const catName = item.kind === 'tx' ? item.category : item.rec.category;
-    const def = getCategoryDef(catName);
+    const visual =
+      item.kind === 'tx'
+        ? resolveCategoryVisual(item.categoryId, item.category, data.categories)
+        : resolveCategoryVisual(item.rec.categoryId, item.rec.category, data.categories);
     const canEditTx = item.kind === 'tx' && !isViewer;
     return (
       <View key={`${item.kind}-${item.id}`}>
         <ListRow
           left={
             <View style={[styles.itemIcon, { backgroundColor: theme.bg }]}>
-              <TossEmoji code={def.iconCode} size={18} />
+              <CategoryIcon icon={visual.icon} size={18} />
             </View>
           }
           contents={
@@ -352,14 +355,14 @@ export default function BookScreen() {
   }
 
   function renderRecRow(r: HouseholdRecurring, i: number, total: number) {
-    const def = getCategoryDef(r.category);
+    const visual = resolveCategoryVisual(r.categoryId, r.category, data.categories);
     const isInc = r.type === 'INCOME';
     return (
       <View key={r.id}>
         <ListRow
           left={
             <View style={[styles.itemIcon, { backgroundColor: theme.bg }]}>
-              <TossEmoji code={def.iconCode} size={22} />
+              <CategoryIcon icon={visual.icon} size={22} />
             </View>
           }
           contents={

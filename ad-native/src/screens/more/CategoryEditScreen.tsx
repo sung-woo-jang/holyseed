@@ -8,11 +8,11 @@ import TextField from '../../components/ui/TextField';
 import AppToast from '../../components/common/AppToast';
 import SheetModal from '../../components/sheets/SheetModal';
 import CategoryIcon from '../../components/common/CategoryIcon';
-import Segmented from '../../components/common/Segmented';
 import { useTheme } from '../../lib/theme';
 import { useHouseholdData } from '../../queries/useHouseholdData';
 import { getCategoryDef } from '../../lib/category-meta';
-import { CATEGORY_ICON_CHOICES } from '../../lib/toss-emoji';
+import { CATEGORY_ICON_SECTIONS } from '../../lib/toss-emoji';
+import { getHiddenIconIds, setHiddenIconIds } from '../../lib/icon-prefs';
 import { useCreateCategory, useUpdateCategory, useDeleteCategory, useUploadCategoryIcon } from '../../queries/mutations';
 import type { MoreStackParamList } from '../../navigation/types';
 
@@ -41,7 +41,7 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
 
   const defFallback = existing ? getCategoryDef(existing.name) : null;
   const [name, setName] = useState(existing?.name ?? '');
-  const [icon, setIcon] = useState(existing?.icon || defFallback?.iconCode || CATEGORY_ICON_CHOICES[0]!.code);
+  const [icon, setIcon] = useState(existing?.icon || defFallback?.iconCode || CATEGORY_ICON_SECTIONS[0]!.items[0]!.code);
   const [color, setColor] = useState(existing?.color || defFallback?.color || COLORS[0]!);
   const [subs, setSubs] = useState<SubDraft[]>(() =>
     categoryId ? data.categories.filter((c) => c.parentId === categoryId).map((c) => ({ id: c.id, name: c.name, icon: c.icon || null, isNew: false })) : [],
@@ -49,7 +49,8 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
   const originalSubs = useMemo(() => subs.map((s) => ({ id: s.id, name: s.name, icon: s.icon })), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [iconPickerFor, setIconPickerFor] = useState<IconPickerTarget | null>(null);
-  const [iconTab, setIconTab] = useState<'emoji' | 'upload'>('emoji');
+  const [iconEditMode, setIconEditMode] = useState(false);
+  const [hiddenIconIds, setHiddenIconIdsState] = useState<string[]>([]);
   const [subModal, setSubModal] = useState<{ index: number; value: string; icon: string | null } | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -65,16 +66,27 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
   }, [navigation, mode]);
 
   function openIconPicker(target: IconPickerTarget) {
-    setIconTab('emoji');
+    setIconEditMode(false);
     setIconPickerFor(target);
+    getHiddenIconIds().then(setHiddenIconIdsState);
   }
   function applyIcon(value: string) {
+    if (iconEditMode) return;
     if (iconPickerFor === 'submodal') {
       setSubModal((prev) => (prev ? { ...prev, icon: value } : prev));
     } else {
       setIcon(value);
     }
     setIconPickerFor(null);
+  }
+  function hideIcon(id: string) {
+    const next = [...hiddenIconIds, id];
+    setHiddenIconIdsState(next);
+    setHiddenIconIds(next);
+  }
+  function resetHiddenIcons() {
+    setHiddenIconIdsState([]);
+    setHiddenIconIds([]);
   }
 
   async function handlePickPhoto() {
@@ -243,35 +255,68 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
         </Button>
       </View>
 
-      <SheetModal visible={!!iconPickerFor} onClose={() => setIconPickerFor(null)} header="카테고리 아이콘 선택">
-        <View style={{ marginBottom: 14 }}>
-          <Segmented options={['이모지', '업로드']} value={iconTab === 'emoji' ? '이모지' : '업로드'} onChange={(v) => setIconTab(v === '이모지' ? 'emoji' : 'upload')} />
+      <SheetModal
+        visible={!!iconPickerFor}
+        onClose={() => setIconPickerFor(null)}
+        header="카테고리 아이콘 선택"
+        headerRight={
+          <Pressable
+            hitSlop={8}
+            onPress={() => setIconEditMode((prev) => !prev)}
+            style={[styles.editToggle, { borderColor: iconEditMode ? theme.danger : theme.border, backgroundColor: iconEditMode ? theme.danger + '18' : theme.bg }]}
+          >
+            <Text style={{ color: iconEditMode ? theme.danger : theme.textMuted, fontSize: 12, fontWeight: '700' }}>{iconEditMode ? '완료' : '편집'}</Text>
+          </Pressable>
+        }
+      >
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>직접 추가</Text>
+          <Pressable
+            onPress={handlePickPhoto}
+            disabled={uploadIcon.isPending || iconEditMode}
+            style={[styles.uploadRow, { backgroundColor: theme.bg, borderColor: theme.border }]}
+          >
+            {uploadIcon.isPending ? (
+              <ActivityIndicator color={theme.brand} />
+            ) : (
+              <>
+                <Text style={{ fontSize: 20 }}>＋</Text>
+                <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700' }}>사진으로 아이콘 추가</Text>
+              </>
+            )}
+          </Pressable>
         </View>
-        {iconTab === 'emoji' ? (
-          <View style={styles.iconGrid}>
-            {CATEGORY_ICON_CHOICES.map((c) => (
-              <Pressable
-                key={c.id}
-                style={[styles.iconCell, { backgroundColor: icon === c.code ? theme.brandSoft : theme.bg, borderColor: icon === c.code ? theme.brand : theme.border }]}
-                onPress={() => applyIcon(c.code)}
-              >
-                <CategoryIcon icon={c.code} size={30} />
-              </Pressable>
-            ))}
-          </View>
-        ) : (
-          <View style={styles.uploadTab}>
-            <Text style={{ color: theme.textMuted, fontSize: 12.5, textAlign: 'center', marginBottom: 14 }}>
-              사진이나 로고를 올려보세요{'\n'}정사각형으로 잘라서 아이콘에 딱 맞게 넣어드려요
-            </Text>
-            <Pressable
-              onPress={handlePickPhoto}
-              disabled={uploadIcon.isPending}
-              style={[styles.uploadBtn, { backgroundColor: theme.brandSoft, borderColor: theme.brand }]}
-            >
-              {uploadIcon.isPending ? <ActivityIndicator color={theme.brand} /> : <Text style={{ color: theme.brand, fontSize: 13.5, fontWeight: '700' }}>사진 선택</Text>}
-            </Pressable>
-          </View>
+
+        {CATEGORY_ICON_SECTIONS.map((section) => {
+          const visibleItems = section.items.filter((c) => !hiddenIconIds.includes(c.id));
+          if (visibleItems.length === 0) return null;
+          return (
+            <View key={section.title} style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>{section.title}</Text>
+              <View style={styles.iconGrid}>
+                {visibleItems.map((c) => (
+                  <Pressable
+                    key={c.id}
+                    style={[styles.iconCell, { backgroundColor: icon === c.code ? theme.brandSoft : theme.bg, borderColor: icon === c.code ? theme.brand : theme.border }]}
+                    onPress={() => applyIcon(c.code)}
+                  >
+                    <CategoryIcon icon={c.code} size={30} />
+                    {iconEditMode && (
+                      <Pressable hitSlop={6} onPress={() => hideIcon(c.id)} style={[styles.removeBadge, { backgroundColor: theme.danger, borderColor: theme.card }]}>
+                        <Text style={{ color: '#fff', fontSize: 11, fontWeight: '800', lineHeight: 13 }}>−</Text>
+                      </Pressable>
+                    )}
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          );
+        })}
+
+        {iconEditMode && hiddenIconIds.length > 0 && (
+          <Pressable onPress={resetHiddenIcons} style={{ alignSelf: 'center', marginTop: 6 }}>
+            <Text style={{ color: theme.brand, fontSize: 12.5, fontWeight: '700' }}>숨긴 이모지 초기화</Text>
+          </Pressable>
         )}
       </SheetModal>
 
@@ -326,10 +371,13 @@ const styles = StyleSheet.create({
   addSubBtn: { alignSelf: 'flex-start', borderRadius: 999, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
   ctaWrap: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20, borderTopWidth: 1 },
   scrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.42)', justifyContent: 'center', alignItems: 'center' },
+  section: { marginBottom: 18 },
+  sectionTitle: { fontSize: 12, fontWeight: '800', marginBottom: 9 },
   iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  iconCell: { width: 52, height: 52, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  uploadTab: { alignItems: 'center', paddingVertical: 12 },
-  uploadBtn: { borderWidth: 1.4, borderRadius: 999, paddingHorizontal: 24, paddingVertical: 11, minWidth: 120, alignItems: 'center' },
+  iconCell: { width: 52, height: 52, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  removeBadge: { position: 'absolute', top: -6, right: -6, width: 19, height: 19, borderRadius: 10, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  uploadRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1, borderStyle: 'dashed', borderRadius: 12, paddingVertical: 14 },
+  editToggle: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1 },
   subModal: { width: '84%', borderRadius: 18, padding: 18 },
   subModalIconRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   subModalIconPreview: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },

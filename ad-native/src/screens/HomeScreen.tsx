@@ -11,7 +11,8 @@ import { useHouseholdData } from '../queries/useHouseholdData';
 import { useTheme } from '../lib/theme';
 import { krw, krwShort, pct } from '../lib/format';
 import { TE } from '../lib/toss-emoji';
-import { getCategoryDef } from '../lib/category-meta';
+import { resolveCategoryVisual } from '../lib/category-meta';
+import CategoryIcon from '../components/common/CategoryIcon';
 import Segmented from '../components/common/Segmented';
 import AutoBadge from '../components/common/AutoBadge';
 import TossEmoji from '../components/common/TossEmoji';
@@ -191,13 +192,13 @@ export default function HomeScreen({ navigation }: Props) {
           </View>
           {recentTxs.length === 0 && <EmptyState compact iconCode={TE.receipt} title="아직 거래 내역이 없어요" desc="가계부에서 첫 거래를 기록해보세요" />}
           {recentTxs.map((tx, i) => {
-            const catDef = getCategoryDef(tx.category);
+            const catVisual = resolveCategoryVisual(tx.categoryId, tx.category, data.categories);
             return (
               <React.Fragment key={tx.id}>
                 <ListRow
                   left={
                     <View style={[styles.txIcon, { backgroundColor: theme.bg }]}>
-                      <TossEmoji code={catDef.iconCode} size={22} />
+                      <CategoryIcon icon={catVisual.icon} size={22} />
                     </View>
                   }
                   contents={

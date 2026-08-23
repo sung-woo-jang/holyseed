@@ -4,10 +4,11 @@ import EmptyState from '../../components/common/EmptyState';
 import Segmented from '../../components/common/Segmented';
 import HBar from '../../components/charts/HBar';
 import TossEmoji from '../../components/common/TossEmoji';
+import CategoryIcon from '../../components/common/CategoryIcon';
 import { useTheme } from '../../lib/theme';
 import { useHouseholdData, type HouseholdTransaction } from '../../queries/useHouseholdData';
 import { krwShort } from '../../lib/format';
-import { getCategoryDef } from '../../lib/category-meta';
+import { resolveCategoryVisual } from '../../lib/category-meta';
 import { TE } from '../../lib/toss-emoji';
 
 type Period = '이번달' | '올해' | '작년' | '3년' | '전체';
@@ -34,16 +35,17 @@ export default function CashflowScreen() {
   const expense = filtered.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
   const savingsRate = income > 0 ? ((income - expense) / income) * 100 : 0;
 
-  const catMap: Record<string, number> = {};
+  const catMap = new Map<string, { amount: number; categoryId: number | null; name: string }>();
   filtered
     .filter((t) => t.type === 'EXPENSE')
     .forEach((t) => {
-      catMap[t.category] = (catMap[t.category] ?? 0) + t.amount;
+      const key = t.categoryId != null ? `id:${t.categoryId}` : `name:${t.category}`;
+      const cur = catMap.get(key);
+      if (cur) cur.amount += t.amount;
+      else catMap.set(key, { amount: t.amount, categoryId: t.categoryId, name: t.category });
     });
-  const catBreakdown = Object.entries(catMap)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 8);
-  const maxCat = catBreakdown[0]?.[1] ?? 1;
+  const catBreakdown = [...catMap.values()].sort((a, b) => b.amount - a.amount).slice(0, 8);
+  const maxCat = catBreakdown[0]?.amount ?? 1;
 
   const monthMap: Record<string, { income: number; expense: number }> = {};
   filtered.forEach((t) => {
@@ -125,18 +127,18 @@ export default function CashflowScreen() {
                 <Text style={{ color: theme.textMuted, fontSize: 13 }}>해당 기간의 지출이 없어요</Text>
               </View>
             ) : (
-              catBreakdown.map(([name, val]) => {
-                const def = getCategoryDef(name);
+              catBreakdown.map((c) => {
+                const visual = resolveCategoryVisual(c.categoryId, c.name, data.categories);
                 return (
-                  <View key={name} style={styles.catRow}>
-                    <TossEmoji code={def.iconCode} size={32} bg={def.color + '22'} />
+                  <View key={c.categoryId ?? c.name} style={styles.catRow}>
+                    <CategoryIcon icon={visual.icon} size={32} bg={visual.color + '22'} />
                     <View style={{ flex: 1 }}>
                       <View style={styles.catTopRow}>
-                        <Text style={{ color: theme.text, fontSize: 13, fontWeight: '600' }}>{name}</Text>
-                        <Text style={{ color: theme.textMuted, fontSize: 11 }}>{expense > 0 ? ((val / expense) * 100).toFixed(1) : 0}%</Text>
-                        <Text style={{ color: theme.danger, fontSize: 12, fontWeight: '700' }}>{krwShort(val)}</Text>
+                        <Text style={{ color: theme.text, fontSize: 13, fontWeight: '600' }}>{c.name}</Text>
+                        <Text style={{ color: theme.textMuted, fontSize: 11 }}>{expense > 0 ? ((c.amount / expense) * 100).toFixed(1) : 0}%</Text>
+                        <Text style={{ color: theme.danger, fontSize: 12, fontWeight: '700' }}>{krwShort(c.amount)}</Text>
                       </View>
-                      <HBar value={val} max={maxCat} color={def.color} />
+                      <HBar value={c.amount} max={maxCat} color={visual.color} />
                     </View>
                   </View>
                 );

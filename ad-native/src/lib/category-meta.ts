@@ -1,4 +1,4 @@
-import type { AssetCategory, CategoryType } from '../types/api';
+import type { AssetCategory, Category, CategoryType } from '../types/api';
 import { TE } from './toss-emoji';
 
 export interface AssetCategoryMeta {
@@ -58,4 +58,27 @@ export const CATEGORY_DEFS: Record<string, CategoryDef> = {
 
 export function getCategoryDef(name: string): CategoryDef {
   return CATEGORY_DEFS[name] ?? { type: 'EXPENSE', iconCode: TE.cyclone, color: '#94A3B8' };
+}
+
+/**
+ * 거래/정기거래처럼 categoryId로 카테고리를 참조하는 화면에서 아이콘·색을 구할 때 쓰는 공용 로직.
+ * 실제 카테고리 데이터(수정 가능한 icon/color, 소분류는 대분류로 폴백)를 항상 우선하고,
+ * 카테고리가 삭제됐거나 연결이 없는 경우에만 이름 기반 하드코딩 기본값으로 폴백한다.
+ */
+export function resolveCategoryVisual(
+  categoryId: number | null | undefined,
+  categoryName: string,
+  categories: Category[],
+): { icon: string; color: string } {
+  const cat = categories.find((c) => c.id === categoryId);
+  if (cat) {
+    const parent = cat.parentId != null ? categories.find((c) => c.id === cat.parentId) : undefined;
+    const def = getCategoryDef(cat.name);
+    return {
+      icon: cat.icon || parent?.icon || def.iconCode,
+      color: cat.color || parent?.color || def.color,
+    };
+  }
+  const def = getCategoryDef(categoryName);
+  return { icon: def.iconCode, color: def.color };
 }

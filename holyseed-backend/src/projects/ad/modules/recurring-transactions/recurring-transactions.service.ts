@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Between, In, Repository } from 'typeorm';
 import { RecurringTransaction, RecurringFrequency } from './entities/recurring-transaction.entity';
 import { Transaction, TransactionType } from '../transactions/entities/transaction.entity';
 import { CreateRecurringDto } from './dto/request/create-recurring.dto';
@@ -99,10 +99,23 @@ export class RecurringTransactionsService {
     });
     const existingKeys = new Set(existing.map((t) => `${t.recurringTemplateId}:${t.date}`));
 
+    // 정기거래 화면을 거치지 않고 직접 입력한 거래(recurringTemplateId가 안 붙음)도
+    // 같은 날짜·카테고리·수입/지출 타입이면 "이미 반영됨"으로 인정 (카테고리 없는 정기거래는 오탐 방지를 위해 제외)
+    const minStartDate = actives.reduce((min, r) => (r.startDate < min ? r.startDate : min), actives[0].startDate);
+    const lowerBound = fromDate && fromDate > minStartDate ? fromDate : minStartDate;
+    const householdTxs = await this.txRepo.find({
+      where: { householdId, date: Between(lowerBound, today) },
+      select: ['date', 'categoryId', 'type'],
+    });
+    const looseKeys = new Set(
+      householdTxs.filter((t) => t.categoryId != null).map((t) => `${t.date}:${t.categoryId}:${t.type}`),
+    );
+
     const missed: MissedOccurrence[] = [];
     for (const r of actives) {
       for (const date of this.computeDueDates(r, fromDate, today)) {
         if (existingKeys.has(`${r.id}:${date}`)) continue;
+        if (r.categoryId != null && looseKeys.has(`${date}:${r.categoryId}:${r.type}`)) continue;
         missed.push({
           recurringId: r.id,
           date,

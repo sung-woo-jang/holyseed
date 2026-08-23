@@ -98,7 +98,6 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [1, 1],
       quality: 0.8,
     });
     if (result.canceled || !result.assets[0]) return;
@@ -185,7 +184,7 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         <View style={styles.iconWrap}>
           <Pressable disabled={isBuiltin} onPress={() => openIconPicker('main')} style={[styles.iconBig, { backgroundColor: color + '22' }]}>
-            <CategoryIcon icon={icon} size={44} />
+            <CategoryIcon icon={icon} size={60} />
           </Pressable>
           {!isBuiltin && (
             <Pressable onPress={() => openIconPicker('main')} style={[styles.changeBtn, { backgroundColor: theme.bg }]}>
@@ -300,7 +299,7 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
                     style={[styles.iconCell, { backgroundColor: icon === c.code ? theme.brandSoft : theme.bg, borderColor: icon === c.code ? theme.brand : theme.border }]}
                     onPress={() => applyIcon(c.code)}
                   >
-                    <CategoryIcon icon={c.code} size={30} />
+                    <CategoryIcon icon={c.code} size={40} />
                     {iconEditMode && (
                       <Pressable hitSlop={6} onPress={() => hideIcon(c.id)} style={[styles.removeBadge, { backgroundColor: theme.danger, borderColor: theme.card }]}>
                         <Text style={{ color: '#fff', fontSize: 11, fontWeight: '800', lineHeight: 13 }}>−</Text>
@@ -374,7 +373,7 @@ const styles = StyleSheet.create({
   section: { marginBottom: 18 },
   sectionTitle: { fontSize: 12, fontWeight: '800', marginBottom: 9 },
   iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  iconCell: { width: 52, height: 52, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  iconCell: { width: 64, height: 64, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center', position: 'relative' },
   removeBadge: { position: 'absolute', top: -6, right: -6, width: 19, height: 19, borderRadius: 10, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   uploadRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1, borderStyle: 'dashed', borderRadius: 12, paddingVertical: 14 },
   editToggle: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1 },

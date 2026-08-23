@@ -53,6 +53,7 @@ export class FilesService {
     subfolder = 'images',
     maxWidth = 800, // 모바일 최적화: 800px (대부분의 디바이스에 충분)
     quality = 82, // WebP 최적 품질
+    options?: { squareCanvas?: boolean; squareCanvasSize?: number },
   ): Promise<{ filename: string; path: string; url: string }> {
     if (!FileUtil.isImageFile(file.originalname)) {
       throw new BadRequestException(ERROR_MESSAGES.FILES.IMAGE_ONLY);
@@ -95,14 +96,30 @@ export class FilesService {
         adaptiveQuality = Math.max(78, quality - 4); // 중간 이미지는 품질 4 낮춤
       }
 
+      // 정사각형 캔버스 모드(카테고리 아이콘 등): 비율 유지하며 크롭 없이 정사각형 안에 맞추고,
+      // 남는 여백은 투명하게 채운다 (직사각형 로고를 정사각형 아이콘 칸에 억지로 크롭하면 잘려 보이는 문제 방지)
+      const squareCanvas = options?.squareCanvas ?? false;
+      const squareCanvasSize = options?.squareCanvasSize ?? 512;
+
       // Sharp를 사용한 이미지 최적화
       const processedBuffer = await sharp(file.buffer)
         // 리사이징
-        .resize(maxWidth, null, {
-          withoutEnlargement: true, // 원본보다 크게 만들지 않음
-          fit: 'inside', // 비율 유지하며 내부에 맞춤
-          kernel: sharp.kernel.lanczos3, // 고품질 리샘플링
-        })
+        .resize(
+          squareCanvas ? squareCanvasSize : maxWidth,
+          squareCanvas ? squareCanvasSize : null,
+          squareCanvas
+            ? {
+                fit: 'contain', // 크롭 없이 비율 유지, 남는 영역은 background로 채움
+                background: { r: 0, g: 0, b: 0, alpha: 0 }, // 투명 패딩
+                withoutEnlargement: false, // 작은 원본도 캔버스를 꽉 채우도록 확대 허용
+                kernel: sharp.kernel.lanczos3,
+              }
+            : {
+                withoutEnlargement: true, // 원본보다 크게 만들지 않음
+                fit: 'inside', // 비율 유지하며 내부에 맞춤
+                kernel: sharp.kernel.lanczos3, // 고품질 리샘플링
+              },
+        )
         // 색상 공간 최적화
         .toColorspace('srgb')
         // 샤프닝 적용 (리사이징 시 선명도 유지)

@@ -111,7 +111,11 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
     }
 
     try {
-      const { url } = await uploadIcon.mutateAsync({ uri: asset.uri, name: asset.fileName || 'icon.jpg', type: asset.mimeType || 'image/jpeg' });
+      // 갤러리 원본 파일명을 그대로 쓰면(예: 한글 파일명) 멀티파트 Content-Disposition 헤더에
+      // 비-ASCII 문자가 들어가 네트워크 요청 자체가 만들어지는 시점에 실패한다 — 백엔드가 어차피
+      // 파일명을 새로 매겨 저장하므로 원본 이름을 보존할 필요가 없어, mimeType 기반 고정 ASCII 이름 사용
+      const ext = (asset.mimeType?.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+      const { url } = await uploadIcon.mutateAsync({ uri: asset.uri, name: `icon.${ext}`, type: asset.mimeType || 'image/jpeg' });
       applyIcon(url);
     } catch (e) {
       setToast(getErrorMessage(e, '업로드에 실패했어요. 다른 사진으로 시도해보세요'));

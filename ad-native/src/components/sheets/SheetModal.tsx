@@ -8,6 +8,8 @@ interface SheetModalProps {
   visible: boolean;
   onClose: () => void;
   header?: string;
+  /** 헤더 텍스트 옆(우측)에 놓는 보조 액션 (예: 편집 토글) */
+  headerRight?: ReactNode;
   cta?: ReactNode;
   children: ReactNode;
   /** 시트 위에 겹쳐 그리는 오버레이(날짜 피커 등) */
@@ -50,7 +52,7 @@ const DISMISS_DISTANCE = 120;
 const DISMISS_VELOCITY = 0.8; // PanResponder의 vy는 px/ms 단위
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export default function SheetModal({ visible, onClose, header, cta, children, overlay }: SheetModalProps) {
+export default function SheetModal({ visible, onClose, header, headerRight, cta, children, overlay }: SheetModalProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const dragY = useRef(new Animated.Value(0)).current;
@@ -122,6 +124,7 @@ export default function SheetModal({ visible, onClose, header, cta, children, ov
                 {header && (
                   <View style={[styles.header, { borderBottomColor: theme.border }]}>
                     <Text style={[styles.headerText, { color: theme.text }]}>{header}</Text>
+                    {headerRight}
                   </View>
                 )}
               </View>
@@ -155,7 +158,7 @@ const styles = StyleSheet.create({
   sheet: { maxHeight: '85%', borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: 'hidden' },
   handleWrap: { alignItems: 'center', paddingVertical: 8 },
   handleBar: { width: 36, height: 4, borderRadius: 2 },
-  header: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 14, borderBottomWidth: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 14, borderBottomWidth: 1 },
   headerText: { fontSize: 17, fontWeight: '700' },
   body: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 24 },
   ctaWrap: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20, borderTopWidth: 1, gap: 8 },

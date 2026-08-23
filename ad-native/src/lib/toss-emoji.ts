@@ -43,7 +43,7 @@ export const TE = {
   sparkles:    '2728',
   home2:       '1F3E0',
   subway:      '1F687',
-  hospital:    '1F4CA',
+  hospital:    '1F3E5',
   bag:         '1F6CD',
   clapperboard:'1F3AC',
   books:       '1F4DA',
@@ -54,19 +54,179 @@ export const TE = {
   bank:        '1F3E6',
   trash:       '1F5D1',
   link:        '1F517',
+
+  // 이모지 개수 확장 (2026-08)
+  coffee:       '2615',
+  burger:       '1F354',
+  pizza:        '1F355',
+  noodle:       '1F35C',
+  bread:        '1F35E',
+  beer:         '1F37A',
+  wine:         '1F377',
+  iceCream:     '1F366',
+  cookie:       '1F36A',
+  shoppingCart: '1F6D2',
+  tshirt:       '1F455',
+  shoes:        '1F45F',
+  ring:         '1F48D',
+  lipstick:     '1F484',
+  bus:          '1F68C',
+  bicycle:      '1F6B2',
+  fuel:         '26FD',
+  pill:         '1F48A',
+  syringe:      '1F489',
+  tooth:        '1F9B7',
+  lotion:       '1F9F4',
+  graduationCap:'1F393',
+  laptop:       '1F4BB',
+  cat:          '1F431',
+  pawPrints:    '1F43E',
+  bone:         '1F9B4',
+  luggage:      '1F9F3',
+  beach:        '1F3D6',
+  worldMap:     '1F5FA',
+  soccer:       '26BD',
+  headphone:    '1F3A7',
+  guitar:       '1F3B8',
+  bathtub:      '1F6C1',
+  broom:        '1F9F9',
+  wrench:       '1F527',
+  droplet:      '1F4A7',
+  antenna:      '1F4F6',
+  baby:         '1F476',
+  family:       '1F46A',
+  birthday:     '1F382',
 };
 
-export const CATEGORY_ICON_CHOICES = [
-  { id: 'gift',        code: TE.gift },
-  { id: 'dog',         code: TE.dog },
-  { id: 'plane',       code: TE.plane },
-  { id: 'camera',      code: TE.photoCamera },
-  { id: 'game',        code: TE.gamepad },
-  { id: 'music',       code: TE.music },
-  { id: 'cake',        code: TE.cake },
-  { id: 'muscle',      code: TE.muscle },
-  { id: 'plant',       code: TE.plant },
-  { id: 'car',         code: TE.car },
-  { id: 'art',         code: TE.art },
-  { id: 'phone',       code: TE.phone },
+export interface CategoryIconChoice {
+  id: string;
+  code: string;
+}
+
+export interface CategoryIconSection {
+  title: string;
+  items: CategoryIconChoice[];
+}
+
+/** 카테고리 아이콘 선택 시트에서 섹션별로 묶어서 보여줄 이모지 목록 (gear/lock/check/search/trash/link 등 유틸리티성 이모지는 제외) */
+export const CATEGORY_ICON_SECTIONS: CategoryIconSection[] = [
+  {
+    title: '음식 · 카페',
+    items: [
+      { id: 'coffee', code: TE.coffee },
+      { id: 'burger', code: TE.burger },
+      { id: 'pizza', code: TE.pizza },
+      { id: 'noodle', code: TE.noodle },
+      { id: 'bread', code: TE.bread },
+      { id: 'cake', code: TE.cake },
+      { id: 'beer', code: TE.beer },
+      { id: 'wine', code: TE.wine },
+      { id: 'iceCream', code: TE.iceCream },
+      { id: 'cookie', code: TE.cookie },
+    ],
+  },
+  {
+    title: '쇼핑',
+    items: [
+      { id: 'bag', code: TE.bag },
+      { id: 'shoppingCart', code: TE.shoppingCart },
+      { id: 'tshirt', code: TE.tshirt },
+      { id: 'shoes', code: TE.shoes },
+      { id: 'ring', code: TE.ring },
+      { id: 'gift', code: TE.gift },
+      { id: 'lipstick', code: TE.lipstick },
+    ],
+  },
+  {
+    title: '교통',
+    items: [
+      { id: 'car', code: TE.car },
+      { id: 'bus', code: TE.bus },
+      { id: 'subway', code: TE.subway },
+      { id: 'bicycle', code: TE.bicycle },
+      { id: 'fuel', code: TE.fuel },
+      { id: 'plane', code: TE.plane },
+    ],
+  },
+  {
+    title: '건강',
+    items: [
+      { id: 'hospital', code: TE.hospital },
+      { id: 'pill', code: TE.pill },
+      { id: 'syringe', code: TE.syringe },
+      { id: 'tooth', code: TE.tooth },
+      { id: 'muscle', code: TE.muscle },
+      { id: 'lotion', code: TE.lotion },
+    ],
+  },
+  {
+    title: '교육',
+    items: [
+      { id: 'graduationCap', code: TE.graduationCap },
+      { id: 'books', code: TE.books },
+      { id: 'pencil', code: TE.pencil },
+      { id: 'laptop', code: TE.laptop },
+    ],
+  },
+  {
+    title: '반려동물',
+    items: [
+      { id: 'dog', code: TE.dog },
+      { id: 'cat', code: TE.cat },
+      { id: 'pawPrints', code: TE.pawPrints },
+      { id: 'bone', code: TE.bone },
+    ],
+  },
+  {
+    title: '여행',
+    items: [
+      { id: 'luggage', code: TE.luggage },
+      { id: 'beach', code: TE.beach },
+      { id: 'worldMap', code: TE.worldMap },
+      { id: 'photoCamera', code: TE.photoCamera },
+    ],
+  },
+  {
+    title: '취미 · 여가',
+    items: [
+      { id: 'gamepad', code: TE.gamepad },
+      { id: 'music', code: TE.music },
+      { id: 'art', code: TE.art },
+      { id: 'soccer', code: TE.soccer },
+      { id: 'clapperboard', code: TE.clapperboard },
+      { id: 'headphone', code: TE.headphone },
+      { id: 'guitar', code: TE.guitar },
+    ],
+  },
+  {
+    title: '생활',
+    items: [
+      { id: 'home2', code: TE.home2 },
+      { id: 'bathtub', code: TE.bathtub },
+      { id: 'broom', code: TE.broom },
+      { id: 'bulb', code: TE.bulb },
+      { id: 'wrench', code: TE.wrench },
+      { id: 'droplet', code: TE.droplet },
+      { id: 'antenna', code: TE.antenna },
+    ],
+  },
+  {
+    title: '기타',
+    items: [
+      { id: 'piggy', code: TE.piggy },
+      { id: 'chartUp', code: TE.chartUp },
+      { id: 'bank', code: TE.bank },
+      { id: 'creditCard', code: TE.creditCard },
+      { id: 'receipt', code: TE.receipt },
+      { id: 'party', code: TE.party },
+      { id: 'calendar', code: TE.calendar },
+      { id: 'repeat', code: TE.repeat },
+      { id: 'sparkles', code: TE.sparkles },
+      { id: 'phone', code: TE.phone },
+      { id: 'briefcase', code: TE.briefcase },
+      { id: 'baby', code: TE.baby },
+      { id: 'family', code: TE.family },
+      { id: 'birthday', code: TE.birthday },
+    ],
+  },
 ];

@@ -13,6 +13,7 @@ import { useHouseholdData } from '../../queries/useHouseholdData';
 import { getCategoryDef } from '../../lib/category-meta';
 import { CATEGORY_ICON_SECTIONS } from '../../lib/toss-emoji';
 import { getHiddenIconIds, setHiddenIconIds } from '../../lib/icon-prefs';
+import { getErrorMessage } from '../../lib/error';
 import { useCreateCategory, useUpdateCategory, useDeleteCategory, useUploadCategoryIcon } from '../../queries/mutations';
 import type { MoreStackParamList } from '../../navigation/types';
 
@@ -90,23 +91,30 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
   }
 
   async function handlePickPhoto() {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
-      setToast('사진 접근 권한이 필요해요');
+    let asset: ImagePicker.ImagePickerAsset;
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        setToast('사진 접근 권한이 필요해요');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+      });
+      if (result.canceled || !result.assets[0]) return;
+      asset = result.assets[0];
+    } catch {
+      setToast('사진을 불러오지 못했어요. 다른 사진으로 시도해보세요');
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 0.8,
-    });
-    if (result.canceled || !result.assets[0]) return;
-    const asset = result.assets[0];
+
     try {
       const { url } = await uploadIcon.mutateAsync({ uri: asset.uri, name: asset.fileName || 'icon.jpg', type: asset.mimeType || 'image/jpeg' });
       applyIcon(url);
-    } catch {
-      setToast('업로드에 실패했어요');
+    } catch (e) {
+      setToast(getErrorMessage(e, '업로드에 실패했어요. 다른 사진으로 시도해보세요'));
     }
   }
 

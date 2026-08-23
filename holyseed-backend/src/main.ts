@@ -12,6 +12,10 @@ import { AppModule } from './app.module';
 // 기준으로 재해석해 9시간이 어긋나던 문제 — 명시적으로 UTC로 해석하도록 고정 (OID 1114)
 types.setTypeParser(1114, (val: string) => new Date(`${val}Z`));
 
+// date(타임존 없음) 컬럼이 pg 기본 파서에 의해 JS Date 객체로 변환되어, 엔티티 타입(string)과
+// 어긋나 문자열 비교/키 매칭 로직이 깨지는 문제 — 원본 그대로 문자열 유지 (OID 1082)
+types.setTypeParser(1082, (val: string) => val);
+
 // Explicitly load environment variables
 const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
 dotenv.config({ path: envFile });

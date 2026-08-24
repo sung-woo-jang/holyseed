@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Button from '../ui/Button';
 import TextFieldBig from '../ui/TextFieldBig';
 import ListRow from '../ui/ListRow';
@@ -135,17 +135,16 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
                         left={<CategoryIcon icon={c.icon || def.iconCode} size={28} bg={(c.color || def.color) + '22'} />}
                         contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{c.name}</Text>}
                         right={
-                          kids.length > 0 ? (
-                            <Text style={{ color: theme.textMuted, fontSize: 13 }}>{isExpanded ? '▴' : '▾'}</Text>
-                          ) : category?.id === c.id ? (
-                            Icon.check(theme.brand, 16)
-                          ) : undefined
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                            {category?.id === c.id && Icon.check(theme.brand, 16)}
+                            {kids.length > 0 && (
+                              <Pressable hitSlop={8} onPress={() => setExpandedCatId(isExpanded ? null : c.id)}>
+                                <Text style={{ color: theme.textMuted, fontSize: 13 }}>{isExpanded ? '▴' : '▾'}</Text>
+                              </Pressable>
+                            )}
+                          </View>
                         }
                         onPress={() => {
-                          if (kids.length > 0) {
-                            setExpandedCatId(isExpanded ? null : c.id);
-                            return;
-                          }
                           setCategory({ id: c.id, name: c.name });
                           setCatPicker(false);
                         }}

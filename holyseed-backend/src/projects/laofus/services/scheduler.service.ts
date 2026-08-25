@@ -144,10 +144,7 @@ export class LaofusSchedulerService implements OnModuleInit {
       const saved = await this.engine.captureAccountSnapshot();
       await this.engine.logSchedulerEvent('info', `일별 자산 스냅샷 기록: ${saved.date} = ₩${saved.totalValueKrw}`);
     } catch (e) {
-      await this.engine.logSchedulerEvent(
-        'error',
-        `자산 스냅샷 기록 실패: ${e instanceof Error ? e.message : e}`,
-      );
+      await this.engine.logSchedulerEvent('error', `자산 스냅샷 기록 실패: ${e instanceof Error ? e.message : e}`);
     }
   }
 }

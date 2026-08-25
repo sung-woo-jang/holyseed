@@ -1,4 +1,15 @@
-import { BadRequestException, Body, Controller, Get, Param, ParseIntPipe, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FilesService } from '@shared/files/files.service';
@@ -23,7 +34,10 @@ export class CategoriesController {
   @ApiOperation({ summary: '카테고리 아이콘 이미지 업로드' })
   async uploadIcon(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException(ERROR_MESSAGES.FILES.NOT_SELECTED);
-    const { url } = await this.filesService.uploadImage(file, 'category-icons', 800, 82, { squareCanvas: true, squareCanvasSize: 512 });
+    const { url } = await this.filesService.uploadImage(file, 'category-icons', 800, 82, {
+      squareCanvas: true,
+      squareCanvasSize: 512,
+    });
     return { success: true, message: '업로드 성공', data: { url }, timestamp: new Date().toISOString() };
   }
 

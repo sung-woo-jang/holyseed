@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsInt,
@@ -71,6 +72,11 @@ export class CreateWorklogDto {
   @IsOptional()
   @IsInt()
   amountOverride?: number | null;
+
+  @ApiPropertyOptional({ description: '원천징수(3.3%) 적용 여부 (미지정 시 분류 기본값)', example: true })
+  @IsOptional()
+  @IsBoolean()
+  withholdingApplied?: boolean;
 
   @ApiPropertyOptional({ description: '주소' })
   @IsOptional()

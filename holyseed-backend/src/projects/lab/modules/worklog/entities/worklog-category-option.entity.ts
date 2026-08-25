@@ -1,5 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { numeric } from '../../../common/numeric.transformer';
 
 /** 근무 기록 "분류" 팔레트 — 사용자가 직접 추가 관리 (삭제는 미지원) */
 @Entity('worklog_category_options', { schema: 'lab' })
@@ -16,4 +17,34 @@ export class WorklogCategoryOption {
   @ApiProperty({ description: '표시 순서 (오름차순)', example: 0 })
   @Column({ name: 'sort_order', type: 'int', default: 0 })
   sortOrder: number;
+
+  @ApiPropertyOptional({ description: '기본 일급여 (미설정 시 날짜 기준 자동)', example: 140000 })
+  @Column({ name: 'default_daily_wage', type: 'int', nullable: true })
+  defaultDailyWage: number | null;
+
+  @ApiProperty({ description: '원천징수(3.3%) 기본 적용 여부', example: true })
+  @Column({ name: 'default_withholding_applied', type: 'boolean', default: true })
+  defaultWithholdingApplied: boolean;
+
+  @ApiProperty({ description: '초과근무 임계시간 (이 시간을 넘으면 추가수당 계산)', example: 8 })
+  @Column({
+    name: 'overtime_threshold_hours',
+    type: 'decimal',
+    precision: 4,
+    scale: 2,
+    default: 8,
+    transformer: numeric,
+  })
+  overtimeThresholdHours: number;
+
+  @ApiProperty({ description: '초과근무 가산율 (시급 대비)', example: 0.1 })
+  @Column({
+    name: 'overtime_extra_rate',
+    type: 'decimal',
+    precision: 4,
+    scale: 3,
+    default: 0.1,
+    transformer: numeric,
+  })
+  overtimeExtraRate: number;
 }

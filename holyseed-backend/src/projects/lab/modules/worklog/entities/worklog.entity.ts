@@ -84,4 +84,30 @@ export class Worklog extends BaseEntity {
   @ApiPropertyOptional({ description: '근무 사진', type: [WorklogPhoto] })
   @Column({ type: 'jsonb', default: () => "'[]'" })
   photos: WorklogPhoto[];
+
+  @ApiProperty({ description: '원천징수(3.3%) 적용 여부', example: true })
+  @Column({ name: 'withholding_applied', type: 'boolean', default: true })
+  withholdingApplied: boolean;
+
+  @ApiProperty({ description: '초과근무 임계시간 (등록 시점 분류 설정 스냅샷)', example: 8 })
+  @Column({
+    name: 'overtime_threshold_hours',
+    type: 'decimal',
+    precision: 4,
+    scale: 2,
+    default: 8,
+    transformer: numeric,
+  })
+  overtimeThresholdHours: number;
+
+  @ApiProperty({ description: '초과근무 가산율 (등록 시점 분류 설정 스냅샷)', example: 0.1 })
+  @Column({
+    name: 'overtime_extra_rate',
+    type: 'decimal',
+    precision: 4,
+    scale: 3,
+    default: 0.1,
+    transformer: numeric,
+  })
+  overtimeExtraRate: number;
 }

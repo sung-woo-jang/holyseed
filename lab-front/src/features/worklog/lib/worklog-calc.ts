@@ -1,7 +1,7 @@
 /**
  * 급여 계산 (백엔드 WorklogService.calcAmount와 동일 공식 — 미리보기용 의도적 중복)
- * 시급 = 일급여 ÷ 8, 실근무 = 총근무 − 휴게, 초과 = max(0, 실근무 − 8)
- * 공수 = 1 + 초과/8, 금액 = 공수×일급여 + 초과×시급×0.1
+ * 시급 = 일급여 ÷ 임계시간, 실근무 = 총근무 − 휴게, 초과 = max(0, 실근무 − 임계시간)
+ * 공수 = 1 + 초과/임계시간, 금액 = 공수×일급여 + 초과×시급×가산율
  */
 export function calcWorklogAmount(params: {
   startTime?: string
@@ -9,8 +9,18 @@ export function calcWorklogAmount(params: {
   breakHours: number
   dailyWage: number
   isDayoff?: boolean
+  overtimeThresholdHours?: number
+  overtimeExtraRate?: number
 }): number {
-  const { startTime, endTime, breakHours, dailyWage, isDayoff } = params
+  const {
+    startTime,
+    endTime,
+    breakHours,
+    dailyWage,
+    isDayoff,
+    overtimeThresholdHours = 8,
+    overtimeExtraRate = 0.1,
+  } = params
   if (isDayoff) return 0
   if (!startTime || !endTime) return dailyWage
 
@@ -23,8 +33,11 @@ export function calcWorklogAmount(params: {
   if (isNaN(total)) return dailyWage
   if (total < 0) total += 24
   const worked = Math.max(0, total - breakHours)
-  const overtime = Math.max(0, worked - 8)
-  return Math.round((1 + overtime / 8) * dailyWage + overtime * (dailyWage / 8) * 0.1)
+  const overtime = Math.max(0, worked - overtimeThresholdHours)
+  return Math.round(
+    (1 + overtime / overtimeThresholdHours) * dailyWage +
+      overtime * (dailyWage / overtimeThresholdHours) * overtimeExtraRate
+  )
 }
 
 /** 일당 기준 (백엔드와 동일 이력) */

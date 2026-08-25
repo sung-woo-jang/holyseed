@@ -22,6 +22,7 @@ import {
   QueryWorklogDto,
   CreateJobOptionDto,
   CreateCategoryOptionDto,
+  UpdateCategoryOptionDto,
   ReorderCategoryOptionsDto,
   SaveSortPrefDto,
 } from './dto/request';
@@ -107,7 +108,13 @@ export class WorklogController {
   @Post('category-options')
   @ApiOperation({ summary: '분류 팔레트에 항목 추가' })
   async createCategoryOption(@Body() dto: CreateCategoryOptionDto) {
-    return ok('분류가 추가되었습니다.', await this.worklogService.createCategoryOption(dto.name));
+    return ok('분류가 추가되었습니다.', await this.worklogService.createCategoryOption(dto));
+  }
+
+  @Post('category-options/update')
+  @ApiOperation({ summary: '분류 기본값(일급여/원천징수/초과수당) 수정 — 기존 근무 기록에는 영향 없음' })
+  async updateCategoryOption(@Body() dto: UpdateCategoryOptionDto) {
+    return ok('분류 설정이 수정되었습니다.', await this.worklogService.updateCategoryOption(dto));
   }
 
   @Post('category-options/reorder')

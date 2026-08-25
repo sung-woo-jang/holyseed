@@ -13,6 +13,7 @@ import {
   ListOrdered,
   Pencil,
   Plus,
+  Settings2,
   Trash2,
   X,
 } from 'lucide-react'
@@ -25,6 +26,7 @@ import {
   useDeleteWorklog,
   useReorderCategoryOptions,
   useSaveWorklogSortPref,
+  useUpdateCategoryOption,
   useUpdateWorklog,
   useUploadWorklogPhotos,
   useWorklogCategoryOptions,
@@ -145,22 +147,24 @@ interface FormState {
   payStatus: PayStatus
   dailyWage: string
   amountOverride: string
+  withholdingApplied: boolean
   address: string
   memo: string
   photos: WorklogPhoto[]
 }
 
-const emptyForm = (date: string): FormState => ({
+const emptyForm = (date: string, category: WorklogCategoryOption | undefined): FormState => ({
   title: '',
   workDate: date,
-  category: '인테리어',
+  category: category?.name ?? '',
   startTime: '08:00',
   endTime: '17:00',
   breakHours: '1',
   jobs: [],
   payStatus: 'EXPECTED',
-  dailyWage: String(getDailyWage(date)),
+  dailyWage: String(category?.defaultDailyWage ?? getDailyWage(date)),
   amountOverride: '',
+  withholdingApplied: category?.defaultWithholdingApplied ?? true,
   address: '',
   memo: '',
   photos: [],
@@ -169,19 +173,109 @@ const emptyForm = (date: string): FormState => ({
 function SortableCategoryRow({ option }: { option: WorklogCategoryOption }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: option.id })
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
+  const [expanded, setExpanded] = useState(false)
+  const [settings, setSettings] = useState({
+    defaultDailyWage: option.defaultDailyWage !== null ? String(option.defaultDailyWage) : '',
+    defaultWithholdingApplied: option.defaultWithholdingApplied,
+    overtimeThresholdHours: String(option.overtimeThresholdHours),
+    overtimeExtraRate: String(option.overtimeExtraRate),
+  })
+  const updateOption = useUpdateCategoryOption()
+
+  async function handleSaveSettings() {
+    try {
+      await updateOption.mutateAsync({
+        id: option.id,
+        defaultDailyWage: settings.defaultDailyWage.trim() === '' ? null : parseInt(settings.defaultDailyWage, 10),
+        defaultWithholdingApplied: settings.defaultWithholdingApplied,
+        overtimeThresholdHours: parseFloat(settings.overtimeThresholdHours) || 8,
+        overtimeExtraRate: parseFloat(settings.overtimeExtraRate) || 0.1,
+      })
+      toast.success('분류 설정이 저장되었습니다.')
+      setExpanded(false)
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? '분류 설정 저장에 실패했습니다.')
+    }
+  }
 
   return (
-    <div ref={setNodeRef} style={style} className="bg-card flex items-center gap-2 rounded-md border px-3 py-2">
-      <button
-        type="button"
-        className="text-muted-foreground cursor-grab touch-none active:cursor-grabbing"
-        aria-label="순서 변경"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="size-4" />
-      </button>
-      <span className="text-sm">{option.name}</span>
+    <div ref={setNodeRef} style={style} className="bg-card rounded-md border px-3 py-2">
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          className="text-muted-foreground cursor-grab touch-none active:cursor-grabbing"
+          aria-label="순서 변경"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="size-4" />
+        </button>
+        <span className="flex-1 text-sm">{option.name}</span>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="h-6 w-6"
+          aria-label={`${option.name} 설정`}
+          onClick={() => setExpanded((v) => !v)}
+        >
+          <Settings2 className="size-4" />
+        </Button>
+      </div>
+      {expanded && (
+        <div className="mt-2 space-y-2 border-t pt-2">
+          <div className="flex items-center justify-between gap-2">
+            <Label className="text-xs font-normal">기본 일급여</Label>
+            <Input
+              type="number"
+              min="0"
+              step="10000"
+              className="h-7 w-28 text-right text-xs"
+              placeholder="날짜 기준 자동"
+              value={settings.defaultDailyWage}
+              onChange={(e) => setSettings((s) => ({ ...s, defaultDailyWage: e.target.value }))}
+            />
+          </div>
+          <label className="flex items-center justify-between gap-2">
+            <span className="text-xs font-normal">원천징수(3.3%) 기본 적용</span>
+            <Checkbox
+              checked={settings.defaultWithholdingApplied}
+              onCheckedChange={(v) => setSettings((s) => ({ ...s, defaultWithholdingApplied: v === true }))}
+            />
+          </label>
+          <div className="flex items-center justify-between gap-2">
+            <Label className="text-xs font-normal">초과근무 임계시간</Label>
+            <Input
+              type="number"
+              min="0"
+              step="0.5"
+              className="h-7 w-28 text-right text-xs"
+              value={settings.overtimeThresholdHours}
+              onChange={(e) => setSettings((s) => ({ ...s, overtimeThresholdHours: e.target.value }))}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <Label className="text-xs font-normal">초과근무 가산율</Label>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              className="h-7 w-28 text-right text-xs"
+              value={settings.overtimeExtraRate}
+              onChange={(e) => setSettings((s) => ({ ...s, overtimeExtraRate: e.target.value }))}
+            />
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            className="w-full"
+            onClick={handleSaveSettings}
+            disabled={updateOption.isPending}
+          >
+            저장
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
@@ -245,7 +339,7 @@ function WorklogDialog({
   editing: Worklog | null
   defaultDate: string
 }) {
-  const [form, setForm] = useState<FormState>(emptyForm(defaultDate))
+  const [form, setForm] = useState<FormState>(emptyForm(defaultDate, undefined))
   const create = useCreateWorklog()
   const update = useUpdateWorklog()
   const uploadPhotos = useUploadWorklogPhotos()
@@ -262,6 +356,19 @@ function WorklogDialog({
   const [newCategoryName, setNewCategoryName] = useState('')
 
   const categoryJobOptions = jobOptions.filter((o) => o.category === form.category)
+  const selectedCategoryOption = categoryOptions.find((o) => o.name === form.category)
+
+  useEffect(() => {
+    if (open && !editing && !form.category && categoryOptions.length > 0) {
+      const first = categoryOptions[0]
+      setForm((f) => ({
+        ...f,
+        category: first.name,
+        dailyWage: String(first.defaultDailyWage ?? getDailyWage(f.workDate)),
+        withholdingApplied: first.defaultWithholdingApplied,
+      }))
+    }
+  }, [open, editing, categoryOptions, form.category])
 
   async function addJobOption() {
     const name = newJobName.trim()
@@ -318,11 +425,12 @@ function WorklogDialog({
               payStatus: editing.payStatus,
               dailyWage: String(editing.dailyWage),
               amountOverride: editing.amountOverride !== null ? String(editing.amountOverride) : '',
+              withholdingApplied: editing.withholdingApplied,
               address: editing.address ?? '',
               memo: editing.memo ?? '',
               photos: editing.photos ?? [],
             }
-          : emptyForm(defaultDate)
+          : emptyForm(defaultDate, categoryOptions[0])
       )
     }
   }
@@ -356,9 +464,11 @@ function WorklogDialog({
     breakHours: parseFloat(form.breakHours) || 0,
     dailyWage: parseInt(form.dailyWage, 10) || 0,
     isDayoff: form.payStatus === 'DAYOFF',
+    overtimeThresholdHours: selectedCategoryOption?.overtimeThresholdHours,
+    overtimeExtraRate: selectedCategoryOption?.overtimeExtraRate,
   })
   const effective = form.amountOverride !== '' ? parseInt(form.amountOverride, 10) || 0 : preview
-  const net = Math.round(effective * (1 - WITHHOLDING_RATE))
+  const net = form.withholdingApplied ? Math.round(effective * (1 - WITHHOLDING_RATE)) : effective
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((f) => ({ ...f, [k]: v }))
 
@@ -375,6 +485,7 @@ function WorklogDialog({
       payStatus: form.payStatus,
       dailyWage: parseInt(form.dailyWage, 10) || 0,
       amountOverride: form.amountOverride !== '' ? parseInt(form.amountOverride, 10) : null,
+      withholdingApplied: form.withholdingApplied,
       address: form.address || undefined,
       memo: form.memo || undefined,
       photos: form.photos,
@@ -418,8 +529,11 @@ function WorklogDialog({
               <Select
                 value={form.category}
                 onValueChange={(v) => {
+                  const opt = categoryOptions.find((o) => o.name === v)
                   set('category', v as WorklogCategory)
                   set('jobs', [])
+                  set('dailyWage', String(opt?.defaultDailyWage ?? getDailyWage(form.workDate)))
+                  set('withholdingApplied', opt?.defaultWithholdingApplied ?? true)
                 }}
               >
                 <SelectTrigger>
@@ -464,7 +578,9 @@ function WorklogDialog({
                 value={form.workDate}
                 onChange={(e) => {
                   set('workDate', e.target.value)
-                  if (!editing) set('dailyWage', String(getDailyWage(e.target.value)))
+                  if (!editing) {
+                    set('dailyWage', String(selectedCategoryOption?.defaultDailyWage ?? getDailyWage(e.target.value)))
+                  }
                 }}
                 required
               />
@@ -620,8 +736,19 @@ function WorklogDialog({
                 onChange={(e) => set('amountOverride', e.target.value)}
               />
             </div>
-            <div className="mt-2 flex justify-between border-t pt-2">
-              <span className="text-muted-foreground">실수령 (3.3% 공제)</span>
+            <label className="mt-2 flex items-center justify-between gap-2 border-t pt-2">
+              <span className="text-muted-foreground flex items-center gap-1.5">
+                <Checkbox
+                  checked={form.withholdingApplied}
+                  onCheckedChange={(v) => set('withholdingApplied', v === true)}
+                />
+                원천징수(3.3%) 적용
+              </span>
+            </label>
+            <div className="mt-2 flex justify-between">
+              <span className="text-muted-foreground">
+                실수령 {form.withholdingApplied ? '(3.3% 공제)' : '(공제 없음)'}
+              </span>
               <b className="tabular-nums">{won(net)}</b>
             </div>
           </div>

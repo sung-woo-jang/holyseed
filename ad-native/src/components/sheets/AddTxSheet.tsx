@@ -132,7 +132,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
                   return (
                     <View key={c.id}>
                       <ListRow
-                        left={<CategoryIcon icon={c.icon || def.iconCode} size={28} bg={(c.color || def.color) + '22'} />}
+                        left={<CategoryIcon icon={c.icon || def.iconCode} size={26} bg={(c.color || def.color) + '22'} />}
                         contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{c.name}</Text>}
                         right={
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -152,22 +152,25 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
                           setCategory({ id: c.id, name: c.name });
                           setCatPicker(false);
                         }}
-                        verticalPadding="small"
+                        verticalPadding={6}
                       />
-                      {isExpanded &&
-                        kids.map((k) => (
-                          <ListRow
-                            key={k.id}
-                            left={<CategoryIcon icon={k.icon || c.icon || def.iconCode} size={22} bg={(c.color || def.color) + '22'} />}
-                            contents={<Text style={{ color: theme.text, fontSize: 14, fontWeight: '500', marginLeft: 12 }}>{k.name}</Text>}
-                            right={category?.id === k.id ? Icon.check(theme.brand, 16) : undefined}
-                            onPress={() => {
-                              setCategory({ id: k.id, name: k.name });
-                              setCatPicker(false);
-                            }}
-                            verticalPadding="small"
-                          />
-                        ))}
+                      {isExpanded && (
+                        <View style={[styles.childGroup, { borderColor: theme.border }]}>
+                          {kids.map((k) => (
+                            <ListRow
+                              key={k.id}
+                              left={<CategoryIcon icon={k.icon || c.icon || def.iconCode} size={20} bg={(c.color || def.color) + '22'} />}
+                              contents={<Text style={{ color: theme.text, fontSize: 13.5, fontWeight: '500' }}>{k.name}</Text>}
+                              right={category?.id === k.id ? Icon.check(theme.brand, 16) : undefined}
+                              onPress={() => {
+                                setCategory({ id: k.id, name: k.name });
+                                setCatPicker(false);
+                              }}
+                              verticalPadding={4}
+                            />
+                          ))}
+                        </View>
+                      )}
                     </View>
                   );
                 })
@@ -239,4 +242,5 @@ const styles = StyleSheet.create({
   titleInput: { height: 44, borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, fontSize: 14, marginBottom: 8 },
   memoInput: { minHeight: 72, borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingTop: 10, fontSize: 14, textAlignVertical: 'top' },
   expandBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  childGroup: { marginLeft: 32, paddingLeft: 12, borderLeftWidth: 2, marginBottom: 4 },
 });

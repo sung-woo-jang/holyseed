@@ -9,10 +9,10 @@ interface ListRowProps {
   right?: ReactNode;
   withArrow?: boolean;
   onPress?: () => void;
-  verticalPadding?: 'none' | 'small' | 'medium' | 'large';
+  verticalPadding?: 'none' | 'small' | 'medium' | 'large' | number;
 }
 
-const VP: Record<NonNullable<ListRowProps['verticalPadding']>, number> = {
+const VP: Record<'none' | 'small' | 'medium' | 'large', number> = {
   none: 0,
   small: 8,
   medium: 14,
@@ -30,7 +30,8 @@ export default function ListRow({ left, contents, right, withArrow = false, onPr
     </>
   );
 
-  const rowStyle = [styles.row, { paddingVertical: VP[verticalPadding] }];
+  const vp = typeof verticalPadding === 'number' ? verticalPadding : VP[verticalPadding];
+  const rowStyle = [styles.row, { paddingVertical: vp }];
 
   if (onPress) {
     return (

@@ -39,6 +39,7 @@ export const WORKLOG_API = {
   DELETE_JOB_OPTION: (id: number | string) => `/worklog/job-options/${id}/delete`,
   CATEGORY_OPTIONS: '/worklog/category-options',
   CREATE_CATEGORY_OPTION: '/worklog/category-options',
+  UPDATE_CATEGORY_OPTION: '/worklog/category-options/update',
   REORDER_CATEGORY_OPTIONS: '/worklog/category-options/reorder',
   SORT_PREF: '/worklog/sort-pref',
 } as const

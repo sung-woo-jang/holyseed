@@ -10,6 +10,11 @@ export interface WorklogJobOption {
 export interface WorklogCategoryOption {
   id: number
   name: string
+  sortOrder: number
+  defaultDailyWage: number | null
+  defaultWithholdingApplied: boolean
+  overtimeThresholdHours: number
+  overtimeExtraRate: number
 }
 
 export interface WorklogPhoto {
@@ -34,6 +39,7 @@ export interface Worklog {
   address: string | null
   memo: string | null
   photos: WorklogPhoto[]
+  withholdingApplied: boolean
   effectiveAmount: number
   netAmount: number
 }
@@ -60,6 +66,7 @@ export interface WorklogInput {
   category?: WorklogCategory
   dailyWage?: number
   amountOverride?: number | null
+  withholdingApplied?: boolean
   address?: string
   memo?: string
   photos?: WorklogPhoto[]

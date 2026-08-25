@@ -96,6 +96,24 @@ export function useCreateCategoryOption() {
   })
 }
 
+export function useUpdateCategoryOption() {
+  const qc = useQueryClient()
+  return useStandardMutation<
+    WorklogCategoryOption,
+    Error,
+    { id: number } & Partial<
+      Pick<
+        WorklogCategoryOption,
+        'name' | 'defaultDailyWage' | 'defaultWithholdingApplied' | 'overtimeThresholdHours' | 'overtimeExtraRate'
+      >
+    >
+  >({
+    mutationFn: async (input) =>
+      (await axiosInstance.post<WorklogCategoryOption>(WORKLOG_API.UPDATE_CATEGORY_OPTION, input)).data,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['worklog', 'category-options'] }),
+  })
+}
+
 export function useReorderCategoryOptions() {
   const qc = useQueryClient()
   return useStandardMutation<WorklogCategoryOption[], Error, number[]>({

@@ -36,5 +36,5 @@ const styles = StyleSheet.create({
   panel: { maxHeight: '70%', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 10 },
   handle: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 10 },
   title: { fontSize: 16, fontWeight: '700', textAlign: 'center', marginBottom: 8, paddingHorizontal: 20 },
-  scroll: { paddingHorizontal: 20 },
+  scroll: {},
 });

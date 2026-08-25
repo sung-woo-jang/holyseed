@@ -145,6 +145,7 @@ export const CATEGORY_ICON_SECTIONS: CategoryIconSection[] = [
       { id: 'subway', code: TE.subway },
       { id: 'bicycle', code: TE.bicycle },
       { id: 'fuel', code: TE.fuel },
+      { id: 'carRepair', code: TE.wrench },
       { id: 'plane', code: TE.plane },
     ],
   },

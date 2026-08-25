@@ -138,8 +138,12 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                             {category?.id === c.id && Icon.check(theme.brand, 16)}
                             {kids.length > 0 && (
-                              <Pressable hitSlop={8} onPress={() => setExpandedCatId(isExpanded ? null : c.id)}>
-                                <Text style={{ color: theme.textMuted, fontSize: 13 }}>{isExpanded ? '▴' : '▾'}</Text>
+                              <Pressable
+                                hitSlop={10}
+                                onPress={() => setExpandedCatId(isExpanded ? null : c.id)}
+                                style={({ pressed }) => [styles.expandBtn, { backgroundColor: pressed ? theme.border : 'transparent' }]}
+                              >
+                                <Text style={{ color: theme.textMuted, fontSize: 16 }}>{isExpanded ? '▴' : '▾'}</Text>
                               </Pressable>
                             )}
                           </View>
@@ -234,4 +238,5 @@ const styles = StyleSheet.create({
   fieldsCard: { borderWidth: 1, borderRadius: 12, marginBottom: 12, overflow: 'hidden' },
   titleInput: { height: 44, borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, fontSize: 14, marginBottom: 8 },
   memoInput: { minHeight: 72, borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingTop: 10, fontSize: 14, textAlignVertical: 'top' },
+  expandBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
 });

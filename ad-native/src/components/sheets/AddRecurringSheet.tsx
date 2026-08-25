@@ -160,8 +160,12 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                             {category?.id === c.id && Icon.check(theme.brand, 16)}
                             {kids.length > 0 && (
-                              <Pressable hitSlop={8} onPress={() => setExpandedCatId(isExpanded ? null : c.id)}>
-                                <Text style={{ color: theme.textMuted, fontSize: 13 }}>{isExpanded ? '▴' : '▾'}</Text>
+                              <Pressable
+                                hitSlop={10}
+                                onPress={() => setExpandedCatId(isExpanded ? null : c.id)}
+                                style={({ pressed }) => [styles.expandBtn, { backgroundColor: pressed ? theme.border : 'transparent' }]}
+                              >
+                                <Text style={{ color: theme.textMuted, fontSize: 16 }}>{isExpanded ? '▴' : '▾'}</Text>
                               </Pressable>
                             )}
                           </View>
@@ -301,4 +305,5 @@ const styles = StyleSheet.create({
   dayGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingBottom: 16 },
   dayCell: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   previewCard: { borderWidth: 1, borderRadius: 12, padding: 12, marginTop: 8 },
+  expandBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
 });

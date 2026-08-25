@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   infoText: { fontSize: 12.5, flex: 1 },
   amountWrap: { marginBottom: 16 },
   fieldsCard: { borderWidth: 1, borderRadius: 12, marginBottom: 12, overflow: 'hidden' },
-  dayGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingBottom: 16 },
+  dayGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 20, paddingBottom: 16 },
   dayCell: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   previewCard: { borderWidth: 1, borderRadius: 12, padding: 12, marginTop: 8 },
   expandBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },

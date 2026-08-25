@@ -72,6 +72,12 @@ export class PhoneUtil {
       return false;
     }
 
+    // 입력에 이미 하이픈이 있다면 그 구간이 정규화 결과와 정확히 일치해야 함
+    // (숫자 개수만 맞고 구간이 다르면 오타로 간주해 무효 처리, 예: '010-12345-678')
+    if (phone.includes('-') && phone !== normalized) {
+      return false;
+    }
+
     const parts = normalized.split('-');
     if (parts.length !== 3) {
       return false;

@@ -15,8 +15,8 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('API 상태 확인 메시지를 반환한다', () => {
+      expect(appController.getHello()).toBe('예약 서비스 플랫폼 API가 정상적으로 작동 중입니다!');
     });
   });
 });

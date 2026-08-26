@@ -139,10 +139,12 @@ export default function CategoryTransactionsScreen({ navigation, route }: Props)
                 {Number(date.slice(5, 7))}월 {Number(date.slice(8, 10))}일
               </Text>
               <View style={[styles.dayCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                {txs.map((t, i) => (
+                {txs.map((t, i) => {
+                  const rowVisual = resolveCategoryVisual(t.categoryId, categoryName, data.categories);
+                  return (
                   <View key={t.id}>
                     <ListRow
-                      left={<CategoryIcon icon={visual.icon} size={18} bg={theme.bg} />}
+                      left={<CategoryIcon icon={rowVisual.icon} size={18} bg={theme.bg} />}
                       contents={<Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{(t as unknown as { title?: string }).title || t.memo || categoryName}</Text>}
                       right={
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -166,7 +168,8 @@ export default function CategoryTransactionsScreen({ navigation, route }: Props)
                     />
                     {i < txs.length - 1 && <Border type="full" />}
                   </View>
-                ))}
+                  );
+                })}
               </View>
             </View>
           ))

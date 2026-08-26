@@ -98,6 +98,8 @@
 
   /* Netflix Typography */
   --netflix-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --netflix-display-font: 'Black Han Sans', var(--netflix-font);
+  --netflix-mono-font: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
   --netflix-hero-size: clamp(2rem, 6vw, 5rem);
   --netflix-title-size: clamp(1.5rem, 3vw, 2.5rem);
   --netflix-body-size: 1rem;

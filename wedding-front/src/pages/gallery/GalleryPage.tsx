@@ -14,29 +14,32 @@ function GalleryContent() {
 
   return (
     <div className={styles.container}>
-      <header className={styles.header}>
-        <div className={styles.main}>
-          <h1 className={styles.headerTitle}>우리의 순간</h1>
-          <p className={styles.headerSubtitle}>{couple.groomName} ❤️ {couple.brideName}</p>
+      <div className={styles.titlecard}>
+        <div className={styles.titlecardInner}>
+          <p className={styles.eyebrow}>Our Story</p>
+          <h1 className={styles.title}>
+            {couple.groomName}
+            <span className={styles.amp}>&amp;</span>
+            {couple.brideName}
+          </h1>
+          <p className={styles.subtitle}>하객분들이 남겨주신 우리의 장면들</p>
         </div>
-      </header>
+      </div>
+      <div className={styles.sprockets} />
 
-      <div className={styles.main}>
-        <section className={styles.uploadSection}>
-          <div className={styles.uploadTitle}>추억을 공유해주세요</div>
-          <p className={styles.uploadDesc}>결혼식 사진이나 영상을 업로드하면 검토 후 갤러리에 표시됩니다</p>
-          <UploadButton coupleId={couple.id} onUploadComplete={() => setRefreshKey((k) => k + 1)} />
-        </section>
+      <div className={styles.section}>
+        <UploadButton coupleId={couple.id} onUploadComplete={() => setRefreshKey((k) => k + 1)} />
+      </div>
 
-        <section>
-          <GalleryView key={refreshKey} coupleId={couple.id} />
-        </section>
+      <div className={styles.section}>
+        <GalleryView key={refreshKey} coupleId={couple.id} />
+      </div>
 
-        <div className={styles.backButtonContainer}>
-          <Link to={`/${couple.slug}`}>
-            <button type="button" className={styles.backButton}>← 청첩장으로 돌아가기</button>
-          </Link>
-        </div>
+      <div className={styles.returnRow}>
+        <Link to={`/${couple.slug}`} className={styles.returnLink}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+          청첩장으로 돌아가기
+        </Link>
       </div>
     </div>
   )

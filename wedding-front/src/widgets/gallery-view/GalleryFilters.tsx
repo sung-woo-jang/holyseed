@@ -1,5 +1,3 @@
-
-
 import styles from './GalleryFilters.module.css';
 import cn from 'classnames';
 
@@ -25,13 +23,11 @@ export function GalleryFilters({ currentFilter, onFilterChange, stats }: Gallery
       {filters.map(filter => (
         <button
           key={filter.value}
+          type="button"
           onClick={() => onFilterChange(filter.value)}
-          className={cn(styles.button, {
-            [styles.buttonActive]: currentFilter === filter.value,
-            [styles.buttonInactive]: currentFilter !== filter.value,
-          })}
+          className={cn(styles.chip, { [styles.chipActive]: currentFilter === filter.value })}
         >
-          {filter.label} ({filter.count})
+          {filter.label} <span className={styles.count}>{filter.count}</span>
         </button>
       ))}
     </div>

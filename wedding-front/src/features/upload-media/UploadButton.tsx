@@ -1,4 +1,4 @@
-import { useState, useRef, DragEvent, ChangeEvent } from 'react';
+import { useState, useRef, DragEvent, ChangeEvent, KeyboardEvent } from 'react';
 import axios from 'axios';
 import { api } from '@/shared/api';
 import styles from './UploadButton.module.css';
@@ -127,6 +127,14 @@ export default function UploadButton({
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const openPicker = () => fileInputRef.current?.click();
+  const handleCardKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openPicker();
+    }
+  };
+
   const handleDragEnter = (e: DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); };
   const handleDragLeave = (e: DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); };
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); };
@@ -138,17 +146,23 @@ export default function UploadButton({
 
   const handleCancel = () => { cancelRef.current?.abort(); };
 
+  const isIdle = !uploading && !success;
+
   return (
     <div className={styles.container}>
       <div
-        className={cn(styles.dropzone, {
-          [styles.dropzoneActive]: isDragging,
-          [styles.dropzoneDisabled]: uploading,
+        className={cn(styles.card, {
+          [styles.cardActive]: isDragging,
+          [styles.cardBusy]: !isIdle,
         })}
         onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        role={isIdle ? 'button' : undefined}
+        tabIndex={isIdle ? 0 : undefined}
+        onClick={isIdle ? openPicker : undefined}
+        onKeyDown={isIdle ? handleCardKeyDown : undefined}
       >
         <input
           ref={fileInputRef}
@@ -160,54 +174,58 @@ export default function UploadButton({
           style={{ display: 'none' }}
         />
 
-        <div className={styles.content}>
-          {!uploading && !success && (
-            <>
-              <svg className={styles.icon} stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <div>
-                <button type="button" onClick={() => fileInputRef.current?.click()} className={styles.buttonSelect}>파일 선택</button>
-              </div>
-              <p className={styles.textMain}>또는 파일을 드래그 앤 드롭하세요</p>
-              <p className={styles.textSub}>JPG, PNG, WEBP, MP4, MOV (최대 5GB)</p>
-            </>
-          )}
+        {isIdle && (
+          <>
+            <div className={styles.icon}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            </div>
+            <div className={styles.copy}>
+              <p className={styles.cardTitle}>새 장면 추가하기</p>
+              <p className={styles.cardDesc}>사진 · 영상을 올리면 검토 후 갤러리에 걸려요 (최대 5GB)</p>
+            </div>
+            <div className={styles.arrow}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+            </div>
+          </>
+        )}
 
-          {uploading && (
-            <>
-              <svg className={styles.spinner} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" style={{ opacity: 0.25 }} />
-                <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" style={{ opacity: 0.75 }} />
-              </svg>
-              {totalFiles > 1 && <p className={styles.fileInfo}>{completedFiles + 1} / {totalFiles} 파일</p>}
-              <p className={styles.fileInfo}>{currentFile}</p>
-              <p className={styles.textSub}>업로드 중... {progress}%</p>
-              <div className={styles.progressContainer}>
-                <div className={styles.progressBar} style={{ width: `${progress}%` }} />
-              </div>
-              <button type="button" onClick={handleCancel} className={styles.buttonCancel}>취소</button>
-            </>
-          )}
-
-          {success && (
-            <>
-              <svg className={styles.iconSuccess} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <p className={styles.textSuccess}>
-                {totalFiles > 1 ? `${totalFiles}개 파일 업로드 완료!` : '업로드 완료!'}{' '}
-                검토 후 갤러리에 표시됩니다.
+        {uploading && (
+          <>
+            <div className={styles.spinner} />
+            <div className={styles.copy}>
+              <p className={styles.cardTitle}>
+                {totalFiles > 1 ? `${completedFiles + 1} / ${totalFiles} 업로드 중` : '업로드 중'}
               </p>
-            </>
-          )}
-        </div>
+              <p className={styles.cardDesc}>{currentFile}</p>
+              <div className={styles.progressTrack}>
+                <div className={styles.progressFill} style={{ width: `${progress}%` }} />
+              </div>
+            </div>
+            <span className={styles.progressPct}>{progress}%</span>
+          </>
+        )}
+
+        {success && (
+          <>
+            <div className={styles.iconSuccess}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <div className={styles.copy}>
+              <p className={styles.cardTitle}>{totalFiles > 1 ? `${totalFiles}개 업로드 완료` : '업로드 완료'}</p>
+              <p className={styles.cardDesc}>검토 후 갤러리에 표시됩니다</p>
+            </div>
+          </>
+        )}
       </div>
 
+      {uploading && (
+        <button type="button" onClick={handleCancel} className={styles.cancelLink}>업로드 취소</button>
+      )}
+
       {error && (
-        <div className={styles.errorContainer}>
-          <p className={styles.errorMessage}>{error}</p>
-          <button type="button" onClick={() => setError(null)} className={styles.buttonCloseError}>닫기</button>
+        <div className={styles.errorPanel}>
+          <p className={styles.errorText}>{error}</p>
+          <button type="button" onClick={() => setError(null)} className={styles.errorClose}>닫기</button>
         </div>
       )}
     </div>

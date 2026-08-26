@@ -1,5 +1,5 @@
 /* ============================================
-   NETFLIX-THEMED GALLERY PAGE
+   FILM-REEL THEMED GALLERY PAGE
    ============================================ */
 
 .container {
@@ -7,161 +7,107 @@
   margin: 0 auto;
   min-height: 100vh;
   background: var(--netflix-black, #141414);
-  padding: 1.5rem;
 }
 
-.header {
+/* Title card */
+.titlecard {
   position: relative;
+  padding: 1.9rem 1.5rem 2.1rem;
   text-align: center;
-  margin: 0 auto 2rem;
-  padding: 2rem 1.5rem;
-  background: var(--netflix-dark-gray, #1f1f1f);
-  border-radius: 8px;
-  border-top: 4px solid var(--netflix-red, #e50914);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  background: linear-gradient(180deg, var(--netflix-dark-gray, #1f1f1f) 0%, var(--netflix-black, #141414) 100%);
 }
 
-.headerTitle {
-  text-align: center;
-  font-family: var(--netflix-font, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
-  font-size: 1.6rem;
-  font-weight: 700;
+.titlecardInner {
+  padding-top: 0.2rem;
+}
+
+.eyebrow {
+  font-family: var(--netflix-mono-font);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: #57554f;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6em;
+  margin: 0;
+}
+
+.eyebrow::before,
+.eyebrow::after {
+  content: '';
+  width: 22px;
+  height: 1px;
+  background: #57554f;
+}
+
+.title {
+  font-family: var(--netflix-display-font);
+  font-size: clamp(2.1rem, 9vw, 2.6rem);
+  line-height: 1.15;
   color: var(--netflix-white, #ffffff);
-  margin-bottom: var(--spacing-sm);
-  letter-spacing: 0.05em;
+  margin: 0.55em 0 0.3em;
+  letter-spacing: 0.01em;
 }
 
-.headerSubtitle {
-  text-align: center;
-  font-size: var(--font-size-lg);
+.amp {
+  color: var(--netflix-red, #e50914);
+  margin: 0 0.16em;
+  font-size: 0.8em;
+}
+
+.subtitle {
+  font-size: 0.85rem;
   color: var(--netflix-text-muted, #b3b3b3);
   font-weight: 500;
-  letter-spacing: 0.02em;
+  margin: 0;
 }
 
-.main {
-  max-width: 100%;
-  margin: 0 auto;
-  padding: var(--spacing-lg) 0;
+/* Signature: film perforation strip */
+.sprockets {
+  height: 12px;
+  background-image: radial-gradient(circle, var(--netflix-black, #141414) 3.5px, transparent 3.6px);
+  background-size: 22px 12px;
+  background-position: 4px center;
+  background-color: #2c2c30;
 }
 
-.uploadSection {
-  background: var(--netflix-dark-gray, #1f1f1f);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-  padding: 2rem;
-  margin: 0 0 2rem;
-  border-top: 4px solid var(--netflix-red, #e50914);
-  position: relative;
-  overflow: hidden;
-  animation: fadeInUp 0.6s ease-out;
+/* Section shell */
+.section {
+  padding: 1.75rem 1.25rem 0;
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Return link */
+.returnRow {
+  margin: 2.6rem 1.25rem 3rem;
 }
 
-.uploadTitle {
-  font-size: var(--font-size-2xl);
-  font-weight: 700;
-  font-family: var(--netflix-font);
-  color: var(--netflix-white, #ffffff);
-  margin-bottom: var(--spacing-sm);
-  text-align: center;
-  position: relative;
-}
-
-.uploadDesc {
-  color: var(--netflix-text-muted, #b3b3b3);
-  text-align: center;
-  margin-bottom: var(--spacing-xl);
-  font-size: var(--font-size-base);
-  line-height: 1.7;
-  position: relative;
-}
-
-.backButtonContainer {
-  margin-top: var(--spacing-xxl);
-  text-align: center;
-  padding-bottom: var(--spacing-xxl);
-  padding: 0 4%;
-}
-
-.backButton {
-  display: inline-flex;
+.returnLink {
+  display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md) var(--spacing-xxl);
-  border: 2px solid var(--netflix-red, #e50914);
-  background: var(--netflix-gray, #2f2f2f);
+  justify-content: center;
+  gap: 0.5em;
+  color: var(--netflix-text-muted, #b3b3b3);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  padding-top: 1.4rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  transition: color 0.2s ease;
+}
+
+.returnLink:hover {
   color: var(--netflix-white, #ffffff);
-  border-radius: 4px;
-  font-weight: 700;
-  font-size: var(--font-size-base);
-  transition: all 0.3s ease;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  letter-spacing: 0.05em;
 }
 
-.backButton:hover {
-  background: var(--netflix-red, #e50914);
-  color: white;
-  border-color: var(--netflix-red-hover, #f40612);
-  box-shadow: 0 6px 20px rgba(229, 9, 20, 0.4);
-  transform: scale(1.05);
-}
-
-.backButton:active {
-  transform: scale(1);
-}
-
-/* Gallery Rows */
-.galleryRows {
-  padding: 2rem 0;
-}
-
-/* Mobile Responsive */
 @media (max-width: 640px) {
-  .header {
-    padding: 1.5rem 1rem;
+  .titlecard {
+    padding: 1.6rem 1.25rem 1.8rem;
   }
 
-  .headerTitle {
-    font-size: 1.8rem;
-  }
-
-  .headerSubtitle {
-    font-size: 1rem;
-  }
-
-  .uploadSection {
-    margin: 0 1rem 2rem;
-    padding: 2rem 1.5rem;
-  }
-
-  .uploadTitle {
-    font-size: 1.5rem;
-  }
-
-  .backButtonContainer {
-    padding: 0 1rem 2rem;
-  }
-
-  .backButton {
-    padding: 1rem 2rem;
-  }
-}
-
-@media (min-width: 641px) and (max-width: 1024px) {
-  .uploadSection {
-    margin: 0 3% 3rem;
+  .title {
+    font-size: 1.9rem;
   }
 }

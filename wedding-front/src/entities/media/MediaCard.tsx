@@ -12,24 +12,18 @@ export function MediaCard({ media, onClick }: MediaCardProps) {
 
   return (
     <div onClick={onClick} className={styles.card}>
-      <div className={styles.imageContainer}>
-        <img
-          src={mediaThumbnailUrl(media.id)}
-          alt={media.uploaderName || 'Guest photo'}
-          className={styles.image}
-          style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-        />
-        {isVideo && (
-          <div className={styles.videoOverlay}>
-            <svg className={styles.videoIcon} fill="currentColor" viewBox="0 0 20 20">
-              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-            </svg>
-          </div>
-        )}
-        <div className={styles.tint} />
-      </div>
+      <img
+        src={mediaThumbnailUrl(media.id)}
+        alt={media.uploaderName || 'Guest photo'}
+        className={styles.image}
+      />
+      {isVideo && (
+        <span className={styles.playBadge}>
+          <svg viewBox="0 0 8 8"><path d="M0 0l8 4-8 4z" fill="currentColor" /></svg>
+        </span>
+      )}
       {(media.uploaderName || media.message) && (
-        <div className={styles.infoOverlay}>
+        <div className={styles.caption}>
           {media.uploaderName && <span className={styles.uploader}>{media.uploaderName}</span>}
           {media.message && <span className={styles.message}>{media.message}</span>}
         </div>

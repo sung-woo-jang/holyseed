@@ -1,66 +1,55 @@
 .container {
   display: flex;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-xl);
+  gap: 0.5rem;
   overflow-x: auto;
-  padding: var(--spacing-sm);
-  padding-bottom: var(--spacing-md);
-  scrollbar-width: none; /* Firefox */
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(254, 245, 248, 0.9) 100%);
-  border-radius: 50px;
-  box-shadow: 0 4px 12px rgba(229, 9, 20, 0.08);
+  scrollbar-width: none;
+  padding-bottom: 0.2rem;
 }
 
 .container::-webkit-scrollbar {
-  display: none; /* Chrome, Safari */
+  display: none;
 }
 
-.button {
-  padding: var(--spacing-sm) var(--spacing-xl);
-  border-radius: 50px;
-  font-size: var(--font-size-sm);
+.chip {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
   font-weight: 600;
   white-space: nowrap;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: none;
+  background: var(--netflix-dark-gray, #1f1f1f);
+  color: var(--netflix-text-muted, #b3b3b3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   cursor: pointer;
-  position: relative;
-  overflow: hidden;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-.button::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
+.chip:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--netflix-white, #ffffff);
 }
 
-.button:hover::before {
-  width: 300px;
-  height: 300px;
+.count {
+  font-family: var(--netflix-mono-font);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: inherit;
+  opacity: 0.7;
 }
 
-.buttonActive {
-  background: linear-gradient(135deg, #e50914 0%, #c40812 100%);
-  color: white;
-  box-shadow: 0 4px 16px rgba(229, 9, 20, 0.4);
-  transform: scale(1.05);
+.chipActive {
+  background: var(--netflix-red, #e50914);
+  color: #ffffff;
+  border-color: var(--netflix-red, #e50914);
 }
 
-.buttonInactive {
-  background-color: transparent;
-  color: var(--color-text);
-  border: 1.5px solid rgba(229, 9, 20, 0.15);
+.chipActive:hover {
+  color: #ffffff;
 }
 
-.buttonInactive:hover {
-  background-color: rgba(229, 9, 20, 0.05);
-  border-color: rgba(229, 9, 20, 0.3);
-  transform: translateY(-1px);
+.chipActive .count {
+  opacity: 0.85;
 }

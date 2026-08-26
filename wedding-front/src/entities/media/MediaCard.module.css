@@ -2,112 +2,88 @@
   position: relative;
   cursor: pointer;
   overflow: hidden;
-  border-radius: 16px;
-  background-color: white;
-  margin-bottom: var(--spacing-md);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(229, 9, 20, 0.08);
-  border: 1px solid rgba(229, 9, 20, 0.05);
-}
-
-.card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(229, 9, 20, 0.2);
-  border-color: rgba(229, 9, 20, 0.15);
-}
-
-.imageContainer {
-  position: relative;
-  width: 100%;
+  border-radius: 10px;
+  background: var(--netflix-gray, #2f2f2f);
 }
 
 .image {
+  display: block;
   width: 100%;
   height: auto;
-  display: block;
   object-fit: cover;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
 .card:hover .image {
-  filter: brightness(0.95);
-  transform: scale(1.05);
+  transform: scale(1.035);
 }
 
-/* Video Overlay */
-.videoOverlay {
+.card::after {
+  content: '';
   position: absolute;
   inset: 0;
+  background: linear-gradient(180deg, transparent 55%, rgba(0, 0, 0, 0.6) 100%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.card:hover::after {
+  opacity: 1;
+}
+
+.playBadge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(229, 9, 20, 0.15) 0%, rgba(196, 8, 18, 0.2) 100%);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #ffffff;
+  z-index: 1;
 }
 
-.card:hover .videoOverlay {
-  background: linear-gradient(135deg, rgba(229, 9, 20, 0.25) 0%, rgba(196, 8, 18, 0.3) 100%);
+.playBadge svg {
+  width: 9px;
+  height: 9px;
+  margin-left: 1px;
 }
 
-.videoIcon {
-  width: 56px;
-  height: 56px;
-  color: white;
-  filter: drop-shadow(0 4px 12px rgba(229, 9, 20, 0.5));
-  transition: all 0.3s ease;
-}
-
-.card:hover .videoIcon {
-  transform: scale(1.1);
-  filter: drop-shadow(0 6px 16px rgba(229, 9, 20, 0.7));
-}
-
-/* Info Overlay */
-.infoOverlay {
+.caption {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: var(--spacing-xl) var(--spacing-md) var(--spacing-md);
-  background: linear-gradient(to top, rgba(229, 9, 20, 0.9) 0%, rgba(229, 9, 20, 0.6) 50%, transparent 100%);
+  left: 10px;
+  right: 10px;
+  bottom: 8px;
   opacity: 0;
-  transform: translateY(20px);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 1;
 }
 
-.card:hover .infoOverlay {
+.card:hover .caption {
   opacity: 1;
   transform: translateY(0);
 }
 
 .uploader {
-  color: white;
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  margin-bottom: 4px;
   display: block;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 .message {
-  color: rgba(255, 255, 255, 0.95);
-  font-size: 0.75rem; /* xs */
+  display: block;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.7rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: block;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-}
-
-/* Hover Tint Overlay (for simple tint without info) */
-.tint {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(229, 9, 20, 0.03) 0%, rgba(196, 8, 18, 0.05) 100%);
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-
-.card:hover .tint {
-  opacity: 1;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }

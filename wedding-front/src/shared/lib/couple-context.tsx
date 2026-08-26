@@ -27,6 +27,9 @@ export function CoupleProvider({ slug, children }: { slug: string; children: Rea
 
   useEffect(() => {
     let cancelled = false
+    setIsLoading(true)
+    setError(null)
+    setCouple(null)
     api
       .post('/couples/by-slug', { slug })
       .then((res) => {

@@ -1,9 +1,7 @@
-import { useRef, type UIEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { n, usd, kstDateOnly } from '@/features/quant/lib/types'
 import { useStatus } from '@/features/quant/lib/useStatus'
 import { CycleChart } from '@/features/quant/ui/CycleChart'
-import { CashChart, TChart } from '@/features/quant/ui/CycleCharts'
 import { Tile } from '@/features/quant/ui/ui'
 import { useContainerWidth } from '@/shared/hooks/use-container-width'
 import { useIsDesktopNav } from '@/shared/hooks/use-media-query'
@@ -17,16 +15,6 @@ export default function CycleDetailPage() {
   const navigate = useNavigate()
   const isDesktop = useIsDesktopNav()
   const { ref: chartsAreaRef, width: chartsAreaWidth } = useContainerWidth<HTMLDivElement>(720)
-  const priceScrollRef = useRef<HTMLDivElement>(null)
-  const tScrollRef = useRef<HTMLDivElement>(null)
-  const cashScrollRef = useRef<HTMLDivElement>(null)
-
-  function syncScroll(e: UIEvent<HTMLDivElement>) {
-    const x = e.currentTarget.scrollLeft
-    for (const r of [priceScrollRef, tScrollRef, cashScrollRef]) {
-      if (r.current && r.current !== e.currentTarget) r.current.scrollLeft = x
-    }
-  }
 
   if (!status)
     return (
@@ -92,19 +80,7 @@ export default function CycleDetailPage() {
 
       <div className="card" style={{ marginBottom: 14 }} ref={chartsAreaRef}>
         <h3 style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 4px' }}>체결가 · 평단 추이</h3>
-        <CycleChart trades={c.trades} width={chartWidth} scrollRef={priceScrollRef} onScroll={syncScroll} />
-        <h3 style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '16px 0 4px' }}>
-          T값 진행 (20 = 후반전 진입)
-        </h3>
-        <TChart trades={c.trades} width={chartWidth} scrollRef={tScrollRef} onScroll={syncScroll} />
-        <h3 style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '16px 0 4px' }}>자금 흐름</h3>
-        <CashChart
-          trades={c.trades}
-          principal={n(c.principal)}
-          width={chartWidth}
-          scrollRef={cashScrollRef}
-          onScroll={syncScroll}
-        />
+        <CycleChart trades={c.trades} width={chartWidth} />
       </div>
 
       <div className="card">

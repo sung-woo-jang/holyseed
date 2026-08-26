@@ -33,6 +33,23 @@ export function CycleChart({ trades, width, scrollRef, onScroll }: CycleChartPro
   const last = pts[pts.length - 1]
   const hv = hover !== null ? pts[hover] : null
 
+  // 매도(쿼터매도/전량매도 등) 콜아웃 라벨 — 호버 없이 항상 표시
+  let lastLabelX = -Infinity
+  let stack = 0
+  const sellLabels = pts
+    .map((t, i) => ({ t, i }))
+    .filter(({ t }) => t.side === 'SELL')
+    .map(({ t, i }) => {
+      const x = xs(i)
+      const y = ys(n(t.price))
+      stack = x - lastLabelX < 60 ? stack + 1 : 0
+      lastLabelX = x
+      const labelY = clampLabelY(y - 28 - stack * 18, PAD.t + 10, y - 14)
+      const text = `${t.kind} ${usd(n(t.price))}`
+      const boxW = text.length * 6 + 12
+      return { x, y, labelY, text, boxW }
+    })
+
   return (
     <div style={{ position: 'relative' }}>
       <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>
@@ -139,6 +156,32 @@ export function CycleChart({ trades, width, scrollRef, onScroll }: CycleChartPro
                 stroke="var(--surface-1)"
                 strokeWidth="2"
               />
+            </g>
+          ))}
+          {sellLabels.map((s, idx) => (
+            <g key={idx}>
+              <line
+                x1={s.x}
+                x2={s.x}
+                y1={s.y - 6}
+                y2={s.labelY + 9}
+                stroke="var(--status-critical)"
+                strokeWidth="1"
+                strokeDasharray="2 2"
+              />
+              <rect
+                x={s.x - s.boxW / 2}
+                y={s.labelY - 9}
+                width={s.boxW}
+                height={18}
+                rx={4}
+                fill="var(--surface-1)"
+                stroke="var(--status-critical)"
+                strokeWidth="1"
+              />
+              <text x={s.x} y={s.labelY + 4} textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--status-critical)">
+                {s.text}
+              </text>
             </g>
           ))}
           {(() => {

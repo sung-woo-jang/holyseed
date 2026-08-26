@@ -67,6 +67,10 @@ export default function TradeDetailPage() {
     : null
 
   const isSell = trade.side === 'SELL'
+  // 매도 시 평단은 변동 없음(엔진 로직) → 직전 평단이 곧 이 매도분의 원가
+  const realizedProfit = isSell ? (n(trade.price) - before.avg) * n(trade.quantity) : null
+  const realizedProfitPct = isSell && before.avg > 0 ? ((n(trade.price) - before.avg) / before.avg) * 100 : null
+  const sellPortionPct = isSell && before.qty > 0 ? (n(trade.quantity) / before.qty) * 100 : null
 
   return (
     <main className="wrap">
@@ -93,6 +97,21 @@ export default function TradeDetailPage() {
         <Tile label="수량" value={n(trade.quantity).toFixed(6)} sub={isSell ? '매도' : '매수'} />
         <Tile label="금액" value={usd(n(trade.amount))} />
         <Tile label="T 변화" value={`${n(trade.tBefore)} → ${n(trade.tAfter)}`} />
+        {isSell && realizedProfit !== null && (
+          <Tile
+            label="실현손익"
+            value={`${realizedProfit >= 0 ? '+' : ''}${usd(realizedProfit)}`}
+            sub={realizedProfitPct !== null ? `${realizedProfitPct >= 0 ? '+' : ''}${realizedProfitPct.toFixed(2)}% · 원가 ${usd(before.avg)}` : undefined}
+            valueColor={realizedProfit >= 0 ? 'var(--delta-good)' : 'var(--status-critical)'}
+          />
+        )}
+        {isSell && sellPortionPct !== null && (
+          <Tile
+            label="매도 비중"
+            value={`${sellPortionPct.toFixed(1)}%`}
+            sub={`보유 ${before.qty.toFixed(6)}주 중 ${n(trade.quantity).toFixed(6)}주`}
+          />
+        )}
       </div>
 
       <div className="card" style={{ marginBottom: 14 }}>

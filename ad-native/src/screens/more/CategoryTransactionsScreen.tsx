@@ -38,7 +38,8 @@ export default function CategoryTransactionsScreen({ navigation, route }: Props)
     enabled: !!hid,
   });
 
-  const raw = txQ.data?.data ?? [];
+  // axios 응답 인터셉터가 {success, data, total} 봉투를 이미 data로 벗겨내므로 txQ.data는 배열 자체 — useHouseholdData.ts와 동일 방어 처리
+  const raw: Transaction[] = Array.isArray(txQ.data) ? txQ.data : ((txQ.data as any)?.data ?? []);
   const rows: Transaction[] = categoryId == null ? raw.filter((t) => t.categoryId == null) : raw;
   const total = rows.reduce((s, t) => s + Number(t.amount), 0);
 

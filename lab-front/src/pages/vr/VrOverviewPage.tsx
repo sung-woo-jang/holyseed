@@ -47,6 +47,7 @@ const ALL_CARD_IDS = [
   'profit',
   'profitRate',
   'pool',
+  'poolUsageRate',
   'cashBalance',
   'cashRatio',
   'quantity',
@@ -111,6 +112,10 @@ export default function VrOverviewPage() {
   const profit = state && totalAssets !== null ? totalAssets - state.investedPrincipal : null
   const profitRate = profit !== null && state && state.investedPrincipal > 0 ? (profit / state.investedPrincipal) * 100 : null
   const cashRatio = state && totalAssets !== null && totalAssets > 0 ? (state.pool / totalAssets) * 100 : null
+  const poolUsageRate =
+    state && state.cycle && state.cycle.poolStart > 0
+      ? ((state.cycle.poolStart - state.pool) / state.cycle.poolStart) * 100
+      : null
 
   const cards = useMemo<CardDef[]>(() => {
     if (!state) return []
@@ -176,6 +181,13 @@ export default function VrOverviewPage() {
         hint: `사용가능 (${state.settings.poolLimitPct}%) ${usd(state.usablePool)}`,
       },
       {
+        id: 'poolUsageRate',
+        label: 'Pool 소진율',
+        value: poolUsageRate !== null ? `${poolUsageRate.toFixed(1)}%` : '—',
+        hint: state.cycle ? `사이클 시작 ${usd(state.cycle.poolStart)} → 현재 ${usd(state.pool)}` : '진행 중인 사이클 없음',
+        tone: poolUsageRate === null || poolUsageRate === 0 ? undefined : poolUsageRate > 0 ? 'negative' : 'positive',
+      },
+      {
         id: 'cashBalance',
         label: '예수금 차이',
         value: cashDiff !== null ? `${cashDiff >= 0 ? '+' : ''}${usd(cashDiff)}` : vrCash === null ? '조회 중…' : '—',
@@ -216,6 +228,7 @@ export default function VrOverviewPage() {
     profit,
     profitRate,
     cashRatio,
+    poolUsageRate,
   ])
 
   const cardMap = useMemo(() => new Map(cards.map((c) => [c.id, c])), [cards])

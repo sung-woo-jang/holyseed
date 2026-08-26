@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import EmptyState from '../../components/common/EmptyState';
 import Segmented from '../../components/common/Segmented';
 import HBar from '../../components/charts/HBar';
@@ -10,26 +11,24 @@ import { useHouseholdData, type HouseholdTransaction } from '../../queries/useHo
 import { krwShort } from '../../lib/format';
 import { resolveCategoryVisual } from '../../lib/category-meta';
 import { TE } from '../../lib/toss-emoji';
+import { periodToRange } from '../../lib/date';
+import type { MoreStackParamList } from '../../navigation/types';
 
 type Period = '이번달' | '올해' | '작년' | '3년' | '전체';
 
-function filterByPeriod(txs: HouseholdTransaction[], period: Period): HouseholdTransaction[] {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  if (period === '이번달') return txs.filter((t) => t.date.startsWith(`${y}-${m}`));
-  if (period === '올해') return txs.filter((t) => t.date.startsWith(`${y}`));
-  if (period === '작년') return txs.filter((t) => t.date.startsWith(`${y - 1}`));
-  if (period === '3년') return txs.filter((t) => Number(t.date.slice(0, 4)) >= y - 2);
-  return txs;
+function filterByRange(txs: HouseholdTransaction[], range: { from?: string; to?: string }): HouseholdTransaction[] {
+  return txs.filter((t) => (!range.from || t.date >= range.from) && (!range.to || t.date <= range.to));
 }
 
-export default function CashflowScreen() {
+type Props = NativeStackScreenProps<MoreStackParamList, 'Cashflow'>;
+
+export default function CashflowScreen({ navigation }: Props) {
   const theme = useTheme();
   const data = useHouseholdData();
   const [period, setPeriod] = useState<Period>('올해');
 
-  const filtered = useMemo(() => filterByPeriod(data.transactions, period), [data.transactions, period]);
+  const range = useMemo(() => periodToRange(period), [period]);
+  const filtered = useMemo(() => filterByRange(data.transactions, range), [data.transactions, range]);
 
   const income = filtered.filter((t) => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
   const expense = filtered.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
@@ -130,7 +129,18 @@ export default function CashflowScreen() {
               catBreakdown.map((c) => {
                 const visual = resolveCategoryVisual(c.categoryId, c.name, data.categories);
                 return (
-                  <View key={c.categoryId ?? c.name} style={styles.catRow}>
+                  <Pressable
+                    key={c.categoryId ?? c.name}
+                    style={({ pressed }) => [styles.catRow, pressed && { opacity: 0.6 }]}
+                    onPress={() =>
+                      navigation.navigate('CategoryTransactions', {
+                        categoryId: c.categoryId,
+                        categoryName: c.name,
+                        from: range.from,
+                        to: range.to,
+                      })
+                    }
+                  >
                     <CategoryIcon icon={visual.icon} size={32} bg={visual.color + '22'} />
                     <View style={{ flex: 1 }}>
                       <View style={styles.catTopRow}>
@@ -140,7 +150,7 @@ export default function CashflowScreen() {
                       </View>
                       <HBar value={c.amount} max={maxCat} color={visual.color} />
                     </View>
-                  </View>
+                  </Pressable>
                 );
               })
             )}

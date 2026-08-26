@@ -68,7 +68,7 @@ export const txApi = {
 
   search: (
     householdId: number,
-    params: { from?: string; to?: string; type?: TxType; categoryId?: number; page?: number; limit?: number },
+    params: { from?: string; to?: string; type?: TxType; categoryId?: number; categoryIds?: number[]; page?: number; limit?: number },
   ) =>
     api
       .post<{ data: Transaction[]; total: number }>(`/households/${householdId}/transactions/search`, params)

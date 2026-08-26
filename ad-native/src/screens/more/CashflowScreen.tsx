@@ -9,7 +9,7 @@ import CategoryIcon from '../../components/common/CategoryIcon';
 import { useTheme } from '../../lib/theme';
 import { useHouseholdData, type HouseholdTransaction } from '../../queries/useHouseholdData';
 import { krwShort } from '../../lib/format';
-import { resolveCategoryVisual } from '../../lib/category-meta';
+import { resolveCategoryVisual, resolveRootCategoryId } from '../../lib/category-meta';
 import { TE } from '../../lib/toss-emoji';
 import { periodToRange } from '../../lib/date';
 import type { MoreStackParamList } from '../../navigation/types';
@@ -38,10 +38,12 @@ export default function CashflowScreen({ navigation }: Props) {
   filtered
     .filter((t) => t.type === 'EXPENSE')
     .forEach((t) => {
-      const key = t.categoryId != null ? `id:${t.categoryId}` : `name:${t.category}`;
+      const rootId = resolveRootCategoryId(t.categoryId, data.categories);
+      const rootCat = rootId != null ? data.categories.find((c) => c.id === rootId) : undefined;
+      const key = rootId != null ? `id:${rootId}` : `name:${t.category}`;
       const cur = catMap.get(key);
       if (cur) cur.amount += t.amount;
-      else catMap.set(key, { amount: t.amount, categoryId: t.categoryId, name: t.category });
+      else catMap.set(key, { amount: t.amount, categoryId: rootId, name: rootCat?.name ?? t.category });
     });
   const catBreakdown = [...catMap.values()].sort((a, b) => b.amount - a.amount).slice(0, 8);
   const maxCat = catBreakdown[0]?.amount ?? 1;

@@ -185,7 +185,7 @@ export default function HomeScreen({ navigation }: Props) {
           <View style={styles.sectionHeader}>
             <Text style={[styles.cardTitle, { color: theme.text }]}>최근 거래</Text>
             {recentTxs.length > 0 && (
-              <TextButton typography="t5" variant="clear" color={theme.textMuted} onPress={() => navigation.navigate('Book')}>
+              <TextButton typography="t5" variant="clear" color={theme.textMuted} onPress={() => navigation.navigate('Book', { screen: 'BookHome' })}>
                 모두 보기
               </TextButton>
             )}

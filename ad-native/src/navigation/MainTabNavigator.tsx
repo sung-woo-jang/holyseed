@@ -2,8 +2,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from '../screens/HomeScreen';
-import BookScreen from '../screens/BookScreen';
 import AssetsStack from './AssetsStack';
+import BookStack from './BookStack';
 import MoreStack from './MoreStack';
 import { Icon } from '../components/common/Icon';
 import { useTheme } from '../lib/theme';
@@ -46,7 +46,7 @@ export default function MainTabNavigator() {
         />
         <Tab.Screen
           name="Book"
-          component={BookScreen}
+          component={BookStack}
           options={{ tabBarLabel: '거래장부', tabBarIcon: ({ color, size }) => Icon.book(color, size) }}
         />
         <Tab.Screen

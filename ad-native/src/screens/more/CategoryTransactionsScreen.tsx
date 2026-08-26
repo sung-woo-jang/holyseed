@@ -168,14 +168,7 @@ export default function CategoryTransactionsScreen({ navigation, route }: Props)
                           )}
                         </View>
                       }
-                      onPress={
-                        canEdit
-                          ? () => {
-                              setEditTx(toEditTx(t));
-                              setAddTxVisible(true);
-                            }
-                          : undefined
-                      }
+                      onPress={() => navigation.navigate('TransactionDetail', { id: String(t.id) })}
                       verticalPadding="small"
                     />
                     {i < txs.length - 1 && <Border type="full" />}

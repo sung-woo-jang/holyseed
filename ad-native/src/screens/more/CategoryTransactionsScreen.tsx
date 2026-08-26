@@ -31,7 +31,10 @@ export default function CategoryTransactionsScreen({ navigation, route }: Props)
     navigation.setOptions({ title: categoryName });
   }, [navigation, categoryName]);
 
-  const params = { from, to, type: 'EXPENSE' as const, limit: 1000, ...(categoryId != null ? { categoryId } : {}) };
+  // 대분류를 탭한 경우 그 아래 소분류 거래까지 함께 조회(현금흐름 breakdown이 대분류 기준으로 합산되므로 상세 화면도 맞춰야 함)
+  const childIds = categoryId != null ? data.categories.filter((c) => c.parentId === categoryId).map((c) => c.id) : [];
+  const categoryIds = categoryId != null ? [categoryId, ...childIds] : undefined;
+  const params = { from, to, type: 'EXPENSE' as const, limit: 1000, ...(categoryIds ? { categoryIds } : {}) };
   const txQ = useQuery({
     queryKey: qk.transactions(hid ?? 0, params),
     queryFn: () => txApi.search(hid!, params),

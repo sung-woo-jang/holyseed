@@ -23,6 +23,12 @@ export class SearchTransactionsDto {
   @IsNumber()
   categoryId?: number;
 
+  @ApiPropertyOptional({ description: '카테고리 ID 목록(대분류+소분류 등 여러 개를 한번에 조회)', type: [Number] })
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  categoryIds?: number[];
+
   @ApiPropertyOptional({ description: '자산 ID (fromAsset 또는 toAsset)' })
   @IsOptional()
   @IsNumber()

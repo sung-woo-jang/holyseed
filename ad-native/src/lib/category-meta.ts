@@ -82,3 +82,11 @@ export function resolveCategoryVisual(
   const def = getCategoryDef(categoryName);
   return { icon: def.iconCode, color: def.color };
 }
+
+/** 소분류 id → 그 대분류 id. 대분류 id거나 카테고리를 못 찾으면(고아 참조) 원본 id를 그대로 반환 */
+export function resolveRootCategoryId(categoryId: number | null | undefined, categories: Category[]): number | null {
+  if (categoryId == null) return null;
+  const cat = categories.find((c) => c.id === categoryId);
+  if (!cat) return categoryId;
+  return cat.parentId ?? cat.id;
+}

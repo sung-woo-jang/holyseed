@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState } from 'react';
-import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Border from '../components/ui/Border';
@@ -42,6 +42,7 @@ export default function AssetDetailScreen({ navigation, route }: Props) {
   const [snapshotOpen, setSnapshotOpen] = useState(false);
   const [editSnap, setEditSnap] = useState<EditableSnapshot | null>(null);
   const [toast, setToast] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
   const updateAsset = useUpdateAsset();
   const deleteAsset = useDeleteAsset();
 
@@ -54,6 +55,15 @@ export default function AssetDetailScreen({ navigation, route }: Props) {
     enabled: !!assetId && !isNaN(Number(assetId)),
     staleTime: 30_000,
   });
+
+  async function onRefresh() {
+    setRefreshing(true);
+    try {
+      await Promise.all([data.refetch(), snapshotsQ.refetch()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -104,7 +114,10 @@ export default function AssetDetailScreen({ navigation, route }: Props) {
 
   return (
     <View style={[styles.root, { backgroundColor: theme.bg }]}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 32 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.brand} colors={[theme.brand]} />}
+      >
         <View style={[styles.summaryCard, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
           <View style={styles.summaryTop}>
             <TossEmoji code={meta.iconCode} size={48} bg={meta.color + '22'} />

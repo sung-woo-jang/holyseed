@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import EmptyState from '../../components/common/EmptyState';
 import Segmented from '../../components/common/Segmented';
@@ -26,6 +26,16 @@ export default function CashflowScreen({ navigation }: Props) {
   const theme = useTheme();
   const data = useHouseholdData();
   const [period, setPeriod] = useState<Period>('올해');
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function onRefresh() {
+    setRefreshing(true);
+    try {
+      await data.refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   const range = useMemo(() => periodToRange(period), [period]);
   const filtered = useMemo(() => filterByRange(data.transactions, range), [data.transactions, range]);
@@ -63,7 +73,11 @@ export default function CashflowScreen({ navigation }: Props) {
   const hasData = filtered.length > 0;
 
   return (
-    <ScrollView style={[styles.root, { backgroundColor: theme.bg }]} contentContainerStyle={{ paddingBottom: 32 }}>
+    <ScrollView
+      style={[styles.root, { backgroundColor: theme.bg }]}
+      contentContainerStyle={{ paddingBottom: 32 }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.brand} colors={[theme.brand]} />}
+    >
       <View style={{ padding: 20, paddingBottom: 8 }}>
         <Segmented options={['이번달', '올해', '작년', '3년', '전체']} value={period} onChange={(v) => setPeriod(v as Period)} />
       </View>

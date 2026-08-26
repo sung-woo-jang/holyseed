@@ -1,9 +1,10 @@
 import 'react-native-gesture-handler';
-import { Platform } from 'react-native';
+import { useEffect } from 'react';
+import { AppState, Platform, type AppStateStatus } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, focusManager } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import * as WebBrowser from 'expo-web-browser';
 import RootNavigator from './src/navigation/RootNavigator';
@@ -23,7 +24,20 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 10_000, retry: 1 } },
 });
 
+// react-query의 refetchOnWindowFocus(기본 활성)는 RN엔 window 포커스 이벤트가 없어 그냥 죽어있음 —
+// AppState를 focusManager에 연결해줘야 백그라운드→포그라운드 복귀 시 자동 재조회가 실제로 동작함
+function onAppStateChange(status: AppStateStatus) {
+  if (Platform.OS !== 'web') {
+    focusManager.setFocused(status === 'active');
+  }
+}
+
 export default function App() {
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', onAppStateChange);
+    return () => sub.remove();
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>

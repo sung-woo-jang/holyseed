@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import ActionSheet from '../components/common/ActionSheet';
@@ -37,7 +37,17 @@ export default function AssetsScreen({ navigation }: Props) {
   const [deleteTarget, setDeleteTarget] = useState<HouseholdAsset | null>(null);
   const [toast, setToast] = useState('');
   const [ownerFilter, setOwnerFilter] = useState<'all' | 'joint' | number>('all');
+  const [refreshing, setRefreshing] = useState(false);
   const deleteAsset = useDeleteAsset();
+
+  async function onRefresh() {
+    setRefreshing(true);
+    try {
+      await data.refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   function handleAction(value: string) {
     const a = actionAsset;
@@ -91,7 +101,10 @@ export default function AssetsScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView edges={['top']} style={[styles.root, { backgroundColor: theme.bg }]}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.brand} colors={[theme.brand]} />}
+      >
         <View style={styles.header}>
           <Text style={[styles.headerLabel, { color: theme.textMuted }]}>총 순자산</Text>
           <Text style={[styles.headerValue, { color: theme.text }]}>{krw(total)}</Text>

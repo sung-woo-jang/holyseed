@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ParamListBase } from '@react-navigation/native';
@@ -45,12 +45,22 @@ export default function TransactionDetailScreen({ navigation, route }: Props) {
   const [editTx, setEditTx] = useState<HouseholdTransaction | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [toast, setToast] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
   const txQ = useQuery({
     queryKey: qk.transaction(Number(id)),
     queryFn: () => txApi.get(Number(id)),
     enabled: !!id && !isNaN(Number(id)),
   });
+
+  async function onRefresh() {
+    setRefreshing(true);
+    try {
+      await Promise.all([data.refetch(), txQ.refetch()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   const tx = (Array.isArray(txQ.data) ? undefined : txQ.data) as Transaction | undefined;
 
@@ -133,7 +143,10 @@ export default function TransactionDetailScreen({ navigation, route }: Props) {
 
   return (
     <View style={[styles.root, { backgroundColor: theme.bg }]}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 32 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.brand} colors={[theme.brand]} />}
+      >
         <View style={styles.sectionPad}>
           <View style={[styles.summaryCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <CategoryIcon icon={visual.icon} size={40} bg={visual.color + '22'} />

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -73,16 +73,27 @@ export default function BookScreen({ navigation }: Props) {
   const [addPicker, setAddPicker] = useState(false);
   const [missedVisible, setMissedVisible] = useState(false);
   const [toast, setToast] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
-  const { data: missed = [] } = useQuery({
+  const missedQ = useQuery({
     queryKey: qk.recurringMissed(hid!),
     queryFn: () => recurringApi.missed(hid!),
     enabled: !!hid,
   });
+  const missed = missedQ.data ?? [];
 
   const toggleRecurring = useToggleRecurring();
   const deleteRecurring = useDeleteRecurring();
   const deleteTx = useDeleteTx();
+
+  async function onRefresh() {
+    setRefreshing(true);
+    try {
+      await Promise.all([data.refetch(), missedQ.refetch()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   function handleTxAction(value: string) {
     const t = actionTx;
@@ -406,7 +417,10 @@ export default function BookScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView edges={['top']} style={[styles.root, { backgroundColor: theme.bg }]}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.brand} colors={[theme.brand]} />}
+      >
         <View style={styles.monthNav}>
           <Pressable style={[styles.monthBtn, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={() => shiftMonth(-1)}>
             <Text style={{ color: theme.text, fontSize: 18 }}>‹</Text>

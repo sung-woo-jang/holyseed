@@ -66,6 +66,8 @@ export const txApi = {
   recent: (householdId: number) =>
     api.get<Transaction[]>(`/households/${householdId}/transactions/recent`).then((r) => r.data),
 
+  get: (id: number) => api.get<Transaction>(`/transactions/${id}`).then((r) => r.data),
+
   search: (
     householdId: number,
     params: { from?: string; to?: string; type?: TxType; categoryId?: number; categoryIds?: number[]; page?: number; limit?: number },

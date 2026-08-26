@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { BookStackParamList } from '../navigation/types';
 import Border from '../components/ui/Border';
 import ListRow from '../components/ui/ListRow';
 import Switch from '../components/ui/Switch';
@@ -44,7 +46,9 @@ type DayItem =
   | { kind: 'tx'; id: string; title: string; amount: number; type: 'INCOME' | 'EXPENSE'; category: string; categoryId: number | null; sub?: string }
   | { kind: 'rec'; id: string; title: string; amount: number; type: 'INCOME' | 'EXPENSE'; rec: HouseholdRecurring };
 
-export default function BookScreen() {
+type Props = NativeStackScreenProps<BookStackParamList, 'BookHome'>;
+
+export default function BookScreen({ navigation }: Props) {
   const theme = useTheme();
   const data = useHouseholdData();
   const currentHousehold = useAuthStore((s) => s.currentHousehold);
@@ -291,7 +295,7 @@ export default function BookScreen() {
               )}
             </View>
           }
-          onPress={canEdit ? () => openTxEdit(tx.id) : undefined}
+          onPress={() => navigation.navigate('TransactionDetail', { id: tx.id })}
           verticalPadding="small"
         />
         {i < total - 1 && <Border type="full" />}
@@ -346,7 +350,7 @@ export default function BookScreen() {
               )}
             </View>
           }
-          onPress={item.kind === 'tx' && canEditTx ? () => openTxEdit(item.id) : item.kind === 'rec' ? () => setActionRec(item.rec) : undefined}
+          onPress={item.kind === 'tx' ? () => navigation.navigate('TransactionDetail', { id: item.id }) : item.kind === 'rec' ? () => setActionRec(item.rec) : undefined}
           verticalPadding="small"
         />
         {i < total - 1 && <Border type="full" />}

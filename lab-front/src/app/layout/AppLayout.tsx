@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
 import PrimarySidebar from './PrimarySidebar'
 import SecondarySidebar from './SecondarySidebar'
 import MobileTopBar from './MobileTopBar'
@@ -15,6 +15,13 @@ import MobileNavDrawer from './MobileNavDrawer'
  */
 export default function AppLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const mainRef = useRef<HTMLElement>(null)
+  const { pathname } = useLocation()
+
+  // main이 자체 스크롤 컨테이너(overflow-y-auto)라 window.scrollTo가 아니라 이쪽을 리셋해야 함
+  useEffect(() => {
+    mainRef.current?.scrollTo(0, 0)
+  }, [pathname])
 
   return (
     <div className="flex h-screen flex-col overflow-hidden lg:grid lg:grid-cols-[68px_220px_1fr]">
@@ -22,7 +29,7 @@ export default function AppLayout() {
       <PrimarySidebar className="hidden lg:flex" />
       <SecondarySidebar className="hidden lg:flex" />
       <MobileNavDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />
-      <main className="flex-1 overflow-y-auto pb-16 lg:pb-0">
+      <main ref={mainRef} className="flex-1 overflow-y-auto pb-16 lg:pb-0">
         <Outlet />
       </main>
       <MobileBottomTabBar className="lg:hidden" onMoreClick={() => setDrawerOpen(true)} />

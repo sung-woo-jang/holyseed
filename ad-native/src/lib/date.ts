@@ -38,3 +38,24 @@ export function shiftMonth(ym: string, delta: number): string {
   const d = new Date(y!, m! - 1 + delta, 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
+
+/** '이번달'|'올해'|'작년'|'3년'|'전체' → {from, to} (YYYY-MM-DD, 문자열 사전식 비교용 경계값 — 존재하지 않는 날짜(예: 4월 31일)를 상한으로 써도 비교엔 안전함) */
+export function periodToRange(
+  period: '이번달' | '올해' | '작년' | '3년' | '전체',
+  base: Date = new Date(),
+): { from?: string; to?: string } {
+  const y = base.getFullYear();
+  const m = String(base.getMonth() + 1).padStart(2, '0');
+  switch (period) {
+    case '이번달':
+      return { from: `${y}-${m}-01`, to: `${y}-${m}-31` };
+    case '올해':
+      return { from: `${y}-01-01`, to: `${y}-12-31` };
+    case '작년':
+      return { from: `${y - 1}-01-01`, to: `${y - 1}-12-31` };
+    case '3년':
+      return { from: `${y - 2}-01-01`, to: `${y}-12-31` };
+    default:
+      return {};
+  }
+}

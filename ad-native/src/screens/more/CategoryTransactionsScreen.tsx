@@ -141,11 +141,23 @@ export default function CategoryTransactionsScreen({ navigation, route }: Props)
               <View style={[styles.dayCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 {txs.map((t, i) => {
                   const rowVisual = resolveCategoryVisual(t.categoryId, categoryName, data.categories);
+                  const rowRawTitle = (t as unknown as { title?: string }).title;
+                  const rowCatName = data.categories.find((c) => c.id === t.categoryId)?.name ?? categoryName;
+                  const rowTitle = rowRawTitle || t.memo || rowCatName;
                   return (
                   <View key={t.id}>
                     <ListRow
-                      left={<CategoryIcon icon={rowVisual.icon} size={18} bg={theme.bg} />}
-                      contents={<Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{(t as unknown as { title?: string }).title || t.memo || categoryName}</Text>}
+                      left={
+                        <View style={[styles.itemIcon, { backgroundColor: theme.bg }]}>
+                          <CategoryIcon icon={rowVisual.icon} size={18} />
+                        </View>
+                      }
+                      contents={
+                        <View>
+                          <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{rowTitle}</Text>
+                          <Text style={{ color: theme.textMuted, fontSize: 11 }}>{rowCatName}</Text>
+                        </View>
+                      }
                       right={
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                           <Text style={{ color: theme.text, fontSize: 14, fontWeight: '700' }}>{krw(t.amount)}</Text>
@@ -217,4 +229,5 @@ const styles = StyleSheet.create({
   sectionPad: { paddingHorizontal: 20, paddingTop: 12 },
   dayTitle: { fontSize: 12, fontWeight: '700', marginBottom: 8 },
   dayCard: { borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
+  itemIcon: { width: 32, height: 32, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
 });

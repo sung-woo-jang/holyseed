@@ -44,10 +44,13 @@ export function CycleChart({ trades, width, scrollRef, onScroll }: CycleChartPro
       const y = ys(n(t.price))
       stack = x - lastLabelX < 60 ? stack + 1 : 0
       lastLabelX = x
-      const labelY = clampLabelY(y - 28 - stack * 18, PAD.t + 10, y - 14)
+      const labelY = clampLabelY(y - 40 - stack * 36, PAD.t + 18, y - 22)
+      // 매도 시 평단은 변동 없음(엔진 로직) → avgAfter가 곧 이 매도분의 원가
+      const profit = (n(t.price) - n(t.avgAfter)) * n(t.quantity)
       const text = `${t.kind} ${usd(n(t.price))}`
-      const boxW = text.length * 6 + 12
-      return { x, y, labelY, text, boxW }
+      const profitText = `${profit >= 0 ? '+' : ''}${usd(profit)}`
+      const boxW = Math.max(text.length, profitText.length) * 6 + 12
+      return { x, y, labelY, text, profitText, profit, boxW }
     })
 
   return (
@@ -164,23 +167,33 @@ export function CycleChart({ trades, width, scrollRef, onScroll }: CycleChartPro
                 x1={s.x}
                 x2={s.x}
                 y1={s.y - 6}
-                y2={s.labelY + 9}
+                y2={s.labelY + 16}
                 stroke="var(--status-critical)"
                 strokeWidth="1"
                 strokeDasharray="2 2"
               />
               <rect
                 x={s.x - s.boxW / 2}
-                y={s.labelY - 9}
+                y={s.labelY - 18}
                 width={s.boxW}
-                height={18}
+                height={32}
                 rx={4}
                 fill="var(--surface-1)"
                 stroke="var(--status-critical)"
                 strokeWidth="1"
               />
-              <text x={s.x} y={s.labelY + 4} textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--status-critical)">
+              <text x={s.x} y={s.labelY - 5} textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--status-critical)">
                 {s.text}
+              </text>
+              <text
+                x={s.x}
+                y={s.labelY + 10}
+                textAnchor="middle"
+                fontSize="11"
+                fontWeight="600"
+                fill={s.profit >= 0 ? 'var(--delta-good)' : 'var(--status-critical)'}
+              >
+                {s.profitText}
               </text>
             </g>
           ))}

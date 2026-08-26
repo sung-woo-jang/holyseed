@@ -11,7 +11,7 @@ import 'swiper/css'
 import 'swiper/css/navigation'
 import 'swiper/css/zoom'
 
-import { CoupleProvider, useCouple } from '@/shared/lib/couple-context'
+import { CoupleProvider, useCouple, DEFAULT_COUPLE_SLUG } from '@/shared/lib/couple-context'
 import { api } from '@/shared/api'
 import { Media, WeddingVenue, AccountInfo, mediaResizedUrl } from '@/shared/types'
 import NetflixIntro from '@/widgets/netflix-intro/NetflixIntro'
@@ -115,7 +115,7 @@ function InvitationContent() {
   }, [couple?.id])
 
   if (isLoading) return <div style={{ color: '#fff', padding: '2rem' }}>로딩 중...</div>
-  if (error || !couple) return <Navigate to="/login" replace />
+  if (error || !couple) return <Navigate to={`/${DEFAULT_COUPLE_SLUG}`} replace />
 
   const venue = couple.weddingVenue as WeddingVenue | null
   // accountInfo가 배열이 아닐 수도(빈 객체 {}) 있으니 정규화
@@ -398,7 +398,7 @@ function InvitationContent() {
 
 export default function InvitationPage() {
   const { coupleSlug } = useParams<{ coupleSlug: string }>()
-  if (!coupleSlug) return <Navigate to="/login" replace />
+  if (!coupleSlug) return <Navigate to={`/${DEFAULT_COUPLE_SLUG}`} replace />
   return (
     <CoupleProvider slug={coupleSlug}>
       <InvitationContent />

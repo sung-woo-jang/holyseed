@@ -96,6 +96,13 @@ export const TE = {
   baby:         '1F476',
   family:       '1F46A',
   birthday:     '1F382',
+
+  // 주거 관련 확장 (2026-08)
+  key:            '1F511',
+  couch:          '1F6CB',
+  officeBuilding: '1F3E2',
+  document:       '1F4C4',
+  fire:           '1F525',
 };
 
 export interface CategoryIconChoice {
@@ -203,12 +210,17 @@ export const CATEGORY_ICON_SECTIONS: CategoryIconSection[] = [
     title: '생활',
     items: [
       { id: 'home2', code: TE.home2 },
+      { id: 'key', code: TE.key },
+      { id: 'officeBuilding', code: TE.officeBuilding },
+      { id: 'couch', code: TE.couch },
       { id: 'bathtub', code: TE.bathtub },
       { id: 'broom', code: TE.broom },
       { id: 'bulb', code: TE.bulb },
+      { id: 'fire', code: TE.fire },
       { id: 'wrench', code: TE.wrench },
       { id: 'droplet', code: TE.droplet },
       { id: 'antenna', code: TE.antenna },
+      { id: 'document', code: TE.document },
     ],
   },
   {

@@ -198,17 +198,31 @@ export class McpService {
       'list_transactions',
       {
         title: '거래 내역 조회',
-        description: '가구의 거래(수입/지출) 내역을 기간·유형으로 조회합니다.',
+        description: '가구의 거래(수입/지출) 내역을 기간·유형·카테고리로 조회합니다.',
         inputSchema: {
           from: z.string().optional().describe('시작일 YYYY-MM-DD'),
           to: z.string().optional().describe('종료일 YYYY-MM-DD'),
           type: z.enum(['INCOME', 'EXPENSE']).optional().describe('거래 유형'),
+          categoryId: z.number().optional().describe('카테고리 id로 필터 (list_categories로 확인)'),
+          categoryIds: z
+            .array(z.number())
+            .optional()
+            .describe('카테고리 id 목록 — 대분류+소분류처럼 여러 카테고리를 한번에 조회할 때'),
           limit: z.number().optional().describe('최대 개수 (기본 50)'),
         },
       },
-      ({ from, to, type, limit }) =>
+      ({ from, to, type, categoryId, categoryIds, limit }) =>
         this.call(user, async (api, hid) =>
-          this.unwrap(await api.post(`/households/${hid}/transactions/search`, { from, to, type, limit: limit ?? 50 })),
+          this.unwrap(
+            await api.post(`/households/${hid}/transactions/search`, {
+              from,
+              to,
+              type,
+              categoryId,
+              categoryIds,
+              limit: limit ?? 50,
+            }),
+          ),
         ),
     );
 
@@ -222,8 +236,11 @@ export class McpService {
           amount: z.number().describe('금액 (원)'),
           date: z.string().optional().describe('YYYY-MM-DD, 생략 시 오늘'),
           title: z.string().optional().describe('제목 (예: 스타벅스, 주유 — 목록에 굵게 표시됨)'),
-          memo: z.string().optional().describe('메모/내역'),
-          categoryId: z.number().optional().describe('카테고리 id'),
+          memo: z
+            .string()
+            .optional()
+            .describe('메모/내역 — 마크다운 문법(굵게 **텍스트**, 목록 -, 링크 [](), 인용문 >)을 쓰면 앱 거래 상세화면에서 서식 있게 표시돼요.'),
+          categoryId: z.number().optional().describe('카테고리 id (list_categories로 확인). 대분류·소분류 아무 id나 가능 — 애매하면 대분류로.'),
         },
       },
       ({ type, amount, date, title, memo, categoryId }) =>
@@ -261,7 +278,7 @@ export class McpService {
           type: z.enum(['INCOME', 'EXPENSE']).describe('수입/지출'),
           amount: z.number().describe('금액 (원)'),
           dayOfMonth: z.number().min(1).max(31).describe('매월 결제일'),
-          categoryId: z.number().optional().describe('카테고리 id'),
+          categoryId: z.number().optional().describe('카테고리 id (list_categories로 확인). 대분류·소분류 아무거나 가능 — 애매하면 대분류로.'),
           endDate: z.string().optional().describe('종료일 YYYY-MM-DD'),
         },
       },
@@ -297,7 +314,8 @@ export class McpService {
       'list_categories',
       {
         title: '카테고리 목록',
-        description: '거래 카테고리(수입/지출) 목록을 조회합니다.',
+        description:
+          '거래 카테고리(수입/지출) 목록을 조회합니다. 대분류는 parentId가 없고, 소분류는 parentId에 소속된 대분류의 id가 들어있어요. create_transaction/create_recurring의 categoryId엔 대분류·소분류 id 아무거나 넣을 수 있고, 애매하면 대분류를 쓰면 됩니다.',
         inputSchema: {},
       },
       () => this.call(user, async (api, hid) => this.unwrap(await api.get(`/households/${hid}/categories`))),

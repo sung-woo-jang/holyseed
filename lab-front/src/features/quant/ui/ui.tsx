@@ -3,11 +3,21 @@ import { useStatusContext } from '@/features/quant/lib/StatusContext'
 import type { StatusDto } from '@/features/quant/lib/types'
 import { kst } from '@/features/quant/lib/types'
 
-export function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {
+export function Tile({
+  label,
+  value,
+  sub,
+  valueColor,
+}: {
+  label: string
+  value: string
+  sub?: string
+  valueColor?: string
+}) {
   return (
     <div className="card" style={{ padding: '12px 16px' }}>
       <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 600 }}>{value}</div>
+      <div style={{ fontSize: 22, fontWeight: 600, color: valueColor }}>{value}</div>
       {sub && <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{sub}</div>}
     </div>
   )

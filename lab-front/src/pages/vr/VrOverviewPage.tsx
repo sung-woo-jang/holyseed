@@ -45,6 +45,7 @@ const ALL_CARD_IDS = [
   'unrealizedProfit',
   'totalAssets',
   'profit',
+  'profitRate',
   'pool',
   'cashBalance',
   'cashRatio',
@@ -108,6 +109,7 @@ export default function VrOverviewPage() {
   const unrealizedProfit = marketValue !== null && costBasis !== null ? marketValue - costBasis : null
   const totalAssets = state && marketValue !== null ? state.pool + marketValue : null
   const profit = state && totalAssets !== null ? totalAssets - state.investedPrincipal : null
+  const profitRate = profit !== null && state && state.investedPrincipal > 0 ? (profit / state.investedPrincipal) * 100 : null
   const cashRatio = state && totalAssets !== null && totalAssets > 0 ? (state.pool / totalAssets) * 100 : null
 
   const cards = useMemo<CardDef[]>(() => {
@@ -161,6 +163,13 @@ export default function VrOverviewPage() {
         tone: profit === null ? undefined : profit >= 0 ? 'positive' : 'negative',
       },
       {
+        id: 'profitRate',
+        label: '수익률',
+        value: profitRate !== null ? `${profitRate >= 0 ? '+' : ''}${profitRate.toFixed(2)}%` : '—',
+        hint: '수익금 ÷ 투자원금 (총자산 기준 수익률)',
+        tone: profitRate === null ? undefined : profitRate >= 0 ? 'positive' : 'negative',
+      },
+      {
         id: 'pool',
         label: 'Pool',
         value: usd(state.pool),
@@ -205,6 +214,7 @@ export default function VrOverviewPage() {
     unrealizedProfit,
     totalAssets,
     profit,
+    profitRate,
     cashRatio,
   ])
 

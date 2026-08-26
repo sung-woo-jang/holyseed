@@ -48,9 +48,7 @@ export const SECTIONS: LabSection[] = [
         label: '무한매수법',
         pages: [
           { path: '/quant', label: '홈', end: true },
-          { path: '/quant/chart', label: '차트' },
           { path: '/quant/cycles', label: '사이클', end: false },
-          { path: '/quant/account', label: '계좌' },
           { path: '/quant/system', label: '시스템' },
         ],
       },
@@ -58,7 +56,6 @@ export const SECTIONS: LabSection[] = [
         label: 'TQQQ VR',
         pages: [
           { path: '/vr', label: '개요', end: true },
-          { path: '/vr/chart', label: '차트' },
           { path: '/vr/trend', label: '추이' },
           { path: '/vr/ladder', label: '예약표' },
           { path: '/vr/fills', label: '체결·사이클' },

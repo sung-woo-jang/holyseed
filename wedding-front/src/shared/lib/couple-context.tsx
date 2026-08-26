@@ -10,6 +10,10 @@ interface CoupleContextValue {
   error: string | null
 }
 
+// 현재 이 앱은 사실상 이 커플 한 쌍만 사용 중이라, 잘못된 경로/slug로
+// 들어왔을 때 로그인 화면 대신 이 청첩장으로 보낸다.
+export const DEFAULT_COUPLE_SLUG = 'kim-n-jang'
+
 const CoupleContext = createContext<CoupleContextValue>({
   couple: null,
   isLoading: true,

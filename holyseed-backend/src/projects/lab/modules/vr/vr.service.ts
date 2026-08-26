@@ -206,8 +206,26 @@ export class VrService {
 
   // ==================== Cycles ====================
 
-  async findAllCycles(): Promise<VrCycle[]> {
-    return this.cycleRepo.find({ order: { cycleNo: 'DESC' } });
+  async findAllCycles(): Promise<Array<VrCycle & { minBand: number; maxBand: number; tradeAmount: number }>> {
+    const [settings, cycles, tradeAmounts] = await Promise.all([
+      this.getSettings(),
+      this.cycleRepo.find({ order: { cycleNo: 'DESC' } }),
+      this.fillRepo
+        .createQueryBuilder('f')
+        .select('f.cycleNo', 'cycleNo')
+        .addSelect('SUM(f.amount)', 'total')
+        .where('f.kind IN (:...kinds)', { kinds: [VrFillKind.INITIAL_BUY, VrFillKind.BUY, VrFillKind.SELL] })
+        .groupBy('f.cycleNo')
+        .getRawMany<{ cycleNo: number; total: string }>(),
+    ]);
+
+    const tradeAmountByCycle = new Map(tradeAmounts.map((t) => [t.cycleNo, round2(Number(t.total))]));
+
+    return cycles.map((cycle) => ({
+      ...cycle,
+      ...computeBand(cycle.vValue, settings.bandPct),
+      tradeAmount: tradeAmountByCycle.get(cycle.cycleNo) ?? 0,
+    }));
   }
 
   async createCycle(dto: CreateCycleDto): Promise<VrCycle> {

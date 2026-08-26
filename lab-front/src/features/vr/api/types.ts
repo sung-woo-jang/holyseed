@@ -21,6 +21,9 @@ export interface VrCycle {
   poolEnd: number | null
   depositAmount: number
   isClosed: boolean
+  minBand: number
+  maxBand: number
+  tradeAmount: number
 }
 
 export interface VrFill {

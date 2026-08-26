@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import Badge from '../components/ui/Badge';
@@ -33,6 +33,16 @@ export default function HomeScreen({ navigation }: Props) {
   const [chartRange, setChartRange] = useState('1년');
   const [snapshotVisible, setSnapshotVisible] = useState(false);
   const [toast, setToast] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function onRefresh() {
+    setRefreshing(true);
+    try {
+      await data.refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   // 마지막 스냅샷 입력일 (자산별 최신 스냅샷 날짜의 최댓값)
   const lastInputDate = data.assets.reduce<string | null>(
@@ -62,7 +72,10 @@ export default function HomeScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView edges={['top']} style={[styles.root, { backgroundColor: theme.bg }]}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.brand} colors={[theme.brand]} />}
+      >
         {/* Period label */}
         <View style={styles.periodRow}>
           <Text style={[styles.periodText, { color: theme.textMuted }]}>전년 동기 대비</Text>

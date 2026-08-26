@@ -74,6 +74,7 @@ export interface HouseholdData {
   pendingInvites: { id: string; code: string; role: MemberRole; household: string; expiresAt: string }[];
   categories: Category[];
   isLoading: boolean;
+  refetch: () => Promise<void>;
 }
 
 const EMPTY: HouseholdData = {
@@ -86,6 +87,7 @@ const EMPTY: HouseholdData = {
   pendingInvites: [],
   categories: [],
   isLoading: false,
+  refetch: async () => {},
 };
 
 // 백엔드 자산 카테고리 enum(REAL_ASSET/DEBT)을 프론트 키(REAL_ESTATE/LIABILITY)로 정규화
@@ -177,6 +179,18 @@ export function useHouseholdData(): HouseholdData {
   });
 
   if (!hid) return EMPTY;
+
+  async function refetch() {
+    await Promise.all([
+      dashQ.refetch(),
+      assetsQ.refetch(),
+      txQ.refetch(),
+      recurringQ.refetch(),
+      membersQ.refetch(),
+      invitationsQ.refetch(),
+      categoriesQ.refetch(),
+    ]);
+  }
 
   const isLoading = assetsQ.isLoading || membersQ.isLoading;
 
@@ -308,5 +322,6 @@ export function useHouseholdData(): HouseholdData {
     pendingInvites,
     categories,
     isLoading,
+    refetch,
   };
 }

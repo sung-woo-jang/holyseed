@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import CategoryIcon from '../../components/common/CategoryIcon';
@@ -40,6 +40,7 @@ export default function CategoryTransactionsScreen({ navigation, route }: Props)
   const [actionTx, setActionTx] = useState<HouseholdTransaction | null>(null);
   const [deleteTxState, setDeleteTxState] = useState<HouseholdTransaction | null>(null);
   const [toast, setToast] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({ title: categoryName });
@@ -54,6 +55,15 @@ export default function CategoryTransactionsScreen({ navigation, route }: Props)
     queryFn: () => txApi.search(hid!, params),
     enabled: !!hid,
   });
+
+  async function onRefresh() {
+    setRefreshing(true);
+    try {
+      await Promise.all([data.refetch(), txQ.refetch()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   // axios 응답 인터셉터가 {success, data, total} 봉투를 이미 data로 벗겨내므로 txQ.data는 배열 자체 — useHouseholdData.ts와 동일 방어 처리
   const raw: Transaction[] = Array.isArray(txQ.data) ? txQ.data : ((txQ.data as any)?.data ?? []);
@@ -119,7 +129,11 @@ export default function CategoryTransactionsScreen({ navigation, route }: Props)
 
   return (
     <>
-      <ScrollView style={[styles.root, { backgroundColor: theme.bg }]} contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScrollView
+        style={[styles.root, { backgroundColor: theme.bg }]}
+        contentContainerStyle={{ paddingBottom: 32 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.brand} colors={[theme.brand]} />}
+      >
         <View style={[styles.summaryCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <CategoryIcon icon={visual.icon} size={36} bg={visual.color + '22'} />
         <View style={{ flex: 1 }}>

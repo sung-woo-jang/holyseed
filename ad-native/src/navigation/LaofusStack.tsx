@@ -18,7 +18,7 @@ const Stack = createNativeStackNavigator<LaofusStackParamList>();
 export default function LaofusStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="LaofusHome" component={LaofusHomeScreen} options={{ title: '라오어' }} />
+      <Stack.Screen name="LaofusHome" component={LaofusHomeScreen} options={{ title: '무매' }} />
       <Stack.Screen name="LaofusSystem" component={LaofusSystemScreen} options={{ title: '엔진 상태 · 이벤트' }} />
       <Stack.Screen name="LaofusCycles" component={LaofusCyclesScreen} options={{ title: '사이클 기록' }} />
       <Stack.Screen name="LaofusCycleDetail" component={LaofusCycleDetailScreen} options={{ title: '사이클 상세' }} />

@@ -85,7 +85,7 @@ export default function LaofusWealthScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.brand} colors={[theme.brand]} />}
     >
       <Text style={{ color: theme.textMuted, fontSize: 12.5, lineHeight: 18, marginBottom: 12 }}>
-        라오어(SOXL)+VR(TQQQ)이 공유하는 토스증권 계좌의 총자산이에요. 매일 자동 기록되고, 아래 버튼으로 지금 즉시 다시 기록할 수도 있어요.
+        무매(SOXL)+VR(TQQQ)이 공유하는 토스증권 계좌의 총자산이에요. 매일 자동 기록되고, 아래 버튼으로 지금 즉시 다시 기록할 수도 있어요.
       </Text>
 
       <View style={styles.tileGrid}>

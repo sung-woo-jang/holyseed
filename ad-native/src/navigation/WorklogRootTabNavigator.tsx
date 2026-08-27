@@ -22,6 +22,7 @@ export default function WorklogRootTabNavigator() {
 
   return (
     <Tab.Navigator
+      initialRouteName="Worklog"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: theme.brand,

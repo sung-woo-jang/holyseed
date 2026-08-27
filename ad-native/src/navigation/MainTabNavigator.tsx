@@ -22,6 +22,7 @@ export default function MainTabNavigator() {
   return (
     <View style={{ flex: 1 }}>
       <Tab.Navigator
+        initialRouteName="Home"
         screenOptions={{
           headerShown: false,
           tabBarActiveTintColor: theme.brand,

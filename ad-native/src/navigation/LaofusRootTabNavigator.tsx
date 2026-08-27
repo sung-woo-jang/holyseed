@@ -24,6 +24,7 @@ export default function LaofusRootTabNavigator() {
 
   return (
     <Tab.Navigator
+      initialRouteName="Laofus"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: theme.brand,

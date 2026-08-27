@@ -15,9 +15,11 @@ interface LineChartProps {
   color?: string;
   dark?: boolean;
   interactive?: boolean;
+  /** 축/툴팁 값 표시 포맷 (기본: 원화 축약 표기) */
+  formatValue?: (v: number) => string;
 }
 
-export default function LineChart({ data, width = 327, height = 180, color = '#3182F6', dark = false, interactive = true }: LineChartProps) {
+export default function LineChart({ data, width = 327, height = 180, color = '#3182F6', dark = false, interactive = true, formatValue = krwShort }: LineChartProps) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const gradId = useRef(`lc-${Math.random().toString(36).slice(2, 7)}`).current;
 
@@ -87,7 +89,7 @@ export default function LineChart({ data, width = 327, height = 180, color = '#3
           <G key={i}>
             <Line x1={padding.left} x2={padding.left + w} y1={t.y} y2={t.y} stroke={gridColor} strokeWidth={1} strokeDasharray="2,4" />
             <SvgText x={width - 4} y={t.y + 3} fontSize={10} fill={labelColor} textAnchor="end">
-              {krwShort(t.value)}
+              {formatValue(t.value)}
             </SvgText>
           </G>
         ))}
@@ -141,7 +143,7 @@ export default function LineChart({ data, width = 327, height = 180, color = '#3
               fontWeight="700"
               fill="#fff"
             >
-              {krwShort(hp.value)}원
+              {formatValue(hp.value)}
             </SvgText>
           </>
         )}

@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Border from '../components/ui/Border';
 import Button from '../components/ui/Button';
 import ListHeader from '../components/ui/ListHeader';
+import AppSwitchSection from '../components/common/AppSwitchSection';
 import { useOtaUpdate } from '../lib/useOtaUpdate';
 import { useTheme } from '../lib/theme';
 
@@ -20,6 +21,10 @@ export default function AppMoreScreen({ appName }: AppMoreScreenProps) {
     <SafeAreaView edges={['top']} style={[styles.root, { backgroundColor: theme.bg }]}>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         <ListHeader title={<ListHeader.TitleParagraph typography="t4">{appName} 더보기</ListHeader.TitleParagraph>} />
+
+        <Border type="full" height={16} />
+
+        <AppSwitchSection />
 
         <Border type="full" height={16} />
 

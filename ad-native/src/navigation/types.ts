@@ -33,5 +33,4 @@ export type MainTabParamList = {
   Assets: NavigatorScreenParams<AssetsStackParamList>;
   Book: NavigatorScreenParams<BookStackParamList>;
   More: NavigatorScreenParams<MoreStackParamList>;
-  Apps: undefined;
 };

@@ -6,7 +6,15 @@ import { buildBuyLadder, buildSellLadder, type LadderRow } from '@/features/vr/l
 
 const usd = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
-function LadderTable({ rows, kind }: { rows: LadderRow[]; kind: 'buy' | 'sell' }) {
+function LadderTable({
+  rows,
+  kind,
+  cycleStartPool,
+}: {
+  rows: LadderRow[]
+  kind: 'buy' | 'sell'
+  cycleStartPool: number | null
+}) {
   return (
     <Table>
       <TableHeader>
@@ -14,16 +22,22 @@ function LadderTable({ rows, kind }: { rows: LadderRow[]; kind: 'buy' | 'sell' }
           <TableHead>체결 후 보유</TableHead>
           <TableHead className="text-right">트리거가</TableHead>
           <TableHead className="text-right">{kind === 'buy' ? 'Pool 잔액 (차감)' : 'Pool 잔액 (가산)'}</TableHead>
+          <TableHead className="text-right">Pool 소진율</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {rows.map((row) => (
-          <TableRow key={row.qtyAfter} className={cn(row.exceedsLimit && 'text-destructive')}>
-            <TableCell>{row.qtyAfter}주{row.exceedsLimit && ' ⚠ 한도 초과'}</TableCell>
-            <TableCell className="text-right tabular-nums">{usd(row.triggerPrice)}</TableCell>
-            <TableCell className="text-right tabular-nums">{usd(row.poolAfter)}</TableCell>
-          </TableRow>
-        ))}
+        {rows.map((row) => {
+          const usageRate =
+            cycleStartPool && cycleStartPool > 0 ? ((cycleStartPool - row.poolAfter) / cycleStartPool) * 100 : null
+          return (
+            <TableRow key={row.qtyAfter} className={cn(row.exceedsLimit && 'text-destructive')}>
+              <TableCell>{row.qtyAfter}주{row.exceedsLimit && ' ⚠ 한도 초과'}</TableCell>
+              <TableCell className="text-right tabular-nums">{usd(row.triggerPrice)}</TableCell>
+              <TableCell className="text-right tabular-nums">{usd(row.poolAfter)}</TableCell>
+              <TableCell className="text-right tabular-nums">{usageRate !== null ? `${usageRate.toFixed(1)}%` : '—'}</TableCell>
+            </TableRow>
+          )
+        })}
       </TableBody>
     </Table>
   )
@@ -61,7 +75,7 @@ export default function VrLadderPage() {
           <h2 className="mb-3 text-sm font-semibold">
             매수표 <span className="font-normal text-muted-foreground">— 트리거가 = 최소밴드 ÷ 직전 보유수량</span>
           </h2>
-          <LadderTable rows={buyRows} kind="buy" />
+          <LadderTable rows={buyRows} kind="buy" cycleStartPool={state.cycle?.poolStart ?? null} />
           <p className="mt-2 text-xs text-muted-foreground">
             ⚠ 표시는 누적 매수액이 사용가능 Pool({usd(state.usablePool)})을 초과하는 구간
           </p>
@@ -71,7 +85,7 @@ export default function VrLadderPage() {
             매도표 <span className="font-normal text-muted-foreground">— 트리거가 = 최대밴드 ÷ 직전 보유수량</span>
           </h2>
           {sellRows.length > 0 ? (
-            <LadderTable rows={sellRows} kind="sell" />
+            <LadderTable rows={sellRows} kind="sell" cycleStartPool={state.cycle?.poolStart ?? null} />
           ) : (
             <p className="text-sm text-muted-foreground">보유수량이 없습니다.</p>
           )}

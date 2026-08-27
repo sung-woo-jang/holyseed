@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import * as Updates from 'expo-updates';
 import Border from '../../components/ui/Border';
 import Button from '../../components/ui/Button';
 import ListHeader from '../../components/ui/ListHeader';
@@ -11,6 +10,7 @@ import ConfirmDialog from '../../components/common/ConfirmDialog';
 import AppToast from '../../components/common/AppToast';
 import McpTokenSheet from '../../components/sheets/McpTokenSheet';
 import { useTheme } from '../../lib/theme';
+import { useOtaUpdate } from '../../lib/useOtaUpdate';
 import { useMcpTokens, useDeleteMcpToken } from '../../queries/mutations';
 
 export default function SettingsScreen() {
@@ -20,29 +20,7 @@ export default function SettingsScreen() {
   const [tokenSheetVisible, setTokenSheetVisible] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; label: string } | null>(null);
   const [toast, setToast] = useState('');
-  const [checkingUpdate, setCheckingUpdate] = useState(false);
-
-  const updateLabel = Updates.isEmbeddedLaunch ? '내장 빌드 (OTA 미적용)' : `업데이트 적용됨 · ${Updates.updateId?.slice(0, 8) ?? '?'}`;
-
-  async function handleCheckUpdate() {
-    setCheckingUpdate(true);
-    try {
-      const result = await Updates.checkForUpdateAsync();
-      if (!result.isAvailable) {
-        Alert.alert('최신 버전', '이미 최신 버전을 쓰고 있어요.');
-        return;
-      }
-      await Updates.fetchUpdateAsync();
-      Alert.alert('업데이트 발견', '새 버전을 받았어요. 지금 적용할까요?', [
-        { text: '나중에', style: 'cancel' },
-        { text: '지금 적용', onPress: () => Updates.reloadAsync() },
-      ]);
-    } catch (e) {
-      Alert.alert('확인 실패', e instanceof Error ? e.message : '알 수 없는 오류예요.');
-    } finally {
-      setCheckingUpdate(false);
-    }
-  }
+  const { updateLabel, checking: checkingUpdate, checkForUpdate: handleCheckUpdate } = useOtaUpdate();
 
   async function confirmDeleteToken() {
     if (!deleteTarget) return;

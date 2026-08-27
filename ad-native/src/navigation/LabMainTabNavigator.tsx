@@ -1,7 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TossEmoji from '../components/common/TossEmoji';
-import LaofusPlaceholderScreen from '../screens/lab/LaofusPlaceholderScreen';
+import LaofusStack from './LaofusStack';
 import VrPlaceholderScreen from '../screens/lab/VrPlaceholderScreen';
 import LabWorklogScreen from '../screens/lab/worklog/LabWorklogScreen';
 import LabMoreScreen from '../screens/lab/LabMoreScreen';
@@ -40,7 +40,7 @@ export default function LabMainTabNavigator() {
     >
       <Tab.Screen
         name="Laofus"
-        component={LaofusPlaceholderScreen}
+        component={LaofusStack}
         options={{ tabBarLabel: '라오어', tabBarIcon: ({ size }) => <TossEmoji code={TE.chartUp} size={size} /> }}
       />
       <Tab.Screen

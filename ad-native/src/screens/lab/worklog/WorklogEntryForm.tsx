@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { useQuery } from '@tanstack/react-query';
 import SheetModal from '../../../components/sheets/SheetModal';
 import Button from '../../../components/ui/Button';
 import TextField from '../../../components/ui/TextField';
@@ -8,7 +10,7 @@ import Switch from '../../../components/ui/Switch';
 import FormRow from '../../../components/common/FormRow';
 import ConfirmDialog from '../../../components/common/ConfirmDialog';
 import DatePicker from '../../../components/common/DatePicker';
-import { labWorklogApi, type WorklogRecord, type WorklogCategoryOption, type PayStatus } from '../../../api/lab-worklog';
+import { labWorklogApi, type WorklogRecord, type WorklogCategoryOption, type WorklogPhoto, type PayStatus } from '../../../api/lab-worklog';
 import { useTheme } from '../../../lib/theme';
 import { todayLocal } from '../../../lib/date';
 import { getErrorMessage } from '../../../lib/error';
@@ -43,12 +45,19 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
   const [dailyWage, setDailyWage] = useState('');
   const [amountOverride, setAmountOverride] = useState('');
   const [withholdingApplied, setWithholdingApplied] = useState(false);
+  const [address, setAddress] = useState('');
+  const [jobs, setJobs] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<WorklogPhoto[]>([]);
   const [memo, setMemo] = useState('');
   const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [error, setError] = useState('');
+
+  const jobOptionsQ = useQuery({ queryKey: ['lab-worklog-jobs'], queryFn: labWorklogApi.jobOptions, enabled: visible, staleTime: 60_000 });
+  const jobChoices = (jobOptionsQ.data ?? []).filter((j) => j.category === category);
 
   useEffect(() => {
     if (!visible) return;
@@ -63,6 +72,9 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
       setDailyWage(record.dailyWage ? String(record.dailyWage) : '');
       setAmountOverride(record.amountOverride != null ? String(record.amountOverride) : '');
       setWithholdingApplied(record.withholdingApplied);
+      setAddress(record.address ?? '');
+      setJobs(record.jobs ?? []);
+      setPhotos(record.photos ?? []);
       setMemo(record.memo ?? '');
     } else {
       setTitle('');
@@ -75,10 +87,51 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
       setDailyWage('');
       setAmountOverride('');
       setWithholdingApplied(categories[0]?.defaultWithholdingApplied ?? false);
+      setAddress('');
+      setJobs([]);
+      setPhotos([]);
       setMemo('');
     }
     setError('');
   }, [visible, record]);
+
+  function toggleJob(name: string) {
+    setJobs((prev) => (prev.includes(name) ? prev.filter((j) => j !== name) : [...prev, name]));
+  }
+
+  async function handlePickPhotos() {
+    const remaining = 5 - photos.length;
+    if (remaining <= 0) return;
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        setError('사진 접근 권한이 필요해요');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        selectionLimit: remaining,
+        quality: 0.8,
+      });
+      if (result.canceled || result.assets.length === 0) return;
+      setUploadingPhoto(true);
+      const files = result.assets.map((a, i) => {
+        const ext = (a.mimeType?.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+        return { uri: a.uri, name: `photo_${Date.now()}_${i}.${ext}`, type: a.mimeType || 'image/jpeg' };
+      });
+      const uploaded = await labWorklogApi.uploadPhotos(files);
+      setPhotos((prev) => [...prev, ...uploaded]);
+    } catch (e) {
+      setError(getErrorMessage(e, '사진 업로드에 실패했어요'));
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
+
+  function removePhoto(filename: string) {
+    setPhotos((prev) => prev.filter((p) => p.filename !== filename));
+  }
 
   const isValid = title.trim().length > 0 && !!workDate;
 
@@ -94,9 +147,12 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
         startTime: startTime || undefined,
         endTime: endTime || undefined,
         breakHours: breakHours ? Number(breakHours) : undefined,
+        jobs,
         dailyWage: dailyWage ? Number(dailyWage) : undefined,
         amountOverride: amountOverride ? Number(amountOverride) : null,
         withholdingApplied,
+        address: address || undefined,
+        photos,
         memo: memo || undefined,
       };
       if (isEdit && record) {
@@ -188,6 +244,49 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
         <Switch checked={withholdingApplied} onCheckedChange={setWithholdingApplied} />
       </View>
 
+      {jobChoices.length > 0 && (
+        <View style={{ marginBottom: 12 }}>
+          <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>업무 (다중 선택)</Text>
+          <View style={styles.chipRow}>
+            {jobChoices.map((j) => {
+              const active = jobs.includes(j.name);
+              return (
+                <Pressable
+                  key={j.id}
+                  onPress={() => toggleJob(j.name)}
+                  style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
+                >
+                  <Text style={{ fontSize: 12.5, fontWeight: '700', color: active ? theme.brand : theme.text }}>{j.name}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      )}
+
+      <TextField variant="box" placeholder="주소 (선택)" value={address} onChangeText={setAddress} style={{ marginBottom: 12 }} />
+
+      <View style={{ marginBottom: 12 }}>
+        <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>사진 ({photos.length}/5)</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={styles.photoRow}>
+            {photos.map((p) => (
+              <View key={p.filename} style={styles.photoThumbWrap}>
+                <Image source={{ uri: p.url }} style={styles.photoThumb} />
+                <Pressable style={styles.photoRemove} onPress={() => removePhoto(p.filename)} hitSlop={6}>
+                  <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>×</Text>
+                </Pressable>
+              </View>
+            ))}
+            {photos.length < 5 && (
+              <Pressable style={[styles.photoAdd, { borderColor: theme.border }]} onPress={handlePickPhotos} disabled={uploadingPhoto}>
+                <Text style={{ color: theme.textMuted, fontSize: 20 }}>{uploadingPhoto ? '···' : '+'}</Text>
+              </Pressable>
+            )}
+          </View>
+        </ScrollView>
+      </View>
+
       <TextInput
         style={[styles.memoInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.bg }]}
         placeholder="메모 (선택)"
@@ -226,4 +325,10 @@ const styles = StyleSheet.create({
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   memoInput: { minHeight: 72, borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingTop: 10, fontSize: 14, textAlignVertical: 'top', marginBottom: 8 },
   deleteRow: { alignItems: 'center', paddingVertical: 12 },
+  fieldLabel: { fontSize: 12, fontWeight: '700', marginBottom: 8 },
+  photoRow: { flexDirection: 'row', gap: 10 },
+  photoThumbWrap: { position: 'relative' },
+  photoThumb: { width: 64, height: 64, borderRadius: 10 },
+  photoRemove: { position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' },
+  photoAdd: { width: 64, height: 64, borderRadius: 10, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
 });

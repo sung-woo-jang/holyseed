@@ -2,6 +2,12 @@ import { labApi } from '../lib/lab-api';
 
 export type PayStatus = 'RECEIVED' | 'EXPECTED' | 'UNPAID' | 'DAYOFF';
 
+export interface WorklogPhoto {
+  filename: string;
+  path: string;
+  url: string;
+}
+
 export interface WorklogRecord {
   id: number;
   title: string;
@@ -17,6 +23,7 @@ export interface WorklogRecord {
   amountOverride: number | null;
   address: string | null;
   memo: string | null;
+  photos: WorklogPhoto[];
   withholdingApplied: boolean;
   effectiveAmount: number;
   netAmount: number;
@@ -36,6 +43,14 @@ export interface WorklogCategoryOption {
   sortOrder: number;
   defaultDailyWage: number | null;
   defaultWithholdingApplied: boolean;
+  overtimeThresholdHours: number;
+  overtimeExtraRate: number;
+}
+
+export interface WorklogJobOption {
+  id: number;
+  name: string;
+  category: string;
 }
 
 export interface WorklogInput {
@@ -44,12 +59,28 @@ export interface WorklogInput {
   startTime?: string;
   endTime?: string;
   breakHours?: number;
+  jobs?: string[];
   payStatus?: PayStatus;
   category?: string;
   dailyWage?: number;
   amountOverride?: number | null;
   withholdingApplied?: boolean;
+  address?: string;
   memo?: string;
+  photos?: WorklogPhoto[];
+}
+
+export interface CategoryOptionInput {
+  name: string;
+  defaultDailyWage?: number | null;
+  defaultWithholdingApplied?: boolean;
+  overtimeThresholdHours?: number;
+  overtimeExtraRate?: number;
+}
+
+export interface SortPref {
+  key: string;
+  dir: 'asc' | 'desc';
 }
 
 export const labWorklogApi = {
@@ -63,4 +94,20 @@ export const labWorklogApi = {
   delete: (id: number) => labApi.post(`/worklog/${id}/delete`).then((r) => r.data),
 
   categoryOptions: () => labApi.get<WorklogCategoryOption[]>('/worklog/category-options').then((r) => r.data),
+  createCategoryOption: (dto: CategoryOptionInput) => labApi.post<WorklogCategoryOption>('/worklog/category-options', dto).then((r) => r.data),
+  updateCategoryOption: (dto: Partial<CategoryOptionInput> & { id: number }) =>
+    labApi.post<WorklogCategoryOption>('/worklog/category-options/update', dto).then((r) => r.data),
+  reorderCategoryOptions: (ids: number[]) => labApi.post('/worklog/category-options/reorder', { ids }).then((r) => r.data),
+
+  jobOptions: () => labApi.get<WorklogJobOption[]>('/worklog/job-options').then((r) => r.data),
+  createJobOption: (name: string, category: string) => labApi.post<WorklogJobOption>('/worklog/job-options', { name, category }).then((r) => r.data),
+  deleteJobOption: (id: number) => labApi.post(`/worklog/job-options/${id}/delete`).then((r) => r.data),
+
+  uploadPhotos: (files: { uri: string; name: string; type: string }[]) => {
+    const form = new FormData();
+    files.forEach((f) => form.append('photos', f as unknown as Blob));
+    return labApi
+      .post<{ photos: WorklogPhoto[] }>('/worklog/upload-photos', form, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 30000 })
+      .then((r) => r.data.photos);
+  },
 };

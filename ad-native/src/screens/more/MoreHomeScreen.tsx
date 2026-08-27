@@ -8,6 +8,7 @@ import Border from '../../components/ui/Border';
 import Button from '../../components/ui/Button';
 import ListHeader from '../../components/ui/ListHeader';
 import ListRow from '../../components/ui/ListRow';
+import AppSwitchSection from '../../components/common/AppSwitchSection';
 import { useHouseholdData } from '../../queries/useHouseholdData';
 import { clearTokens } from '../../lib/storage';
 import { useTheme } from '../../lib/theme';
@@ -82,6 +83,10 @@ export default function MoreHomeScreen({ navigation }: Props) {
             {idx < menuItems.length - 1 && <Border type="full" />}
           </View>
         ))}
+
+        <Border type="full" height={16} />
+
+        <AppSwitchSection />
 
         <Border type="full" height={16} />
 

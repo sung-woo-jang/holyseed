@@ -2,7 +2,6 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TossEmoji from '../components/common/TossEmoji';
 import LabWorklogScreen from '../screens/lab/worklog/LabWorklogScreen';
-import AppLauncherScreen from '../screens/AppLauncherScreen';
 import AppMoreScreen from '../screens/AppMoreScreen';
 import { useTheme } from '../lib/theme';
 import { TE } from '../lib/toss-emoji';
@@ -10,7 +9,6 @@ import { TE } from '../lib/toss-emoji';
 export type WorklogTabParamList = {
   Worklog: undefined;
   More: undefined;
-  Apps: undefined;
 };
 
 const Tab = createBottomTabNavigator<WorklogTabParamList>();
@@ -45,9 +43,6 @@ export default function WorklogRootTabNavigator() {
       />
       <Tab.Screen name="More" options={{ tabBarLabel: '더보기', tabBarIcon: ({ size }) => <TossEmoji code={TE.gear} size={size} /> }}>
         {() => <AppMoreScreen appName="근무일지" />}
-      </Tab.Screen>
-      <Tab.Screen name="Apps" options={{ tabBarLabel: '앱', tabBarIcon: ({ size }) => <TossEmoji code={TE.repeat} size={size} /> }}>
-        {() => <AppLauncherScreen homeRoute="Worklog" />}
       </Tab.Screen>
     </Tab.Navigator>
   );

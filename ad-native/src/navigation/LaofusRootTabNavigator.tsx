@@ -3,7 +3,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TossEmoji from '../components/common/TossEmoji';
 import LaofusStack from './LaofusStack';
 import VrStack from './VrStack';
-import AppLauncherScreen from '../screens/AppLauncherScreen';
 import AppMoreScreen from '../screens/AppMoreScreen';
 import { useTheme } from '../lib/theme';
 import { TE } from '../lib/toss-emoji';
@@ -12,7 +11,6 @@ export type LaofusTabParamList = {
   Laofus: undefined;
   Vr: undefined;
   More: undefined;
-  Apps: undefined;
 };
 
 const Tab = createBottomTabNavigator<LaofusTabParamList>();
@@ -52,9 +50,6 @@ export default function LaofusRootTabNavigator() {
       />
       <Tab.Screen name="More" options={{ tabBarLabel: '더보기', tabBarIcon: ({ size }) => <TossEmoji code={TE.gear} size={size} /> }}>
         {() => <AppMoreScreen appName="라오어" />}
-      </Tab.Screen>
-      <Tab.Screen name="Apps" options={{ tabBarLabel: '앱', tabBarIcon: ({ size }) => <TossEmoji code={TE.repeat} size={size} /> }}>
-        {() => <AppLauncherScreen homeRoute="Laofus" homeNestedScreen="LaofusHome" />}
       </Tab.Screen>
     </Tab.Navigator>
   );

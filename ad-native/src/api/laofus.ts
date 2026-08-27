@@ -84,9 +84,42 @@ export interface StatusDto {
   now: string;
 }
 
+export interface HoldingRow {
+  symbol: string;
+  name: string;
+  quantity: string;
+  averagePurchasePrice: string;
+  lastPrice: string;
+  marketValue: { amount: string; purchaseAmount: string };
+  profitLoss: { amount: string; rate: string };
+  dailyProfitLoss: { amount: string; rate: string };
+}
+
+export interface AccountDto {
+  holdings: { items: HoldingRow[] };
+  buyingPower: { usd: string; krw: string };
+  exchangeRate: { rate: string; midRate: string } | null;
+}
+
+export interface AccountSnapshotDto {
+  id: number;
+  date: string;
+  totalValueUsd: string;
+  totalValueKrw: string;
+  stockValueUsd: string;
+  cashUsd: string;
+  cashKrw: string;
+  fxRate: string;
+  holdingsJson: { symbol: string; quantity: number; marketValueUsd: number }[];
+  createdAt: string;
+}
+
 export const laofusRestApi = {
   status: () => laofusApi.get<StatusDto>('/status').then((r) => r.data),
   price: () => laofusApi.get<{ price: number; ts: string }>('/price').then((r) => r.data),
   events: (cursor?: number, level?: string) =>
     laofusApi.get<{ events: EventDto[]; nextCursor: number | null }>('/events', { params: { cursor, level } }).then((r) => r.data),
+  account: () => laofusApi.get<AccountDto>('/account').then((r) => r.data),
+  accountSnapshots: () => laofusApi.get<AccountSnapshotDto[]>('/account-snapshots').then((r) => r.data),
+  recordAccountSnapshot: () => laofusApi.post('/account-snapshot/run').then((r) => r.data),
 };

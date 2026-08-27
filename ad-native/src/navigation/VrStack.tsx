@@ -20,7 +20,7 @@ export default function VrStack() {
     <Stack.Navigator>
       <Stack.Screen name="VrOverview" component={VrOverviewScreen} options={{ title: 'TQQQ VR' }} />
       <Stack.Screen name="VrFills" component={VrFillsScreen} options={{ title: '체결 내역' }} />
-      <Stack.Screen name="VrLadder" component={VrLadderScreen} options={{ title: '사다리' }} />
+      <Stack.Screen name="VrLadder" component={VrLadderScreen} options={{ title: '예약 매수/매도표' }} />
       <Stack.Screen name="VrTrend" component={VrTrendScreen} options={{ title: '추이' }} />
       <Stack.Screen name="VrSystem" component={VrSystemScreen} options={{ title: '시스템' }} />
     </Stack.Navigator>

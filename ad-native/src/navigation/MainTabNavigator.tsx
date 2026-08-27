@@ -5,6 +5,7 @@ import HomeScreen from '../screens/HomeScreen';
 import AssetsStack from './AssetsStack';
 import BookStack from './BookStack';
 import MoreStack from './MoreStack';
+import AppLauncherScreen from '../screens/AppLauncherScreen';
 import { Icon } from '../components/common/Icon';
 import { useTheme } from '../lib/theme';
 import { useSheetStore } from '../stores/sheet.store';
@@ -53,6 +54,11 @@ export default function MainTabNavigator() {
           name="More"
           component={MoreStack}
           options={{ tabBarLabel: '더보기', tabBarIcon: ({ color, size }) => Icon.more(color, size) }}
+        />
+        <Tab.Screen
+          name="Apps"
+          component={AppLauncherScreen}
+          options={{ tabBarLabel: '앱', tabBarIcon: ({ color, size }) => Icon.apps(color, size) }}
         />
       </Tab.Navigator>
       {/* Android의 RN Modal은 별도 OS Window라 하단 탭바를 덮지 못하는 업스트림 미해결 한계가 있다

@@ -2,15 +2,16 @@ import { create } from 'zustand';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
-export type AppMode = 'assetDiary' | 'lab';
+export type AppMode = 'assetDiary' | 'laofus' | 'worklog';
 
+const VALID_MODES: AppMode[] = ['assetDiary', 'laofus', 'worklog'];
 const KEY = 'app_mode';
 const isWeb = Platform.OS === 'web';
 
 async function readStoredMode(): Promise<AppMode | null> {
   try {
     const raw = isWeb ? window.localStorage.getItem(KEY) : await SecureStore.getItemAsync(KEY);
-    return raw === 'lab' || raw === 'assetDiary' ? raw : null;
+    return VALID_MODES.includes(raw as AppMode) ? (raw as AppMode) : null;
   } catch {
     return null;
   }

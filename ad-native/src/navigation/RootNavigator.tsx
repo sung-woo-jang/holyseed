@@ -9,7 +9,8 @@ import { useTheme } from '../lib/theme';
 import Loader from '../components/ui/Loader';
 import AuthNavigator from './AuthNavigator';
 import MainTabNavigator from './MainTabNavigator';
-import LabRootNavigator from './LabRootNavigator';
+import LaofusRootTabNavigator from './LaofusRootTabNavigator';
+import WorklogRootTabNavigator from './WorklogRootTabNavigator';
 import OnboardingScreen from '../screens/auth/OnboardingScreen';
 
 async function restoreSession() {
@@ -45,7 +46,8 @@ export default function RootNavigator() {
     );
   }
 
-  if (mode === 'lab') return <LabRootNavigator />;
+  if (mode === 'laofus') return <LaofusRootTabNavigator />;
+  if (mode === 'worklog') return <WorklogRootTabNavigator />;
 
   if (!isAuthenticated) return <AuthNavigator />;
   if (!currentHousehold) return <OnboardingScreen />;

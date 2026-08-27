@@ -1,24 +1,21 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TossEmoji from '../components/common/TossEmoji';
-import LaofusStack from './LaofusStack';
-import VrStack from './VrStack';
 import LabWorklogScreen from '../screens/lab/worklog/LabWorklogScreen';
-import LabMoreScreen from '../screens/lab/LabMoreScreen';
+import AppLauncherScreen from '../screens/AppLauncherScreen';
 import { useTheme } from '../lib/theme';
 import { TE } from '../lib/toss-emoji';
 
-export type LabTabParamList = {
-  Laofus: undefined;
-  Vr: undefined;
+export type WorklogTabParamList = {
   Worklog: undefined;
-  LabMore: undefined;
+  Apps: undefined;
 };
 
-const Tab = createBottomTabNavigator<LabTabParamList>();
+const Tab = createBottomTabNavigator<WorklogTabParamList>();
 const BASE_TAB_BAR_HEIGHT = 52;
 
-export default function LabMainTabNavigator() {
+/** "근무일지" 앱 — 트레이딩 도구와 무관한 독립 도구로 분리 */
+export default function WorklogRootTabNavigator() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const tabBarHeight = BASE_TAB_BAR_HEIGHT + insets.bottom;
@@ -39,24 +36,14 @@ export default function LabMainTabNavigator() {
       }}
     >
       <Tab.Screen
-        name="Laofus"
-        component={LaofusStack}
-        options={{ tabBarLabel: '라오어', tabBarIcon: ({ size }) => <TossEmoji code={TE.chartUp} size={size} /> }}
-      />
-      <Tab.Screen
-        name="Vr"
-        component={VrStack}
-        options={{ tabBarLabel: 'VR', tabBarIcon: ({ size }) => <TossEmoji code={TE.chartBar} size={size} /> }}
-      />
-      <Tab.Screen
         name="Worklog"
         component={LabWorklogScreen}
         options={{ tabBarLabel: '근무일지', tabBarIcon: ({ size }) => <TossEmoji code={TE.briefcase} size={size} /> }}
       />
       <Tab.Screen
-        name="LabMore"
-        component={LabMoreScreen}
-        options={{ tabBarLabel: '더보기', tabBarIcon: ({ size }) => <TossEmoji code={TE.gear} size={size} /> }}
+        name="Apps"
+        component={AppLauncherScreen}
+        options={{ tabBarLabel: '앱', tabBarIcon: ({ size }) => <TossEmoji code={TE.repeat} size={size} /> }}
       />
     </Tab.Navigator>
   );

@@ -25,6 +25,16 @@ export const Icon = {
       <Circle cx={19} cy={12} r={1.6} fill={color} />
     </Svg>
   ),
+  apps: (color = '#8B95A1', size = 24) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" pointerEvents="none">
+      <Path
+        d="M4 4h6v6H4V4zM14 4h6v6h-6V4zM4 14h6v6H4v-6zM14 14h6v6h-6v-6z"
+        stroke={color}
+        strokeWidth={1.8}
+        strokeLinejoin="round"
+      />
+    </Svg>
+  ),
   back: (color = '#191F28', size = 24) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" pointerEvents="none">
       <Path d="M15 6l-6 6 6 6" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />

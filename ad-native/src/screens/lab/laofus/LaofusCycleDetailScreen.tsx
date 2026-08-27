@@ -1,14 +1,19 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Dimensions, ScrollView, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Loader from '../../../components/ui/Loader';
 import EmptyState from '../../../components/common/EmptyState';
+import CycleTradeChart from './CycleTradeChart';
 import { laofusRestApi } from '../../../api/laofus';
 import { useTheme } from '../../../lib/theme';
 import { TE } from '../../../lib/toss-emoji';
 import type { LaofusStackParamList } from '../../../navigation/LaofusStack';
 
 type Props = NativeStackScreenProps<LaofusStackParamList, 'LaofusCycleDetail'>;
+
+/** 거래 1건당 최소 폭(px) — 이보다 촘촘해지면 가로 스크롤 (lab-front CycleDetailPage.tsx와 동일 값) */
+const CHART_POINT_WIDTH = 28;
 
 function n(v: string | number | null | undefined): number {
   return Number(v ?? 0);
@@ -34,6 +39,11 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
   const theme = useTheme();
   const { cycleNo } = route.params;
   const statusQ = useQuery({ queryKey: ['laofus-status'], queryFn: laofusRestApi.status });
+  const [cardWidth, setCardWidth] = useState(Dimensions.get('window').width - 32 - 32);
+
+  function onCardLayout(e: LayoutChangeEvent) {
+    setCardWidth(e.nativeEvent.layout.width);
+  }
 
   if (statusQ.isLoading) {
     return (
@@ -69,6 +79,13 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
         <Tile theme={theme} label="거래 횟수" value={`${real.length}차`} sub={`${days}일간`} />
       </View>
 
+      <View style={[styles.chartCard, { backgroundColor: theme.card, borderColor: theme.border }]} onLayout={onCardLayout}>
+        <Text style={[styles.chartTitle, { color: theme.textMuted }]}>체결가 · 평단 추이</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <CycleTradeChart trades={c.trades} width={Math.max(cardWidth, real.length * CHART_POINT_WIDTH)} />
+        </ScrollView>
+      </View>
+
       <View style={[styles.listCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
         {sortedTrades.map((t, i) => (
           <View key={t.id} style={[styles.tradeRow, i > 0 && { borderTopWidth: 1, borderColor: theme.border }]}>
@@ -98,6 +115,8 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   tileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   tile: { width: '48%', borderWidth: 1, borderRadius: 12, padding: 12 },
+  chartCard: { borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 12 },
+  chartTitle: { fontSize: 12.5, fontWeight: '700', marginBottom: 8 },
   listCard: { borderWidth: 1, borderRadius: 14, overflow: 'hidden' },
   tradeRow: { padding: 12 },
   tradeTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

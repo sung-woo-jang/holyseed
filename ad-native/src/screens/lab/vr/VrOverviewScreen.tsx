@@ -159,7 +159,7 @@ export default function VrOverviewScreen({ navigation }: Props) {
           <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>체결 내역</Text>
         </Pressable>
         <Pressable style={[styles.navChip, { borderColor: theme.border }]} onPress={() => navigation.navigate('VrLadder')}>
-          <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>사다리</Text>
+          <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>매수/매도표</Text>
         </Pressable>
         <Pressable style={[styles.navChip, { borderColor: theme.border }]} onPress={() => navigation.navigate('VrTrend')}>
           <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>추이</Text>

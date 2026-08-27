@@ -28,11 +28,13 @@ export default function AppLauncherScreen({ homeRoute, homeNestedScreen }: AppLa
 
   function goToApp(target: AppMode, current: boolean) {
     if (current) {
-      // 이미 이 앱이면 모드 전환 없이 그 앱의 메인 화면으로만 이동
-      // 이 화면은 3개 앱의 서로 다른 탭 내비게이터에서 공용으로 쓰여 부모 타입을 특정할 수 없어 any로 처리
-      const parent = navigation.getParent() as any;
-      if (homeNestedScreen) parent?.navigate(homeRoute, { screen: homeNestedScreen });
-      else parent?.navigate(homeRoute);
+      // 이미 이 앱이면 모드 전환 없이 그 앱의 메인 화면으로만 이동.
+      // AppLauncherScreen은 각 모드의 최상위 Tab.Navigator에 바로 등록된 화면이라(부모 내비게이터가 없음)
+      // getParent()가 아니라 자기 자신의 navigation이 곧 그 탭 내비게이터다.
+      // 3개 앱의 서로 다른 탭 내비게이터에서 공용으로 쓰여 타입을 특정할 수 없어 any로 처리
+      const nav = navigation as any;
+      if (homeNestedScreen) nav.navigate(homeRoute, { screen: homeNestedScreen });
+      else nav.navigate(homeRoute);
       return;
     }
     switchMode(target);

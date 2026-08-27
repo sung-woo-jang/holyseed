@@ -4,10 +4,12 @@ import { api } from '../lib/api';
 import { getTokens } from '../lib/storage';
 import { loadHouseholds } from '../lib/auth-bootstrap';
 import { useAuthStore } from '../stores/auth.store';
+import { useAppModeStore } from '../stores/appMode.store';
 import { useTheme } from '../lib/theme';
 import Loader from '../components/ui/Loader';
 import AuthNavigator from './AuthNavigator';
 import MainTabNavigator from './MainTabNavigator';
+import LabRootNavigator from './LabRootNavigator';
 import OnboardingScreen from '../screens/auth/OnboardingScreen';
 
 async function restoreSession() {
@@ -28,18 +30,22 @@ async function restoreSession() {
 export default function RootNavigator() {
   const theme = useTheme();
   const { isReady, isAuthenticated, currentHousehold } = useAuthStore();
+  const { isReady: modeReady, mode, restore: restoreAppMode } = useAppModeStore();
 
   useEffect(() => {
     restoreSession();
+    restoreAppMode();
   }, []);
 
-  if (!isReady) {
+  if (!isReady || !modeReady) {
     return (
       <View style={[styles.loading, { backgroundColor: theme.bg }]}>
         <Loader size="large" color={theme.brand} />
       </View>
     );
   }
+
+  if (mode === 'lab') return <LabRootNavigator />;
 
   if (!isAuthenticated) return <AuthNavigator />;
   if (!currentHousehold) return <OnboardingScreen />;

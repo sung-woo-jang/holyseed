@@ -13,6 +13,7 @@ import { clearTokens } from '../../lib/storage';
 import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
 import { useAuthStore } from '../../stores/auth.store';
+import { useAppModeStore } from '../../stores/appMode.store';
 import type { MoreStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<MoreStackParamList, 'MoreHome'>;
@@ -22,6 +23,7 @@ export default function MoreHomeScreen({ navigation }: Props) {
   const data = useHouseholdData();
   const role = useAuthStore((s) => s.currentHousehold?.role);
   const logout = useAuthStore((s) => s.logout);
+  const switchAppMode = useAppModeStore((s) => s.switchMode);
   const [logoutConfirm, setLogoutConfirm] = useState(false);
 
   async function handleLogout() {
@@ -82,6 +84,25 @@ export default function MoreHomeScreen({ navigation }: Props) {
             {idx < menuItems.length - 1 && <Border type="full" />}
           </View>
         ))}
+
+        <Border type="full" height={16} />
+
+        <ListRow
+          left={
+            <View style={[styles.menuIconBox, { backgroundColor: theme.dark ? '#1a2340' : '#EEF2FF' }]}>
+              <TossEmoji code={TE.gamepad} size={28} />
+            </View>
+          }
+          contents={
+            <View>
+              <Text style={{ color: theme.text, fontSize: 15, fontWeight: '600' }}>Lab 모드로 전환</Text>
+              <Text style={{ color: theme.textMuted, fontSize: 12, marginTop: 2 }}>라오어 · TQQQ VR · 근무일지</Text>
+            </View>
+          }
+          withArrow
+          onPress={() => switchAppMode('lab')}
+          verticalPadding="small"
+        />
 
         <Border type="full" height={16} />
 

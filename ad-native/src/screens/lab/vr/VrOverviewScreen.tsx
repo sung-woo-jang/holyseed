@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Loader from '../../../components/ui/Loader';
 import ConfirmDialog from '../../../components/common/ConfirmDialog';
 import SheetModal from '../../../components/sheets/SheetModal';
@@ -10,9 +9,6 @@ import AppToast from '../../../components/common/AppToast';
 import { vrApi } from '../../../api/vr';
 import { useTheme } from '../../../lib/theme';
 import { getErrorMessage } from '../../../lib/error';
-import type { VrStackParamList } from '../../../navigation/VrStack';
-
-type Props = NativeStackScreenProps<VrStackParamList, 'VrOverview'>;
 
 function usd(v: number | null | undefined): string {
   if (v === null || v === undefined) return '—';
@@ -33,7 +29,7 @@ const ALL_CARD_IDS = [
   'growthRate', 'minBand', 'maxBand', 'avgPrice', 'depositAmount', 'gFactor',
 ];
 
-export default function VrOverviewScreen({ navigation }: Props) {
+export default function VrOverviewScreen() {
   const theme = useTheme();
   const [rolloverConfirm, setRolloverConfirm] = useState(false);
   const [rolling, setRolling] = useState(false);
@@ -155,20 +151,6 @@ export default function VrOverviewScreen({ navigation }: Props) {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.brand} colors={[theme.brand]} />}
     >
       <View style={styles.navRow}>
-        <Pressable style={[styles.navChip, { borderColor: theme.border }]} onPress={() => navigation.navigate('VrFills')}>
-          <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>체결 내역</Text>
-        </Pressable>
-        <Pressable style={[styles.navChip, { borderColor: theme.border }]} onPress={() => navigation.navigate('VrLadder')}>
-          <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>매수/매도표</Text>
-        </Pressable>
-        <Pressable style={[styles.navChip, { borderColor: theme.border }]} onPress={() => navigation.navigate('VrTrend')}>
-          <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>추이</Text>
-        </Pressable>
-      </View>
-      <View style={styles.navRow}>
-        <Pressable style={[styles.navChip, { borderColor: theme.border }]} onPress={() => navigation.navigate('VrSystem')}>
-          <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>시스템</Text>
-        </Pressable>
         <Pressable style={[styles.navChip, { borderColor: theme.border }]} onPress={() => setSettingsOpen(true)}>
           <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>카드 표시 설정</Text>
         </Pressable>

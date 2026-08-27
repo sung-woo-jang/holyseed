@@ -158,6 +158,17 @@ export default function VrOverviewScreen({ navigation }: Props) {
         <Pressable style={[styles.navChip, { borderColor: theme.border }]} onPress={() => navigation.navigate('VrFills')}>
           <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>체결 내역</Text>
         </Pressable>
+        <Pressable style={[styles.navChip, { borderColor: theme.border }]} onPress={() => navigation.navigate('VrLadder')}>
+          <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>사다리</Text>
+        </Pressable>
+        <Pressable style={[styles.navChip, { borderColor: theme.border }]} onPress={() => navigation.navigate('VrTrend')}>
+          <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>추이</Text>
+        </Pressable>
+      </View>
+      <View style={styles.navRow}>
+        <Pressable style={[styles.navChip, { borderColor: theme.border }]} onPress={() => navigation.navigate('VrSystem')}>
+          <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>시스템</Text>
+        </Pressable>
         <Pressable style={[styles.navChip, { borderColor: theme.border }]} onPress={() => setSettingsOpen(true)}>
           <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>카드 표시 설정</Text>
         </Pressable>

@@ -65,12 +65,33 @@ export interface VrEventDto {
   message: string;
 }
 
+export interface VrLastRunDto {
+  runId: string;
+  startedAt: string;
+  endedAt: string;
+  level: string;
+  summary: string;
+}
+
+export interface VrStatusDto {
+  activeSession: string | null;
+  engine: {
+    mode: 'live' | 'dry-run';
+    schedulerEnabled: boolean;
+    running: boolean;
+    nextRun: string | null;
+    lastRun: VrLastRunDto | null;
+  };
+  now: string;
+}
+
 export const vrApi = {
   state: () => labApi.get<VrState>('/vr/state').then((r) => r.data),
   price: () => labApi.get<{ price: number; ts: string }>('/vr/price').then((r) => r.data),
   cashBalance: () => labApi.get<{ totalCash: number; laofusCash: number; vrCash: number }>('/vr/cash-balance').then((r) => r.data),
   events: (cursor?: number, level?: string) =>
     labApi.get<{ events: VrEventDto[]; nextCursor: number | null }>('/vr/events', { params: { cursor, level } }).then((r) => r.data),
+  status: () => labApi.get<VrStatusDto>('/vr/status').then((r) => r.data),
   fills: () => labApi.get<VrFill[]>('/vr/fills').then((r) => r.data),
   cycles: () => labApi.get<VrCycle[]>('/vr/cycles').then((r) => r.data),
   createFill: (dto: { fillDate: string; kind: VrFillKind; price: number; quantity: number; note?: string }) =>

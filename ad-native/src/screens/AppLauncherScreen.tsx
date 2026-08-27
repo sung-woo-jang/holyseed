@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import TossEmoji from '../components/common/TossEmoji';
 import { useAppModeStore, type AppMode } from '../stores/appMode.store';
 import { useTheme } from '../lib/theme';
@@ -11,10 +12,31 @@ const APPS: { mode: AppMode; emojiCode: string; name: string; hint: string }[] =
   { mode: 'worklog', emojiCode: TE.briefcase, name: '근무일지', hint: '근무 기록 · 급여 계산' },
 ];
 
-export default function AppLauncherScreen() {
+interface AppLauncherScreenProps {
+  /** 이 런처가 속한 탭 내비게이터에서, 그 앱의 메인 화면에 해당하는 탭 라우트 이름 */
+  homeRoute: string;
+  /** homeRoute 탭이 자체 스택 내비게이터라면, 그 스택의 첫 화면(메인 화면) 이름 */
+  homeNestedScreen?: string;
+}
+
+/** 3개 앱(자산일기/라오어/근무일지) 공용 전환 런처 — 각 앱 탭바의 "앱" 탭에 등록됨 */
+export default function AppLauncherScreen({ homeRoute, homeNestedScreen }: AppLauncherScreenProps) {
   const theme = useTheme();
+  const navigation = useNavigation();
   const mode = useAppModeStore((s) => s.mode);
   const switchMode = useAppModeStore((s) => s.switchMode);
+
+  function goToApp(target: AppMode, current: boolean) {
+    if (current) {
+      // 이미 이 앱이면 모드 전환 없이 그 앱의 메인 화면으로만 이동
+      // 이 화면은 3개 앱의 서로 다른 탭 내비게이터에서 공용으로 쓰여 부모 타입을 특정할 수 없어 any로 처리
+      const parent = navigation.getParent() as any;
+      if (homeNestedScreen) parent?.navigate(homeRoute, { screen: homeNestedScreen });
+      else parent?.navigate(homeRoute);
+      return;
+    }
+    switchMode(target);
+  }
 
   return (
     <SafeAreaView edges={['top']} style={[styles.root, { backgroundColor: theme.bg }]}>
@@ -33,7 +55,7 @@ export default function AppLauncherScreen() {
                 { backgroundColor: theme.card, borderColor: current ? theme.brand : theme.border },
                 current && { backgroundColor: theme.brandSoft },
               ]}
-              onPress={() => !current && switchMode(app.mode)}
+              onPress={() => goToApp(app.mode, current)}
             >
               <View style={[styles.iconBox, { backgroundColor: theme.bg }]}>
                 <TossEmoji code={app.emojiCode} size={26} />

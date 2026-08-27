@@ -55,11 +55,9 @@ export default function MainTabNavigator() {
           component={MoreStack}
           options={{ tabBarLabel: '더보기', tabBarIcon: ({ color, size }) => Icon.more(color, size) }}
         />
-        <Tab.Screen
-          name="Apps"
-          component={AppLauncherScreen}
-          options={{ tabBarLabel: '앱', tabBarIcon: ({ color, size }) => Icon.apps(color, size) }}
-        />
+        <Tab.Screen name="Apps" options={{ tabBarLabel: '앱', tabBarIcon: ({ color, size }) => Icon.apps(color, size) }}>
+          {() => <AppLauncherScreen homeRoute="Home" />}
+        </Tab.Screen>
       </Tab.Navigator>
       {/* Android의 RN Modal은 별도 OS Window라 하단 탭바를 덮지 못하는 업스트림 미해결 한계가 있다
           (statusBarTranslucent/navigationBarTranslucent를 다 줘도 안 고쳐짐). tabBarStyle의

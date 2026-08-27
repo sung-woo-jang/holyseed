@@ -40,11 +40,9 @@ export default function WorklogRootTabNavigator() {
         component={LabWorklogScreen}
         options={{ tabBarLabel: '근무일지', tabBarIcon: ({ size }) => <TossEmoji code={TE.briefcase} size={size} /> }}
       />
-      <Tab.Screen
-        name="Apps"
-        component={AppLauncherScreen}
-        options={{ tabBarLabel: '앱', tabBarIcon: ({ size }) => <TossEmoji code={TE.repeat} size={size} /> }}
-      />
+      <Tab.Screen name="Apps" options={{ tabBarLabel: '앱', tabBarIcon: ({ size }) => <TossEmoji code={TE.repeat} size={size} /> }}>
+        {() => <AppLauncherScreen homeRoute="Worklog" />}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 }

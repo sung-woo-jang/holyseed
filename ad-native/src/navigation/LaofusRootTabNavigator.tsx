@@ -47,11 +47,9 @@ export default function LaofusRootTabNavigator() {
         component={VrStack}
         options={{ tabBarLabel: 'VR', tabBarIcon: ({ size }) => <TossEmoji code={TE.chartBar} size={size} /> }}
       />
-      <Tab.Screen
-        name="Apps"
-        component={AppLauncherScreen}
-        options={{ tabBarLabel: '앱', tabBarIcon: ({ size }) => <TossEmoji code={TE.repeat} size={size} /> }}
-      />
+      <Tab.Screen name="Apps" options={{ tabBarLabel: '앱', tabBarIcon: ({ size }) => <TossEmoji code={TE.repeat} size={size} /> }}>
+        {() => <AppLauncherScreen homeRoute="Laofus" homeNestedScreen="LaofusHome" />}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 }

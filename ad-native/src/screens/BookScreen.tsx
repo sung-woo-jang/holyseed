@@ -12,7 +12,7 @@ import { useTheme } from '../lib/theme';
 import { useAuthStore } from '../stores/auth.store';
 import { krw } from '../lib/format';
 import { TE } from '../lib/toss-emoji';
-import { getCategoryDef, resolveCategoryVisual } from '../lib/category-meta';
+import { getCategoryDef, resolveCategoryVisual, resolveRootCategoryId } from '../lib/category-meta';
 import TossEmoji from '../components/common/TossEmoji';
 import CategoryIcon from '../components/common/CategoryIcon';
 import { Icon } from '../components/common/Icon';
@@ -118,14 +118,20 @@ export default function BookScreen({ navigation }: Props) {
 
   const monthTx = useMemo(() => data.transactions.filter((t) => t.date.startsWith(month)), [data.transactions, month]);
 
+  function rootCategoryName(t: HouseholdTransaction): string {
+    const rootId = resolveRootCategoryId(t.categoryId, data.categories);
+    const rootCat = rootId != null ? data.categories.find((c) => c.id === rootId) : undefined;
+    return rootCat?.name ?? t.category;
+  }
+
   const monthCats = useMemo(
-    () => [...new Set((typeFilter === 'all' ? monthTx : monthTx.filter((t) => t.type === typeFilter)).map((t) => t.category))],
-    [monthTx, typeFilter],
+    () => [...new Set((typeFilter === 'all' ? monthTx : monthTx.filter((t) => t.type === typeFilter)).map((t) => rootCategoryName(t)))],
+    [monthTx, typeFilter, data.categories],
   );
 
   function handleTypeFilter(v: 'all' | 'INCOME' | 'EXPENSE') {
     setTypeFilter(v);
-    const scopedCats = new Set((v === 'all' ? monthTx : monthTx.filter((t) => t.type === v)).map((t) => t.category));
+    const scopedCats = new Set((v === 'all' ? monthTx : monthTx.filter((t) => t.type === v)).map((t) => rootCategoryName(t)));
     setCatFilter((prev) => new Set([...prev].filter((c) => scopedCats.has(c))));
   }
 
@@ -133,10 +139,10 @@ export default function BookScreen({ navigation }: Props) {
     () =>
       monthTx.filter((t) => {
         if (typeFilter !== 'all' && t.type !== typeFilter) return false;
-        if (catFilter.size > 0 && !catFilter.has(t.category)) return false;
+        if (catFilter.size > 0 && !catFilter.has(rootCategoryName(t))) return false;
         return true;
       }),
-    [monthTx, typeFilter, catFilter],
+    [monthTx, typeFilter, catFilter, data.categories],
   );
 
   const recurring = data.recurring;
@@ -160,14 +166,16 @@ export default function BookScreen({ navigation }: Props) {
   const monthIncome = monthTx.filter((t) => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
   const monthExpense = monthTx.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
 
+  const catBreakdownDrilled = catFilter.size > 0;
   const catBreakdown = useMemo(() => {
     const sums = new Map<string, number>();
     for (const t of filteredTx) {
       if (t.type !== 'EXPENSE') continue;
-      sums.set(t.category, (sums.get(t.category) ?? 0) + t.amount);
+      const key = catBreakdownDrilled ? t.category : rootCategoryName(t);
+      sums.set(key, (sums.get(key) ?? 0) + t.amount);
     }
     return [...sums.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
-  }, [filteredTx]);
+  }, [filteredTx, catBreakdownDrilled, data.categories]);
 
   const groupedTx = useMemo(() => {
     const map = new Map<string, HouseholdTransaction[]>();
@@ -505,7 +513,9 @@ export default function BookScreen({ navigation }: Props) {
             {catBreakdown.length > 0 && (
               <View style={styles.sectionPad}>
                 <View style={[styles.catCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                  <Text style={[styles.catCardTitle, { color: theme.text }]}>카테고리별 지출</Text>
+                  <Text style={[styles.catCardTitle, { color: theme.text }]}>
+                    {catBreakdownDrilled && catFilter.size === 1 ? `${[...catFilter][0]} 세부 지출` : '카테고리별 지출'}
+                  </Text>
                   {catBreakdown.map(([cat, amt], i) => {
                     const def = getCategoryDef(cat);
                     const max = catBreakdown[0]![1];

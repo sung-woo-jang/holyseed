@@ -233,12 +233,12 @@ export default function LabWorklogScreen({ navigation }: Props) {
 
       <View style={styles.toolRow}>
         <Segmented options={['목록', '캘린더']} value={view} onChange={(v) => setView(v as '목록' | '캘린더')} small />
+        <Pressable style={[styles.toolChip, { borderColor: theme.brand }]} onPress={() => navigation.navigate('WorklogSettlement')}>
+          <Text style={{ color: theme.brand, fontSize: 12, fontWeight: '700' }}>정산</Text>
+        </Pressable>
         <View style={{ flex: 1 }} />
         <Pressable style={[styles.toolChip, { borderColor: theme.border }]} onPress={() => setCategorySheetVisible(true)}>
           <Text style={{ color: theme.text, fontSize: 12, fontWeight: '700' }}>관리</Text>
-        </Pressable>
-        <Pressable style={[styles.toolChip, { borderColor: theme.brand }]} onPress={() => navigation.navigate('WorklogSettlement')}>
-          <Text style={{ color: theme.brand, fontSize: 12, fontWeight: '700' }}>정산</Text>
         </Pressable>
         <Pressable style={[styles.toolChip, { borderColor: selectMode ? theme.brand : theme.border }]} onPress={toggleSelectMode}>
           <Text style={{ color: selectMode ? theme.brand : theme.text, fontSize: 12, fontWeight: '700' }}>{selectMode ? '선택 취소' : '선택'}</Text>

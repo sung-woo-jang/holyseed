@@ -27,23 +27,33 @@ const PAY_STATUS_LABEL: Record<PayStatus, string> = {
 };
 
 const STATUS_OPTIONS: PayStatus[] = ['RECEIVED', 'EXPECTED', 'UNPAID'];
-const SCOPE_OPTIONS = ['이번 달', '미수령 전체'];
+const SCOPE_OPTIONS = ['월별', '미수령 전체'];
 
 export default function WorklogSettlementScreen({ navigation }: Props) {
   const theme = useTheme();
-  const [scope, setScope] = useState<'이번 달' | '미수령 전체'>('이번 달');
+  const [scope, setScope] = useState<'월별' | '미수령 전체'>('월별');
+  const [ym, setYm] = useState(() => {
+    const d = new Date();
+    return { year: d.getFullYear(), month: d.getMonth() + 1 };
+  });
   const [targetStatus, setTargetStatus] = useState<PayStatus>('RECEIVED');
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState('');
 
-  const now = new Date();
+  function changeMonth(delta: number) {
+    setYm((prev) => {
+      const d = new Date(prev.year, prev.month - 1 + delta, 1);
+      return { year: d.getFullYear(), month: d.getMonth() + 1 };
+    });
+  }
+
   const dataQ = useQuery({
-    queryKey: ['lab-worklog-settlement', scope, now.getFullYear(), now.getMonth() + 1],
+    queryKey: ['lab-worklog-settlement', scope, ym.year, ym.month],
     queryFn: () =>
-      scope === '이번 달'
-        ? labWorklogApi.query({ year: now.getFullYear(), month: now.getMonth() + 1 })
+      scope === '월별'
+        ? labWorklogApi.query({ year: ym.year, month: ym.month })
         : labWorklogApi.query({ from: '2000-01-01', to: todayLocal() }),
   });
 
@@ -102,8 +112,22 @@ export default function WorklogSettlementScreen({ navigation }: Props) {
   return (
     <SafeAreaView edges={['bottom']} style={[styles.root, { backgroundColor: theme.bg }]}>
       <View style={styles.segWrap}>
-        <Segmented options={SCOPE_OPTIONS} value={scope} onChange={(v) => setScope(v as '이번 달' | '미수령 전체')} />
+        <Segmented options={SCOPE_OPTIONS} value={scope} onChange={(v) => setScope(v as '월별' | '미수령 전체')} />
       </View>
+
+      {scope === '월별' && (
+        <View style={styles.monthNav}>
+          <Pressable hitSlop={10} onPress={() => changeMonth(-1)} style={styles.monthNavBtn}>
+            <Text style={{ color: theme.text, fontSize: 18 }}>‹</Text>
+          </Pressable>
+          <Text style={{ color: theme.text, fontSize: 14, fontWeight: '700' }}>
+            {ym.year}년 {ym.month}월
+          </Text>
+          <Pressable hitSlop={10} onPress={() => changeMonth(1)} style={styles.monthNavBtn}>
+            <Text style={{ color: theme.text, fontSize: 18 }}>›</Text>
+          </Pressable>
+        </View>
+      )}
 
       <View style={[styles.summaryCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <View style={styles.summaryRow}>
@@ -211,6 +235,8 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60 },
   segWrap: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, paddingBottom: 10 },
+  monthNavBtn: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   summaryCard: { marginHorizontal: 16, borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 12 },
   summaryRow: { flexDirection: 'row' },
   summaryItem: { flex: 1, gap: 4 },

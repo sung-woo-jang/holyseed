@@ -29,12 +29,6 @@ const PAY_STATUS_LABEL: Record<WorklogRecord['payStatus'], string> = {
   DAYOFF: '휴무',
 };
 
-const PAY_FILTER_OPTIONS: { key: 'ALL' | 'RECEIVED' | 'UNRECEIVED'; label: string }[] = [
-  { key: 'ALL', label: '전체' },
-  { key: 'RECEIVED', label: '받은것만' },
-  { key: 'UNRECEIVED', label: '안받은것만' },
-];
-
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 function sortByDate(records: WorklogRecord[], dir: 'asc' | 'desc'): WorklogRecord[] {
@@ -57,7 +51,7 @@ export default function LabWorklogScreen({ navigation }: Props) {
   const [view, setView] = useState<'목록' | '캘린더'>('목록');
   const [calendarSelectedDate, setCalendarSelectedDate] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [payStatusFilter, setPayStatusFilter] = useState<'ALL' | 'RECEIVED' | 'UNRECEIVED'>('ALL');
+  const [showUnreceivedOnly, setShowUnreceivedOnly] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -108,8 +102,7 @@ export default function LabWorklogScreen({ navigation }: Props) {
   const summary = worklogQ.data?.summary;
   const categories = categoriesQ.data ?? [];
   const filteredRecords = records.filter((r) => {
-    if (payStatusFilter === 'RECEIVED' && r.payStatus !== 'RECEIVED') return false;
-    if (payStatusFilter === 'UNRECEIVED' && r.payStatus === 'RECEIVED') return false;
+    if (showUnreceivedOnly && r.payStatus === 'RECEIVED') return false;
     if (categoryFilter && r.category !== categoryFilter) return false;
     return true;
   });
@@ -243,48 +236,43 @@ export default function LabWorklogScreen({ navigation }: Props) {
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sortRow}>
         <View style={styles.chipRow}>
-          {PAY_FILTER_OPTIONS.map((o) => {
-            const active = o.key === payStatusFilter;
-            return (
+          <Pressable
+            onPress={() => setShowUnreceivedOnly((prev) => !prev)}
+            style={[styles.chip, { borderColor: showUnreceivedOnly ? theme.brand : theme.border, backgroundColor: showUnreceivedOnly ? theme.brandSoft : theme.card }]}
+          >
+            <Text style={{ fontSize: 12, lineHeight: 18, fontWeight: '700', color: showUnreceivedOnly ? theme.brand : theme.text, includeFontPadding: false }}>
+              안받은것만{showUnreceivedOnly ? ' ✓' : ''}
+            </Text>
+          </Pressable>
+
+          {categories.length > 0 && (
+            <>
               <Pressable
-                key={o.key}
-                onPress={() => setPayStatusFilter(o.key)}
-                style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
+                onPress={() => setCategoryFilter(null)}
+                style={[styles.chip, { borderColor: categoryFilter === null ? theme.brand : theme.border, backgroundColor: categoryFilter === null ? theme.brandSoft : theme.card }]}
               >
-                <Text style={{ fontSize: 12, lineHeight: 18, fontWeight: '700', color: active ? theme.brand : theme.text, includeFontPadding: false }}>{o.label}</Text>
+                <Text style={{ fontSize: 12, lineHeight: 18, fontWeight: '700', color: categoryFilter === null ? theme.brand : theme.text, includeFontPadding: false }}>전체</Text>
               </Pressable>
-            );
-          })}
+              {categories.map((c) => {
+                const active = c.name === categoryFilter;
+                return (
+                  <Pressable
+                    key={c.id}
+                    onPress={() => setCategoryFilter(c.name)}
+                    style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
+                  >
+                    <Text style={{ fontSize: 12, lineHeight: 18, fontWeight: '700', color: active ? theme.brand : theme.text, includeFontPadding: false }}>{c.name}</Text>
+                  </Pressable>
+                );
+              })}
+            </>
+          )}
+
           <Pressable onPress={changeSortDir} style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.card }]}>
             <Text style={{ fontSize: 12, lineHeight: 18, fontWeight: '700', color: theme.text, includeFontPadding: false }}>{sortDir === 'asc' ? '날짜 오름차순 ↑' : '날짜 내림차순 ↓'}</Text>
           </Pressable>
         </View>
       </ScrollView>
-
-      {categories.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sortRow}>
-          <View style={styles.chipRow}>
-            <Pressable
-              onPress={() => setCategoryFilter(null)}
-              style={[styles.chip, { borderColor: categoryFilter === null ? theme.brand : theme.border, backgroundColor: categoryFilter === null ? theme.brandSoft : theme.card }]}
-            >
-              <Text style={{ fontSize: 12, lineHeight: 18, fontWeight: '700', color: categoryFilter === null ? theme.brand : theme.text, includeFontPadding: false }}>전체</Text>
-            </Pressable>
-            {categories.map((c) => {
-              const active = c.name === categoryFilter;
-              return (
-                <Pressable
-                  key={c.id}
-                  onPress={() => setCategoryFilter(c.name)}
-                  style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
-                >
-                  <Text style={{ fontSize: 12, lineHeight: 18, fontWeight: '700', color: active ? theme.brand : theme.text, includeFontPadding: false }}>{c.name}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </ScrollView>
-      )}
 
       {worklogQ.isLoading ? (
         <View style={styles.center}>

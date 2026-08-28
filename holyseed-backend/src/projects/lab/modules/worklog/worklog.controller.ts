@@ -67,19 +67,6 @@ export class WorklogController {
     return ok('근무 기록이 추가되었습니다.', await this.worklogService.create(dto));
   }
 
-  @Post(':id/update')
-  @ApiOperation({ summary: '근무 기록 수정 (금액 재계산)' })
-  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateWorklogDto) {
-    return ok('근무 기록이 수정되었습니다.', await this.worklogService.update(id, dto));
-  }
-
-  @Post(':id/delete')
-  @ApiOperation({ summary: '근무 기록 삭제' })
-  async delete(@Param('id', ParseIntPipe) id: number) {
-    await this.worklogService.delete(id);
-    return ok('근무 기록이 삭제되었습니다.', null);
-  }
-
   @Get('job-options')
   @ApiOperation({ summary: '업무 팔레트 조회 (없으면 기본값 자동 시딩)' })
   async getJobOptions() {
@@ -149,5 +136,23 @@ export class WorklogController {
     const results = await Promise.all(files.map((file) => this.filesService.uploadImage(file, 'worklog')));
     const photos = results.map((r) => ({ filename: r.filename, path: r.path, url: r.url }));
     return ok('사진을 업로드했습니다.', { photos });
+  }
+
+  // ':id/xxx' 형태의 동적 라우트는 반드시 위의 모든 정적 라우트(search/query/job-options/
+  // category-options/sort-pref/upload-photos 등)보다 아래에 와야 한다 — Express/Nest는 라우트를
+  // 선언 순서대로 매칭하는데, 예전에 이 두 라우트가 위쪽에 있었을 때 'category-options/update' 같은
+  // 2세그먼트 정적 경로가 ':id/update' 패턴에 먼저 매칭돼버려('id'='category-options') ParseIntPipe가
+  // "Validation failed (numeric string is expected)" 에러를 던지는 버그가 있었다.
+  @Post(':id/update')
+  @ApiOperation({ summary: '근무 기록 수정 (금액 재계산)' })
+  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateWorklogDto) {
+    return ok('근무 기록이 수정되었습니다.', await this.worklogService.update(id, dto));
+  }
+
+  @Post(':id/delete')
+  @ApiOperation({ summary: '근무 기록 삭제' })
+  async delete(@Param('id', ParseIntPipe) id: number) {
+    await this.worklogService.delete(id);
+    return ok('근무 기록이 삭제되었습니다.', null);
   }
 }

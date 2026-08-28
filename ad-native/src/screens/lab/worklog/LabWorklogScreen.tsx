@@ -193,6 +193,7 @@ export default function LabWorklogScreen() {
               <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{r.title}</Text>
               <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 2 }}>
                 {r.category} · {PAY_STATUS_LABEL[r.payStatus]}
+                {r.halfPay ? ' · 반액' : ''}
               </Text>
             </View>
           }

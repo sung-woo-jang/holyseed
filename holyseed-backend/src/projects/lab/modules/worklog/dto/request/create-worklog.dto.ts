@@ -78,6 +78,11 @@ export class CreateWorklogDto {
   @IsBoolean()
   withholdingApplied?: boolean;
 
+  @ApiPropertyOptional({ description: '사정으로 일당의 절반만 지급받는 경우 true', default: false })
+  @IsOptional()
+  @IsBoolean()
+  halfPay?: boolean;
+
   @ApiPropertyOptional({ description: '주소' })
   @IsOptional()
   @IsString()

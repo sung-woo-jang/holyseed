@@ -90,7 +90,8 @@ export class WorklogService {
   }
 
   private toView(log: Worklog): WorklogView {
-    const effectiveAmount = log.amountOverride ?? log.amount;
+    const halved = log.halfPay ? Math.round(log.amount / 2) : log.amount;
+    const effectiveAmount = log.amountOverride ?? halved;
     const netAmount = Math.round(effectiveAmount * (1 - (log.withholdingApplied ? WITHHOLDING_RATE : 0)));
     return { ...log, effectiveAmount, netAmount };
   }
@@ -192,6 +193,7 @@ export class WorklogService {
       dailyWage,
       amountOverride: dto.amountOverride ?? null,
       withholdingApplied: dto.withholdingApplied ?? categoryOption?.defaultWithholdingApplied ?? true,
+      halfPay: dto.halfPay ?? false,
       overtimeThresholdHours: categoryOption?.overtimeThresholdHours ?? 8,
       overtimeExtraRate: categoryOption?.overtimeExtraRate ?? 0.1,
     });

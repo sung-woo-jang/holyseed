@@ -28,17 +28,27 @@ export class CategoriesController {
     private readonly filesService: FilesService,
   ) {}
 
-  @Post('categories/icon-upload')
+  @Post('households/:householdId/categories/icon-upload')
+  @UseGuards(MembershipGuard)
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: '카테고리 아이콘 이미지 업로드' })
-  async uploadIcon(@UploadedFile() file: Express.Multer.File) {
+  @ApiOperation({ summary: '카테고리 아이콘 이미지 업로드 (우리집 라이브러리에도 계속 보관)' })
+  async uploadIcon(@Param('householdId', ParseIntPipe) householdId: number, @UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException(ERROR_MESSAGES.FILES.NOT_SELECTED);
-    const { url } = await this.filesService.uploadImage(file, 'category-icons', 800, 82, {
+    const { url, filename } = await this.filesService.uploadImage(file, 'category-icons', 800, 82, {
       squareCanvas: true,
       squareCanvasSize: 512,
     });
+    await this.categoriesService.recordIconAsset(householdId, url, filename);
     return { success: true, message: '업로드 성공', data: { url }, timestamp: new Date().toISOString() };
+  }
+
+  @Get('households/:householdId/categories/icon-library')
+  @UseGuards(MembershipGuard)
+  @ApiOperation({ summary: '우리집에서 업로드한 카테고리 아이콘 이미지 라이브러리 조회 (최신순)' })
+  async getIconLibrary(@Param('householdId', ParseIntPipe) householdId: number) {
+    const data = await this.categoriesService.findIconLibrary(householdId);
+    return { success: true, message: '조회 성공', data, timestamp: new Date().toISOString() };
   }
 
   @Get('households/:householdId/categories')

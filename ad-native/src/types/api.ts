@@ -36,6 +36,13 @@ export interface Category {
   isBuiltin: boolean;
 }
 
+export interface CategoryIconAsset {
+  id: number;
+  url: string;
+  filename: string;
+  createdAt: string;
+}
+
 export interface Transaction {
   id: number;
   householdId: number;

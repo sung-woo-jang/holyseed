@@ -258,8 +258,13 @@ export function useUpdateCategory() {
 }
 
 export function useUploadCategoryIcon() {
+  const qc = useQueryClient();
+  const hid = useHid();
   return useMutation({
-    mutationFn: (file: { uri: string; name: string; type: string }) => categoriesApi.uploadIcon(file),
+    mutationFn: (file: { uri: string; name: string; type: string }) => categoriesApi.uploadIcon(hid!, file),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.iconLibrary(hid!) });
+    },
   });
 }
 

@@ -45,6 +45,7 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
   const [dailyWage, setDailyWage] = useState('');
   const [amountOverride, setAmountOverride] = useState('');
   const [withholdingApplied, setWithholdingApplied] = useState(false);
+  const [halfPay, setHalfPay] = useState(false);
   const [address, setAddress] = useState('');
   const [jobs, setJobs] = useState<string[]>([]);
   const [photos, setPhotos] = useState<WorklogPhoto[]>([]);
@@ -72,6 +73,7 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
       setDailyWage(record.dailyWage ? String(record.dailyWage) : '');
       setAmountOverride(record.amountOverride != null ? String(record.amountOverride) : '');
       setWithholdingApplied(record.withholdingApplied);
+      setHalfPay(record.halfPay);
       setAddress(record.address ?? '');
       setJobs(record.jobs ?? []);
       setPhotos(record.photos ?? []);
@@ -87,6 +89,7 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
       setDailyWage('');
       setAmountOverride('');
       setWithholdingApplied(categories[0]?.defaultWithholdingApplied ?? false);
+      setHalfPay(false);
       setAddress('');
       setJobs([]);
       setPhotos([]);
@@ -151,6 +154,7 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
         dailyWage: dailyWage ? Number(dailyWage) : undefined,
         amountOverride: amountOverride ? Number(amountOverride) : null,
         withholdingApplied,
+        halfPay,
         address: address || undefined,
         photos,
         memo: memo || undefined,
@@ -242,6 +246,14 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
       <View style={styles.switchRow}>
         <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>원천징수(3.3%) 적용</Text>
         <Switch checked={withholdingApplied} onCheckedChange={setWithholdingApplied} />
+      </View>
+
+      <View style={styles.switchRow}>
+        <View>
+          <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>반액 지급</Text>
+          <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 2 }}>사정으로 일당의 절반만 받는 경우</Text>
+        </View>
+        <Switch checked={halfPay} onCheckedChange={setHalfPay} />
       </View>
 
       {jobChoices.length > 0 && (

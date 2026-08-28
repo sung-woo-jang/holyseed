@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import ListRow from '../../../components/ui/ListRow';
 import Border from '../../../components/ui/Border';
 import Loader from '../../../components/ui/Loader';
@@ -17,6 +18,9 @@ import { useTheme } from '../../../lib/theme';
 import { krw } from '../../../lib/format';
 import { toLocalDateString, todayLocal } from '../../../lib/date';
 import { TE } from '../../../lib/toss-emoji';
+import type { WorklogStackParamList } from '../../../navigation/WorklogStack';
+
+type Props = NativeStackScreenProps<WorklogStackParamList, 'WorklogHome'>;
 
 const PAY_STATUS_LABEL: Record<WorklogRecord['payStatus'], string> = {
   RECEIVED: '수령완료',
@@ -46,7 +50,7 @@ function sortRecords(records: WorklogRecord[], key: string, dir: 'asc' | 'desc')
   return sorted;
 }
 
-export default function LabWorklogScreen() {
+export default function LabWorklogScreen({ navigation }: Props) {
   const theme = useTheme();
   const [ym, setYm] = useState(() => {
     const d = new Date();
@@ -236,6 +240,9 @@ export default function LabWorklogScreen() {
         <View style={{ flex: 1 }} />
         <Pressable style={[styles.toolChip, { borderColor: theme.border }]} onPress={() => setCategorySheetVisible(true)}>
           <Text style={{ color: theme.text, fontSize: 12, fontWeight: '700' }}>관리</Text>
+        </Pressable>
+        <Pressable style={[styles.toolChip, { borderColor: theme.brand }]} onPress={() => navigation.navigate('WorklogSettlement')}>
+          <Text style={{ color: theme.brand, fontSize: 12, fontWeight: '700' }}>정산</Text>
         </Pressable>
         <Pressable style={[styles.toolChip, { borderColor: selectMode ? theme.brand : theme.border }]} onPress={toggleSelectMode}>
           <Text style={{ color: selectMode ? theme.brand : theme.text, fontSize: 12, fontWeight: '700' }}>{selectMode ? '선택 취소' : '선택'}</Text>

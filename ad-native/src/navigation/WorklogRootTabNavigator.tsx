@@ -1,7 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TossEmoji from '../components/common/TossEmoji';
-import LabWorklogScreen from '../screens/lab/worklog/LabWorklogScreen';
+import WorklogStack from './WorklogStack';
 import AppMoreScreen from '../screens/AppMoreScreen';
 import { useTheme } from '../lib/theme';
 import { TE } from '../lib/toss-emoji';
@@ -38,7 +38,7 @@ export default function WorklogRootTabNavigator() {
     >
       <Tab.Screen
         name="Worklog"
-        component={LabWorklogScreen}
+        component={WorklogStack}
         options={{ tabBarLabel: '근무일지', tabBarIcon: ({ size }) => <TossEmoji code={TE.briefcase} size={size} /> }}
       />
       <Tab.Screen name="More" options={{ tabBarLabel: '더보기', tabBarIcon: ({ size }) => <TossEmoji code={TE.gear} size={size} /> }}>

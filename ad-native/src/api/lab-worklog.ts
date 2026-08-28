@@ -85,9 +85,24 @@ export interface SortPref {
   dir: 'asc' | 'desc';
 }
 
+export interface QueryParams {
+  year?: number;
+  month?: number;
+  from?: string;
+  to?: string;
+  category?: string;
+  payStatus?: PayStatus;
+  jobs?: string[];
+  titleContains?: string;
+  withholding?: boolean;
+}
+
 export const labWorklogApi = {
   search: (year: number, month: number) =>
     labApi.post<{ records: WorklogRecord[]; summary: WorklogSummary }>('/worklog/search', { year, month }).then((r) => r.data),
+
+  query: (params: QueryParams) =>
+    labApi.post<{ records: WorklogRecord[]; summary: WorklogSummary }>('/worklog/query', params).then((r) => r.data),
 
   create: (dto: WorklogInput) => labApi.post<WorklogRecord>('/worklog', dto).then((r) => r.data),
 

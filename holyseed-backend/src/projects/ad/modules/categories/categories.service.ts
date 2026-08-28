@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Not, Repository } from 'typeorm';
 import { Category, CategoryType } from './entities/category.entity';
+import { CategoryIconAsset } from './entities/category-icon-asset.entity';
 import { Transaction } from '../transactions/entities/transaction.entity';
 import { RecurringTransaction } from '../recurring-transactions/entities/recurring-transaction.entity';
 import { CreateCategoryDto } from './dto/request/create-category.dto';
@@ -20,7 +21,17 @@ export class CategoriesService {
     private readonly txRepo: Repository<Transaction>,
     @InjectRepository(RecurringTransaction)
     private readonly recurringRepo: Repository<RecurringTransaction>,
+    @InjectRepository(CategoryIconAsset)
+    private readonly iconAssetRepo: Repository<CategoryIconAsset>,
   ) {}
+
+  async findIconLibrary(householdId: number): Promise<CategoryIconAsset[]> {
+    return this.iconAssetRepo.find({ where: { householdId }, order: { createdAt: 'DESC' }, take: 60 });
+  }
+
+  async recordIconAsset(householdId: number, url: string, filename: string): Promise<CategoryIconAsset> {
+    return this.iconAssetRepo.save(this.iconAssetRepo.create({ householdId, url, filename }));
+  }
 
   async findByHousehold(householdId: number): Promise<Category[]> {
     return this.categoryRepo.find({

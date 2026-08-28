@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Button from '../../components/ui/Button';
 import Border from '../../components/ui/Border';
@@ -15,6 +16,9 @@ import { CATEGORY_ICON_SECTIONS } from '../../lib/toss-emoji';
 import { getHiddenIconIds, setHiddenIconIds } from '../../lib/icon-prefs';
 import { getErrorMessage } from '../../lib/error';
 import { useCreateCategory, useUpdateCategory, useDeleteCategory, useUploadCategoryIcon } from '../../queries/mutations';
+import { categoriesApi } from '../../api';
+import { qk } from '../../queries/keys';
+import { useAuthStore } from '../../stores/auth.store';
 import type { MoreStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<MoreStackParamList, 'CategoryEdit'>;
@@ -61,6 +65,13 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
   const uploadIcon = useUploadCategoryIcon();
+  const hid = useAuthStore((s) => s.currentHousehold?.id);
+  const iconLibraryQ = useQuery({
+    queryKey: qk.iconLibrary(hid!),
+    queryFn: () => categoriesApi.iconLibrary(hid!),
+    enabled: !!hid,
+  });
+  const iconLibrary = iconLibraryQ.data ?? [];
 
   useEffect(() => {
     navigation.setOptions({ title: mode === 'add' ? '카테고리 추가' : '카테고리 편집' });
@@ -297,6 +308,23 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
             )}
           </Pressable>
         </View>
+
+        {iconLibrary.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>업로드한 이미지</Text>
+            <View style={styles.iconGrid}>
+              {iconLibrary.map((asset) => (
+                <Pressable
+                  key={asset.id}
+                  style={[styles.iconCell, { backgroundColor: icon === asset.url ? theme.brandSoft : theme.bg, borderColor: icon === asset.url ? theme.brand : theme.border }]}
+                  onPress={() => applyIcon(asset.url)}
+                >
+                  <CategoryIcon icon={asset.url} size={40} />
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
 
         {CATEGORY_ICON_SECTIONS.map((section) => {
           const visibleItems = section.items.filter((c) => !hiddenIconIds.includes(c.id));

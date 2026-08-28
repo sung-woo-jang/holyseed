@@ -5,6 +5,7 @@ import type {
   AssetCategory,
   AssetSnapshot,
   Category,
+  CategoryIconAsset,
   CategoryType,
   Invitation,
   McpToken,
@@ -147,14 +148,20 @@ export const categoriesApi = {
 
   delete: (id: number) => api.post(`/categories/${id}/delete`).then((r) => r.data),
 
-  uploadIcon: (file: { uri: string; name: string; type: string }) => {
+  uploadIcon: (householdId: number, file: { uri: string; name: string; type: string }) => {
     const form = new FormData();
     form.append('file', file as unknown as Blob);
     // 큰 원본 사진은 업로드+서버 리사이즈에 기본 10초 타임아웃보다 오래 걸릴 수 있어 넉넉히 잡음
     return api
-      .post<{ url: string }>(`/categories/icon-upload`, form, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 30000 })
+      .post<{ url: string }>(`/households/${householdId}/categories/icon-upload`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 30000,
+      })
       .then((r) => r.data);
   },
+
+  iconLibrary: (householdId: number) =>
+    api.get<CategoryIconAsset[]>(`/households/${householdId}/categories/icon-library`).then((r) => r.data),
 };
 
 // ─── Households / Members / Invitations ───────────────────────────────────────

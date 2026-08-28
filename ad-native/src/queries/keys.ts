@@ -10,6 +10,7 @@ export const qk = {
   recurringMissed: (householdId: number, fromDate?: string) =>
     fromDate ? (['recurring-missed', householdId, fromDate] as const) : (['recurring-missed', householdId] as const),
   categories: (householdId: number) => ['categories', householdId] as const,
+  iconLibrary: (householdId: number) => ['icon-library', householdId] as const,
   dashboard: (householdId: number) => ['dashboard', householdId] as const,
   netWorthAt: (householdId: number, date: string) => ['net-worth-at', householdId, date] as const,
   members: (householdId: number) => ['members', householdId] as const,

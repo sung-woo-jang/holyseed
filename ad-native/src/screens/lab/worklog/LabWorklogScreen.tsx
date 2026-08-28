@@ -29,20 +29,17 @@ const PAY_STATUS_LABEL: Record<WorklogRecord['payStatus'], string> = {
   DAYOFF: '휴무',
 };
 
-const SORT_OPTIONS: { key: string; label: string }[] = [
-  { key: 'workDate', label: '날짜' },
-  { key: 'payStatus', label: '수령여부' },
+const PAY_FILTER_OPTIONS: { key: 'ALL' | 'RECEIVED' | 'UNRECEIVED'; label: string }[] = [
+  { key: 'ALL', label: '전체' },
+  { key: 'RECEIVED', label: '받은것만' },
+  { key: 'UNRECEIVED', label: '안받은것만' },
 ];
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
-function sortRecords(records: WorklogRecord[], key: string, dir: 'asc' | 'desc'): WorklogRecord[] {
-  const sorted = [...records].sort((a, b) => {
-    let cmp = 0;
-    if (key === 'payStatus') cmp = PAY_STATUS_LABEL[a.payStatus].localeCompare(PAY_STATUS_LABEL[b.payStatus], 'ko');
-    else cmp = a.workDate < b.workDate ? -1 : a.workDate > b.workDate ? 1 : 0;
-    return dir === 'asc' ? cmp : -cmp;
-  });
+function sortByDate(records: WorklogRecord[], dir: 'asc' | 'desc'): WorklogRecord[] {
+  const sorted = [...records].sort((a, b) => (a.workDate < b.workDate ? -1 : a.workDate > b.workDate ? 1 : 0));
+  if (dir === 'desc') sorted.reverse();
   return sorted;
 }
 
@@ -59,8 +56,9 @@ export default function LabWorklogScreen({ navigation }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [view, setView] = useState<'목록' | '캘린더'>('목록');
   const [calendarSelectedDate, setCalendarSelectedDate] = useState<string | null>(null);
-  const [sortKey, setSortKey] = useState('workDate');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [payStatusFilter, setPayStatusFilter] = useState<'ALL' | 'RECEIVED' | 'UNRECEIVED'>('ALL');
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
@@ -68,10 +66,7 @@ export default function LabWorklogScreen({ navigation }: Props) {
 
   useEffect(() => {
     getWorklogSortPref().then((pref) => {
-      if (pref) {
-        setSortKey(pref.key);
-        setSortDir(pref.dir);
-      }
+      if (pref) setSortDir(pref.dir);
     });
   }, []);
 
@@ -103,23 +98,24 @@ export default function LabWorklogScreen({ navigation }: Props) {
     setCalendarSelectedDate(null);
   }
 
-  function changeSort(key: string) {
-    setSortKey(key);
-    setWorklogSortPref({ key, dir: sortDir });
-  }
-
   function changeSortDir() {
     const next = sortDir === 'asc' ? 'desc' : 'asc';
     setSortDir(next);
-    setWorklogSortPref({ key: sortKey, dir: next });
+    setWorklogSortPref({ key: 'workDate', dir: next });
   }
 
   const records = worklogQ.data?.records ?? [];
   const summary = worklogQ.data?.summary;
   const categories = categoriesQ.data ?? [];
-  const sortedRecords = sortRecords(records, sortKey, sortDir);
+  const filteredRecords = records.filter((r) => {
+    if (payStatusFilter === 'RECEIVED' && r.payStatus !== 'RECEIVED') return false;
+    if (payStatusFilter === 'UNRECEIVED' && r.payStatus === 'RECEIVED') return false;
+    if (categoryFilter && r.category !== categoryFilter) return false;
+    return true;
+  });
+  const sortedRecords = sortByDate(filteredRecords, sortDir);
   const recordsByDate = new Map<string, WorklogRecord[]>();
-  records.forEach((r) => {
+  filteredRecords.forEach((r) => {
     const list = recordsByDate.get(r.workDate) ?? [];
     list.push(r);
     recordsByDate.set(r.workDate, list);
@@ -245,24 +241,47 @@ export default function LabWorklogScreen({ navigation }: Props) {
         </Pressable>
       </View>
 
-      {view === '목록' && (
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sortRow}>
+        <View style={styles.chipRow}>
+          {PAY_FILTER_OPTIONS.map((o) => {
+            const active = o.key === payStatusFilter;
+            return (
+              <Pressable
+                key={o.key}
+                onPress={() => setPayStatusFilter(o.key)}
+                style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
+              >
+                <Text style={{ fontSize: 12, lineHeight: 16, fontWeight: '700', color: active ? theme.brand : theme.text }}>{o.label}</Text>
+              </Pressable>
+            );
+          })}
+          <Pressable onPress={changeSortDir} style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.card }]}>
+            <Text style={{ fontSize: 12, lineHeight: 16, fontWeight: '700', color: theme.text }}>{sortDir === 'asc' ? '날짜 오름차순 ↑' : '날짜 내림차순 ↓'}</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+
+      {categories.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sortRow}>
           <View style={styles.chipRow}>
-            {SORT_OPTIONS.map((o) => {
-              const active = o.key === sortKey;
+            <Pressable
+              onPress={() => setCategoryFilter(null)}
+              style={[styles.chip, { borderColor: categoryFilter === null ? theme.brand : theme.border, backgroundColor: categoryFilter === null ? theme.brandSoft : theme.card }]}
+            >
+              <Text style={{ fontSize: 12, lineHeight: 16, fontWeight: '700', color: categoryFilter === null ? theme.brand : theme.text }}>전체</Text>
+            </Pressable>
+            {categories.map((c) => {
+              const active = c.name === categoryFilter;
               return (
                 <Pressable
-                  key={o.key}
-                  onPress={() => changeSort(o.key)}
+                  key={c.id}
+                  onPress={() => setCategoryFilter(c.name)}
                   style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
                 >
-                  <Text style={{ fontSize: 12, lineHeight: 16, fontWeight: '700', color: active ? theme.brand : theme.text }}>{o.label}</Text>
+                  <Text style={{ fontSize: 12, lineHeight: 16, fontWeight: '700', color: active ? theme.brand : theme.text }}>{c.name}</Text>
                 </Pressable>
               );
             })}
-            <Pressable onPress={changeSortDir} style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.card }]}>
-              <Text style={{ fontSize: 12, lineHeight: 16, fontWeight: '700', color: theme.text }}>{sortDir === 'asc' ? '오름차순 ↑' : '내림차순 ↓'}</Text>
-            </Pressable>
           </View>
         </ScrollView>
       )}

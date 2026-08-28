@@ -252,12 +252,12 @@ export default function LabWorklogScreen() {
                   onPress={() => changeSort(o.key)}
                   style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
                 >
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: active ? theme.brand : theme.text }}>{o.label}</Text>
+                  <Text style={{ fontSize: 12, lineHeight: 16, fontWeight: '700', color: active ? theme.brand : theme.text }}>{o.label}</Text>
                 </Pressable>
               );
             })}
             <Pressable onPress={changeSortDir} style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.card }]}>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text }}>{sortDir === 'asc' ? '오름차순 ↑' : '내림차순 ↓'}</Text>
+              <Text style={{ fontSize: 12, lineHeight: 16, fontWeight: '700', color: theme.text }}>{sortDir === 'asc' ? '오름차순 ↑' : '내림차순 ↓'}</Text>
             </Pressable>
           </View>
         </ScrollView>

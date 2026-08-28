@@ -31,9 +31,7 @@ const PAY_STATUS_LABEL: Record<WorklogRecord['payStatus'], string> = {
 
 const SORT_OPTIONS: { key: string; label: string }[] = [
   { key: 'workDate', label: '날짜' },
-  { key: 'amount', label: '금액' },
-  { key: 'title', label: '현장명' },
-  { key: 'category', label: '분류' },
+  { key: 'payStatus', label: '수령여부' },
 ];
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -41,9 +39,7 @@ const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 function sortRecords(records: WorklogRecord[], key: string, dir: 'asc' | 'desc'): WorklogRecord[] {
   const sorted = [...records].sort((a, b) => {
     let cmp = 0;
-    if (key === 'amount') cmp = a.effectiveAmount - b.effectiveAmount;
-    else if (key === 'title') cmp = a.title.localeCompare(b.title, 'ko');
-    else if (key === 'category') cmp = a.category.localeCompare(b.category, 'ko');
+    if (key === 'payStatus') cmp = PAY_STATUS_LABEL[a.payStatus].localeCompare(PAY_STATUS_LABEL[b.payStatus], 'ko');
     else cmp = a.workDate < b.workDate ? -1 : a.workDate > b.workDate ? 1 : 0;
     return dir === 'asc' ? cmp : -cmp;
   });

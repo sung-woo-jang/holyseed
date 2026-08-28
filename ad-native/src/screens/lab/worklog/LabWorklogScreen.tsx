@@ -251,12 +251,12 @@ export default function LabWorklogScreen({ navigation }: Props) {
                 onPress={() => setPayStatusFilter(o.key)}
                 style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
               >
-                <Text style={{ fontSize: 12, lineHeight: 16, fontWeight: '700', color: active ? theme.brand : theme.text }}>{o.label}</Text>
+                <Text style={{ fontSize: 12, lineHeight: 18, fontWeight: '700', color: active ? theme.brand : theme.text, includeFontPadding: false }}>{o.label}</Text>
               </Pressable>
             );
           })}
           <Pressable onPress={changeSortDir} style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.card }]}>
-            <Text style={{ fontSize: 12, lineHeight: 16, fontWeight: '700', color: theme.text }}>{sortDir === 'asc' ? '날짜 오름차순 ↑' : '날짜 내림차순 ↓'}</Text>
+            <Text style={{ fontSize: 12, lineHeight: 18, fontWeight: '700', color: theme.text, includeFontPadding: false }}>{sortDir === 'asc' ? '날짜 오름차순 ↑' : '날짜 내림차순 ↓'}</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -268,7 +268,7 @@ export default function LabWorklogScreen({ navigation }: Props) {
               onPress={() => setCategoryFilter(null)}
               style={[styles.chip, { borderColor: categoryFilter === null ? theme.brand : theme.border, backgroundColor: categoryFilter === null ? theme.brandSoft : theme.card }]}
             >
-              <Text style={{ fontSize: 12, lineHeight: 16, fontWeight: '700', color: categoryFilter === null ? theme.brand : theme.text }}>전체</Text>
+              <Text style={{ fontSize: 12, lineHeight: 18, fontWeight: '700', color: categoryFilter === null ? theme.brand : theme.text, includeFontPadding: false }}>전체</Text>
             </Pressable>
             {categories.map((c) => {
               const active = c.name === categoryFilter;
@@ -278,7 +278,7 @@ export default function LabWorklogScreen({ navigation }: Props) {
                   onPress={() => setCategoryFilter(c.name)}
                   style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
                 >
-                  <Text style={{ fontSize: 12, lineHeight: 16, fontWeight: '700', color: active ? theme.brand : theme.text }}>{c.name}</Text>
+                  <Text style={{ fontSize: 12, lineHeight: 18, fontWeight: '700', color: active ? theme.brand : theme.text, includeFontPadding: false }}>{c.name}</Text>
                 </Pressable>
               );
             })}

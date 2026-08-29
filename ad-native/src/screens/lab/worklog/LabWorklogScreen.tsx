@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
   toolChip: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, justifyContent: 'center' },
   sortRow: { paddingLeft: 16, marginBottom: 4, height: 48 },
   chipRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 16, paddingBottom: 4 },
-  chip: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 16, borderWidth: 1, justifyContent: 'center' },
+  chip: { height: 38, alignSelf: 'center', paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, justifyContent: 'center' },
   summaryCard: { marginHorizontal: 20, marginTop: 8, borderRadius: 16, borderWidth: 1, padding: 16, gap: 10 },
   summaryRow: { flexDirection: 'row' },
   summaryItem: { flex: 1, gap: 4 },

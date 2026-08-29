@@ -240,7 +240,7 @@ export default function LabWorklogScreen({ navigation }: Props) {
             onPress={() => setShowUnreceivedOnly((prev) => !prev)}
             style={[styles.chip, { borderColor: showUnreceivedOnly ? theme.brand : theme.border, backgroundColor: showUnreceivedOnly ? theme.brandSoft : theme.card }]}
           >
-            <Text style={{ fontSize: 12, lineHeight: 18, fontWeight: '700', color: showUnreceivedOnly ? theme.brand : theme.text, includeFontPadding: false }}>
+            <Text style={{ fontSize: 12, lineHeight: 20, fontWeight: '700', color: showUnreceivedOnly ? theme.brand : theme.text, includeFontPadding: false }}>
               안받은것만{showUnreceivedOnly ? ' ✓' : ''}
             </Text>
           </Pressable>
@@ -251,7 +251,7 @@ export default function LabWorklogScreen({ navigation }: Props) {
                 onPress={() => setCategoryFilter(null)}
                 style={[styles.chip, { borderColor: categoryFilter === null ? theme.brand : theme.border, backgroundColor: categoryFilter === null ? theme.brandSoft : theme.card }]}
               >
-                <Text style={{ fontSize: 12, lineHeight: 18, fontWeight: '700', color: categoryFilter === null ? theme.brand : theme.text, includeFontPadding: false }}>전체</Text>
+                <Text style={{ fontSize: 12, lineHeight: 20, fontWeight: '700', color: categoryFilter === null ? theme.brand : theme.text, includeFontPadding: false }}>전체</Text>
               </Pressable>
               {categories.map((c) => {
                 const active = c.name === categoryFilter;
@@ -261,7 +261,7 @@ export default function LabWorklogScreen({ navigation }: Props) {
                     onPress={() => setCategoryFilter(c.name)}
                     style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
                   >
-                    <Text style={{ fontSize: 12, lineHeight: 18, fontWeight: '700', color: active ? theme.brand : theme.text, includeFontPadding: false }}>{c.name}</Text>
+                    <Text style={{ fontSize: 12, lineHeight: 20, fontWeight: '700', color: active ? theme.brand : theme.text, includeFontPadding: false }}>{c.name}</Text>
                   </Pressable>
                 );
               })}
@@ -269,7 +269,7 @@ export default function LabWorklogScreen({ navigation }: Props) {
           )}
 
           <Pressable onPress={changeSortDir} style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.card }]}>
-            <Text style={{ fontSize: 12, lineHeight: 18, fontWeight: '700', color: theme.text, includeFontPadding: false }}>{sortDir === 'asc' ? '날짜 오름차순 ↑' : '날짜 내림차순 ↓'}</Text>
+            <Text style={{ fontSize: 12, lineHeight: 20, fontWeight: '700', color: theme.text, includeFontPadding: false }}>{sortDir === 'asc' ? '날짜 오름차순 ↑' : '날짜 내림차순 ↓'}</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -418,9 +418,9 @@ const styles = StyleSheet.create({
   addBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   toolRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8, gap: 8 },
   toolChip: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, justifyContent: 'center' },
-  sortRow: { paddingLeft: 16, marginBottom: 4, height: 44 },
-  chipRow: { flexDirection: 'row', gap: 8, paddingRight: 16, paddingBottom: 4 },
-  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, borderWidth: 1, justifyContent: 'center' },
+  sortRow: { paddingLeft: 16, marginBottom: 4, height: 48 },
+  chipRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 16, paddingBottom: 4 },
+  chip: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 16, borderWidth: 1, justifyContent: 'center' },
   summaryCard: { marginHorizontal: 20, marginTop: 8, borderRadius: 16, borderWidth: 1, padding: 16, gap: 10 },
   summaryRow: { flexDirection: 'row' },
   summaryItem: { flex: 1, gap: 4 },

@@ -83,7 +83,7 @@ function InvitationContent() {
 
   useEffect(() => {
     if (!couple?.id) return
-    api.post('/media/search', { coupleId: couple.id, moderationStatus: 'APPROVED', limit: 10 })
+    api.post('/media/search', { coupleId: couple.id, moderationStatus: 'APPROVED', guestOnly: true, limit: 10 })
       .then((res) => setGuestMedia(res.data.data?.media ?? []))
       // 하객에게는 에러를 노출하지 않고 기본 사진으로 대체 렌더
       .catch((e) => console.warn('하객 미디어 조회 실패', e))

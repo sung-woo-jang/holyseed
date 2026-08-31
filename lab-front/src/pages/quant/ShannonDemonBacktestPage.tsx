@@ -157,7 +157,7 @@ export default function ShannonDemonBacktestPage() {
           </div>
           <div className="space-y-2">
             <Label>초기자본 ($)</Label>
-            <Input type="number" min="1" step="100" value={initialCapital} onChange={(e) => setInitialCapital(e.target.value)} />
+            <Input type="number" min="0" step="100" value={initialCapital} onChange={(e) => setInitialCapital(e.target.value)} />
           </div>
         </div>
 

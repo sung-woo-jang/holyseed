@@ -60,6 +60,8 @@ export interface Media {
   localThumbnailPath?: string
   processingStatus: ProcessingStatus
   moderationStatus: ModerationStatus
+  isFeatured: boolean
+  featuredAt?: string | null
   uploaderName?: string
   message?: string
   fileType: string

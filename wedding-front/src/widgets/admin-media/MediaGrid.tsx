@@ -7,6 +7,7 @@ interface MediaGridProps {
   media?: Media[];
   isLoading: boolean;
   onModerate: (id: string, status: 'APPROVED' | 'REJECTED') => Promise<void>;
+  onSetFeatured: (id: string, isFeatured: boolean) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
 
@@ -14,6 +15,7 @@ export function MediaGrid({
   media,
   isLoading,
   onModerate,
+  onSetFeatured,
   onDelete,
 }: MediaGridProps) {
   if (isLoading) {
@@ -47,6 +49,7 @@ export function MediaGrid({
           key={item.id}
           media={item}
           onModerate={onModerate}
+          onSetFeatured={onSetFeatured}
           onDelete={onDelete}
         />
       ))}

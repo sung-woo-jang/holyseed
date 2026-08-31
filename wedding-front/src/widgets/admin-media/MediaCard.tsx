@@ -7,10 +7,11 @@ import cn from 'classnames';
 interface MediaCardProps {
   media: Media;
   onModerate: (id: string, status: 'APPROVED' | 'REJECTED') => Promise<void>;
+  onSetFeatured: (id: string, isFeatured: boolean) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
 
-export function MediaCard({ media, onModerate, onDelete }: MediaCardProps) {
+export function MediaCard({ media, onModerate, onSetFeatured, onDelete }: MediaCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -18,6 +19,15 @@ export function MediaCard({ media, onModerate, onDelete }: MediaCardProps) {
     setIsProcessing(true);
     try {
       await onModerate(media.id, status);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleToggleFeatured = async () => {
+    setIsProcessing(true);
+    try {
+      await onSetFeatured(media.id, !media.isFeatured);
     } finally {
       setIsProcessing(false);
     }
@@ -60,6 +70,7 @@ export function MediaCard({ media, onModerate, onDelete }: MediaCardProps) {
         )}
         {/* Status Badge */}
         {getStatusBadge()}
+        {media.isFeatured && <span className={cn(styles.badge, styles.badgeFeatured)}>TOP5</span>}
       </div>
 
       {/* Info */}
@@ -101,6 +112,14 @@ export function MediaCard({ media, onModerate, onDelete }: MediaCardProps) {
           className={cn(styles.button, styles.buttonReject)}
         >
           거부
+        </button>
+        <button
+          onClick={handleToggleFeatured}
+          disabled={isProcessing || media.moderationStatus !== 'APPROVED'}
+          className={cn(styles.button, media.isFeatured ? styles.buttonFeaturedActive : styles.buttonFeature)}
+          title={media.moderationStatus !== 'APPROVED' ? '승인된 사진만 지정할 수 있습니다' : undefined}
+        >
+          {media.isFeatured ? 'TOP5 해제' : 'TOP5 지정'}
         </button>
         <button
           onClick={() => setShowDeleteModal(true)}

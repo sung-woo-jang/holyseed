@@ -36,6 +36,10 @@ export class Couple {
   @Column({ name: 'theme_settings', type: 'jsonb', default: {} })
   themeSettings: Record<string, any>;
 
+  @ApiPropertyOptional({ description: '카카오톡 등 링크 공유 시 썸네일로 쓸 미디어 ID' })
+  @Column({ name: 'og_image_media_id', nullable: true })
+  ogImageMediaId?: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

@@ -351,6 +351,47 @@ function InvitationContent() {
                 </div>
               )}
             </div>
+
+            {venue.transportation && (
+              <div className={styles.transportInfo}>
+                {venue.transportation.subway && (
+                  <div className={styles.transportRow}>
+                    <span className={styles.transportIcon}>🚇</span>
+                    <div>
+                      <h3 className={styles.transportLabel}>지하철</h3>
+                      <p className={styles.transportText}>{venue.transportation.subway}</p>
+                    </div>
+                  </div>
+                )}
+                {venue.transportation.bus && (
+                  <div className={styles.transportRow}>
+                    <span className={styles.transportIcon}>🚌</span>
+                    <div>
+                      <h3 className={styles.transportLabel}>버스</h3>
+                      <p className={styles.transportText}>{venue.transportation.bus}</p>
+                    </div>
+                  </div>
+                )}
+                {venue.transportation.car && (
+                  <div className={styles.transportRow}>
+                    <span className={styles.transportIcon}>🚗</span>
+                    <div>
+                      <h3 className={styles.transportLabel}>자가용</h3>
+                      <p className={styles.transportText}>{venue.transportation.car}</p>
+                    </div>
+                  </div>
+                )}
+                {venue.transportation.parking && (
+                  <div className={styles.transportRow}>
+                    <span className={styles.transportIcon}>🅿️</span>
+                    <div>
+                      <h3 className={styles.transportLabel}>주차장</h3>
+                      <p className={styles.transportText}>{venue.transportation.parking}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </section>
         )}
 

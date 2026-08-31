@@ -18,6 +18,7 @@ interface RunResult {
   finalValue: number
   totalReturnPct: number
   rebalanceCount: number
+  totalFeesPaid: number
   buyHoldFinalValue: number
   buyHoldReturnPct: number
 }
@@ -31,6 +32,7 @@ export default function ShannonDemonBacktestPage() {
   const [targetStockPct, setTargetStockPct] = useState(50)
   const [thresholdPct, setThresholdPct] = useState('5')
   const [initialCapital, setInitialCapital] = useState('10000')
+  const [feePct, setFeePct] = useState('0.1')
 
   const [result, setResult] = useState<RunResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -46,12 +48,14 @@ export default function ShannonDemonBacktestPage() {
       }
 
       const capital = parseFloat(initialCapital)
+      const fee = parseFloat(feePct) || 0
       const sim = simulateShannonDemon(prices, {
         targetStockPct,
         thresholdPct: parseFloat(thresholdPct),
         initialCapital: capital,
+        feePct: fee,
       })
-      const buyHold = computeBuyAndHold(prices, capital)
+      const buyHold = computeBuyAndHold(prices, capital, fee)
 
       const points: BacktestChartPoint[] = sim.timeline.map((d, i) => ({
         date: d.date,
@@ -65,6 +69,7 @@ export default function ShannonDemonBacktestPage() {
         finalValue: sim.finalValue,
         totalReturnPct: sim.totalReturnPct,
         rebalanceCount: sim.rebalanceCount,
+        totalFeesPaid: sim.totalFeesPaid,
         buyHoldFinalValue,
         buyHoldReturnPct: ((buyHoldFinalValue - capital) / capital) * 100,
       })
@@ -85,7 +90,7 @@ export default function ShannonDemonBacktestPage() {
         description="주식:현금을 목표 비율로 유지하다가 비중이 임계값을 벗어나면 리밸런싱하는 전략을 실제 과거 가격으로 시뮬레이션합니다."
       />
 
-      <div className="mt-6 grid grid-cols-2 gap-3 rounded-lg border bg-card p-4 lg:grid-cols-5">
+      <div className="mt-6 grid grid-cols-2 gap-3 rounded-lg border bg-card p-4 lg:grid-cols-6">
         <div className="space-y-2">
           <Label>종목</Label>
           <Select value={symbol} onValueChange={(v) => setSymbol(v as BacktestSymbol)}>
@@ -130,6 +135,10 @@ export default function ShannonDemonBacktestPage() {
           <Input type="number" min="0.1" step="0.1" value={thresholdPct} onChange={(e) => setThresholdPct(e.target.value)} />
         </div>
         <div className="space-y-2">
+          <Label>거래 수수료 (%)</Label>
+          <Input type="number" min="0" step="0.01" value={feePct} onChange={(e) => setFeePct(e.target.value)} />
+        </div>
+        <div className="space-y-2">
           <Label>초기자본 ($)</Label>
           <Input type="number" min="1" step="100" value={initialCapital} onChange={(e) => setInitialCapital(e.target.value)} />
         </div>
@@ -144,7 +153,7 @@ export default function ShannonDemonBacktestPage() {
 
       {result && (
         <>
-          <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
             <Tile
               label="최종 자산 (섀넌의 도깨비)"
               value={usd(result.finalValue)}
@@ -160,6 +169,7 @@ export default function ShannonDemonBacktestPage() {
               value={`${excessReturnPct !== null && excessReturnPct >= 0 ? '+' : ''}${excessReturnPct?.toFixed(1)}%p`}
             />
             <Tile label="리밸런싱 횟수" value={`${result.rebalanceCount}회`} />
+            <Tile label="누적 수수료" value={usd(result.totalFeesPaid)} />
           </div>
 
           <div className="mt-4 rounded-lg border bg-card p-4" ref={chartAreaRef}>

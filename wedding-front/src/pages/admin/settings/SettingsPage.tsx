@@ -6,6 +6,7 @@ import { api, TOKEN_KEY } from '@/shared/api'
 import NaverMapScript from '@/shared/ui/NaverMapScript'
 import VenueAddressPicker from '@/shared/ui/VenueAddressPicker'
 import { useToast } from '@/shared/ui/toast'
+import type { Media } from '@/shared/types'
 import styles from './SettingsPage.module.css'
 import adminStyles from '../admin-page.module.css'
 
@@ -41,6 +42,8 @@ export default function AdminSettingsPage() {
   const { register, handleSubmit, reset, control, setValue, watch, formState: { errors } } = useForm<SettingsFormData>({ resolver: zodResolver(settingsSchema) })
   const { fields, append, remove } = useFieldArray({ control, name: 'accountInfo' })
   const [venueExtra, setVenueExtra] = useState<Record<string, any>>({})
+  const [ogImageMediaId, setOgImageMediaId] = useState<string | null>(null)
+  const [approvedMedia, setApprovedMedia] = useState<Media[]>([])
 
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY)
@@ -54,6 +57,10 @@ export default function AdminSettingsPage() {
         // 폼에 입력란이 없는 나머지 venue 필드(예: transportation)는 저장 시 유실되지 않도록 보존
         const { name, address, hall, floor, lat, lng, ...rest } = c.weddingVenue ?? {}
         setVenueExtra(rest)
+        setOgImageMediaId(c.ogImageMediaId ?? null)
+        api.post('/media/search', { coupleId: id, moderationStatus: 'APPROVED', limit: 100 })
+          .then((res) => setApprovedMedia(res.data.data?.media ?? []))
+          .catch(() => {})
         reset({
           groomName: c.groomName,
           brideName: c.brideName,
@@ -83,6 +90,7 @@ export default function AdminSettingsPage() {
         weddingDate: data.weddingDate ? new Date(data.weddingDate).toISOString() : undefined,
         weddingVenue: data.venueName ? { ...venueExtra, name: data.venueName, address: data.venueAddress ?? '', hall: data.venueHall ?? '', floor: data.venueFloor ?? '', lat: data.venueLat, lng: data.venueLng } : undefined,
         accountInfo: accounts,
+        ogImageMediaId,
       })
       setMessage({ type: 'success', text: '저장되었습니다.' })
       toast.success('저장되었습니다.')
@@ -149,6 +157,35 @@ export default function AdminSettingsPage() {
                 />
               </div>
             </div>
+          </section>
+
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>카카오톡 공유 썸네일</h2>
+            <p className={styles.ogHint}>카카오톡 등에 청첩장 링크를 공유할 때 보여줄 사진을 골라주세요. 고르지 않으면 최신 승인 사진이 자동으로 쓰입니다.</p>
+            {approvedMedia.length === 0 ? (
+              <p className={styles.accountEmpty}>승인된 사진이 아직 없습니다. 미디어 관리에서 사진을 승인해주세요.</p>
+            ) : (
+              <div className={styles.ogPickerGrid}>
+                <button
+                  type="button"
+                  className={`${styles.ogPickerNone} ${ogImageMediaId === null ? styles.ogPickerSelected : ''}`}
+                  onClick={() => setOgImageMediaId(null)}
+                >
+                  자동 선택
+                </button>
+                {approvedMedia.map((m) => (
+                  <button
+                    type="button"
+                    key={m.id}
+                    className={`${styles.ogPickerItem} ${ogImageMediaId === m.id ? styles.ogPickerSelected : ''}`}
+                    onClick={() => setOgImageMediaId(m.id)}
+                  >
+                    <img src={`/api/wedding/media/${m.id}/thumbnail`} alt={m.uploaderName || 'photo'} className={styles.ogPickerImage} />
+                    {ogImageMediaId === m.id && <span className={styles.ogPickerCheck}>✓</span>}
+                  </button>
+                ))}
+              </div>
+            )}
           </section>
 
           <section className={styles.section}>

@@ -18,6 +18,7 @@ import NetflixIntro from '@/widgets/netflix-intro/NetflixIntro'
 import NetflixNav from '@/shared/ui/NetflixNav'
 import NetflixRow from '@/widgets/netflix-row/NetflixRow'
 import WeddingCalendar from '@/widgets/wedding-calendar/WeddingCalendar'
+import { GuestbookSection } from '@/widgets/guestbook/GuestbookSection'
 import AttendanceModal from '@/features/rsvp/AttendanceModal'
 import NaverMapScript from '@/shared/ui/NaverMapScript'
 import { useToast } from '@/shared/ui/toast'
@@ -349,6 +350,12 @@ function InvitationContent() {
             </div>
           </section>
         )}
+
+        {/* Guestbook */}
+        <section id="guestbook-section" className={cn(styles.section, styles.guestbookSection)}>
+          <h2 className={styles.sectionTitle}>방명록</h2>
+          <GuestbookSection coupleId={couple.id} />
+        </section>
 
         {/* Footer */}
         <footer className={styles.footer}>

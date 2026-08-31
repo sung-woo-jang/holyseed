@@ -1,0 +1,93 @@
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--w-border);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(28, 27, 25, 0.04);
+}
+
+.table {
+  background: var(--w-surface);
+  min-width: 560px;
+}
+
+.headRow,
+.bodyRow {
+  display: grid;
+  grid-template-columns: 1fr 2.4fr 1fr 0.5fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.headRow {
+  padding: 13px 22px;
+  border-bottom: 1px solid var(--w-divider);
+  font-size: 0.72rem;
+  color: var(--w-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.bodyRow {
+  padding: 15px 22px;
+  border-bottom: 1px solid #f3f0ea;
+}
+
+.bodyRow:last-child {
+  border-bottom: none;
+}
+
+.guestName {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--w-ink);
+}
+
+.message {
+  font-size: 0.86rem;
+  color: var(--w-ink-soft);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.dateCell {
+  font-size: 0.82rem;
+  color: var(--w-muted);
+}
+
+.deleteCell {
+  text-align: right;
+}
+
+.deleteButton {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--w-border);
+  background: #fff;
+  color: var(--w-muted-light);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.deleteButton:hover {
+  color: var(--w-rejected-fg);
+  border-color: #e8cfc8;
+}
+
+.loading,
+.empty {
+  padding: 48px 16px;
+  text-align: center;
+  background: var(--w-surface);
+  border: 1px solid var(--w-border);
+  border-radius: 14px;
+  color: var(--w-muted);
+}
+
+.emptyText {
+  color: var(--w-muted-light);
+  font-size: 0.95rem;
+  margin: 0;
+}

@@ -22,6 +22,7 @@ const AdminDashboardPage = lazy(() => import('@/pages/admin/dashboard/DashboardP
 const AdminMediaPage = lazy(() => import('@/pages/admin/media/MediaPage'))
 const AdminContentRowsPage = lazy(() => import('@/pages/admin/content-rows/ContentRowsPage'))
 const AdminAttendancePage = lazy(() => import('@/pages/admin/attendance/AttendancePage'))
+const AdminGuestbookPage = lazy(() => import('@/pages/admin/guestbook/GuestbookPage'))
 const AdminSettingsPage = lazy(() => import('@/pages/admin/settings/SettingsPage'))
 const AdminLayout = lazy(() => import('@/pages/admin/layout/AdminLayout'))
 
@@ -69,6 +70,7 @@ export default function App() {
               <Route path="media" element={<AdminMediaPage />} />
               <Route path="content-rows" element={<AdminContentRowsPage />} />
               <Route path="attendance" element={<AdminAttendancePage />} />
+              <Route path="guestbook" element={<AdminGuestbookPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
             </Route>
 

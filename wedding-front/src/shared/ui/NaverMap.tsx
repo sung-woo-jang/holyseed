@@ -114,7 +114,7 @@ export default function NaverMap({ lat, lng, venueName, address, photoUrl, weddi
           주소 복사
         </button>
         <button type="button" onClick={openNaverMap} className={cn(styles.button, styles.buttonMap)}>
-          <img src="/naver-map-icon.webp" alt="" className={styles.naverIcon} />
+          <img src="/naver-map-icon.png" alt="" className={styles.naverIcon} />
           네이버지도
         </button>
       </div>

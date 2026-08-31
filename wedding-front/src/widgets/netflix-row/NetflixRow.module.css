@@ -48,7 +48,6 @@
 }
 
 .card:hover {
-  transform: scale(1.08);
   z-index: 10;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8);
 }
@@ -82,10 +81,6 @@
   .card {
     width: 45.8vw;
     aspect-ratio: 16/9;
-  }
-
-  .card:hover {
-    transform: scale(1.02);
   }
 }
 
@@ -163,7 +158,6 @@
 }
 
 .videoCard:hover {
-  transform: scale(1.08);
   z-index: 10;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8);
 }
@@ -426,7 +420,6 @@
 }
 
 .uploadCard:hover {
-  transform: scale(1.08);
   box-shadow: 0 12px 32px rgba(229, 9, 20, 0.6);
 }
 
@@ -485,7 +478,6 @@
 }
 
 .topRankedCard:hover {
-  transform: scale(1.08);
   z-index: 10;
 }
 

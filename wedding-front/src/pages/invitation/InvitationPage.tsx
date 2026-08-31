@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { TouchEvent as ReactTouchEvent } from 'react'
-import { useParams, Navigate } from 'react-router-dom'
+import { useParams, Navigate, Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import cn from 'classnames'
@@ -276,34 +276,43 @@ function InvitationContent() {
         <NetflixNav coupleSlug={couple.slug} groomName={couple.groomName} brideName={couple.brideName} />
         {/* Hero */}
         <section className={styles.hero}>
-          <div className={styles.heroImage}>
+          <div className={styles.heroTabs}>
+            <button type="button" className={cn(styles.heroTab, styles.heroTabActive)} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>청첩장</button>
+            <Link to={`/${couple.slug}/gallery`} className={styles.heroTab}>갤러리</Link>
+            <button type="button" className={styles.heroTab} onClick={() => document.getElementById('guestbook-section')?.scrollIntoView({ behavior: 'smooth' })}>방명록</button>
+            <button type="button" className={styles.heroTab} onClick={() => document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth' })}>오시는 길</button>
+          </div>
+
+          <div className={styles.heroCard}>
             {guestMedia.slice(0, 6).map((m, i) => {
               const src = mediaResizedUrl(m.id)
               return (
                 <div key={m.id} className={cn(styles.heroPhotoWrap, { [styles.heroPhotoActive]: i === heroIndex })}>
-                  {/* 세로 사진 등 비율이 다른 사진도 잘리지 않게: 흐린 배경(cover)이 프레임을 채우고, 선명한 원본(contain)은 잘림 없이 통째로 보임 */}
+                  {/* 세로 사진 등 비율이 다른 사진도 잘리지 않게: 흐린 배경(cover)이 카드를 채우고, 선명한 원본(contain)은 잘림 없이 통째로 보임 */}
                   <img src={src} alt="" aria-hidden="true" className={styles.heroPhotoBackdrop} loading={i === 0 ? 'eager' : 'lazy'} />
                   <img src={src} alt={`${couple.groomName} & ${couple.brideName}`} className={styles.heroPhotoMain} loading={i === 0 ? 'eager' : 'lazy'} />
                 </div>
               )
             })}
-            <div className={styles.heroOverlay} />
-          </div>
-          <div className={styles.heroContent}>
-            <div className={styles.heroText}>
+            <div className={styles.heroCardGradient} />
+            <div className={styles.heroCardCopy}>
               <h1 className={styles.heroNames}>{couple.groomName}<span className={styles.ampersand}>&</span>{couple.brideName}</h1>
-              {weddingDate && <time className={styles.heroDate} dateTime={weddingDate.toISOString()}>{format(weddingDate, 'yyyy. MM. dd', { locale: ko })}</time>}
-              <div className={styles.heroButtons}>
-                <button className={styles.playButton} onClick={() => { const v = document.querySelector('video[data-wedding-video]'); if (v) { v.scrollIntoView({ behavior: 'smooth', block: 'center' }); (v as HTMLVideoElement).play() } }}>
-                  <svg className={styles.playIcon} viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor" /></svg><span>재생</span>
-                </button>
-                <button className={styles.moreInfoButton} onClick={() => document.getElementById('wedding-info')?.scrollIntoView({ behavior: 'smooth' })}>
-                  <svg className={styles.infoIcon} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" fill="none" strokeWidth="2" /><text x="12" y="12" textAnchor="middle" dominantBaseline="central" fill="currentColor" fontSize="14" fontWeight="bold">i</text></svg><span>상세 정보</span>
-                </button>
-              </div>
+              {weddingDate && (
+                <time className={styles.heroDate} dateTime={weddingDate.toISOString()}>
+                  {format(weddingDate, 'yyyy. MM. dd', { locale: ko })}{venue?.name ? ` · ${venue.name}` : ''}
+                </time>
+              )}
             </div>
           </div>
-          <div className={styles.scrollIndicator}><span>SCROLL</span><div className={styles.scrollLine} /></div>
+
+          <div className={styles.heroButtons}>
+            <button className={styles.playButton} onClick={() => { const v = document.querySelector('video[data-wedding-video]'); if (v) { v.scrollIntoView({ behavior: 'smooth', block: 'center' }); (v as HTMLVideoElement).play() } }}>
+              <svg className={styles.playIcon} viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor" /></svg><span>재생</span>
+            </button>
+            <button className={styles.moreInfoButton} onClick={() => document.getElementById('wedding-info')?.scrollIntoView({ behavior: 'smooth' })}>
+              <svg className={styles.infoIcon} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" fill="none" strokeWidth="2" /><text x="12" y="12" textAnchor="middle" dominantBaseline="central" fill="currentColor" fontSize="14" fontWeight="bold">i</text></svg><span>상세 정보</span>
+            </button>
+          </div>
         </section>
 
         {/* Calendar */}

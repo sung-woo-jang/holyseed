@@ -43,7 +43,6 @@ function InvitationContent() {
   const [currentRowId, setCurrentRowId] = useState<string | null>(null)
   const [videoLightbox, setVideoLightbox] = useState<string | null>(null)
   const [guestMedia, setGuestMedia] = useState<Media[]>([])
-  const [featuredMedia, setFeaturedMedia] = useState<Media[]>([])
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false)
   const [dynamicContentRows, setDynamicContentRows] = useState<any[]>([])
@@ -88,10 +87,6 @@ function InvitationContent() {
       .then((res) => setGuestMedia(res.data.data?.media ?? []))
       // 하객에게는 에러를 노출하지 않고 기본 사진으로 대체 렌더
       .catch((e) => console.warn('하객 미디어 조회 실패', e))
-
-    api.post('/media/search', { coupleId: couple.id, moderationStatus: 'APPROVED', isFeatured: true, limit: 5 })
-      .then((res) => setFeaturedMedia(res.data.data?.media ?? []))
-      .catch((e) => console.warn('TOP5 지정 사진 조회 실패', e))
   }, [couple?.id])
 
   // Hero 배경 자동 전환 (5초 간격 크로스페이드) — 동시 로딩 부담을 줄이기 위해 앞쪽 6장만 순환
@@ -131,8 +126,7 @@ function InvitationContent() {
   const weddingDate = couple.weddingDate ? new Date(couple.weddingDate) : null
 
   // TOP 5: 승인된 하객 사진만 사용 (5장 미만이면 있는 만큼만 표시)
-  // 관리자가 지정한 사진(featuredMedia)이 있으면 그걸 우선 쓰고, 없으면 최신 승인 사진으로 자동 채움
-  const topSources = (featuredMedia.length > 0 ? featuredMedia : guestMedia).map((m) => mediaResizedUrl(m.id)).slice(0, 5)
+  const topSources = guestMedia.map((m) => mediaResizedUrl(m.id)).slice(0, 5)
   const topItems = topSources.map((src, i) => ({ type: 'top-ranked', src, rank: i + 1, alt: `Top ${i + 1}` }))
 
   const openLightbox = (index: number) => { setLightboxIndex(index); setCurrentSlideIndex(index) }
@@ -230,13 +224,16 @@ function InvitationContent() {
     }
   }
 
+  // 관리자가 콘텐츠 Row에서 직접 TOP5 랭킹을 만들었으면 하드코딩된 기본 TOP5는 숨김(중복 방지)
+  const hasCustomTopRanked = dynamicContentRows.some((row) => row.type === 'top-ranked-row')
+
   const systemRows = [
-    {
+    ...(hasCustomTopRanked ? [] : [{
       id: 'top-ranked',
       title: '오늘의 TOP 5 추억',
       type: 'top-ranked-row',
       items: topItems,
-    },
+    }]),
     {
       id: 'wedding-info',
       title: '웨딩데이 정보',

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsEnum, IsNumber, IsOptional, IsUUID, Min } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsUUID, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ModerationStatus } from '../../entities/wedding-media.entity';
 
@@ -12,11 +12,6 @@ export class SearchMediaDto {
   @IsOptional()
   @IsEnum(ModerationStatus)
   moderationStatus?: ModerationStatus;
-
-  @ApiPropertyOptional({ description: 'TOP5 지정 여부 필터' })
-  @IsOptional()
-  @IsBoolean()
-  isFeatured?: boolean;
 
   @ApiPropertyOptional({ description: '페이지당 개수', default: 24 })
   @IsOptional()

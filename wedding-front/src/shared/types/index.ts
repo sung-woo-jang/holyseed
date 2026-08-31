@@ -1,4 +1,11 @@
 // ===== Couple =====
+export interface WeddingVenueTransportation {
+  subway?: string
+  bus?: string
+  car?: string
+  parking?: string
+}
+
 export interface WeddingVenue {
   name: string
   address: string
@@ -6,6 +13,7 @@ export interface WeddingVenue {
   lng?: number
   hall?: string
   floor?: string
+  transportation?: WeddingVenueTransportation
 }
 
 export interface AccountInfo {
@@ -60,8 +68,6 @@ export interface Media {
   localThumbnailPath?: string
   processingStatus: ProcessingStatus
   moderationStatus: ModerationStatus
-  isFeatured: boolean
-  featuredAt?: string | null
   uploaderName?: string
   message?: string
   fileType: string

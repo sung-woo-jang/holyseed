@@ -65,14 +65,6 @@
   color: var(--w-rejected-fg);
 }
 
-.badgeFeatured {
-  top: 12px;
-  left: auto;
-  right: 12px;
-  background: var(--w-accent);
-  color: #fff;
-}
-
 .info {
   padding: 16px 18px;
   flex: 1;
@@ -145,23 +137,6 @@
 
 .buttonApprove:hover:not(:disabled),
 .buttonReject:hover:not(:disabled) {
-  opacity: 0.85;
-}
-
-.buttonFeature {
-  border-color: var(--w-border);
-  color: var(--w-ink-soft);
-  background: #fff;
-}
-
-.buttonFeaturedActive {
-  border-color: var(--w-accent);
-  color: #fff;
-  background: var(--w-accent);
-}
-
-.buttonFeature:hover:not(:disabled),
-.buttonFeaturedActive:hover:not(:disabled) {
   opacity: 0.85;
 }
 

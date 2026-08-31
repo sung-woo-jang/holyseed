@@ -8,7 +8,6 @@ import { Public } from '@common/decorators/public.decorator';
 import { MediaService } from './media.service';
 import { SearchMediaDto } from './dto/request/search-media.dto';
 import { ModerateMediaDto } from './dto/request/moderate-media.dto';
-import { SetFeaturedMediaDto } from './dto/request/set-featured-media.dto';
 
 @ApiTags('Wedding 미디어')
 @Controller('wedding/media')
@@ -92,20 +91,6 @@ export class MediaController {
     return {
       success: true,
       message: '검수 상태가 변경되었습니다.',
-      data: { ...media, fileSize: Number(media.fileSize) },
-      timestamp: new Date().toISOString(),
-    };
-  }
-
-  @Post(':id/set-featured')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '오늘의 TOP 5 추억 지정/해제 (관리자)' })
-  @ApiResponse({ status: 403, description: '권한 없음' })
-  async setFeatured(@Param('id') id: string, @Body() dto: SetFeaturedMediaDto, @Request() req: any) {
-    const media = await this.mediaService.setFeatured(id, dto, req.user);
-    return {
-      success: true,
-      message: dto.isFeatured ? 'TOP5로 지정되었습니다.' : 'TOP5 지정이 해제되었습니다.',
       data: { ...media, fileSize: Number(media.fileSize) },
       timestamp: new Date().toISOString(),
     };

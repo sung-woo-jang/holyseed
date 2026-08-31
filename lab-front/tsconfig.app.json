@@ -20,8 +20,9 @@
     "paths": {
       "@/*": ["src/*"],
       "@holyseed/laofus-core": ["../packages/laofus-core/src/index.ts"],
-      "@holyseed/vr-core": ["../packages/vr-core/src/index.ts"]
+      "@holyseed/vr-core": ["../packages/vr-core/src/index.ts"],
+      "@holyseed/shannon-core": ["../packages/shannon-core/src/index.ts"]
     }
   },
-  "include": ["src", "../packages/laofus-core/src", "../packages/vr-core/src"]
+  "include": ["src", "../packages/laofus-core/src", "../packages/vr-core/src", "../packages/shannon-core/src"]
 }

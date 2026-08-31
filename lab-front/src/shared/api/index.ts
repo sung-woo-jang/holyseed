@@ -8,4 +8,4 @@ export type { ApiResponse, ErrorResponse, PaginatedData } from './apiResponseTyp
 export type { TypedAxiosInstance } from './axios-types'
 
 // 엔드포인트 내보내기
-export { AUTH_API, VR_API, WORKLOG_API, EXPENSE_API } from './endpoints'
+export { AUTH_API, VR_API, WORKLOG_API, EXPENSE_API, BACKTEST_API } from './endpoints'

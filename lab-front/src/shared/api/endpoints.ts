@@ -26,6 +26,11 @@ export const VR_API = {
   CANDLES: '/vr/candles',
 } as const
 
+// ===== 백테스트 API =====
+export const BACKTEST_API = {
+  PRICES: '/backtest/prices',
+} as const
+
 // ===== 근무일지 API =====
 export const WORKLOG_API = {
   LIST: '/worklog',

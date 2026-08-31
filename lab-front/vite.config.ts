@@ -38,6 +38,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       '@holyseed/laofus-core': path.resolve(__dirname, '../packages/laofus-core/src'),
       '@holyseed/vr-core': path.resolve(__dirname, '../packages/vr-core/src'),
+      '@holyseed/shannon-core': path.resolve(__dirname, '../packages/shannon-core/src'),
     },
   },
   server: {

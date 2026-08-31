@@ -22,6 +22,9 @@ export function MediaSelector({ coupleId, rowType, onSelect, onClose }: MediaSel
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteMode, setDeleteMode] = useState(false);
+  const [markedForDeleteIds, setMarkedForDeleteIds] = useState<Set<string>>(new Set());
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -101,6 +104,64 @@ export function MediaSelector({ coupleId, rowType, onSelect, onClose }: MediaSel
     }
   };
 
+  const toggleMarkedForDelete = (mediaId: string) => {
+    setMarkedForDeleteIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(mediaId)) {
+        next.delete(mediaId);
+      } else {
+        next.add(mediaId);
+      }
+      return next;
+    });
+  };
+
+  const handleItemClick = (mediaId: string) => {
+    if (deleteMode) {
+      toggleMarkedForDelete(mediaId);
+    } else {
+      toggleSelection(mediaId);
+    }
+  };
+
+  const handleToggleDeleteMode = () => {
+    setDeleteMode((prev) => !prev);
+    setMarkedForDeleteIds(new Set());
+  };
+
+  const handleBulkDeleteConfirm = async () => {
+    const ids = Array.from(markedForDeleteIds);
+    if (ids.length === 0) return;
+    setIsDeleting(true);
+    try {
+      const results = await Promise.allSettled(ids.map((id) => api.post(`/media/${id}/delete`)));
+      const succeededIds = ids.filter((_, i) => results[i].status === 'fulfilled');
+      const failedCount = ids.length - succeededIds.length;
+
+      setMedia((prev) => prev.filter((m) => !succeededIds.includes(m.id)));
+      setSelectedMediaIds((prev) => {
+        const next = new Set(prev);
+        succeededIds.forEach((id) => next.delete(id));
+        return next;
+      });
+      setMarkedForDeleteIds((prev) => {
+        const next = new Set(prev);
+        succeededIds.forEach((id) => next.delete(id));
+        return next;
+      });
+
+      if (failedCount === 0) {
+        toast.success(`${succeededIds.length}개의 미디어가 삭제되었습니다.`);
+        setDeleteMode(false);
+      } else {
+        toast.error(`${succeededIds.length}개 삭제, ${failedCount}개 실패했습니다.`);
+      }
+    } finally {
+      setIsDeleting(false);
+      setShowBulkDeleteConfirm(false);
+    }
+  };
+
   const handleUploadComplete = async (mediaIds: string[]) => {
     if (mediaIds.length === 0) return;
 
@@ -168,43 +229,72 @@ export function MediaSelector({ coupleId, rowType, onSelect, onClose }: MediaSel
                 </div>
               ) : (
                 <>
-                  <p className={styles.hint}>
-                    {rowType === 'TOP_RANKED' ? '최대 5개까지 선택 가능합니다.' : '원하는 미디어를 선택하세요.'}
-                  </p>
+                  <div className={styles.toolbar}>
+                    <p className={styles.hint}>
+                      {deleteMode
+                        ? '삭제할 사진을 선택하세요.'
+                        : rowType === 'TOP_RANKED' ? '최대 5개까지 선택 가능합니다.' : '원하는 미디어를 선택하세요.'}
+                    </p>
+                    <button type="button" className={styles.deleteModeButton} onClick={handleToggleDeleteMode}>
+                      {deleteMode ? '취소' : '여러 개 삭제'}
+                    </button>
+                  </div>
+
+                  {deleteMode && (
+                    <div className={styles.bulkBar}>
+                      <span>{markedForDeleteIds.size}개 선택됨</span>
+                      <button
+                        type="button"
+                        className={styles.bulkDeleteButton}
+                        disabled={markedForDeleteIds.size === 0}
+                        onClick={() => setShowBulkDeleteConfirm(true)}
+                      >
+                        선택 삭제
+                      </button>
+                    </div>
+                  )}
 
                   <div className={styles.mediaGrid}>
-                    {media.map((m) => (
-                      <div
-                        key={m.id}
-                        className={`${styles.mediaItem} ${selectedMediaIds.has(m.id) ? styles.selected : ''}`}
-                        onClick={() => toggleSelection(m.id)}
-                      >
-                        {m.fileType.startsWith('video/') ? (
-                          <video
-                            src={`/api/wedding/media/${m.id}/original`}
-                            className={styles.mediaThumbnail}
-                          />
-                        ) : (
-                          <img
-                            src={`/api/wedding/media/${m.id}/thumbnail`}
-                            alt={m.uploaderName || 'Media'}
-                            className={styles.mediaThumbnail}
-                            style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                          />
-                        )}
-                        {selectedMediaIds.has(m.id) && (
-                          <div className={styles.checkmark}>✓</div>
-                        )}
-                        <button
-                          type="button"
-                          className={styles.deleteButton}
-                          title="영구 삭제"
-                          onClick={(e) => { e.stopPropagation(); setDeletingId(m.id); }}
+                    {media.map((m) => {
+                      const isMarked = markedForDeleteIds.has(m.id);
+                      return (
+                        <div
+                          key={m.id}
+                          className={`${styles.mediaItem} ${!deleteMode && selectedMediaIds.has(m.id) ? styles.selected : ''} ${deleteMode && isMarked ? styles.markedForDelete : ''}`}
+                          onClick={() => handleItemClick(m.id)}
                         >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
+                          {m.fileType.startsWith('video/') ? (
+                            <video
+                              src={`/api/wedding/media/${m.id}/original`}
+                              className={styles.mediaThumbnail}
+                            />
+                          ) : (
+                            <img
+                              src={`/api/wedding/media/${m.id}/thumbnail`}
+                              alt={m.uploaderName || 'Media'}
+                              className={styles.mediaThumbnail}
+                              style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                            />
+                          )}
+                          {!deleteMode && selectedMediaIds.has(m.id) && (
+                            <div className={styles.checkmark}>✓</div>
+                          )}
+                          {deleteMode && isMarked && (
+                            <div className={styles.deleteCheckmark}>✓</div>
+                          )}
+                          {!deleteMode && (
+                            <button
+                              type="button"
+                              className={styles.deleteButton}
+                              title="영구 삭제"
+                              onClick={(e) => { e.stopPropagation(); setDeletingId(m.id); }}
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </>
               )}
@@ -239,6 +329,15 @@ export function MediaSelector({ coupleId, rowType, onSelect, onClose }: MediaSel
         <DeleteConfirmModal
           onConfirm={handleDeleteConfirm}
           onCancel={() => setDeletingId(null)}
+          isProcessing={isDeleting}
+        />
+      )}
+
+      {showBulkDeleteConfirm && (
+        <DeleteConfirmModal
+          description={`선택한 ${markedForDeleteIds.size}개의 미디어를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`}
+          onConfirm={handleBulkDeleteConfirm}
+          onCancel={() => setShowBulkDeleteConfirm(false)}
           isProcessing={isDeleting}
         />
       )}

@@ -25,7 +25,7 @@ export function GalleryView({ coupleId }: GalleryViewProps) {
   const fetchMedia = useCallback(async (offset: number, reset: boolean) => {
     setLoading(true)
     try {
-      const res = await api.post('/media/search', { coupleId, moderationStatus: 'APPROVED', limit: 24, offset })
+      const res = await api.post('/media/search', { coupleId, moderationStatus: 'APPROVED', guestOnly: true, limit: 24, offset })
       const items: Media[] = res.data.data?.media ?? []
       setMedia((prev) => (reset ? items : [...prev, ...items]))
       setHasMore(items.length === 24)

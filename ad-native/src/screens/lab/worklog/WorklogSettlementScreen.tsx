@@ -10,6 +10,7 @@ import EmptyState from '../../../components/common/EmptyState';
 import AppToast from '../../../components/common/AppToast';
 import ConfirmDialog from '../../../components/common/ConfirmDialog';
 import Segmented from '../../../components/common/Segmented';
+import { Icon } from '../../../components/common/Icon';
 import { labWorklogApi, type PayStatus, type WorklogRecord } from '../../../api/lab-worklog';
 import { useTheme } from '../../../lib/theme';
 import { krw } from '../../../lib/format';
@@ -177,7 +178,7 @@ export default function WorklogSettlementScreen({ navigation }: Props) {
                           { borderColor: selectedIds.has(r.id) ? theme.brand : theme.border, backgroundColor: selectedIds.has(r.id) ? theme.brand : 'transparent' },
                         ]}
                       >
-                        {selectedIds.has(r.id) && <Text style={{ color: '#fff', fontSize: 11, fontWeight: '800' }}>✓</Text>}
+                        {selectedIds.has(r.id) && Icon.check('#fff', 12)}
                       </View>
                     </View>
                   }

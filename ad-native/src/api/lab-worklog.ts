@@ -32,6 +32,7 @@ export interface WorklogRecord {
 
 export interface WorklogSummary {
   workDays: number;
+  laborUnits: number;
   totalAmount: number;
   totalNet: number;
   receivedNet: number;

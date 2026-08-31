@@ -287,6 +287,13 @@ export default function LabWorklogScreen({ navigation }: Props) {
               </View>
               <View style={styles.summaryRow}>
                 <View style={styles.summaryItem}>
+                  <Text style={{ color: theme.textMuted, fontSize: 12 }}>품</Text>
+                  <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{summary.laborUnits}품</Text>
+                </View>
+                <View style={styles.summaryItem} />
+              </View>
+              <View style={styles.summaryRow}>
+                <View style={styles.summaryItem}>
                   <Text style={{ color: theme.textMuted, fontSize: 12 }}>수령완료</Text>
                   <Text style={{ color: theme.brand, fontSize: 13, fontWeight: '700' }}>{krw(summary.receivedNet)}</Text>
                 </View>

@@ -1,4 +1,4 @@
-export const BACKTEST_SYMBOLS = ['TQQQ', 'QLD', 'SSO', 'UPRO', 'SOXL'] as const
+export const BACKTEST_SYMBOLS = ['TQQQ', 'QLD', 'SSO', 'UPRO', 'SOXL', 'QQQM', 'SPYM'] as const
 export type BacktestSymbol = (typeof BACKTEST_SYMBOLS)[number]
 
 export interface PricePoint {

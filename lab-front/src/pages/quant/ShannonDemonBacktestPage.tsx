@@ -21,14 +21,21 @@ interface RunResult {
   totalFeesPaid: number
   buyHoldFinalValue: number
   buyHoldReturnPct: number
+  dataFrom: string
+  dataTo: string
 }
+
+const YEAR_OPTIONS = ['1', '3', '5', '10', '15']
 
 export default function ShannonDemonBacktestPage() {
   const { ref: chartAreaRef, width: chartWidth } = useContainerWidth<HTMLDivElement>(720)
   const fetchPrices = useBacktestPrices()
 
   const [symbol, setSymbol] = useState<BacktestSymbol>('TQQQ')
-  const [years, setYears] = useState('10')
+  const [yearsBySymbol, setYearsBySymbol] = useState<Record<string, string>>({})
+  const years = yearsBySymbol[symbol] ?? '10'
+  const setYears = (v: string) => setYearsBySymbol((prev) => ({ ...prev, [symbol]: v }))
+
   const [targetStockPct, setTargetStockPct] = useState(50)
   const [thresholdPct, setThresholdPct] = useState('5')
   const [initialCapital, setInitialCapital] = useState('10000')
@@ -72,6 +79,8 @@ export default function ShannonDemonBacktestPage() {
         totalFeesPaid: sim.totalFeesPaid,
         buyHoldFinalValue,
         buyHoldReturnPct: ((buyHoldFinalValue - capital) / capital) * 100,
+        dataFrom: prices[0].date,
+        dataTo: prices[prices.length - 1].date,
       })
     } catch (e: any) {
       setError(e?.response?.data?.message ?? '백테스트 실행에 실패했습니다.')
@@ -90,70 +99,83 @@ export default function ShannonDemonBacktestPage() {
         description="주식:현금을 목표 비율로 유지하다가 비중이 임계값을 벗어나면 리밸런싱하는 전략을 실제 과거 가격으로 시뮬레이션합니다."
       />
 
-      <div className="mt-6 grid grid-cols-2 gap-3 rounded-lg border bg-card p-4 lg:grid-cols-6">
-        <div className="space-y-2">
-          <Label>종목</Label>
-          <Select value={symbol} onValueChange={(v) => setSymbol(v as BacktestSymbol)}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {BACKTEST_SYMBOLS.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          handleRun()
+        }}
+      >
+        <div className="mt-6 grid grid-cols-2 gap-3 rounded-lg border bg-card p-4 lg:grid-cols-6">
+          <div className="space-y-2">
+            <Label>종목</Label>
+            <Select value={symbol} onValueChange={(v) => setSymbol(v as BacktestSymbol)}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {BACKTEST_SYMBOLS.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>기간</Label>
+            <Select value={years} onValueChange={setYears}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {YEAR_OPTIONS.map((y) => (
+                  <SelectItem key={y} value={y}>
+                    {y}년
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>목표 주식비중 — {targetStockPct}%</Label>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={targetStockPct}
+              onChange={(e) => setTargetStockPct(Number(e.target.value))}
+              className="mt-2.5 w-full"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>리밸런싱 임계값 (±%p)</Label>
+            <Input type="number" min="0.1" step="0.1" value={thresholdPct} onChange={(e) => setThresholdPct(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>거래 수수료 (%)</Label>
+            <Input type="number" min="0" step="0.01" value={feePct} onChange={(e) => setFeePct(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>초기자본 ($)</Label>
+            <Input type="number" min="1" step="100" value={initialCapital} onChange={(e) => setInitialCapital(e.target.value)} />
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label>기간</Label>
-          <Select value={years} onValueChange={setYears}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="3">3년</SelectItem>
-              <SelectItem value="5">5년</SelectItem>
-              <SelectItem value="10">10년</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>목표 주식비중 — {targetStockPct}%</Label>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={targetStockPct}
-            onChange={(e) => setTargetStockPct(Number(e.target.value))}
-            className="mt-2.5 w-full"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>리밸런싱 임계값 (±%p)</Label>
-          <Input type="number" min="0.1" step="0.1" value={thresholdPct} onChange={(e) => setThresholdPct(e.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <Label>거래 수수료 (%)</Label>
-          <Input type="number" min="0" step="0.01" value={feePct} onChange={(e) => setFeePct(e.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <Label>초기자본 ($)</Label>
-          <Input type="number" min="1" step="100" value={initialCapital} onChange={(e) => setInitialCapital(e.target.value)} />
-        </div>
-      </div>
 
-      <div className="mt-4">
-        <Button onClick={handleRun} disabled={fetchPrices.isPending}>
-          {fetchPrices.isPending ? '가격 데이터 조회 중…' : '백테스트 실행'}
-        </Button>
-        {error && <span className="ml-3 text-sm text-destructive">{error}</span>}
-      </div>
+        <div className="mt-4">
+          <Button type="submit" disabled={fetchPrices.isPending}>
+            {fetchPrices.isPending ? '가격 데이터 조회 중…' : '백테스트 실행'}
+          </Button>
+          {error && <span className="ml-3 text-sm text-destructive">{error}</span>}
+        </div>
+      </form>
 
       {result && (
         <>
-          <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <div className="mt-6 text-xs text-muted-foreground">
+            실제 데이터 구간: {result.dataFrom} ~ {result.dataTo}
+          </div>
+
+          <div className="mt-2 grid grid-cols-2 gap-3 lg:grid-cols-5">
             <Tile
               label="최종 자산 (섀넌의 도깨비)"
               value={usd(result.finalValue)}

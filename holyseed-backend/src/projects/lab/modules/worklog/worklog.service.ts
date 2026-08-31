@@ -160,7 +160,7 @@ export class WorklogService {
     const sum = (rows: WorklogView[], pick: (r: WorklogView) => number) => rows.reduce((acc, r) => acc + pick(r), 0);
 
     const base = {
-      workDays: workRecords.length,
+      workDays: sum(workRecords, (r) => (r.halfPay ? 0.5 : 1)),
       totalAmount: sum(workRecords, (r) => r.effectiveAmount),
     };
     if (!withholding) return base;

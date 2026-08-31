@@ -8,7 +8,6 @@ import sharp from 'sharp';
 import { WeddingMedia, ModerationStatus, ProcessingStatus } from './entities/wedding-media.entity';
 import { SearchMediaDto } from './dto/request/search-media.dto';
 import { ModerateMediaDto } from './dto/request/moderate-media.dto';
-import { SetFeaturedMediaDto } from './dto/request/set-featured-media.dto';
 import { WeddingUserRole } from '../auth/entities/wedding-user.entity';
 
 @Injectable()
@@ -33,13 +32,10 @@ export class MediaService {
     if (dto.moderationStatus) {
       where.moderationStatus = dto.moderationStatus;
     }
-    if (dto.isFeatured !== undefined) {
-      where.isFeatured = dto.isFeatured;
-    }
 
     const [media, total] = await this.mediaRepo.findAndCount({
       where,
-      order: dto.isFeatured ? { featuredAt: 'ASC' } : { createdAt: 'DESC' },
+      order: { createdAt: 'DESC' },
       take: dto.limit ?? 24,
       skip: dto.offset ?? 0,
     });
@@ -209,43 +205,6 @@ export class MediaService {
 
     this._checkAccess(media.coupleId, user);
     media.moderationStatus = dto.moderationStatus;
-    return this.mediaRepo.save(media);
-  }
-
-  /**
-   * "오늘의 TOP 5 추억" 지정/해제 (관리자)
-   */
-  async setFeatured(
-    id: string,
-    dto: SetFeaturedMediaDto,
-    user: { coupleId: string; role: string },
-  ): Promise<WeddingMedia> {
-    const media = await this.mediaRepo.findOne({ where: { id } });
-    if (!media) {
-      throw new NotFoundException('미디어를 찾을 수 없습니다.');
-    }
-
-    this._checkAccess(media.coupleId, user);
-
-    if (dto.isFeatured) {
-      if (media.moderationStatus !== ModerationStatus.APPROVED) {
-        throw new BadRequestException('승인된 사진만 TOP5로 지정할 수 있습니다.');
-      }
-      if (!media.isFeatured) {
-        const featuredCount = await this.mediaRepo.count({
-          where: { coupleId: media.coupleId, isFeatured: true },
-        });
-        if (featuredCount >= 5) {
-          throw new BadRequestException('이미 5개가 지정되어 있습니다. 다른 사진을 먼저 해제해주세요.');
-        }
-      }
-      media.isFeatured = true;
-      media.featuredAt = new Date();
-    } else {
-      media.isFeatured = false;
-      media.featuredAt = null;
-    }
-
     return this.mediaRepo.save(media);
   }
 

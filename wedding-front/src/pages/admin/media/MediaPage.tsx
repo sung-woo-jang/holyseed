@@ -56,15 +56,6 @@ export default function AdminMediaPage() {
     }
   }
 
-  const handleSetFeatured = async (id: string, isFeatured: boolean) => {
-    try {
-      await api.post(`/media/${id}/set-featured`, { isFeatured })
-      await fetchMedia()
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'TOP5 지정에 실패했습니다.')
-    }
-  }
-
   const handleDelete = async (id: string) => {
     try {
       await api.post(`/media/${id}/delete`)
@@ -88,7 +79,7 @@ export default function AdminMediaPage() {
 
       {error && <div className={styles.errorContainer}><p className={styles.errorMessage}>{error}</p></div>}
 
-      <MediaGrid media={data?.media} isLoading={isLoading} onModerate={handleModerate} onSetFeatured={handleSetFeatured} onDelete={handleDelete} />
+      <MediaGrid media={data?.media} isLoading={isLoading} onModerate={handleModerate} onDelete={handleDelete} />
 
       {data && data.total > 24 && (
         <div className={styles.pagination}>

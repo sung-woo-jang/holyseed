@@ -113,6 +113,20 @@ export interface AttendanceSearchResult {
   stats: AttendanceStats
 }
 
+// ===== Guestbook =====
+export interface Guestbook {
+  id: string
+  coupleId: string
+  guestName: string
+  message: string
+  createdAt: string
+}
+
+export interface GuestbookSearchResult {
+  entries: Guestbook[]
+  total: number
+}
+
 // ===== ContentRow =====
 export type ContentRowType = 'TOP_RANKED' | 'IMAGE_GALLERY' | 'VIDEO_GALLERY'
 

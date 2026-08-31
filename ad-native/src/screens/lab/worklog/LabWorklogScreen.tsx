@@ -281,14 +281,14 @@ export default function LabWorklogScreen({ navigation }: Props) {
                   <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{summary.workDays}일</Text>
                 </View>
                 <View style={styles.summaryItem}>
-                  <Text style={{ color: theme.textMuted, fontSize: 12 }}>실수령 합계</Text>
-                  <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{krw(summary.totalNet)}</Text>
+                  <Text style={{ color: theme.textMuted, fontSize: 12 }}>품</Text>
+                  <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{summary.laborUnits}품</Text>
                 </View>
               </View>
               <View style={styles.summaryRow}>
                 <View style={styles.summaryItem}>
-                  <Text style={{ color: theme.textMuted, fontSize: 12 }}>품</Text>
-                  <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{summary.laborUnits}품</Text>
+                  <Text style={{ color: theme.textMuted, fontSize: 12 }}>실수령 합계</Text>
+                  <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{krw(summary.totalNet)}</Text>
                 </View>
                 <View style={styles.summaryItem} />
               </View>

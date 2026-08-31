@@ -27,6 +27,7 @@ export enum ModerationStatus {
 @Entity('media', { schema: 'wedding' })
 @Index(['coupleId', 'moderationStatus', 'createdAt'])
 @Index(['processingStatus'])
+@Index(['coupleId', 'isFeatured'])
 export class WeddingMedia {
   @ApiProperty({ description: '미디어 ID (UUID)' })
   @PrimaryGeneratedColumn('uuid')
@@ -68,6 +69,14 @@ export class WeddingMedia {
     default: ModerationStatus.PENDING,
   })
   moderationStatus: ModerationStatus;
+
+  @ApiProperty({ description: "오늘의 TOP 5 추억에 지정 여부" })
+  @Column({ name: 'is_featured', default: false })
+  isFeatured: boolean;
+
+  @ApiPropertyOptional({ description: 'TOP5로 지정된 시각(정렬 기준)' })
+  @Column({ name: 'featured_at', type: 'timestamp', nullable: true })
+  featuredAt?: Date | null;
 
   @ApiPropertyOptional({ description: '업로더 이름' })
   @Column({ name: 'uploader_name', nullable: true })

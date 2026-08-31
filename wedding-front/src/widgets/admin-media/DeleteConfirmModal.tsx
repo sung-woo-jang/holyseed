@@ -5,19 +5,21 @@ interface DeleteConfirmModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   isProcessing?: boolean;
+  description?: string;
 }
 
 export function DeleteConfirmModal({
   onConfirm,
   onCancel,
   isProcessing = false,
+  description = '이 미디어를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
 }: DeleteConfirmModalProps) {
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
         <h3 className={styles.title}>미디어 삭제</h3>
         <p className={styles.description}>
-          이 미디어를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+          {description}
         </p>
         <div className={styles.actions}>
           <button

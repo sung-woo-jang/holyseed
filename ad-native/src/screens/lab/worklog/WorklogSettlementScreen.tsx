@@ -29,6 +29,15 @@ const PAY_STATUS_LABEL: Record<PayStatus, string> = {
 
 const STATUS_OPTIONS: PayStatus[] = ['RECEIVED', 'EXPECTED', 'UNPAID'];
 const SCOPE_OPTIONS = ['월별', '미수령 전체'];
+const VIEW_FILTER_OPTIONS: { key: 'ALL' | 'UNRECEIVED' | 'RECEIVED'; label: string }[] = [
+  { key: 'ALL', label: '전체' },
+  { key: 'UNRECEIVED', label: '미수령' },
+  { key: 'RECEIVED', label: '수령' },
+];
+
+function sortByDateDesc(records: WorklogRecord[]): WorklogRecord[] {
+  return [...records].sort((a, b) => (a.workDate < b.workDate ? 1 : a.workDate > b.workDate ? -1 : 0));
+}
 
 export default function WorklogSettlementScreen({ navigation }: Props) {
   const theme = useTheme();
@@ -38,6 +47,7 @@ export default function WorklogSettlementScreen({ navigation }: Props) {
     return { year: d.getFullYear(), month: d.getMonth() + 1 };
   });
   const [targetStatus, setTargetStatus] = useState<PayStatus>('RECEIVED');
+  const [viewFilter, setViewFilter] = useState<'ALL' | 'UNRECEIVED' | 'RECEIVED'>('ALL');
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -58,12 +68,21 @@ export default function WorklogSettlementScreen({ navigation }: Props) {
         : labWorklogApi.query({ from: '2000-01-01', to: todayLocal() }),
   });
 
-  const candidates = useMemo(() => {
-    const records = dataQ.data?.records ?? [];
-    return records
-      .filter((r) => r.payStatus === 'EXPECTED' || r.payStatus === 'UNPAID')
-      .sort((a, b) => (a.workDate < b.workDate ? 1 : a.workDate > b.workDate ? -1 : 0));
-  }, [dataQ.data]);
+  const allRecords = dataQ.data?.records ?? [];
+
+  const candidates = useMemo(() => sortByDateDesc(allRecords.filter((r) => r.payStatus === 'EXPECTED' || r.payStatus === 'UNPAID')), [dataQ.data]);
+  const receivedRecords = useMemo(() => sortByDateDesc(allRecords.filter((r) => r.payStatus === 'RECEIVED')), [dataQ.data]);
+  const receivedTotal = receivedRecords.reduce((sum, r) => sum + r.effectiveAmount, 0);
+
+  // "월별" 스코프에서만 보기 필터 적용 — "미수령 전체" 스코프는 원래부터 미수령만 다루는 화면이라 필터 없이 candidates 그대로
+  const displayRecords =
+    scope === '월별'
+      ? viewFilter === 'RECEIVED'
+        ? receivedRecords
+        : viewFilter === 'UNRECEIVED'
+          ? candidates
+          : sortByDateDesc([...candidates, ...receivedRecords])
+      : candidates;
 
   // 스코프 전환/데이터 로드 시 후보 전체를 기본 선택 상태로
   useEffect(() => {
@@ -130,6 +149,23 @@ export default function WorklogSettlementScreen({ navigation }: Props) {
         </View>
       )}
 
+      {scope === '월별' && (
+        <View style={styles.badgeRow}>
+          {VIEW_FILTER_OPTIONS.map((opt) => {
+            const active = viewFilter === opt.key;
+            return (
+              <Pressable
+                key={opt.key}
+                onPress={() => setViewFilter(opt.key)}
+                style={[styles.badge, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
+              >
+                <Text style={{ fontSize: 12, fontWeight: '700', color: active ? theme.brand : theme.text }}>{opt.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
+
       <View style={[styles.summaryCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <View style={styles.summaryRow}>
           <View style={styles.summaryItem}>
@@ -138,56 +174,77 @@ export default function WorklogSettlementScreen({ navigation }: Props) {
           </View>
           <View style={styles.summaryItem}>
             <Text style={{ color: theme.textMuted, fontSize: 12 }}>미수령 합계</Text>
-            <Text style={{ color: theme.text, fontSize: 16, fontWeight: '800' }}>{krw(candidateTotal)}</Text>
+            <Text style={{ color: theme.danger, fontSize: 16, fontWeight: '800' }}>{krw(candidateTotal)}</Text>
           </View>
         </View>
+        {scope === '월별' && (
+          <View style={styles.summaryRow}>
+            <View style={styles.summaryItem}>
+              <Text style={{ color: theme.textMuted, fontSize: 12 }}>수령완료 건수</Text>
+              <Text style={{ color: theme.text, fontSize: 16, fontWeight: '800' }}>{receivedRecords.length}건</Text>
+            </View>
+            <View style={styles.summaryItem}>
+              <Text style={{ color: theme.textMuted, fontSize: 12 }}>수령완료 합계</Text>
+              <Text style={{ color: theme.brand, fontSize: 16, fontWeight: '800' }}>{krw(receivedTotal)}</Text>
+            </View>
+          </View>
+        )}
       </View>
 
       {dataQ.isLoading ? (
         <View style={styles.center}>
           <Loader size="large" />
         </View>
-      ) : candidates.length === 0 ? (
-        <EmptyState iconCode={TE.receipt} title="정산할 미수령 기록이 없어요" />
+      ) : displayRecords.length === 0 ? (
+        <EmptyState iconCode={TE.receipt} title={scope === '월별' && viewFilter !== 'ALL' ? '해당 조건의 기록이 없어요' : '정산할 미수령 기록이 없어요'} />
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
           <View style={[styles.listCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            {candidates.map((r, i) => (
-              <View key={r.id}>
-                <ListRow
-                  left={
-                    <View style={[styles.dateBox, { backgroundColor: theme.bg }]}>
-                      <Text style={{ color: theme.textMuted, fontSize: 10, fontWeight: '700' }}>{Number(r.workDate.slice(5, 7))}월</Text>
-                      <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{Number(r.workDate.slice(8, 10))}</Text>
-                    </View>
-                  }
-                  contents={
-                    <View>
-                      <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{r.title}</Text>
-                      <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 2 }}>
-                        {r.category} · {PAY_STATUS_LABEL[r.payStatus]}
-                      </Text>
-                    </View>
-                  }
-                  right={
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                      <Text style={{ color: theme.text, fontSize: 13.5, fontWeight: '700' }}>{krw(r.effectiveAmount)}</Text>
-                      <View
-                        style={[
-                          styles.checkBox,
-                          { borderColor: selectedIds.has(r.id) ? theme.brand : theme.border, backgroundColor: selectedIds.has(r.id) ? theme.brand : 'transparent' },
-                        ]}
-                      >
-                        {selectedIds.has(r.id) && Icon.check('#fff', 12)}
+            {displayRecords.map((r, i) => {
+              const isCandidate = r.payStatus === 'EXPECTED' || r.payStatus === 'UNPAID';
+              return (
+                <View key={r.id}>
+                  <ListRow
+                    left={
+                      <View style={[styles.dateBox, { backgroundColor: theme.bg }]}>
+                        <Text style={{ color: theme.textMuted, fontSize: 10, fontWeight: '700' }}>{Number(r.workDate.slice(5, 7))}월</Text>
+                        <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{Number(r.workDate.slice(8, 10))}</Text>
                       </View>
-                    </View>
-                  }
-                  onPress={() => toggleSelect(r.id)}
-                  verticalPadding="small"
-                />
-                {i < candidates.length - 1 && <Border type="full" />}
-              </View>
-            ))}
+                    }
+                    contents={
+                      <View>
+                        <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{r.title}</Text>
+                        <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 2 }}>
+                          {r.category} · {PAY_STATUS_LABEL[r.payStatus]}
+                        </Text>
+                      </View>
+                    }
+                    right={
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                        <Text style={{ color: isCandidate ? theme.text : theme.textMuted, fontSize: 13.5, fontWeight: '700' }}>{krw(r.effectiveAmount)}</Text>
+                        {isCandidate ? (
+                          <View
+                            style={[
+                              styles.checkBox,
+                              { borderColor: selectedIds.has(r.id) ? theme.brand : theme.border, backgroundColor: selectedIds.has(r.id) ? theme.brand : 'transparent' },
+                            ]}
+                          >
+                            {selectedIds.has(r.id) && Icon.check('#fff', 12)}
+                          </View>
+                        ) : (
+                          <View style={[styles.doneBadge, { backgroundColor: theme.brandSoft }]}>
+                            <Text style={{ fontSize: 10.5, fontWeight: '800', color: theme.brand }}>완료</Text>
+                          </View>
+                        )}
+                      </View>
+                    }
+                    onPress={isCandidate ? () => toggleSelect(r.id) : undefined}
+                    verticalPadding="small"
+                  />
+                  {i < displayRecords.length - 1 && <Border type="full" />}
+                </View>
+              );
+            })}
           </View>
         </ScrollView>
       )}
@@ -238,7 +295,10 @@ const styles = StyleSheet.create({
   segWrap: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
   monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, paddingBottom: 10 },
   monthNavBtn: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
-  summaryCard: { marginHorizontal: 16, borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 12 },
+  badgeRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 10 },
+  badge: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, borderWidth: 1 },
+  doneBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999 },
+  summaryCard: { marginHorizontal: 16, borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 12, gap: 10 },
   summaryRow: { flexDirection: 'row' },
   summaryItem: { flex: 1, gap: 4 },
   listCard: { marginHorizontal: 16, borderRadius: 14, borderWidth: 1, overflow: 'hidden' },

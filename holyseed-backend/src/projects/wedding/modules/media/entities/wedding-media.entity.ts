@@ -73,6 +73,10 @@ export class WeddingMedia {
   @Column({ name: 'uploader_name', nullable: true })
   uploaderName?: string;
 
+  @ApiProperty({ description: '관리자가 콘텐츠 관리용으로 직접 올린 사진인지 여부(true=관리자, false=하객)' })
+  @Column({ name: 'is_admin_upload', default: false })
+  isAdminUpload: boolean;
+
   @ApiPropertyOptional({ description: '업로더 메시지' })
   @Column({ type: 'text', nullable: true })
   message?: string;

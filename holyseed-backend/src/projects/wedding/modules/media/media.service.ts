@@ -32,6 +32,9 @@ export class MediaService {
     if (dto.moderationStatus) {
       where.moderationStatus = dto.moderationStatus;
     }
+    if (dto.guestOnly) {
+      where.isAdminUpload = false;
+    }
 
     const [media, total] = await this.mediaRepo.findAndCount({
       where,
@@ -40,11 +43,16 @@ export class MediaService {
       skip: dto.offset ?? 0,
     });
 
+    const statsWhere: Partial<WeddingMedia> = { coupleId: dto.coupleId };
+    if (dto.guestOnly) {
+      statsWhere.isAdminUpload = false;
+    }
+
     const [totalCount, pendingCount, approvedCount, rejectedCount] = await Promise.all([
-      this.mediaRepo.count({ where: { coupleId: dto.coupleId } }),
-      this.mediaRepo.count({ where: { coupleId: dto.coupleId, moderationStatus: ModerationStatus.PENDING } }),
-      this.mediaRepo.count({ where: { coupleId: dto.coupleId, moderationStatus: ModerationStatus.APPROVED } }),
-      this.mediaRepo.count({ where: { coupleId: dto.coupleId, moderationStatus: ModerationStatus.REJECTED } }),
+      this.mediaRepo.count({ where: statsWhere }),
+      this.mediaRepo.count({ where: { ...statsWhere, moderationStatus: ModerationStatus.PENDING } }),
+      this.mediaRepo.count({ where: { ...statsWhere, moderationStatus: ModerationStatus.APPROVED } }),
+      this.mediaRepo.count({ where: { ...statsWhere, moderationStatus: ModerationStatus.REJECTED } }),
     ]);
 
     return {
@@ -149,6 +157,7 @@ export class MediaService {
       localThumbnailPath,
       processingStatus: ProcessingStatus.COMPLETED,
       moderationStatus,
+      isAdminUpload,
       uploaderName,
       message,
       fileType: file.mimetype,

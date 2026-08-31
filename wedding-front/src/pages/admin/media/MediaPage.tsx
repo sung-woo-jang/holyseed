@@ -34,7 +34,7 @@ export default function AdminMediaPage() {
     if (!coupleId) return
     setIsLoading(true); setError(null)
     try {
-      const body: any = { coupleId, limit: 24, offset: page * 24 }
+      const body: any = { coupleId, guestOnly: true, limit: 24, offset: page * 24 }
       if (filter !== 'ALL') body.moderationStatus = filter
       const res = await api.post('/media/search', body)
       setData(res.data.data)
@@ -71,7 +71,7 @@ export default function AdminMediaPage() {
     <div className={styles.pageContainer}>
       <div className={styles.pageHeader}>
         <h1 className={styles.title}>미디어 관리</h1>
-        <p className={styles.description}>업로드된 사진과 영상을 검토하고 승인/거부하세요.</p>
+        <p className={styles.description}>하객이 갤러리에 올린 사진과 영상을 검토하고 승인/거부하세요.</p>
       </div>
 
       <MediaStats stats={data?.stats} />

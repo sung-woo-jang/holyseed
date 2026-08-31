@@ -47,7 +47,6 @@ function InvitationContent() {
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false)
   const [dynamicContentRows, setDynamicContentRows] = useState<any[]>([])
   const [heroIndex, setHeroIndex] = useState(0)
-  const [failedHeroIds, setFailedHeroIds] = useState<Set<string>>(new Set())
   const swiperRef = useRef<SwiperType | null>(null)
   const lightboxOverlayRef = useRef<HTMLDivElement | null>(null)
   const zoomScaleRef = useRef(1)
@@ -90,10 +89,8 @@ function InvitationContent() {
       .catch((e) => console.warn('하객 미디어 조회 실패', e))
   }, [couple?.id])
 
-  // Hero 배경 자동 전환 (5초 간격 크로스페이드) — 동시 로딩 부담을 줄이기 위해 앞쪽 6장만 순환.
-  // 로딩 실패한 사진은 순환 대상에서 제외해 빈 화면이 뜨지 않게 함.
-  const heroPhotos = guestMedia.slice(0, 6).filter((m) => !failedHeroIds.has(m.id))
-  const heroPoolSize = heroPhotos.length
+  // Hero 배경 자동 전환 (5초 간격 크로스페이드) — 동시 로딩 부담을 줄이기 위해 앞쪽 6장만 순환
+  const heroPoolSize = Math.min(guestMedia.length, 6)
   useEffect(() => {
     if (heroPoolSize <= 1) return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
@@ -280,14 +277,13 @@ function InvitationContent() {
         {/* Hero */}
         <section className={styles.hero}>
           <div className={styles.heroImage}>
-            {heroPhotos.map((m, i) => (
+            {guestMedia.slice(0, 6).map((m, i) => (
               <img
                 key={m.id}
                 src={mediaResizedUrl(m.id)}
                 alt={`${couple.groomName} & ${couple.brideName}`}
-                className={cn(styles.heroPhoto, { [styles.heroPhotoActive]: i === heroIndex % heroPoolSize })}
-                loading="eager"
-                onError={() => setFailedHeroIds((prev) => new Set(prev).add(m.id))}
+                className={cn(styles.heroPhoto, { [styles.heroPhotoActive]: i === heroIndex })}
+                loading={i === 0 ? 'eager' : 'lazy'}
               />
             ))}
             <div className={styles.heroOverlay} />

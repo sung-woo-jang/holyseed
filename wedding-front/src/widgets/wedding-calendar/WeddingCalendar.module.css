@@ -1,0 +1,142 @@
+.card {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 2.25rem 1.75rem 2rem;
+  border-radius: 12px;
+  background: linear-gradient(165deg, #262626 0%, #1a1a1a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 3px solid var(--netflix-red, #e50914);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  text-align: center;
+}
+
+.dateHeading {
+  font-family: 'Playfair Display', var(--netflix-font);
+  font-weight: 700;
+  font-size: clamp(1.7rem, 6vw, 2.1rem);
+  color: var(--netflix-white, #ffffff);
+  letter-spacing: 0.02em;
+}
+
+.dateSub {
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--netflix-text-muted, #b3b3b3);
+  font-weight: 500;
+}
+
+.divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 1.4rem 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  row-gap: 0.75rem;
+}
+
+.weekdayLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--netflix-text-muted, #b3b3b3);
+  letter-spacing: 0.04em;
+}
+
+.dayCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+}
+
+.day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--netflix-white, #ffffff);
+}
+
+.sun {
+  color: var(--netflix-red, #e50914);
+}
+
+.sat {
+  color: #6ea8fe;
+}
+
+.dayActive {
+  background: var(--netflix-red, #e50914);
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.countdown {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.countUnit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 2.6rem;
+}
+
+.countValue {
+  font-family: var(--netflix-mono-font);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--netflix-white, #ffffff);
+}
+
+.countLabel {
+  font-family: var(--netflix-mono-font);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--netflix-text-muted, #b3b3b3);
+}
+
+.countColon {
+  font-family: var(--netflix-mono-font);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--netflix-text-muted, #b3b3b3);
+  padding-top: 0.05rem;
+}
+
+.message {
+  margin: 1.5rem 0 0;
+  font-size: 0.88rem;
+  color: var(--netflix-text-muted, #b3b3b3);
+}
+
+.messageStrong {
+  color: var(--netflix-red, #e50914);
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: 1.75rem 1.25rem 1.5rem;
+  }
+
+  .countUnit {
+    min-width: 2.3rem;
+  }
+
+  .countValue {
+    font-size: 1.3rem;
+  }
+}

@@ -17,6 +17,7 @@ import { Media, WeddingVenue, AccountInfo, mediaResizedUrl } from '@/shared/type
 import NetflixIntro from '@/widgets/netflix-intro/NetflixIntro'
 import NetflixNav from '@/shared/ui/NetflixNav'
 import NetflixRow from '@/widgets/netflix-row/NetflixRow'
+import WeddingCalendar from '@/widgets/wedding-calendar/WeddingCalendar'
 import AttendanceModal from '@/features/rsvp/AttendanceModal'
 import NaverMapScript from '@/shared/ui/NaverMapScript'
 import { useToast } from '@/shared/ui/toast'
@@ -234,7 +235,6 @@ function InvitationContent() {
       title: '웨딩데이 정보',
       type: 'info-card-row',
       items: [
-        weddingDate ? { type: 'calendar-card', year: format(weddingDate, 'yyyy'), month: format(weddingDate, 'MMMM', { locale: ko }).toUpperCase(), day: format(weddingDate, 'd'), dayName: format(weddingDate, 'EEEE', { locale: ko }), time: format(weddingDate, 'a h:mm', { locale: ko }) } : null,
         ...(accountInfo?.map((account) => ({
           type: 'account-card', icon: '🎁', relation: account.relation, holder: account.holder, bank: account.bank, account: account.account,
           action: { label: '계좌번호 복사', onClick: () => { navigator.clipboard.writeText(account.account).then(() => toast.success('계좌번호가 복사되었습니다.')).catch(() => toast.error('계좌번호 복사에 실패했습니다.')) } },
@@ -314,6 +314,14 @@ function InvitationContent() {
             />
           ))}
         </div>
+
+        {/* Calendar */}
+        {weddingDate && (
+          <section id="calendar-section" className={cn(styles.section, styles.calendarSection)}>
+            <h2 className={styles.sectionTitle}>결혼식 날짜</h2>
+            <WeddingCalendar weddingDate={weddingDate} groomName={couple.groomName} brideName={couple.brideName} />
+          </section>
+        )}
 
         {/* Map */}
         {venue && (

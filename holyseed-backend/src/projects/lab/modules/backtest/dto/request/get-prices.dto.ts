@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsIn, IsInt, Max, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsDateString, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 
 export const BACKTEST_SYMBOLS = ['TQQQ', 'QLD', 'SSO', 'UPRO', 'SOXL', 'QQQM', 'SPYM'] as const;
 export type BacktestSymbol = (typeof BACKTEST_SYMBOLS)[number];
@@ -14,4 +14,9 @@ export class GetPricesDto {
   @Min(1)
   @Max(15)
   years: number;
+
+  @ApiPropertyOptional({ description: '투자 종료 시점(YYYY-MM-DD) — 생략 시 오늘까지', example: '2020-01-01' })
+  @IsOptional()
+  @IsDateString({}, { message: '종료일은 YYYY-MM-DD 형식이어야 합니다.' })
+  untilDate?: string;
 }

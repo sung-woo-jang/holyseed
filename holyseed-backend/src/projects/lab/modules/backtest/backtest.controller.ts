@@ -18,7 +18,7 @@ export class BacktestController {
   @Post('prices')
   @ApiOperation({ summary: '백테스트용 종목 일봉 종가 조회 (없으면 토스 API로 채운 뒤 캐시)' })
   async getPrices(@Body() dto: GetPricesDto) {
-    const prices = await this.backtestService.getPrices(dto.symbol, dto.years);
+    const prices = await this.backtestService.getPrices(dto.symbol, dto.years, dto.untilDate);
     return ok('조회 성공', prices);
   }
 }

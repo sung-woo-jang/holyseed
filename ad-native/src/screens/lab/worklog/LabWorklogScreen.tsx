@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
   addBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   toolRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8, gap: 8 },
   toolChip: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, justifyContent: 'center' },
-  sortRow: { paddingLeft: 16, marginBottom: 4, height: 44 },
+  sortRow: { flexGrow: 0, flexShrink: 0, paddingLeft: 16, marginBottom: 4, height: 44 },
   chipRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 16, paddingBottom: 4 },
   chip: { height: 34, alignSelf: 'center', paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, justifyContent: 'center' },
   summaryCard: { marginHorizontal: 20, marginTop: 8, borderRadius: 16, borderWidth: 1, padding: 16, gap: 10 },

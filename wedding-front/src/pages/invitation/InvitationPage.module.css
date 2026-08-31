@@ -274,7 +274,7 @@
 .accountSection {
   padding: var(--netflix-section-padding) 1.5rem;
   text-align: center;
-  background: var(--netflix-black);
+  background: var(--netflix-dark-gray, #1f1f1f);
 }
 
 .accountQuote {

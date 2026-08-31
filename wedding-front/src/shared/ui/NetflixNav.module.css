@@ -30,22 +30,3 @@
   white-space: nowrap;
 }
 
-.navLinks {
-  display: flex;
-  gap: 0.95rem;
-  align-items: center;
-}
-
-.navLink {
-  color: white;
-  font-size: 0.82rem;
-  font-weight: 500;
-  text-decoration: none;
-  transition: color 0.3s ease;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-}
-
-.navLink:hover {
-  color: var(--netflix-red, #e50914);
-}

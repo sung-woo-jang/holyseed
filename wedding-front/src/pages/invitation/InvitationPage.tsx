@@ -322,60 +322,6 @@ function InvitationContent() {
           </section>
         )}
 
-        {/* Account */}
-        {(groomAccounts.length > 0 || brideAccounts.length > 0) && (
-          <section id="account-section" className={cn(styles.section, styles.accountSection)}>
-            <h2 className={styles.sectionTitle}>마음 전하실 곳</h2>
-            <p className={styles.accountQuote}>
-              참석이 어려우신 분들을 위해 계좌를 남겨둡니다.<br />
-              복사 버튼을 누르면 계좌번호를 바로 전달해 드릴 수 있어요.
-            </p>
-
-            <div className={styles.accordionList}>
-              {([
-                { key: 'groom' as const, label: '신랑측 계좌번호', accounts: groomAccounts },
-                { key: 'bride' as const, label: '신부측 계좌번호', accounts: brideAccounts },
-              ]).map(({ key, label, accounts }) => {
-                if (accounts.length === 0) return null
-                const isOpen = openAccordion === key
-                return (
-                  <div key={key} className={cn(styles.accordion, { [styles.accordionOpen]: isOpen })}>
-                    <button
-                      type="button"
-                      className={styles.accHead}
-                      onClick={() => setOpenAccordion(isOpen ? null : key)}
-                    >
-                      <span className={styles.accHeadLeft}>
-                        <span className={styles.accSide}>{label}</span>
-                        <span className={styles.accHint}>{accounts.length}명</span>
-                      </span>
-                      <span className={styles.chevron}>⌄</span>
-                    </button>
-                    <div className={styles.accBody}>
-                      {accounts.map((account, i) => (
-                        <div key={i} className={styles.accountRow}>
-                          <span className={styles.accountRowName}>
-                            {account.holder} <span>{account.relation}</span>
-                          </span>
-                          <span className={styles.accountRowRight}>
-                            <span className={styles.accountRowNum}>{account.bank} {account.account}</span>
-                            <button type="button" className={styles.accountCopyBtn} onClick={() => copyAccount(account.account)}>복사</button>
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            <div className={styles.accountRsvp}>
-              <p className={styles.accountRsvpLine}>소중한 시간 함께 해주시는 모든 분들께 감사드립니다</p>
-              <button type="button" className={styles.accountRsvpBtn} onClick={() => setAttendanceModalOpen(true)}>참석 여부 남기기</button>
-            </div>
-          </section>
-        )}
-
         {/* Content Rows */}
         <div className={styles.contentRows}>
           {contentRows.map((row) => (
@@ -443,6 +389,60 @@ function InvitationContent() {
                 })}
               </div>
             )}
+          </section>
+        )}
+
+        {/* Account */}
+        {(groomAccounts.length > 0 || brideAccounts.length > 0) && (
+          <section id="account-section" className={cn(styles.section, styles.accountSection)}>
+            <h2 className={styles.sectionTitle}>마음 전하실 곳</h2>
+            <p className={styles.accountQuote}>
+              참석이 어려우신 분들을 위해 계좌를 남겨둡니다.<br />
+              복사 버튼을 누르면 계좌번호를 바로 전달해 드릴 수 있어요.
+            </p>
+
+            <div className={styles.accordionList}>
+              {([
+                { key: 'groom' as const, label: '신랑측 계좌번호', accounts: groomAccounts },
+                { key: 'bride' as const, label: '신부측 계좌번호', accounts: brideAccounts },
+              ]).map(({ key, label, accounts }) => {
+                if (accounts.length === 0) return null
+                const isOpen = openAccordion === key
+                return (
+                  <div key={key} className={cn(styles.accordion, { [styles.accordionOpen]: isOpen })}>
+                    <button
+                      type="button"
+                      className={styles.accHead}
+                      onClick={() => setOpenAccordion(isOpen ? null : key)}
+                    >
+                      <span className={styles.accHeadLeft}>
+                        <span className={styles.accSide}>{label}</span>
+                        <span className={styles.accHint}>{accounts.length}명</span>
+                      </span>
+                      <span className={styles.chevron}>⌄</span>
+                    </button>
+                    <div className={styles.accBody}>
+                      {accounts.map((account, i) => (
+                        <div key={i} className={styles.accountRow}>
+                          <span className={styles.accountRowName}>
+                            {account.holder} <span>{account.relation}</span>
+                          </span>
+                          <span className={styles.accountRowRight}>
+                            <span className={styles.accountRowNum}>{account.bank} {account.account}</span>
+                            <button type="button" className={styles.accountCopyBtn} onClick={() => copyAccount(account.account)}>복사</button>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className={styles.accountRsvp}>
+              <p className={styles.accountRsvpLine}>소중한 시간 함께 해주시는 모든 분들께 감사드립니다</p>
+              <button type="button" className={styles.accountRsvpBtn} onClick={() => setAttendanceModalOpen(true)}>참석 여부 남기기</button>
+            </div>
           </section>
         )}
 

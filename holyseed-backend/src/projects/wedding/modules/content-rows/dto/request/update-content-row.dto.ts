@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsArray, IsBoolean, IsEnum, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ContentRowType } from '../../entities/wedding-content-row.entity';
 
 export class UpdateContentRowDto {
@@ -31,5 +31,6 @@ export class UpdateContentRowDto {
   @ApiPropertyOptional({ description: '아이템 배열' })
   @IsOptional()
   @IsArray()
+  @Type(() => Object)
   items?: Record<string, any>[];
 }

@@ -18,4 +18,9 @@ export class BacktestPrice extends BaseEntity {
   @ApiProperty({ description: '종가(수정주가) ($)', example: 70.68 })
   @Column({ type: 'decimal', precision: 12, scale: 4, transformer: numeric })
   close: number;
+
+  /** 이 행이 종목의 실제 상장일 등으로 더 과거 데이터가 없는 최초 캔들임이 확인됨 (재백필 스킵용) */
+  @ApiProperty({ description: '이 종목의 캐싱 가능한 최초 데이터 여부', example: false })
+  @Column({ name: 'is_earliest', type: 'boolean', default: false })
+  isEarliest: boolean;
 }

@@ -154,7 +154,7 @@ export default function ShannonDemonBacktestPage() {
           </div>
           <div className="space-y-2">
             <Label>리밸런싱 임계값 (±%p)</Label>
-            <Input type="number" min="0.1" step="0.1" value={thresholdPct} onChange={(e) => setThresholdPct(e.target.value)} />
+            <Input type="number" min="0" step="0.5" value={thresholdPct} onChange={(e) => setThresholdPct(e.target.value)} />
           </div>
           <div className="space-y-2">
             <Label>거래 수수료 (%)</Label>

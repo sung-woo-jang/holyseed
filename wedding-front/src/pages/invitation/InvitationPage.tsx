@@ -301,6 +301,14 @@ function InvitationContent() {
           <div className={styles.scrollIndicator}><span>SCROLL</span><div className={styles.scrollLine} /></div>
         </section>
 
+        {/* Calendar */}
+        {weddingDate && (
+          <section id="calendar-section" className={cn(styles.section, styles.calendarSection)}>
+            <h2 className={styles.sectionTitle}>결혼식 날짜</h2>
+            <WeddingCalendar weddingDate={weddingDate} groomName={couple.groomName} brideName={couple.brideName} />
+          </section>
+        )}
+
         {/* Content Rows */}
         <div className={styles.contentRows}>
           {contentRows.map((row) => (
@@ -314,14 +322,6 @@ function InvitationContent() {
             />
           ))}
         </div>
-
-        {/* Calendar */}
-        {weddingDate && (
-          <section id="calendar-section" className={cn(styles.section, styles.calendarSection)}>
-            <h2 className={styles.sectionTitle}>결혼식 날짜</h2>
-            <WeddingCalendar weddingDate={weddingDate} groomName={couple.groomName} brideName={couple.brideName} />
-          </section>
-        )}
 
         {/* Map */}
         {venue && (

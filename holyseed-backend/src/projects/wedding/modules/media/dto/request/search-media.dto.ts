@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsNumber, IsOptional, IsUUID, Min } from 'class-validator';
+import { IsBoolean, IsEnum, IsNumber, IsOptional, IsUUID, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ModerationStatus } from '../../entities/wedding-media.entity';
 
@@ -12,6 +12,11 @@ export class SearchMediaDto {
   @IsOptional()
   @IsEnum(ModerationStatus)
   moderationStatus?: ModerationStatus;
+
+  @ApiPropertyOptional({ description: '하객이 올린 사진만 조회(관리자 직접 업로드분 제외)' })
+  @IsOptional()
+  @IsBoolean()
+  guestOnly?: boolean;
 
   @ApiPropertyOptional({ description: '페이지당 개수', default: 24 })
   @IsOptional()

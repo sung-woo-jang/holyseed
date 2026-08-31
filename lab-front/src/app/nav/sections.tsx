@@ -42,7 +42,7 @@ export const SECTIONS: LabSection[] = [
     id: 'quant',
     label: '라오어',
     icon: InfinityIcon,
-    basePaths: ['/quant', '/vr'],
+    basePaths: ['/quant', '/vr', '/backtest'],
     groups: [
       {
         label: '무한매수법',
@@ -65,6 +65,10 @@ export const SECTIONS: LabSection[] = [
       {
         label: '자산 기록',
         pages: [{ path: '/quant/wealth', label: '실계좌' }],
+      },
+      {
+        label: '백테스트',
+        pages: [{ path: '/backtest/shannon', label: '섀넌의 도깨비' }],
       },
     ],
   },

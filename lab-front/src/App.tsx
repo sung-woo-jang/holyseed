@@ -8,6 +8,7 @@ import CycleDetailPage from '@/pages/quant/CycleDetailPage'
 import CyclesPage from '@/pages/quant/CyclesPage'
 import HomePage from '@/pages/quant/HomePage'
 import QuantLayout from '@/pages/quant/QuantLayout'
+import ShannonDemonBacktestPage from '@/pages/quant/ShannonDemonBacktestPage'
 import SystemPage from '@/pages/quant/SystemPage'
 import TradeDetailPage from '@/pages/quant/TradeDetailPage'
 import WealthPage from '@/pages/quant/WealthPage'
@@ -40,6 +41,8 @@ export default function App() {
           <Route path="/vr/ladder" element={<VrLadderPage />} />
           <Route path="/vr/fills" element={<VrFillsPage />} />
           <Route path="/vr/system" element={<VrSystemPage />} />
+
+          <Route path="/backtest/shannon" element={<ShannonDemonBacktestPage />} />
 
           <Route path="/worklog/dashboard" element={<FinanceDashboardPage />} />
           <Route path="/worklog" element={<WorklogPage />} />

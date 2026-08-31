@@ -174,8 +174,11 @@ export class TossClientService {
     symbol: string,
     interval: '1m' | '1d',
     count = 200,
+    before?: string,
   ): Promise<{ candles: TossCandle[]; nextBefore: string | null }> {
-    return this.request('GET', '/api/v1/candles', { params: { symbol, interval, count: String(count) } });
+    const params: Record<string, string> = { symbol, interval, count: String(count) };
+    if (before) params.before = before;
+    return this.request('GET', '/api/v1/candles', { params });
   }
 
   async getExchangeRate(): Promise<{ rate: string; midRate: string; rateChangeType: string }> {

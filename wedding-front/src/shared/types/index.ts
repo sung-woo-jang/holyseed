@@ -1,9 +1,14 @@
 // ===== Couple =====
+export interface TransportationGroup {
+  heading?: string
+  bullets: string[]
+}
+
 export interface WeddingVenueTransportation {
-  subway?: string
-  bus?: string
-  car?: string
-  parking?: string
+  subway?: TransportationGroup[]
+  bus?: TransportationGroup[]
+  car?: TransportationGroup[]
+  parking?: TransportationGroup[]
 }
 
 export interface WeddingVenue {

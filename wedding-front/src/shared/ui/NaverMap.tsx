@@ -91,7 +91,7 @@ export default function NaverMap({ lat, lng, venueName, address, photoUrl, weddi
   }, [lat, lng, venueName, photoUrl, weddingDateLabel])
 
   const openNaverMap = () => {
-    window.open(`https://map.naver.com/p/search/${encodeURIComponent(venueName)}`, '_blank')
+    window.open('https://namu.wiki/w/%EB%84%A4%EC%9D%B4%EB%B2%84%EC%A7%80%EB%8F%84', '_blank')
   }
 
   const handleCopyAddress = async () => {

@@ -10,6 +10,7 @@ import EmptyState from '../../../components/common/EmptyState';
 import AppToast from '../../../components/common/AppToast';
 import ConfirmDialog from '../../../components/common/ConfirmDialog';
 import Segmented from '../../../components/common/Segmented';
+import { Icon } from '../../../components/common/Icon';
 import WorklogEntryForm from './WorklogEntryForm';
 import WorklogCategorySheet from './WorklogCategorySheet';
 import { labWorklogApi, type WorklogRecord } from '../../../api/lab-worklog';
@@ -31,6 +32,12 @@ const PAY_STATUS_LABEL: Record<WorklogRecord['payStatus'], string> = {
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
+const PAY_FILTER_OPTIONS: { key: 'UNRECEIVED' | 'RECEIVED' | 'ALL'; label: string }[] = [
+  { key: 'UNRECEIVED', label: '미수령' },
+  { key: 'RECEIVED', label: '수령' },
+  { key: 'ALL', label: '전체' },
+];
+
 function sortByDate(records: WorklogRecord[], dir: 'asc' | 'desc'): WorklogRecord[] {
   const sorted = [...records].sort((a, b) => (a.workDate < b.workDate ? -1 : a.workDate > b.workDate ? 1 : 0));
   if (dir === 'desc') sorted.reverse();
@@ -51,7 +58,7 @@ export default function LabWorklogScreen({ navigation }: Props) {
   const [view, setView] = useState<'목록' | '캘린더'>('목록');
   const [calendarSelectedDate, setCalendarSelectedDate] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [showUnreceivedOnly, setShowUnreceivedOnly] = useState(false);
+  const [payFilter, setPayFilter] = useState<'UNRECEIVED' | 'RECEIVED' | 'ALL'>('ALL');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -102,7 +109,8 @@ export default function LabWorklogScreen({ navigation }: Props) {
   const summary = worklogQ.data?.summary;
   const categories = categoriesQ.data ?? [];
   const filteredRecords = records.filter((r) => {
-    if (showUnreceivedOnly && r.payStatus === 'RECEIVED') return false;
+    if (payFilter === 'RECEIVED' && r.payStatus !== 'RECEIVED') return false;
+    if (payFilter === 'UNRECEIVED' && r.payStatus === 'RECEIVED') return false;
     if (categoryFilter && r.category !== categoryFilter) return false;
     return true;
   });
@@ -168,7 +176,7 @@ export default function LabWorklogScreen({ navigation }: Props) {
           left={
             selectMode ? (
               <View style={[styles.checkCircle, { borderColor: checked ? theme.brand : theme.border, backgroundColor: checked ? theme.brand : 'transparent' }]}>
-                {checked && <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>✓</Text>}
+                {checked && Icon.check('#fff', 12)}
               </View>
             ) : (
               <View style={[styles.dateBox, { backgroundColor: theme.bg }]}>
@@ -236,14 +244,18 @@ export default function LabWorklogScreen({ navigation }: Props) {
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sortRow}>
         <View style={styles.chipRow}>
-          <Pressable
-            onPress={() => setShowUnreceivedOnly((prev) => !prev)}
-            style={[styles.chip, { borderColor: showUnreceivedOnly ? theme.brand : theme.border, backgroundColor: showUnreceivedOnly ? theme.brandSoft : theme.card }]}
-          >
-            <Text style={{ fontSize: 12, lineHeight: 20, fontWeight: '700', color: showUnreceivedOnly ? theme.brand : theme.text, includeFontPadding: false }}>
-              안받은것만{showUnreceivedOnly ? ' ✓' : ''}
-            </Text>
-          </Pressable>
+          {PAY_FILTER_OPTIONS.map((opt) => {
+            const active = payFilter === opt.key;
+            return (
+              <Pressable
+                key={opt.key}
+                onPress={() => setPayFilter(opt.key)}
+                style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
+              >
+                <Text style={{ fontSize: 12, lineHeight: 20, fontWeight: '700', color: active ? theme.brand : theme.text, includeFontPadding: false }}>{opt.label}</Text>
+              </Pressable>
+            );
+          })}
 
           {categories.length > 0 && (
             <>

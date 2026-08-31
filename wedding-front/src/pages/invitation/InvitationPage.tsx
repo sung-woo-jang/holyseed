@@ -354,42 +354,30 @@ function InvitationContent() {
 
             {venue.transportation && (
               <div className={styles.transportInfo}>
-                {venue.transportation.subway && (
-                  <div className={styles.transportRow}>
-                    <span className={styles.transportIcon}>🚇</span>
-                    <div>
-                      <h3 className={styles.transportLabel}>지하철</h3>
-                      <p className={styles.transportText}>{venue.transportation.subway}</p>
+                {([
+                  { key: 'subway', title: '지하철 이용 시' },
+                  { key: 'bus', title: '버스 이용 시' },
+                  { key: 'car', title: '자가용 이용 시' },
+                  { key: 'parking', title: '주차 안내' },
+                ] as const).map(({ key, title }) => {
+                  const groups = venue.transportation?.[key]
+                  if (!groups || groups.length === 0) return null
+                  return (
+                    <div key={key} className={styles.transportSection}>
+                      <h3 className={styles.transportSectionTitle}>{title}</h3>
+                      {groups.map((group, gi) => (
+                        <div key={gi} className={styles.transportGroup}>
+                          {group.heading && <p className={styles.transportHeading}>{group.heading}</p>}
+                          <ul className={styles.transportBullets}>
+                            {group.bullets.map((bullet, bi) => (
+                              <li key={bi} className={styles.transportBulletItem}>{bullet}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                )}
-                {venue.transportation.bus && (
-                  <div className={styles.transportRow}>
-                    <span className={styles.transportIcon}>🚌</span>
-                    <div>
-                      <h3 className={styles.transportLabel}>버스</h3>
-                      <p className={styles.transportText}>{venue.transportation.bus}</p>
-                    </div>
-                  </div>
-                )}
-                {venue.transportation.car && (
-                  <div className={styles.transportRow}>
-                    <span className={styles.transportIcon}>🚗</span>
-                    <div>
-                      <h3 className={styles.transportLabel}>자가용</h3>
-                      <p className={styles.transportText}>{venue.transportation.car}</p>
-                    </div>
-                  </div>
-                )}
-                {venue.transportation.parking && (
-                  <div className={styles.transportRow}>
-                    <span className={styles.transportIcon}>🅿️</span>
-                    <div>
-                      <h3 className={styles.transportLabel}>주차장</h3>
-                      <p className={styles.transportText}>{venue.transportation.parking}</p>
-                    </div>
-                  </div>
-                )}
+                  )
+                })}
               </div>
             )}
           </section>

@@ -277,15 +277,16 @@ function InvitationContent() {
         {/* Hero */}
         <section className={styles.hero}>
           <div className={styles.heroImage}>
-            {guestMedia.slice(0, 6).map((m, i) => (
-              <img
-                key={m.id}
-                src={mediaResizedUrl(m.id)}
-                alt={`${couple.groomName} & ${couple.brideName}`}
-                className={cn(styles.heroPhoto, { [styles.heroPhotoActive]: i === heroIndex })}
-                loading={i === 0 ? 'eager' : 'lazy'}
-              />
-            ))}
+            {guestMedia.slice(0, 6).map((m, i) => {
+              const src = mediaResizedUrl(m.id)
+              return (
+                <div key={m.id} className={cn(styles.heroPhotoWrap, { [styles.heroPhotoActive]: i === heroIndex })}>
+                  {/* 세로 사진 등 비율이 다른 사진도 잘리지 않게: 흐린 배경(cover)이 프레임을 채우고, 선명한 원본(contain)은 잘림 없이 통째로 보임 */}
+                  <img src={src} alt="" aria-hidden="true" className={styles.heroPhotoBackdrop} loading={i === 0 ? 'eager' : 'lazy'} />
+                  <img src={src} alt={`${couple.groomName} & ${couple.brideName}`} className={styles.heroPhotoMain} loading={i === 0 ? 'eager' : 'lazy'} />
+                </div>
+              )
+            })}
             <div className={styles.heroOverlay} />
           </div>
           <div className={styles.heroContent}>

@@ -321,12 +321,14 @@ export default function LabWorklogScreen({ navigation }: Props) {
                         <View style={[styles.dayCircle, selected && { backgroundColor: theme.brand }]}>
                           <Text style={{ color: selected ? '#fff' : theme.text, fontSize: 13, fontWeight: isToday || selected ? '700' : '500' }}>{day}</Text>
                         </View>
-                        {dayRecords.length > 0 && <View style={[styles.dayDot, { backgroundColor: selected ? '#fff' : theme.brand }]} />}
-                        {dayNet > 0 && (
-                          <Text numberOfLines={1} style={{ color: selected ? '#fff' : theme.textMuted, fontSize: 8.5, marginTop: 1 }}>
-                            {Math.round(dayNet / 10000)}만
-                          </Text>
-                        )}
+                        <View style={styles.dayIndicator}>
+                          {dayRecords.length > 0 && <View style={[styles.dayDot, { backgroundColor: selected ? '#fff' : theme.brand }]} />}
+                          {dayNet > 0 && (
+                            <Text numberOfLines={1} style={{ color: selected ? '#fff' : theme.textMuted, fontSize: 8.5, marginTop: 1 }}>
+                              {Math.round(dayNet / 10000)}만
+                            </Text>
+                          )}
+                        </View>
                       </Pressable>
                     );
                   })}
@@ -424,6 +426,7 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
   cell: { width: `${100 / 7}%`, aspectRatio: 0.85, alignItems: 'center', justifyContent: 'center' },
   dayCircle: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  dayIndicator: { height: 16, alignItems: 'center', justifyContent: 'flex-start' },
   dayDot: { width: 4, height: 4, borderRadius: 2, marginTop: 2 },
   bulkBar: {
     position: 'absolute',

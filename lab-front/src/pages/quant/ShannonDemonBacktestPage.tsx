@@ -40,6 +40,7 @@ export default function ShannonDemonBacktestPage() {
   const [thresholdPct, setThresholdPct] = useState('5')
   const [initialCapital, setInitialCapital] = useState('10000')
   const [feePct, setFeePct] = useState('0.1')
+  const [untilDate, setUntilDate] = useState('')
 
   const [result, setResult] = useState<RunResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -47,7 +48,7 @@ export default function ShannonDemonBacktestPage() {
   async function handleRun() {
     setError(null)
     try {
-      const res = await fetchPrices.mutateAsync({ symbol, years: Number(years) })
+      const res = await fetchPrices.mutateAsync({ symbol, years: Number(years), untilDate: untilDate || undefined })
       const prices = res.data ?? []
       if (prices.length < 2) {
         setError('가격 데이터가 부족합니다.')
@@ -105,7 +106,7 @@ export default function ShannonDemonBacktestPage() {
           handleRun()
         }}
       >
-        <div className="mt-6 grid grid-cols-2 gap-3 rounded-lg border bg-card p-4 lg:grid-cols-6">
+        <div className="mt-6 grid grid-cols-2 gap-3 rounded-lg border bg-card p-4 lg:grid-cols-7">
           <div className="space-y-2">
             <Label>종목</Label>
             <Select value={symbol} onValueChange={(v) => setSymbol(v as BacktestSymbol)}>
@@ -135,6 +136,10 @@ export default function ShannonDemonBacktestPage() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>종료일 (비우면 오늘)</Label>
+            <Input type="date" value={untilDate} onChange={(e) => setUntilDate(e.target.value)} />
           </div>
           <div className="space-y-2">
             <Label>목표 주식비중 — {targetStockPct}%</Label>

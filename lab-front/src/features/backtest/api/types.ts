@@ -9,4 +9,5 @@ export interface PricePoint {
 export interface GetPricesInput {
   symbol: BacktestSymbol
   years: number
+  untilDate?: string
 }

@@ -273,7 +273,7 @@ function InvitationContent() {
       <NaverMapScript />
 
       <div className={cn(styles.container, { [styles.zoomInFromIntro]: !showIntro && !wasSkipped, [styles.fadeInNormal]: !showIntro && wasSkipped })}>
-        <NetflixNav coupleSlug={couple.slug} groomName={couple.groomName} brideName={couple.brideName} />
+        <NetflixNav groomName={couple.groomName} brideName={couple.brideName} />
         {/* Hero */}
         <section className={styles.hero}>
           <div className={styles.heroTabs}>

@@ -244,18 +244,18 @@ export default function LabWorklogScreen({ navigation }: Props) {
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sortRow}>
         <View style={styles.chipRow}>
-          {PAY_FILTER_OPTIONS.map((opt) => {
-            const active = payFilter === opt.key;
+          {(() => {
+            const active = payFilter !== 'ALL';
+            const label = PAY_FILTER_OPTIONS.find((o) => o.key === payFilter)!.label;
             return (
               <Pressable
-                key={opt.key}
-                onPress={() => setPayFilter(opt.key)}
+                onPress={() => setPayFilter((prev) => (prev === 'ALL' ? 'UNRECEIVED' : prev === 'UNRECEIVED' ? 'RECEIVED' : 'ALL'))}
                 style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
               >
-                <Text style={{ fontSize: 12, lineHeight: 20, fontWeight: '700', color: active ? theme.brand : theme.text, includeFontPadding: false }}>{opt.label}</Text>
+                <Text style={{ fontSize: 12, lineHeight: 20, fontWeight: '700', color: active ? theme.brand : theme.text, includeFontPadding: false }}>{label}</Text>
               </Pressable>
             );
-          })}
+          })()}
 
           {categories.length > 0 && (
             <>

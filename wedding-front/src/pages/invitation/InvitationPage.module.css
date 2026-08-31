@@ -268,6 +268,166 @@
 }
 
 /* ============================================
+   ACCOUNT SECTION
+   ============================================ */
+
+.accountSection {
+  padding: var(--netflix-section-padding) 1.5rem;
+  text-align: center;
+  background: var(--netflix-black);
+}
+
+.accountQuote {
+  max-width: 420px;
+  margin: 0 auto 2.5rem;
+  font-family: 'Noto Serif KR', var(--netflix-font, serif);
+  font-style: italic;
+  font-size: 0.92rem;
+  line-height: 1.8;
+  color: var(--netflix-text-muted, #b3b3b3);
+}
+
+.accordionList {
+  max-width: 420px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.accordion {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.accordion:last-of-type {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.accHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 1rem 0.15rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.accHeadLeft {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.accSide {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.accHint {
+  font-size: 0.72rem;
+  color: var(--netflix-text-muted, #b3b3b3);
+}
+
+.chevron {
+  font-size: 0.8rem;
+  color: var(--netflix-text-muted, #b3b3b3);
+  transition: transform 0.2s ease;
+}
+
+.accordionOpen .chevron {
+  transform: rotate(180deg);
+  color: #fff;
+}
+
+.accBody {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.25s ease;
+}
+
+.accordionOpen .accBody {
+  max-height: 400px;
+  padding-bottom: 0.85rem;
+}
+
+.accountRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.15rem;
+}
+
+.accountRowName {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.accountRowName span {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--netflix-text-muted, #b3b3b3);
+}
+
+.accountRowRight {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.accountRowNum {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #d8d5cf;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.accountCopyBtn {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--netflix-red, #e50914);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.accountRsvp {
+  max-width: 420px;
+  margin: 1.75rem auto 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.accountRsvpLine {
+  font-size: 0.82rem;
+  color: var(--netflix-text-muted, #b3b3b3);
+  line-height: 1.6;
+  margin: 0 0 0.65rem;
+}
+
+.accountRsvpBtn {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--netflix-red, #e50914);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ============================================
    INVITATION MESSAGE
    ============================================ */
 

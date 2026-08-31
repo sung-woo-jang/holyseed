@@ -47,6 +47,7 @@ function InvitationContent() {
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false)
   const [dynamicContentRows, setDynamicContentRows] = useState<any[]>([])
   const [heroIndex, setHeroIndex] = useState(0)
+  const [openAccordion, setOpenAccordion] = useState<'groom' | 'bride' | null>(null)
   const swiperRef = useRef<SwiperType | null>(null)
   const lightboxOverlayRef = useRef<HTMLDivElement | null>(null)
   const zoomScaleRef = useRef(1)
@@ -128,6 +129,16 @@ function InvitationContent() {
   // TOP 5: 승인된 하객 사진만 사용 (5장 미만이면 있는 만큼만 표시)
   const topSources = guestMedia.map((m) => mediaResizedUrl(m.id)).slice(0, 5)
   const topItems = topSources.map((src, i) => ({ type: 'top-ranked', src, rank: i + 1, alt: `Top ${i + 1}` }))
+
+  // 계좌를 신랑측/신부측으로 분류 (relation에 '신랑'/'신부'가 포함되는지로 판단 — 스키마 변경 없이 자유 텍스트 그대로 활용)
+  const groomAccounts = accountInfo.filter((a) => a.relation?.includes('신랑'))
+  const brideAccounts = accountInfo.filter((a) => a.relation?.includes('신부'))
+
+  const copyAccount = (account: string) => {
+    navigator.clipboard.writeText(account)
+      .then(() => toast.success('계좌번호가 복사되었습니다.'))
+      .catch(() => toast.error('계좌번호 복사에 실패했습니다.'))
+  }
 
   const openLightbox = (index: number) => { setLightboxIndex(index); setCurrentSlideIndex(index) }
   const closeLightbox = () => { setLightboxIndex(null); setCurrentSlideIndex(0); swiperRef.current = null }
@@ -235,18 +246,6 @@ function InvitationContent() {
       items: topItems,
     }]),
     {
-      id: 'wedding-info',
-      title: '웨딩데이 정보',
-      type: 'info-card-row',
-      items: [
-        ...(accountInfo?.map((account) => ({
-          type: 'account-card', icon: '🎁', relation: account.relation, holder: account.holder, bank: account.bank, account: account.account,
-          action: { label: '계좌번호 복사', onClick: () => { navigator.clipboard.writeText(account.account).then(() => toast.success('계좌번호가 복사되었습니다.')).catch(() => toast.error('계좌번호 복사에 실패했습니다.')) } },
-        })) ?? []),
-        { type: 'info-card', icon: '✉️', title: '참석 여부', subtitle: '알려주세요', content: '소중한 시간 함께 해주시는 모든 분들께 감사드립니다', action: { label: '참석 응답하기', onClick: () => setAttendanceModalOpen(true) } },
-      ].filter(Boolean),
-    },
-    {
       id: 'upload-cta',
       title: '함께 만드는 우리의 앨범',
       type: 'mixed-row',
@@ -309,7 +308,7 @@ function InvitationContent() {
             <button className={styles.playButton} onClick={() => { const v = document.querySelector('video[data-wedding-video]'); if (v) { v.scrollIntoView({ behavior: 'smooth', block: 'center' }); (v as HTMLVideoElement).play() } }}>
               <svg className={styles.playIcon} viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor" /></svg><span>재생</span>
             </button>
-            <button className={styles.moreInfoButton} onClick={() => document.getElementById('wedding-info')?.scrollIntoView({ behavior: 'smooth' })}>
+            <button className={styles.moreInfoButton} onClick={() => document.getElementById('account-section')?.scrollIntoView({ behavior: 'smooth' })}>
               <svg className={styles.infoIcon} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" fill="none" strokeWidth="2" /><text x="12" y="12" textAnchor="middle" dominantBaseline="central" fill="currentColor" fontSize="14" fontWeight="bold">i</text></svg><span>상세 정보</span>
             </button>
           </div>
@@ -320,6 +319,60 @@ function InvitationContent() {
           <section id="calendar-section" className={cn(styles.section, styles.calendarSection)}>
             <h2 className={styles.sectionTitle}>결혼식 날짜</h2>
             <WeddingCalendar weddingDate={weddingDate} groomName={couple.groomName} brideName={couple.brideName} />
+          </section>
+        )}
+
+        {/* Account */}
+        {(groomAccounts.length > 0 || brideAccounts.length > 0) && (
+          <section id="account-section" className={cn(styles.section, styles.accountSection)}>
+            <h2 className={styles.sectionTitle}>마음 전하실 곳</h2>
+            <p className={styles.accountQuote}>
+              참석이 어려우신 분들을 위해 계좌를 남겨둡니다.<br />
+              복사 버튼을 누르면 계좌번호를 바로 전달해 드릴 수 있어요.
+            </p>
+
+            <div className={styles.accordionList}>
+              {([
+                { key: 'groom' as const, label: '신랑측 계좌번호', accounts: groomAccounts },
+                { key: 'bride' as const, label: '신부측 계좌번호', accounts: brideAccounts },
+              ]).map(({ key, label, accounts }) => {
+                if (accounts.length === 0) return null
+                const isOpen = openAccordion === key
+                return (
+                  <div key={key} className={cn(styles.accordion, { [styles.accordionOpen]: isOpen })}>
+                    <button
+                      type="button"
+                      className={styles.accHead}
+                      onClick={() => setOpenAccordion(isOpen ? null : key)}
+                    >
+                      <span className={styles.accHeadLeft}>
+                        <span className={styles.accSide}>{label}</span>
+                        <span className={styles.accHint}>{accounts.length}명</span>
+                      </span>
+                      <span className={styles.chevron}>⌄</span>
+                    </button>
+                    <div className={styles.accBody}>
+                      {accounts.map((account, i) => (
+                        <div key={i} className={styles.accountRow}>
+                          <span className={styles.accountRowName}>
+                            {account.holder} <span>{account.relation}</span>
+                          </span>
+                          <span className={styles.accountRowRight}>
+                            <span className={styles.accountRowNum}>{account.bank} {account.account}</span>
+                            <button type="button" className={styles.accountCopyBtn} onClick={() => copyAccount(account.account)}>복사</button>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className={styles.accountRsvp}>
+              <p className={styles.accountRsvpLine}>소중한 시간 함께 해주시는 모든 분들께 감사드립니다</p>
+              <button type="button" className={styles.accountRsvpBtn} onClick={() => setAttendanceModalOpen(true)}>참석 여부 남기기</button>
+            </div>
           </section>
         )}
 

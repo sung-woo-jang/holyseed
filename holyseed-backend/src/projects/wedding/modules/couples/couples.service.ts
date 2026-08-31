@@ -52,6 +52,7 @@ export class CouplesService {
       ...(dto.weddingVenue !== undefined && { weddingVenue: dto.weddingVenue }),
       ...(dto.accountInfo !== undefined && { accountInfo: dto.accountInfo }),
       ...(dto.themeSettings !== undefined && { themeSettings: dto.themeSettings }),
+      ...(dto.ogImageMediaId !== undefined && { ogImageMediaId: dto.ogImageMediaId }),
     });
 
     return this.coupleRepo.save(couple);

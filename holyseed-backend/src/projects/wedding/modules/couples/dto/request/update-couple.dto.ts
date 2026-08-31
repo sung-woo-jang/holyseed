@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
+import { IsDateString, IsOptional, IsString, IsUUID, MaxLength, ValidateNested } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 class AccountInfoDto {
@@ -57,4 +57,9 @@ export class UpdateCoupleDto {
   @ApiPropertyOptional({ description: '테마 설정' })
   @IsOptional()
   themeSettings?: Record<string, any>;
+
+  @ApiPropertyOptional({ description: '카카오톡 등 링크 공유 시 썸네일로 쓸 미디어 ID' })
+  @IsOptional()
+  @IsUUID()
+  ogImageMediaId?: string | null;
 }

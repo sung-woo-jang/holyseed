@@ -114,9 +114,10 @@ export default function NaverMap({ lat, lng, venueName, address, photoUrl, weddi
           주소 복사
         </button>
         <button type="button" onClick={openNaverMap} className={cn(styles.button, styles.buttonMap)}>
-          <span role="img" aria-label="map">
-            🗺️
-          </span>{' '}
+          <svg className={styles.naverIcon} viewBox="0 0 24 24" aria-hidden="true">
+            <rect width="24" height="24" rx="6" fill="#03C75A" />
+            <path d="M12 5c-2.76 0-5 2.24-5 5 0 3.75 5 9 5 9s5-5.25 5-9c0-2.76-2.24-5-5-5zm0 7a2 2 0 110-4 2 2 0 010 4z" fill="#ffffff" />
+          </svg>
           네이버지도
         </button>
       </div>

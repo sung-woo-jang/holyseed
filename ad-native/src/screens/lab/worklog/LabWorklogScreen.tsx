@@ -32,12 +32,6 @@ const PAY_STATUS_LABEL: Record<WorklogRecord['payStatus'], string> = {
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
-const PAY_FILTER_OPTIONS: { key: 'UNRECEIVED' | 'RECEIVED' | 'ALL'; label: string }[] = [
-  { key: 'UNRECEIVED', label: '미수령' },
-  { key: 'RECEIVED', label: '수령' },
-  { key: 'ALL', label: '전체' },
-];
-
 function sortByDate(records: WorklogRecord[], dir: 'asc' | 'desc'): WorklogRecord[] {
   const sorted = [...records].sort((a, b) => (a.workDate < b.workDate ? -1 : a.workDate > b.workDate ? 1 : 0));
   if (dir === 'desc') sorted.reverse();
@@ -58,7 +52,6 @@ export default function LabWorklogScreen({ navigation }: Props) {
   const [view, setView] = useState<'목록' | '캘린더'>('목록');
   const [calendarSelectedDate, setCalendarSelectedDate] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [payFilter, setPayFilter] = useState<'UNRECEIVED' | 'RECEIVED' | 'ALL'>('ALL');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -109,8 +102,6 @@ export default function LabWorklogScreen({ navigation }: Props) {
   const summary = worklogQ.data?.summary;
   const categories = categoriesQ.data ?? [];
   const filteredRecords = records.filter((r) => {
-    if (payFilter === 'RECEIVED' && r.payStatus !== 'RECEIVED') return false;
-    if (payFilter === 'UNRECEIVED' && r.payStatus === 'RECEIVED') return false;
     if (categoryFilter && r.category !== categoryFilter) return false;
     return true;
   });
@@ -244,19 +235,6 @@ export default function LabWorklogScreen({ navigation }: Props) {
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sortRow}>
         <View style={styles.chipRow}>
-          {(() => {
-            const active = payFilter !== 'ALL';
-            const label = PAY_FILTER_OPTIONS.find((o) => o.key === payFilter)!.label;
-            return (
-              <Pressable
-                onPress={() => setPayFilter((prev) => (prev === 'ALL' ? 'UNRECEIVED' : prev === 'UNRECEIVED' ? 'RECEIVED' : 'ALL'))}
-                style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
-              >
-                <Text style={{ fontSize: 12, lineHeight: 20, fontWeight: '700', color: active ? theme.brand : theme.text, includeFontPadding: false }}>{label}</Text>
-              </Pressable>
-            );
-          })()}
-
           {categories.length > 0 && (
             <>
               <Pressable

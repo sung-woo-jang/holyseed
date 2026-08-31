@@ -40,6 +40,7 @@ export default function AdminSettingsPage() {
 
   const { register, handleSubmit, reset, control, setValue, watch, formState: { errors } } = useForm<SettingsFormData>({ resolver: zodResolver(settingsSchema) })
   const { fields, append, remove } = useFieldArray({ control, name: 'accountInfo' })
+  const [venueExtra, setVenueExtra] = useState<Record<string, any>>({})
 
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY)
@@ -50,6 +51,9 @@ export default function AdminSettingsPage() {
         setCoupleId(id)
         const coupleRes = await api.get(`/couples/${id}`)
         const c = coupleRes.data.data
+        // 폼에 입력란이 없는 나머지 venue 필드(예: transportation)는 저장 시 유실되지 않도록 보존
+        const { name, address, hall, floor, lat, lng, ...rest } = c.weddingVenue ?? {}
+        setVenueExtra(rest)
         reset({
           groomName: c.groomName,
           brideName: c.brideName,
@@ -77,7 +81,7 @@ export default function AdminSettingsPage() {
         groomName: data.groomName,
         brideName: data.brideName,
         weddingDate: data.weddingDate ? new Date(data.weddingDate).toISOString() : undefined,
-        weddingVenue: data.venueName ? { name: data.venueName, address: data.venueAddress ?? '', hall: data.venueHall ?? '', floor: data.venueFloor ?? '', lat: data.venueLat, lng: data.venueLng } : undefined,
+        weddingVenue: data.venueName ? { ...venueExtra, name: data.venueName, address: data.venueAddress ?? '', hall: data.venueHall ?? '', floor: data.venueFloor ?? '', lat: data.venueLat, lng: data.venueLng } : undefined,
         accountInfo: accounts,
       })
       setMessage({ type: 'success', text: '저장되었습니다.' })

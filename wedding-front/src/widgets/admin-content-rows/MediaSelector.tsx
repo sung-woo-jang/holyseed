@@ -3,6 +3,7 @@ import { api } from '@/shared/api';
 import type { Media } from '@/shared/types';
 import { ContentRowType, ContentItem } from '@/shared/types';
 import { MediaUploader } from './MediaUploader';
+import { DeleteConfirmModal } from '@/widgets/admin-media/DeleteConfirmModal';
 import { useToast } from '@/shared/ui/toast';
 import styles from './MediaSelector.module.css';
 
@@ -19,6 +20,8 @@ export function MediaSelector({ coupleId, rowType, onSelect, onClose }: MediaSel
   const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -76,6 +79,26 @@ export function MediaSelector({ coupleId, rowType, onSelect, onClose }: MediaSel
     });
 
     onSelect(items);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingId) return;
+    setIsDeleting(true);
+    try {
+      await api.post(`/media/${deletingId}/delete`);
+      setMedia((prev) => prev.filter((m) => m.id !== deletingId));
+      setSelectedMediaIds((prev) => {
+        const next = new Set(prev);
+        next.delete(deletingId);
+        return next;
+      });
+      toast.success('미디어가 삭제되었습니다.');
+      setDeletingId(null);
+    } catch {
+      toast.error('미디어 삭제에 실패했습니다.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleUploadComplete = async (mediaIds: string[]) => {
@@ -172,6 +195,14 @@ export function MediaSelector({ coupleId, rowType, onSelect, onClose }: MediaSel
                         {selectedMediaIds.has(m.id) && (
                           <div className={styles.checkmark}>✓</div>
                         )}
+                        <button
+                          type="button"
+                          className={styles.deleteButton}
+                          title="영구 삭제"
+                          onClick={(e) => { e.stopPropagation(); setDeletingId(m.id); }}
+                        >
+                          ✕
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -203,6 +234,14 @@ export function MediaSelector({ coupleId, rowType, onSelect, onClose }: MediaSel
           )}
         </div>
       </div>
+
+      {deletingId && (
+        <DeleteConfirmModal
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeletingId(null)}
+          isProcessing={isDeleting}
+        />
+      )}
     </div>
   );
 }

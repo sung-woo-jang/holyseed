@@ -239,6 +239,12 @@
   background: var(--netflix-black);
 }
 
+.calendarSection {
+  padding: var(--netflix-section-padding) 1.5rem;
+  text-align: center;
+  background: var(--netflix-dark-gray, #1f1f1f);
+}
+
 /* ============================================
    INVITATION MESSAGE
    ============================================ */

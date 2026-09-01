@@ -1,14 +1,22 @@
 // ===== Couple =====
-export interface TransportationGroup {
-  heading?: string
-  bullets: string[]
+export interface SubwayLineInfo {
+  line: string
+  color: string
+  desc: string
+  subBullets?: string[]
+}
+
+export interface BusCategoryInfo {
+  label: string
+  color: string
+  numbers: string
 }
 
 export interface WeddingVenueTransportation {
-  subway?: TransportationGroup[]
-  bus?: TransportationGroup[]
-  car?: TransportationGroup[]
-  parking?: TransportationGroup[]
+  subway?: SubwayLineInfo[]
+  busStopInfo?: string
+  busCategories?: BusCategoryInfo[]
+  busRealtimeUrl?: string
 }
 
 export interface WeddingVenue {

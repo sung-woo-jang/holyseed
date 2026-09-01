@@ -367,31 +367,52 @@ function InvitationContent() {
 
             {venue.transportation && (
               <div className={styles.transportInfo}>
-                {([
-                  { key: 'subway', title: '지하철 이용 시' },
-                  { key: 'bus', title: '버스 이용 시' },
-                  // 자가용/주차 안내는 요청으로 임시 숨김
-                  // { key: 'car', title: '자가용 이용 시' },
-                  // { key: 'parking', title: '주차 안내' },
-                ] as const).map(({ key, title }) => {
-                  const groups = venue.transportation?.[key]
-                  if (!groups || groups.length === 0) return null
-                  return (
-                    <div key={key} className={styles.transportSection}>
-                      <h3 className={styles.transportSectionTitle}>{title}</h3>
-                      {groups.map((group, gi) => (
-                        <div key={gi} className={styles.transportGroup}>
-                          {group.heading && <p className={styles.transportHeading}>{group.heading}</p>}
+                {venue.transportation.subway && venue.transportation.subway.length > 0 && (
+                  <div className={styles.transportSection}>
+                    <div className={styles.transportSectionHead}>
+                      <svg className={styles.transportIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="4" y="3" width="16" height="14" rx="4" /><path d="M4 11h16" /><circle cx="8.5" cy="14.5" r="0.6" fill="currentColor" /><circle cx="15.5" cy="14.5" r="0.6" fill="currentColor" /><path d="M8 21l-1.5-2.5M16 21l1.5-2.5" /></svg>
+                      <h3 className={styles.transportSectionTitle}>지하철 이용 시</h3>
+                    </div>
+                    {venue.transportation.subway.map((line, i) => (
+                      <div key={i} className={styles.subwayLine}>
+                        <div className={styles.subwayLineHead}>
+                          <span className={styles.lineBadge} style={{ background: line.color }}>{line.line}</span>
+                          <span className={styles.subwayDesc}>{line.desc}</span>
+                        </div>
+                        {line.subBullets && line.subBullets.length > 0 && (
                           <ul className={styles.transportBullets}>
-                            {group.bullets.map((bullet, bi) => (
+                            {line.subBullets.map((bullet, bi) => (
                               <li key={bi} className={styles.transportBulletItem}>{bullet}</li>
                             ))}
                           </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {venue.transportation.busCategories && venue.transportation.busCategories.length > 0 && (
+                  <div className={styles.transportSection}>
+                    <div className={styles.transportSectionHead}>
+                      <svg className={styles.transportIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="4" y="3" width="16" height="13" rx="3" /><path d="M4 9h16M8 16v2M16 16v2" /><circle cx="8" cy="19" r="1" fill="currentColor" /><circle cx="16" cy="19" r="1" fill="currentColor" /></svg>
+                      <h3 className={styles.transportSectionTitle}>버스 이용 시</h3>
+                    </div>
+                    {venue.transportation.busStopInfo && (
+                      <p className={styles.busStopInfo}>{venue.transportation.busStopInfo}</p>
+                    )}
+                    <div className={styles.busCategoryList}>
+                      {venue.transportation.busCategories.map((cat, i) => (
+                        <div key={i} className={styles.busCategoryRow}>
+                          <span className={styles.busCategoryBadge} style={{ background: cat.color }}>{cat.label}</span>
+                          <span className={styles.busNumbers}>{cat.numbers}</span>
                         </div>
                       ))}
                     </div>
-                  )
-                })}
+                    {venue.transportation.busRealtimeUrl && (
+                      <a className={styles.transportLinkButton} href={venue.transportation.busRealtimeUrl} target="_blank" rel="noopener noreferrer">실시간 버스노선</a>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </section>

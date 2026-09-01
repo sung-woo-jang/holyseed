@@ -302,7 +302,7 @@ function InvitationContent() {
               <h1 className={styles.heroNames}>{couple.groomName}<span className={styles.ampersand}>&</span>{couple.brideName}</h1>
               {weddingDate && (
                 <time className={styles.heroDate} dateTime={weddingDate.toISOString()}>
-                  {format(weddingDate, 'yyyy. MM. dd', { locale: ko })}{venue?.name ? ` · ${venue.name}` : ''}
+                  {format(weddingDate, 'yyyy. MM. dd a h시', { locale: ko })}{venue?.name ? ` · ${venue.name}` : ''}
                 </time>
               )}
             </div>
@@ -353,7 +353,7 @@ function InvitationContent() {
                     venueName={venue.name}
                     address={venue.address}
                     photoUrl={guestMedia[0] ? mediaResizedUrl(guestMedia[0].id) : undefined}
-                    weddingDateLabel={weddingDate ? format(weddingDate, 'yyyy. MM. dd', { locale: ko }) : undefined}
+                    weddingDateLabel={weddingDate ? format(weddingDate, 'yyyy. MM. dd a h시', { locale: ko }) : undefined}
                   />
                 </Suspense>
               ) : (
@@ -461,7 +461,7 @@ function InvitationContent() {
         <footer className={styles.footer}>
           <div className={styles.footerDivider} />
           <div className={styles.footerNames}>{couple.groomName} & {couple.brideName}</div>
-          {weddingDate && <div className={styles.footerDate}>{format(weddingDate, 'yyyy. MM. dd', { locale: ko })}</div>}
+          {weddingDate && <div className={styles.footerDate}>{format(weddingDate, 'yyyy. MM. dd a h시', { locale: ko })}</div>}
           <div className={styles.footerCopyright}>Wedding Archive</div>
         </footer>
 
@@ -511,7 +511,7 @@ function InvitationContent() {
           coupleId={couple.id}
           groomName={couple.groomName}
           brideName={couple.brideName}
-          weddingDateLabel={weddingDate ? format(weddingDate, 'yyyy. MM. dd', { locale: ko }) : undefined}
+          weddingDateLabel={weddingDate ? format(weddingDate, 'yyyy. MM. dd a h시', { locale: ko }) : undefined}
         />
       </div>
     </>

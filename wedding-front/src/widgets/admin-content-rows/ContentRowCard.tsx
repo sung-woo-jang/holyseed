@@ -9,7 +9,7 @@ interface ContentRowCardProps {
 }
 
 const ROW_TYPE_LABELS: Record<string, string> = {
-  TOP_RANKED: 'TOP 5 랭킹',
+  TOP_RANKED: 'TOP 랭킹',
   IMAGE_GALLERY: '이미지 갤러리',
   VIDEO_GALLERY: '비디오 갤러리',
 };

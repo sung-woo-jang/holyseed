@@ -56,6 +56,7 @@ function InvitationContent() {
   const [dynamicContentRows, setDynamicContentRows] = useState<any[]>([])
   const [heroIndex, setHeroIndex] = useState(0)
   const [openAccordion, setOpenAccordion] = useState<'groom' | 'bride' | null>(null)
+  const heroVideoRef = useRef<HTMLVideoElement | null>(null)
   const swiperRef = useRef<SwiperType | null>(null)
   const lightboxOverlayRef = useRef<HTMLDivElement | null>(null)
   const zoomScaleRef = useRef(1)
@@ -68,6 +69,13 @@ function InvitationContent() {
     lastY: 0,
     lastTime: 0,
   })
+
+  // 인트로가 Hero를 가리고 있는 동안 영상이 미리 재생되지 않도록, 인트로가 끝난 시점에만 재생 시작
+  useEffect(() => {
+    if (!showIntro) {
+      heroVideoRef.current?.play().catch(() => {})
+    }
+  }, [showIntro])
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -288,7 +296,7 @@ function InvitationContent() {
 
           <div className={styles.heroCard}>
             <div className={cn(styles.heroPhotoWrap, { [styles.heroPhotoActive]: heroIndex === 0 })}>
-              <video className={styles.heroVideoBg} src={HERO_VIDEO_SRC} autoPlay loop muted playsInline />
+              <video ref={heroVideoRef} className={styles.heroVideoBg} src={HERO_VIDEO_SRC} loop muted playsInline />
             </div>
             {heroPhotoIds.slice(0, 6).map((id, i) => {
               const src = mediaResizedUrl(id)

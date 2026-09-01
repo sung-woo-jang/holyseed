@@ -1,9 +1,10 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { TOKEN_KEY } from '@/shared/api'
-import { DEFAULT_COUPLE_SLUG } from '@/shared/lib/couple-context'
+import { CoupleProvider, DEFAULT_COUPLE_SLUG } from '@/shared/lib/couple-context'
 import { ToastProvider } from '@/shared/ui/toast'
+import PageSpinner from '@/shared/ui/PageSpinner'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,11 +39,16 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
-function PageLoader() {
+// 청첩장/갤러리/참석의사 페이지가 라우트를 오가도 CoupleProvider가 언마운트되지 않도록
+// 공통 부모 레이아웃에서 한 번만 감싼다 — 그렇지 않으면 탭 전환마다 커플 정보를 다시
+// fetch하며 "로딩 중" 화면이 매번 깜빡였음
+function CoupleRouteLayout() {
+  const { coupleSlug } = useParams<{ coupleSlug: string }>()
+  if (!coupleSlug) return <Navigate to={`/${DEFAULT_COUPLE_SLUG}`} replace />
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-      <div style={{ color: '#666' }}>로딩 중...</div>
-    </div>
+    <CoupleProvider slug={coupleSlug}>
+      <Outlet />
+    </CoupleProvider>
   )
 }
 
@@ -52,7 +58,7 @@ export default function App() {
       <ToastProvider>
       <BrowserRouter>
         <ScrollToTop />
-        <Suspense fallback={<PageLoader />}>
+        <Suspense fallback={<PageSpinner />}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
@@ -74,9 +80,11 @@ export default function App() {
               <Route path="settings" element={<AdminSettingsPage />} />
             </Route>
 
-            <Route path="/:coupleSlug" element={<InvitationPage />} />
-            <Route path="/:coupleSlug/gallery" element={<GalleryPage />} />
-            <Route path="/:coupleSlug/attendance" element={<AttendancePage />} />
+            <Route path="/:coupleSlug" element={<CoupleRouteLayout />}>
+              <Route index element={<InvitationPage />} />
+              <Route path="gallery" element={<GalleryPage />} />
+              <Route path="attendance" element={<AttendancePage />} />
+            </Route>
 
             <Route path="/" element={<Navigate to={`/${DEFAULT_COUPLE_SLUG}`} replace />} />
             <Route path="*" element={<Navigate to={`/${DEFAULT_COUPLE_SLUG}`} replace />} />

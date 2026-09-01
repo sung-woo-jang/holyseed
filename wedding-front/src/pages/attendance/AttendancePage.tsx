@@ -1,6 +1,7 @@
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { CoupleProvider, useCouple, DEFAULT_COUPLE_SLUG } from '@/shared/lib/couple-context'
+import { Navigate, useNavigate } from 'react-router-dom'
+import { useCouple, DEFAULT_COUPLE_SLUG } from '@/shared/lib/couple-context'
 import AttendanceForm from '@/features/rsvp/AttendanceForm'
+import PageSpinner from '@/shared/ui/PageSpinner'
 import { useToast } from '@/shared/ui/toast'
 import styles from './AttendancePage.module.css'
 
@@ -9,7 +10,7 @@ function AttendanceContent() {
   const navigate = useNavigate()
   const toast = useToast()
 
-  if (isLoading) return <div style={{ padding: '2rem' }}>로딩 중...</div>
+  if (isLoading) return <PageSpinner />
   if (error || !couple) return <Navigate to={`/${DEFAULT_COUPLE_SLUG}`} replace />
 
   const handleSuccess = () => {
@@ -31,12 +32,4 @@ function AttendanceContent() {
   )
 }
 
-export default function AttendancePage() {
-  const { coupleSlug } = useParams<{ coupleSlug: string }>()
-  if (!coupleSlug) return <Navigate to={`/${DEFAULT_COUPLE_SLUG}`} replace />
-  return (
-    <CoupleProvider slug={coupleSlug}>
-      <AttendanceContent />
-    </CoupleProvider>
-  )
-}
+export default AttendanceContent

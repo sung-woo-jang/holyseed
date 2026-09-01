@@ -233,8 +233,11 @@ export default function NetflixRow({ title, items, onItemClick, onVideoClick, ro
             onClick={() => onItemClick?.(index)}
           >
             {composedGlyph ? (
+              // 자릿수마다 85 너비 슬롯이 필요해서(CSS의 85:148 고정 비율을 그대로 쓰면
+              // 가로로 눌려 작게 렌더링됨), 실제 조합 너비에 맞춰 비율 자체를 넓힘
               <svg
                 className={styles.rankNumberSvg}
+                style={{ aspectRatio: `${85 * composedGlyph.length} / 148` }}
                 viewBox={`0 0 ${85 * composedGlyph.length} 148`}
                 fill="none"
                 opacity={0.3}

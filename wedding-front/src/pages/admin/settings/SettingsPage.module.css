@@ -126,74 +126,118 @@
 }
 
 /* 축의금 계좌 섹션 */
-.sectionHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 0 0 18px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--w-divider);
-}
-
-.sectionHead .sectionTitle {
-  margin: 0;
-  padding: 0;
-  border: none;
-}
-
-.addAccountButton {
-  padding: 8px 14px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #fff;
-  background: var(--w-accent);
-  border: none;
-  border-radius: 9px;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.addAccountButton:hover {
-  opacity: 0.92;
-}
-
 .accountEmpty {
   font-size: 0.85rem;
   color: var(--w-muted);
   margin: 0;
 }
 
-.accountRow {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--w-divider);
+.accountGroup {
+  margin-bottom: 20px;
 }
 
-.accountRow:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+.accountGroup:last-child {
+  margin-bottom: 0;
+}
+
+.accountGroupHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.accountGroupTitle {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--w-ink-soft);
+  margin: 0;
+}
+
+.addGroupAccountButton {
+  padding: 6px 12px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--w-accent);
+  background: transparent;
+  border: 1px solid var(--w-accent);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.addGroupAccountButton:hover {
+  background: var(--w-accent);
+  color: #fff;
+}
+
+.accountCard {
+  background: var(--w-input);
+  border: 1px solid var(--w-border);
+  border-radius: 10px;
+  padding: 12px 14px 14px;
+  margin-bottom: 10px;
+}
+
+.accountCard:last-child {
+  margin-bottom: 0;
+}
+
+.accountCardHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.accountBadge {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--w-accent);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.accountCardLabel {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: none;
+  border-bottom: 1px solid var(--w-border-strong);
+  background: transparent;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--w-ink);
+  font-family: inherit;
+}
+
+.accountCardLabel:focus {
+  outline: none;
+  border-color: var(--w-accent);
 }
 
 .accountGrid {
-  flex: 1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 12px;
 }
 
 .removeAccountButton {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  margin-top: 22px;
+  width: 28px;
+  height: 28px;
   border-radius: 8px;
   border: 1px solid var(--w-border);
   background: #fff;
   color: var(--w-muted-light);
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   transition: color 0.2s, border-color 0.2s;
 }
 

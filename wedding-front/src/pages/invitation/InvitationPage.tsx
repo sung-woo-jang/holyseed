@@ -21,6 +21,7 @@ import WeddingCalendar from '@/widgets/wedding-calendar/WeddingCalendar'
 import { GuestbookSection } from '@/widgets/guestbook/GuestbookSection'
 import AttendanceModal from '@/features/rsvp/AttendanceModal'
 import NaverMapScript from '@/shared/ui/NaverMapScript'
+import KakaoShareScript from '@/shared/ui/KakaoShareScript'
 import { useToast } from '@/shared/ui/toast'
 import styles from './InvitationPage.module.css'
 
@@ -48,6 +49,7 @@ function InvitationContent() {
   const [dynamicContentRows, setDynamicContentRows] = useState<any[]>([])
   const [heroIndex, setHeroIndex] = useState(0)
   const [openAccordion, setOpenAccordion] = useState<'groom' | 'bride' | null>(null)
+  const [shareImageUrl, setShareImageUrl] = useState<string | undefined>()
   const swiperRef = useRef<SwiperType | null>(null)
   const lightboxOverlayRef = useRef<HTMLDivElement | null>(null)
   const zoomScaleRef = useRef(1)
@@ -88,6 +90,22 @@ function InvitationContent() {
       .then((res) => setGuestMedia(res.data.data?.media ?? []))
       // 하객에게는 에러를 노출하지 않고 기본 사진으로 대체 렌더
       .catch((e) => console.warn('하객 미디어 조회 실패', e))
+  }, [couple?.id])
+
+  // 카카오톡 공유 카드용 이미지 — 관리자가 지정한 OG 사진이 있으면 그걸, 없으면 최신 승인 사진(관리자 업로드 포함)
+  useEffect(() => {
+    if (!couple?.id) return
+    const ogImageMediaId = couple.ogImageMediaId
+    if (ogImageMediaId) {
+      setShareImageUrl(`${window.location.origin}${mediaResizedUrl(ogImageMediaId)}`)
+      return
+    }
+    api.post('/media/search', { coupleId: couple.id, moderationStatus: 'APPROVED', limit: 1 })
+      .then((res) => {
+        const m = res.data.data?.media?.[0]
+        if (m) setShareImageUrl(`${window.location.origin}${mediaResizedUrl(m.id)}`)
+      })
+      .catch(() => {})
   }, [couple?.id])
 
   // Hero 배경 자동 전환 (5초 간격 크로스페이드) — 동시 로딩 부담을 줄이기 위해 앞쪽 6장만 순환
@@ -138,6 +156,28 @@ function InvitationContent() {
     navigator.clipboard.writeText(account)
       .then(() => toast.success('계좌번호가 복사되었습니다.'))
       .catch(() => toast.error('계좌번호 복사에 실패했습니다.'))
+  }
+
+  const handleKakaoShare = () => {
+    if (!window.Kakao?.isInitialized()) {
+      toast.error('카카오톡 공유 기능을 불러오는 중입니다. 잠시 후 다시 시도해주세요.')
+      return
+    }
+    const pageUrl = `${window.location.origin}/${couple.slug}`
+    const attendanceUrl = `${window.location.origin}/${couple.slug}/attendance`
+    window.Kakao.Share.sendDefault({
+      objectType: 'feed',
+      content: {
+        title: `${couple.groomName} ♥ ${couple.brideName} 결혼식에 초대합니다`,
+        description: weddingDate ? format(weddingDate, 'yyyy년 MM월 dd일', { locale: ko }) : '',
+        imageUrl: shareImageUrl || `${window.location.origin}/favicon.ico`,
+        link: { mobileWebUrl: pageUrl, webUrl: pageUrl },
+      },
+      buttons: [
+        { title: '모바일청첩장', link: { mobileWebUrl: pageUrl, webUrl: pageUrl } },
+        { title: '참석의사 전달', link: { mobileWebUrl: attendanceUrl, webUrl: attendanceUrl } },
+      ],
+    })
   }
 
   const openLightbox = (index: number) => { setLightboxIndex(index); setCurrentSlideIndex(index) }
@@ -270,6 +310,7 @@ function InvitationContent() {
     <>
       {showIntro && <NetflixIntro onComplete={(skipped) => { setWasSkipped(skipped); setShowIntro(false) }} />}
       <NaverMapScript />
+      <KakaoShareScript />
 
       <div className={cn(styles.container, { [styles.zoomInFromIntro]: !showIntro && !wasSkipped, [styles.fadeInNormal]: !showIntro && wasSkipped })}>
         <NetflixNav groomName={couple.groomName} brideName={couple.brideName} />
@@ -451,6 +492,14 @@ function InvitationContent() {
           <h2 className={styles.sectionTitle}>방명록</h2>
           <GuestbookSection coupleId={couple.id} />
         </section>
+
+        {/* Kakao Share */}
+        <div className={styles.kakaoShareWrap}>
+          <button type="button" className={styles.kakaoShareButton} onClick={handleKakaoShare}>
+            <svg className={styles.kakaoIcon} viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.58 2 11c0 2.85 1.87 5.35 4.68 6.78-.15.56-.98 3.58-1.01 3.8 0 0-.02.17.09.24.11.07.24.02.24.02.32-.05 3.73-2.47 4.31-2.88.54.08 1.1.12 1.69.12 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/></svg>
+            <span>카카오톡으로 공유하기</span>
+          </button>
+        </div>
 
         {/* Footer */}
         <footer className={styles.footer}>

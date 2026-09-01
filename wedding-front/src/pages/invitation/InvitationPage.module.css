@@ -1328,6 +1328,36 @@
    FOOTER
    ============================================ */
 
+.kakaoShareWrap {
+  padding: 2.5rem 1.5rem 0;
+  text-align: center;
+  background: var(--netflix-dark-gray, #1f1f1f);
+}
+
+.kakaoShareButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.75rem;
+  border-radius: 999px;
+  border: none;
+  background: #fee500;
+  color: #191919;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.kakaoShareButton:hover {
+  opacity: 0.88;
+}
+
+.kakaoIcon {
+  width: 18px;
+  height: 18px;
+}
+
 .footer {
   padding: 4rem 1.5rem 3rem;
   text-align: center;

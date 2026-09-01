@@ -19,12 +19,21 @@ export default function AttendanceForm({ coupleId, onSuccess, onCancel }: Attend
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
     reset,
   } = useForm<AttendanceFormData>({
     resolver: zodResolver(attendanceFormSchema),
     defaultValues: { guestCount: 1, attendanceStatus: 'ATTENDING' },
   })
+
+  const attendanceStatus = watch('attendanceStatus')
+  const statusOptions: { value: AttendanceFormData['attendanceStatus']; label: string }[] = [
+    { value: 'ATTENDING', label: '참석' },
+    { value: 'NOT_ATTENDING', label: '불참' },
+    { value: 'MAYBE', label: '미정' },
+  ]
 
   const onSubmit = async (data: AttendanceFormData) => {
     setIsSubmitting(true)
@@ -57,42 +66,47 @@ export default function AttendanceForm({ coupleId, onSuccess, onCancel }: Attend
       </div>
 
       <div className={styles.formGroup}>
-        <label htmlFor="attendanceStatus">참석 여부 *</label>
-        <select
-          {...register('attendanceStatus')}
-          id="attendanceStatus"
-          className={errors.attendanceStatus ? styles.inputError : ''}
-        >
-          <option value="ATTENDING">참석</option>
-          <option value="NOT_ATTENDING">불참</option>
-          <option value="MAYBE">미정</option>
-        </select>
+        <label>참석 여부 *</label>
+        <div className={styles.statusRow}>
+          {statusOptions.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              className={`${styles.statusChip} ${attendanceStatus === opt.value ? styles.statusChipOn : ''}`}
+              onClick={() => setValue('attendanceStatus', opt.value, { shouldValidate: true })}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
         {errors.attendanceStatus && <span className={styles.fieldError}>{errors.attendanceStatus.message}</span>}
       </div>
 
-      <div className={styles.formGroup}>
-        <label htmlFor="guestCount">인원 수 *</label>
-        <input
-          {...register('guestCount', { valueAsNumber: true })}
-          id="guestCount"
-          type="number"
-          min="1"
-          max="10"
-          className={errors.guestCount ? styles.inputError : ''}
-        />
-        {errors.guestCount && <span className={styles.fieldError}>{errors.guestCount.message}</span>}
-      </div>
+      <div className={styles.row2}>
+        <div className={styles.formGroup}>
+          <label htmlFor="guestCount">인원 수 *</label>
+          <input
+            {...register('guestCount', { valueAsNumber: true })}
+            id="guestCount"
+            type="number"
+            min="1"
+            max="10"
+            className={errors.guestCount ? styles.inputError : ''}
+          />
+          {errors.guestCount && <span className={styles.fieldError}>{errors.guestCount.message}</span>}
+        </div>
 
-      <div className={styles.formGroup}>
-        <label htmlFor="phoneNumber">연락처</label>
-        <input
-          {...register('phoneNumber')}
-          id="phoneNumber"
-          type="tel"
-          placeholder="010-1234-5678"
-          className={errors.phoneNumber ? styles.inputError : ''}
-        />
-        {errors.phoneNumber && <span className={styles.fieldError}>{errors.phoneNumber.message}</span>}
+        <div className={styles.formGroup}>
+          <label htmlFor="phoneNumber">연락처</label>
+          <input
+            {...register('phoneNumber')}
+            id="phoneNumber"
+            type="tel"
+            placeholder="010-1234-5678"
+            className={errors.phoneNumber ? styles.inputError : ''}
+          />
+          {errors.phoneNumber && <span className={styles.fieldError}>{errors.phoneNumber.message}</span>}
+        </div>
       </div>
 
       <div className={styles.formGroup}>
@@ -108,11 +122,11 @@ export default function AttendanceForm({ coupleId, onSuccess, onCancel }: Attend
       </div>
 
       <div className={styles.formActions}>
-        <button type="button" onClick={onCancel} disabled={isSubmitting} className={styles.cancelButton}>
-          취소
-        </button>
         <button type="submit" disabled={isSubmitting} className={styles.submitButton}>
           {isSubmitting ? '전송 중...' : '전달하기'}
+        </button>
+        <button type="button" onClick={onCancel} disabled={isSubmitting} className={styles.cancelButton}>
+          취소
         </button>
       </div>
     </form>

@@ -504,7 +504,14 @@ function InvitationContent() {
         )}
 
         {/* Modals */}
-        <AttendanceModal isOpen={attendanceModalOpen} onClose={() => setAttendanceModalOpen(false)} coupleId={couple.id} groomName={couple.groomName} brideName={couple.brideName} />
+        <AttendanceModal
+          isOpen={attendanceModalOpen}
+          onClose={() => setAttendanceModalOpen(false)}
+          coupleId={couple.id}
+          groomName={couple.groomName}
+          brideName={couple.brideName}
+          weddingDateLabel={weddingDate ? format(weddingDate, 'yyyy. MM. dd', { locale: ko }) : undefined}
+        />
       </div>
     </>
   )

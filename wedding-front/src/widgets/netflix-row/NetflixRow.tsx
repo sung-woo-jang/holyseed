@@ -261,12 +261,12 @@ export default function NetflixRow({ title, items, onItemClick, onVideoClick, ro
               >
                 <text
                   x="42.5"
-                  y="140"
+                  y={item.rank >= 10 ? 128 : 132}
                   textAnchor="middle"
                   fill={`url(#${gradientId})`}
-                  fontSize={item.rank >= 10 ? 95 : 148}
-                  fontWeight="800"
-                  fontFamily="Helvetica Neue, Arial, sans-serif"
+                  fontSize={item.rank >= 10 ? 95 : 140}
+                  fontWeight="700"
+                  fontFamily="'Bebas Neue', Helvetica Neue, Arial, sans-serif"
                 >
                   {item.rank}
                 </text>

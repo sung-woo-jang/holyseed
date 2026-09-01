@@ -113,6 +113,17 @@
   border: 1px solid #ddd;
   border-radius: 4px;
   overflow: hidden;
+  cursor: grab;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+
+.itemCard.dragging {
+  opacity: 0.4;
+}
+
+.itemCard.dragOver {
+  border-color: #1976d2;
+  border-width: 2px;
 }
 
 .itemThumbnail {

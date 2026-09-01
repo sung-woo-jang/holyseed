@@ -96,6 +96,20 @@ export class MediaController {
     };
   }
 
+  @Post(':id/rotate')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '이미지 90도 회전 (원본/리사이즈/썸네일 파일을 그대로 덮어씀)' })
+  @ApiResponse({ status: 403, description: '권한 없음' })
+  async rotate(@Param('id') id: string, @Body('direction') direction: 'cw' | 'ccw' = 'cw', @Request() req: any) {
+    const media = await this.mediaService.rotate(id, direction, req.user);
+    return {
+      success: true,
+      message: '이미지가 회전되었습니다.',
+      data: { ...media, fileSize: Number(media.fileSize) },
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   @Post(':id/delete')
   @ApiBearerAuth()
   @ApiOperation({ summary: '미디어 삭제' })

@@ -224,6 +224,46 @@ export class MediaService {
   }
 
   /**
+   * 이미지 90도 회전 (기존 파일을 그대로 덮어씀 — 재업로드 없이 방향만 보정)
+   */
+  async rotate(id: string, direction: 'cw' | 'ccw', user: { coupleId: string; role: string }): Promise<WeddingMedia> {
+    const media = await this.mediaRepo.findOne({ where: { id } });
+    if (!media) {
+      throw new NotFoundException('미디어를 찾을 수 없습니다.');
+    }
+    this._checkAccess(media.coupleId, user);
+
+    if (!media.fileType.startsWith('image/') || !media.localOriginalPath) {
+      throw new BadRequestException('이미지 미디어만 회전할 수 있습니다.');
+    }
+
+    const degrees = direction === 'cw' ? 90 : -90;
+    const srcBuffer = await fs.readFile(media.localOriginalPath);
+
+    const originalBuffer = await sharp(srcBuffer).rotate(degrees).toColorspace('srgb').webp({ quality: 90 }).toBuffer();
+    const resizedBuffer = await sharp(originalBuffer)
+      .resize(1200, null, { withoutEnlargement: true, fit: 'inside', kernel: sharp.kernel.lanczos3 })
+      .toColorspace('srgb')
+      .webp({ quality: 85 })
+      .toBuffer();
+    const thumbnailBuffer = await sharp(originalBuffer)
+      .resize(400, 400, { fit: 'cover', kernel: sharp.kernel.lanczos3 })
+      .toColorspace('srgb')
+      .webp({ quality: 80 })
+      .toBuffer();
+
+    await fs.writeFile(media.localOriginalPath, originalBuffer);
+    if (media.localResizedPath) await fs.writeFile(media.localResizedPath, resizedBuffer);
+    if (media.localThumbnailPath) await fs.writeFile(media.localThumbnailPath, thumbnailBuffer);
+
+    if (media.width && media.height) {
+      [media.width, media.height] = [media.height, media.width];
+    }
+
+    return this.mediaRepo.save(media);
+  }
+
+  /**
    * 미디어 삭제 (로컬 파일 + DB)
    */
   async delete(id: string, user: { coupleId: string; role: string }): Promise<void> {

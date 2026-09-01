@@ -38,6 +38,12 @@ const DISMISS_MIN_OPACITY = 0.15
 // Hero 카드 첫 슬라이드로 고정 재생되는 영상
 const HERO_VIDEO_SRC = '/KakaoTalk_Video_2026-09-01-19-17-08.mp4'
 
+// 예식장에서 받은 약도/주차안내서 원본(PDF)과 미리보기 이미지(PDF 1페이지를 미리 추출해둠)
+const VENUE_MAP_PDF = '/소풍컨벤션_약도.pdf'
+const VENUE_MAP_IMAGE = '/venue-map.jpg'
+const VENUE_PARKING_PDF = '/소풍컨벤션_주차안내서.pdf'
+const VENUE_PARKING_IMAGE = '/venue-parking.png'
+
 function InvitationContent() {
   const { couple, isLoading, error } = useCouple()
   const toast = useToast()
@@ -410,6 +416,43 @@ function InvitationContent() {
                     </div>
                   </div>
                 )}
+
+                <div className={styles.transportSection}>
+                  <div className={styles.transportSectionHead}>
+                    <svg className={styles.transportIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M3 7l6-2 6 2 6-2v14l-6 2-6-2-6 2V7z" /><path d="M9 5v14M15 7v14" /></svg>
+                    <h3 className={styles.transportSectionTitle}>약도</h3>
+                  </div>
+                  <div className={styles.venueDocImageWrap}>
+                    <img src={VENUE_MAP_IMAGE} alt="소풍컨벤션웨딩 약도" className={styles.venueDocImage} loading="lazy" />
+                  </div>
+                  <div className={styles.venueDocActions}>
+                    <a className={styles.transportLinkButton} href={VENUE_MAP_PDF} target="_blank" rel="noopener noreferrer">약도 크게 보기</a>
+                    <a className={styles.transportLinkButton} href={VENUE_MAP_PDF} download>약도 다운로드</a>
+                  </div>
+                  <ul className={styles.transportBullets}>
+                    <li className={styles.transportBulletItem}>전용 엘리베이터 이용 시: 1층 터미널 택시승강장 방향 엘리베이터 20 · 21 · 22호기 이용</li>
+                    <li className={styles.transportBulletItem}>차량 이용 시: 주차장 B1~B3층 기둥번호 3, 4, 5, 6번 옆 주차</li>
+                    <li className={styles.transportBulletItem}>에스컬레이터 이용 시: 6층 빕스 맞은편에서 7층으로 이동</li>
+                  </ul>
+                </div>
+
+                <div className={styles.transportSection}>
+                  <div className={styles.transportSectionHead}>
+                    <svg className={styles.transportIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="5" y="4" width="14" height="16" rx="2" /><path d="M9 8h6M9 12h2M13 12h2M9 16h6" /></svg>
+                    <h3 className={styles.transportSectionTitle}>주차장 안내</h3>
+                  </div>
+                  <ul className={styles.transportBullets}>
+                    <li className={styles.transportBulletItem}>소풍터미널 또는 뉴코아아울렛 내 소풍웨딩홀 지하 B1 · B2 · B3 주차장</li>
+                    <li className={styles.transportBulletItem}>주차장 입구는 2곳: 무지개고가교 우측 뉴코아 주차장 입구, 부천소풍터미널 삼거리 주차장 입구</li>
+                  </ul>
+                  <div className={styles.venueDocImageWrap}>
+                    <img src={VENUE_PARKING_IMAGE} alt="소풍컨벤션웨딩홀 7층 주차 안내서" className={styles.venueDocImage} loading="lazy" />
+                  </div>
+                  <div className={styles.venueDocActions}>
+                    <a className={styles.transportLinkButton} href={VENUE_PARKING_PDF} target="_blank" rel="noopener noreferrer">주차안내서 크게 보기</a>
+                    <a className={styles.transportLinkButton} href={VENUE_PARKING_PDF} download>주차안내서 다운로드</a>
+                  </div>
+                </div>
               </div>
             )}
           </section>

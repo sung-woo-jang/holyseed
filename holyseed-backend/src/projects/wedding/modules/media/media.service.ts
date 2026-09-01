@@ -113,11 +113,7 @@ export class MediaService {
       // .rotate() 없이 리사이즈하면 EXIF orientation이 무시돼 세로로 찍은 사진(주로 휴대폰 사진)이
       // 옆으로 눕거나 뒤집혀 보임 — 픽셀 자체를 EXIF 방향에 맞게 바로잡고 태그는 정리
       // 1. original (WebP, q90, full size)
-      const originalBuffer = await sharp(file.buffer)
-        .rotate()
-        .toColorspace('srgb')
-        .webp({ quality: 90 })
-        .toBuffer();
+      const originalBuffer = await sharp(file.buffer).rotate().toColorspace('srgb').webp({ quality: 90 }).toBuffer();
 
       // 2. resized (1200px wide, WebP q85)
       const resizedBuffer = await sharp(file.buffer)

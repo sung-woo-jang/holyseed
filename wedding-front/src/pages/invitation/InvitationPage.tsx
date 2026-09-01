@@ -35,6 +35,9 @@ const DISMISS_VELOCITY_PX_MS = 0.5
 const DISMISS_FADE_RATIO = 0.75
 const DISMISS_MIN_OPACITY = 0.15
 
+// Hero 카드 첫 슬라이드로 고정 재생되는 영상
+const HERO_VIDEO_SRC = '/KakaoTalk_Video_2026-09-01-19-17-08.mp4'
+
 function InvitationContent() {
   const { couple, isLoading, error } = useCouple()
   const toast = useToast()
@@ -96,16 +99,16 @@ function InvitationContent() {
     ? couple.heroImageMediaIds.slice(0, 6)
     : guestMedia.slice(0, 6).map((m) => m.id)
 
-  // Hero 배경 자동 전환 (5초 간격 크로스페이드) — 동시 로딩 부담을 줄이기 위해 앞쪽 6장만 순환
-  const heroPoolSize = Math.min(heroPhotoIds.length, 6)
+  // Hero 배경 자동 전환 (5초 간격 크로스페이드) — 0번은 항상 영상, 그 뒤로 사진(앞쪽 6장만 순환)
+  const heroSlideCount = 1 + Math.min(heroPhotoIds.length, 6)
   useEffect(() => {
-    if (heroPoolSize <= 1) return
+    if (heroSlideCount <= 1) return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     const timer = setInterval(() => {
-      setHeroIndex((i) => (i + 1) % heroPoolSize)
+      setHeroIndex((i) => (i + 1) % heroSlideCount)
     }, 5000)
     return () => clearInterval(timer)
-  }, [heroPoolSize])
+  }, [heroSlideCount])
 
   useEffect(() => {
     if (!couple?.id) return
@@ -289,10 +292,14 @@ function InvitationContent() {
           </div>
 
           <div className={styles.heroCard}>
+            <div className={cn(styles.heroPhotoWrap, { [styles.heroPhotoActive]: heroIndex === 0 })}>
+              <video className={styles.heroVideoBg} src={HERO_VIDEO_SRC} autoPlay loop muted playsInline />
+            </div>
             {heroPhotoIds.slice(0, 6).map((id, i) => {
               const src = mediaResizedUrl(id)
+              const slideIndex = i + 1
               return (
-                <div key={id} className={cn(styles.heroPhotoWrap, { [styles.heroPhotoActive]: i === heroIndex })}>
+                <div key={id} className={cn(styles.heroPhotoWrap, { [styles.heroPhotoActive]: slideIndex === heroIndex })}>
                   {/* 세로 사진 등 비율이 다른 사진도 잘리지 않게: 흐린 배경(cover)이 카드를 채우고, 선명한 원본(contain)은 잘림 없이 통째로 보임 */}
                   <img src={src} alt="" aria-hidden="true" className={styles.heroPhotoBackdrop} loading={i === 0 ? 'eager' : 'lazy'} />
                   <img src={src} alt={`${couple.groomName} & ${couple.brideName}`} className={styles.heroPhotoMain} loading={i === 0 ? 'eager' : 'lazy'} />
@@ -311,7 +318,7 @@ function InvitationContent() {
           </div>
 
           <div className={styles.heroButtons}>
-            <button className={styles.playButton} onClick={() => { const v = document.querySelector('video[data-wedding-video]'); if (v) { v.scrollIntoView({ behavior: 'smooth', block: 'center' }); (v as HTMLVideoElement).play() } }}>
+            <button className={styles.playButton} onClick={() => setVideoLightbox(HERO_VIDEO_SRC)}>
               <svg className={styles.playIcon} viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor" /></svg><span>재생</span>
             </button>
             <button className={styles.moreInfoButton} onClick={() => document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth' })}>

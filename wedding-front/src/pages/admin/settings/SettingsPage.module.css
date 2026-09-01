@@ -190,20 +190,6 @@
   margin-bottom: 10px;
 }
 
-.accountBadge {
-  flex-shrink: 0;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--w-accent);
-  color: #fff;
-  font-size: 0.72rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .accountCardLabel {
   flex: 1;
   min-width: 0;

@@ -39,8 +39,45 @@ export function ContentRowForm({ coupleId, row, onSubmit, onCancel }: ContentRow
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showMediaSelector, setShowMediaSelector] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const isEditing = !!row;
+
+  // 배열 순서가 실제 노출 순서라, 순서 바꾼 뒤 order/rank(TOP_RANKED)도 새 위치에 맞게 재부여
+  const reindexItems = (list: ContentItem[]): ContentItem[] =>
+    list.map((item, i) => (item.type === 'top-ranked' ? { ...item, order: i, rank: i + 1 } : { ...item, order: i }));
+
+  const handleDragStart = (index: number) => (e: React.DragEvent) => {
+    setDragIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (index: number) => (e: React.DragEvent) => {
+    e.preventDefault();
+    if (dragOverIndex !== index) setDragOverIndex(index);
+  };
+
+  const handleDrop = (index: number) => (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverIndex(null);
+    if (dragIndex === null || dragIndex === index) {
+      setDragIndex(null);
+      return;
+    }
+    setItems((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(dragIndex, 1);
+      next.splice(index, 0, moved);
+      return reindexItems(next);
+    });
+    setDragIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
 
   const handleAddItems = (newItems: ContentItem[]) => {
     setItems((prev) => {
@@ -143,11 +180,20 @@ export function ContentRowForm({ coupleId, row, onSubmit, onCancel }: ContentRow
           아이템 ({items.length}개)
           {rowType === 'TOP_RANKED' && <span className={styles.hint}> 최대 5개</span>}
         </label>
+        {items.length > 1 && <p className={styles.hint}>드래그해서 순서를 바꿀 수 있습니다.</p>}
 
         {items.length > 0 && (
           <div className={styles.itemsGrid}>
             {items.map((item, index) => (
-              <div key={index} className={styles.itemCard}>
+              <div
+                key={index}
+                className={`${styles.itemCard} ${dragIndex === index ? styles.dragging : ''} ${dragOverIndex === index && dragIndex !== null && dragIndex !== index ? styles.dragOver : ''}`}
+                draggable
+                onDragStart={handleDragStart(index)}
+                onDragOver={handleDragOver(index)}
+                onDrop={handleDrop(index)}
+                onDragEnd={handleDragEnd}
+              >
                 {item.type === 'video' ? (
                   <video
                     src={item.src}

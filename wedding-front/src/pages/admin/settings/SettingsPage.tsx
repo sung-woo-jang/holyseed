@@ -279,7 +279,6 @@ export default function AdminSettingsPage() {
                       return (
                         <div key={field.id} className={styles.accountCard}>
                           <div className={styles.accountCardHead}>
-                            <span className={styles.accountBadge}>{index + 1}</span>
                             <input
                               {...register(`accountInfo.${index}.relation`)}
                               type="text"

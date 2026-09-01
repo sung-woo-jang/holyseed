@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { TouchEvent as ReactTouchEvent } from 'react'
-import { useParams, Navigate, Link } from 'react-router-dom'
+import { Navigate, Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import cn from 'classnames'
@@ -11,7 +11,7 @@ import 'swiper/css'
 import 'swiper/css/navigation'
 import 'swiper/css/zoom'
 
-import { CoupleProvider, useCouple, DEFAULT_COUPLE_SLUG } from '@/shared/lib/couple-context'
+import { useCouple, DEFAULT_COUPLE_SLUG } from '@/shared/lib/couple-context'
 import { api } from '@/shared/api'
 import { Media, WeddingVenue, AccountInfo, mediaResizedUrl } from '@/shared/types'
 import NetflixIntro from '@/widgets/netflix-intro/NetflixIntro'
@@ -21,6 +21,7 @@ import WeddingCalendar from '@/widgets/wedding-calendar/WeddingCalendar'
 import { GuestbookSection } from '@/widgets/guestbook/GuestbookSection'
 import AttendanceModal from '@/features/rsvp/AttendanceModal'
 import NaverMapScript from '@/shared/ui/NaverMapScript'
+import PageSpinner from '@/shared/ui/PageSpinner'
 import { useToast } from '@/shared/ui/toast'
 import styles from './InvitationPage.module.css'
 
@@ -122,7 +123,7 @@ function InvitationContent() {
       .catch((e) => console.warn('콘텐츠 Row 조회 실패', e))
   }, [couple?.id])
 
-  if (isLoading) return <div style={{ color: '#fff', padding: '2rem' }}>로딩 중...</div>
+  if (isLoading) return <PageSpinner />
   if (error || !couple) return <Navigate to={`/${DEFAULT_COUPLE_SLUG}`} replace />
 
   const venue = couple.weddingVenue as WeddingVenue | null
@@ -511,12 +512,4 @@ function InvitationContent() {
   )
 }
 
-export default function InvitationPage() {
-  const { coupleSlug } = useParams<{ coupleSlug: string }>()
-  if (!coupleSlug) return <Navigate to={`/${DEFAULT_COUPLE_SLUG}`} replace />
-  return (
-    <CoupleProvider slug={coupleSlug}>
-      <InvitationContent />
-    </CoupleProvider>
-  )
-}
+export default InvitationContent

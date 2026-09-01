@@ -1,15 +1,16 @@
 import { useState } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
-import { CoupleProvider, useCouple, DEFAULT_COUPLE_SLUG } from '@/shared/lib/couple-context'
+import { Link, Navigate } from 'react-router-dom'
+import { useCouple, DEFAULT_COUPLE_SLUG } from '@/shared/lib/couple-context'
 import UploadButton from '@/features/upload-media/UploadButton'
 import { GalleryView } from '@/widgets/gallery-view/GalleryView'
+import PageSpinner from '@/shared/ui/PageSpinner'
 import styles from './GalleryPage.module.css'
 
 function GalleryContent() {
   const { couple, isLoading, error } = useCouple()
   const [refreshKey, setRefreshKey] = useState(0)
 
-  if (isLoading) return <div style={{ padding: '2rem' }}>로딩 중...</div>
+  if (isLoading) return <PageSpinner />
   if (error || !couple) return <Navigate to={`/${DEFAULT_COUPLE_SLUG}`} replace />
 
   return (
@@ -45,12 +46,4 @@ function GalleryContent() {
   )
 }
 
-export default function GalleryPage() {
-  const { coupleSlug } = useParams<{ coupleSlug: string }>()
-  if (!coupleSlug) return <Navigate to={`/${DEFAULT_COUPLE_SLUG}`} replace />
-  return (
-    <CoupleProvider slug={coupleSlug}>
-      <GalleryContent />
-    </CoupleProvider>
-  )
-}
+export default GalleryContent

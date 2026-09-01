@@ -38,10 +38,8 @@ const DISMISS_MIN_OPACITY = 0.15
 // Hero 카드 첫 슬라이드로 고정 재생되는 영상
 const HERO_VIDEO_SRC = '/KakaoTalk_Video_2026-09-01-19-17-08.mp4'
 
-// 예식장에서 받은 약도/주차안내서 원본(PDF)과 미리보기 이미지(PDF 1페이지를 미리 추출해둠)
-const VENUE_MAP_PDF = '/소풍컨벤션_약도.pdf'
+// 예식장에서 받은 약도/주차안내서 PDF에서 미리 추출해둔 미리보기 이미지
 const VENUE_MAP_IMAGE = '/venue-map.jpg'
-const VENUE_PARKING_PDF = '/소풍컨벤션_주차안내서.pdf'
 const VENUE_PARKING_IMAGE = '/venue-parking.png'
 
 function InvitationContent() {
@@ -425,10 +423,6 @@ function InvitationContent() {
                   <div className={styles.venueDocImageWrap}>
                     <img src={VENUE_MAP_IMAGE} alt="소풍컨벤션웨딩 약도" className={styles.venueDocImage} loading="lazy" />
                   </div>
-                  <div className={styles.venueDocActions}>
-                    <a className={styles.transportLinkButton} href={VENUE_MAP_PDF} target="_blank" rel="noopener noreferrer">약도 크게 보기</a>
-                    <a className={styles.transportLinkButton} href={VENUE_MAP_PDF} download>약도 다운로드</a>
-                  </div>
                   <ul className={styles.transportBullets}>
                     <li className={styles.transportBulletItem}>전용 엘리베이터 이용 시: 1층 터미널 택시승강장 방향 엘리베이터 20 · 21 · 22호기 이용</li>
                     <li className={styles.transportBulletItem}>차량 이용 시: 주차장 B1~B3층 기둥번호 3, 4, 5, 6번 옆 주차</li>
@@ -447,10 +441,6 @@ function InvitationContent() {
                   </ul>
                   <div className={styles.venueDocImageWrap}>
                     <img src={VENUE_PARKING_IMAGE} alt="소풍컨벤션웨딩홀 7층 주차 안내서" className={styles.venueDocImage} loading="lazy" />
-                  </div>
-                  <div className={styles.venueDocActions}>
-                    <a className={styles.transportLinkButton} href={VENUE_PARKING_PDF} target="_blank" rel="noopener noreferrer">주차안내서 크게 보기</a>
-                    <a className={styles.transportLinkButton} href={VENUE_PARKING_PDF} download>주차안내서 다운로드</a>
                   </div>
                 </div>
               </div>

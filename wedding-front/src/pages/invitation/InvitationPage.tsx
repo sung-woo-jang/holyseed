@@ -370,8 +370,9 @@ function InvitationContent() {
                 {([
                   { key: 'subway', title: '지하철 이용 시' },
                   { key: 'bus', title: '버스 이용 시' },
-                  { key: 'car', title: '자가용 이용 시' },
-                  { key: 'parking', title: '주차 안내' },
+                  // 자가용/주차 안내는 요청으로 임시 숨김
+                  // { key: 'car', title: '자가용 이용 시' },
+                  // { key: 'parking', title: '주차 안내' },
                 ] as const).map(({ key, title }) => {
                   const groups = venue.transportation?.[key]
                   if (!groups || groups.length === 0) return null

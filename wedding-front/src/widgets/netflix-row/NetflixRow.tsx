@@ -229,7 +229,7 @@ export default function NetflixRow({ title, items, onItemClick, onVideoClick, ro
             {glyph ? (
               <svg
                 className={styles.rankNumberSvg}
-                viewBox="0 0 85 148"
+                viewBox={glyph.viewBox ?? '0 0 85 148'}
                 fill="none"
                 opacity={glyph.opacity}
                 preserveAspectRatio="xMaxYMid meet"
@@ -256,7 +256,7 @@ export default function NetflixRow({ title, items, onItemClick, onVideoClick, ro
                 className={styles.rankNumberSvg}
                 viewBox="0 0 85 148"
                 fill="none"
-                opacity={Math.max(0.18, 0.32 - (item.rank - 6) * 0.02)}
+                opacity={0.3}
                 preserveAspectRatio="xMaxYMid meet"
               >
                 <text

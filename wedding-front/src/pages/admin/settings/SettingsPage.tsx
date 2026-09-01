@@ -43,7 +43,19 @@ export default function AdminSettingsPage() {
   const { fields, append, remove } = useFieldArray({ control, name: 'accountInfo' })
   const [venueExtra, setVenueExtra] = useState<Record<string, any>>({})
   const [ogImageMediaId, setOgImageMediaId] = useState<string | null>(null)
+  const [heroImageMediaIds, setHeroImageMediaIds] = useState<string[]>([])
   const [approvedMedia, setApprovedMedia] = useState<Media[]>([])
+
+  const toggleHeroImage = (id: string) => {
+    setHeroImageMediaIds((prev) => {
+      if (prev.includes(id)) return prev.filter((v) => v !== id)
+      if (prev.length >= 6) {
+        toast.error('Hero 배경 사진은 최대 6장까지 고를 수 있습니다.')
+        return prev
+      }
+      return [...prev, id]
+    })
+  }
 
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY)
@@ -58,6 +70,7 @@ export default function AdminSettingsPage() {
         const { name, address, hall, floor, lat, lng, ...rest } = c.weddingVenue ?? {}
         setVenueExtra(rest)
         setOgImageMediaId(c.ogImageMediaId ?? null)
+        setHeroImageMediaIds(Array.isArray(c.heroImageMediaIds) ? c.heroImageMediaIds : [])
         api.post('/media/search', { coupleId: id, moderationStatus: 'APPROVED', limit: 100 })
           .then((res) => setApprovedMedia(res.data.data?.media ?? []))
           .catch(() => {})
@@ -91,6 +104,7 @@ export default function AdminSettingsPage() {
         weddingVenue: data.venueName ? { ...venueExtra, name: data.venueName, address: data.venueAddress ?? '', hall: data.venueHall ?? '', floor: data.venueFloor ?? '', lat: data.venueLat, lng: data.venueLng } : undefined,
         accountInfo: accounts,
         ogImageMediaId,
+        heroImageMediaIds,
       })
       setMessage({ type: 'success', text: '저장되었습니다.' })
       toast.success('저장되었습니다.')
@@ -184,6 +198,38 @@ export default function AdminSettingsPage() {
                     {ogImageMediaId === m.id && <span className={styles.ogPickerCheck}>✓</span>}
                   </button>
                 ))}
+              </div>
+            )}
+          </section>
+
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>Hero 배경 사진</h2>
+            <p className={styles.ogHint}>청첩장 첫 화면 카드에 순환 표시할 사진을 최대 6장 골라주세요. 고르지 않으면 하객이 올린 사진이 자동으로 채워집니다.</p>
+            {approvedMedia.length === 0 ? (
+              <p className={styles.accountEmpty}>승인된 사진이 아직 없습니다. 미디어 관리에서 사진을 승인해주세요.</p>
+            ) : (
+              <div className={styles.ogPickerGrid}>
+                <button
+                  type="button"
+                  className={`${styles.ogPickerNone} ${heroImageMediaIds.length === 0 ? styles.ogPickerSelected : ''}`}
+                  onClick={() => setHeroImageMediaIds([])}
+                >
+                  자동 선택
+                </button>
+                {approvedMedia.map((m) => {
+                  const order = heroImageMediaIds.indexOf(m.id)
+                  return (
+                    <button
+                      type="button"
+                      key={m.id}
+                      className={`${styles.ogPickerItem} ${order !== -1 ? styles.ogPickerSelected : ''}`}
+                      onClick={() => toggleHeroImage(m.id)}
+                    >
+                      <img src={`/api/wedding/media/${m.id}/thumbnail`} alt={m.uploaderName || 'photo'} className={styles.ogPickerImage} />
+                      {order !== -1 && <span className={styles.ogPickerCheck}>{order + 1}</span>}
+                    </button>
+                  )
+                })}
               </div>
             )}
           </section>

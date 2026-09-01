@@ -43,6 +43,8 @@ export interface Couple {
   weddingVenue?: WeddingVenue
   accountInfo: AccountInfo[]
   themeSettings: ThemeSettings
+  ogImageMediaId?: string | null
+  heroImageMediaIds?: string[] | null
   createdAt: string
   updatedAt: string
 }

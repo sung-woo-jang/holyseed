@@ -40,6 +40,10 @@ export class Couple {
   @Column({ name: 'og_image_media_id', nullable: true })
   ogImageMediaId?: string | null;
 
+  @ApiPropertyOptional({ description: 'Hero 배경으로 쓸 미디어 ID 목록(최대 6개, 없으면 하객 업로드로 자동 채움)' })
+  @Column({ name: 'hero_image_media_ids', type: 'jsonb', nullable: true })
+  heroImageMediaIds?: string[] | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

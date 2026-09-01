@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsOptional, IsString, IsUUID, MaxLength, ValidateNested } from 'class-validator';
+import { IsArray, IsDateString, IsOptional, IsString, IsUUID, MaxLength, ValidateNested } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 class AccountInfoDto {
@@ -62,4 +62,10 @@ export class UpdateCoupleDto {
   @IsOptional()
   @IsUUID()
   ogImageMediaId?: string | null;
+
+  @ApiPropertyOptional({ description: 'Hero 배경으로 쓸 미디어 ID 목록(최대 6개)' })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  heroImageMediaIds?: string[];
 }

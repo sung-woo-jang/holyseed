@@ -53,6 +53,7 @@ export class CouplesService {
       ...(dto.accountInfo !== undefined && { accountInfo: dto.accountInfo }),
       ...(dto.themeSettings !== undefined && { themeSettings: dto.themeSettings }),
       ...(dto.ogImageMediaId !== undefined && { ogImageMediaId: dto.ogImageMediaId }),
+      ...(dto.heroImageMediaIds !== undefined && { heroImageMediaIds: dto.heroImageMediaIds }),
     });
 
     return this.coupleRepo.save(couple);

@@ -139,8 +139,8 @@ function InvitationContent() {
   const accountInfo: AccountInfo[] = Array.isArray(rawAccount) ? (rawAccount as AccountInfo[]) : []
   const weddingDate = couple.weddingDate ? new Date(couple.weddingDate) : null
 
-  // TOP 5: 승인된 하객 사진만 사용 (5장 미만이면 있는 만큼만 표시)
-  const topSources = guestMedia.map((m) => mediaResizedUrl(m.id)).slice(0, 5)
+  // TOP 랭킹: 승인된 하객 사진만 사용 (최대 12장, 그보다 적으면 있는 만큼만 표시)
+  const topSources = guestMedia.map((m) => mediaResizedUrl(m.id)).slice(0, 12)
   const topItems = topSources.map((src, i) => ({ type: 'top-ranked', src, rank: i + 1, alt: `Top ${i + 1}` }))
 
   // 계좌를 신랑측/신부측으로 분류 (relation에 '신랑'/'신부'가 포함되는지로 판단 — 스키마 변경 없이 자유 텍스트 그대로 활용)
@@ -248,13 +248,13 @@ function InvitationContent() {
     }
   }
 
-  // 관리자가 콘텐츠 Row에서 직접 TOP5 랭킹을 만들었으면 하드코딩된 기본 TOP5는 숨김(중복 방지)
+  // 관리자가 콘텐츠 Row에서 직접 TOP 랭킹을 만들었으면 하드코딩된 기본 TOP 랭킹은 숨김(중복 방지)
   const hasCustomTopRanked = dynamicContentRows.some((row) => row.type === 'top-ranked-row')
 
   const systemRows = [
     ...(hasCustomTopRanked ? [] : [{
       id: 'top-ranked',
-      title: '오늘의 TOP 5 추억',
+      title: '오늘의 TOP 추억',
       type: 'top-ranked-row',
       items: topItems,
     }]),

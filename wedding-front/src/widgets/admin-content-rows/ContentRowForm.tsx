@@ -15,8 +15,8 @@ interface ContentRowFormProps {
 const ROW_TYPE_OPTIONS: { value: ContentRowType; label: string; description: string }[] = [
   {
     value: 'TOP_RANKED',
-    label: 'TOP 5 랭킹',
-    description: '큰 숫자 오버레이가 있는 랭킹 갤러리 (최대 5개)',
+    label: 'TOP 랭킹',
+    description: '큰 숫자 오버레이가 있는 랭킹 갤러리 (최대 12개)',
   },
   {
     value: 'IMAGE_GALLERY',
@@ -106,8 +106,8 @@ export function ContentRowForm({ coupleId, row, onSubmit, onCancel }: ContentRow
       return;
     }
 
-    if (rowType === 'TOP_RANKED' && items.length > 5) {
-      setError('TOP 5 랭킹은 최대 5개의 아이템만 추가할 수 있습니다.');
+    if (rowType === 'TOP_RANKED' && items.length > 12) {
+      setError('TOP 랭킹은 최대 12개의 아이템만 추가할 수 있습니다.');
       return;
     }
 
@@ -145,7 +145,7 @@ export function ContentRowForm({ coupleId, row, onSubmit, onCancel }: ContentRow
           className={styles.input}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="예: 오늘 대한민국 TOP 5 웨딩"
+          placeholder="예: 오늘의 TOP 추억"
           required
         />
       </div>
@@ -178,7 +178,7 @@ export function ContentRowForm({ coupleId, row, onSubmit, onCancel }: ContentRow
       <div className={styles.field}>
         <label className={styles.label}>
           아이템 ({items.length}개)
-          {rowType === 'TOP_RANKED' && <span className={styles.hint}> 최대 5개</span>}
+          {rowType === 'TOP_RANKED' && <span className={styles.hint}> 최대 12개</span>}
         </label>
         {items.length > 1 && <p className={styles.hint}>드래그해서 순서를 바꿀 수 있습니다.</p>}
 
@@ -227,7 +227,7 @@ export function ContentRowForm({ coupleId, row, onSubmit, onCancel }: ContentRow
           type="button"
           className={styles.addItemButton}
           onClick={() => setShowMediaSelector(true)}
-          disabled={rowType === 'TOP_RANKED' && items.length >= 5}
+          disabled={rowType === 'TOP_RANKED' && items.length >= 12}
         >
           + 아이템 추가
         </button>

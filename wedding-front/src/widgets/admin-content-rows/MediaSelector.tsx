@@ -48,8 +48,8 @@ export function MediaSelector({ coupleId, rowType, onSelect, onClose }: MediaSel
   };
 
   const toggleSelection = (mediaId: string) => {
-    if (!selectedMediaIds.has(mediaId) && rowType === 'TOP_RANKED' && selectedMediaIds.size >= 5) {
-      toast.info('TOP 5 랭킹은 최대 5개까지만 선택할 수 있습니다.');
+    if (!selectedMediaIds.has(mediaId) && rowType === 'TOP_RANKED' && selectedMediaIds.size >= 12) {
+      toast.info('TOP 랭킹은 최대 12개까지만 선택할 수 있습니다.');
       return;
     }
     setSelectedMediaIds((prev) => {
@@ -250,7 +250,7 @@ export function MediaSelector({ coupleId, rowType, onSelect, onClose }: MediaSel
                     <p className={styles.hint}>
                       {deleteMode
                         ? '삭제할 사진을 선택하세요.'
-                        : rowType === 'TOP_RANKED' ? '최대 5개까지 선택 가능합니다.' : '원하는 미디어를 선택하세요.'}
+                        : rowType === 'TOP_RANKED' ? '최대 12개까지 선택 가능합니다.' : '원하는 미디어를 선택하세요.'}
                     </p>
                     <button type="button" className={styles.deleteModeButton} onClick={handleToggleDeleteMode}>
                       {deleteMode ? '취소' : '여러 개 삭제'}

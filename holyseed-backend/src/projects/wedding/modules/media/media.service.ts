@@ -105,18 +105,23 @@ export class MediaService {
 
     if (isImage) {
       const metadata = await sharp(file.buffer).metadata();
-      width = metadata.width;
-      height = metadata.height;
+      // EXIF orientation이 5~8(90도/270도 회전)이면 실제 보이는 가로/세로가 뒤바뀜
+      const isSideways = !!metadata.orientation && metadata.orientation >= 5;
+      width = isSideways ? metadata.height : metadata.width;
+      height = isSideways ? metadata.width : metadata.height;
 
+      // .rotate() 없이 리사이즈하면 EXIF orientation이 무시돼 세로로 찍은 사진(주로 휴대폰 사진)이
+      // 옆으로 눕거나 뒤집혀 보임 — 픽셀 자체를 EXIF 방향에 맞게 바로잡고 태그는 정리
       // 1. original (WebP, q90, full size)
       const originalBuffer = await sharp(file.buffer)
+        .rotate()
         .toColorspace('srgb')
         .webp({ quality: 90 })
-        .withMetadata({ orientation: metadata.orientation })
         .toBuffer();
 
       // 2. resized (1200px wide, WebP q85)
       const resizedBuffer = await sharp(file.buffer)
+        .rotate()
         .resize(1200, null, { withoutEnlargement: true, fit: 'inside', kernel: sharp.kernel.lanczos3 })
         .toColorspace('srgb')
         .webp({ quality: 85 })
@@ -124,6 +129,7 @@ export class MediaService {
 
       // 3. thumbnail (400×400 cover, WebP q80)
       const thumbnailBuffer = await sharp(file.buffer)
+        .rotate()
         .resize(400, 400, { fit: 'cover', kernel: sharp.kernel.lanczos3 })
         .toColorspace('srgb')
         .webp({ quality: 80 })

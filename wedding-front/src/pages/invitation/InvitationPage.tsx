@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { TouchEvent as ReactTouchEvent } from 'react'
-import { Navigate, Link } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import cn from 'classnames'
@@ -254,15 +254,6 @@ function InvitationContent() {
       type: 'top-ranked-row',
       items: topItems,
     }]),
-    {
-      id: 'upload-cta',
-      title: '함께 만드는 우리의 앨범',
-      type: 'mixed-row',
-      items: [
-        { type: 'upload-card', icon: '📸', title: '사진 업로드', subtitle: '결혼식의 추억을 공유해주세요', action: { label: '사진 업로드하기', href: `/${couple.slug}/gallery` } },
-        ...guestMedia.map((m, i) => ({ src: mediaResizedUrl(m.id), alt: `Guest Photo ${i + 1}`, type: 'image' })),
-      ],
-    },
   ]
 
   const contentRows = [...dynamicContentRows, ...systemRows]
@@ -286,7 +277,7 @@ function InvitationContent() {
         <section className={styles.hero}>
           <div className={styles.heroTabs}>
             <button type="button" className={cn(styles.heroTab, styles.heroTabActive)} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>청첩장</button>
-            <Link to={`/${couple.slug}/gallery`} className={styles.heroTab}>갤러리</Link>
+            <button type="button" className={styles.heroTab} onClick={() => setAttendanceModalOpen(true)}>참석 여부</button>
             <button type="button" className={styles.heroTab} onClick={() => document.getElementById('guestbook-section')?.scrollIntoView({ behavior: 'smooth' })}>방명록</button>
             <button type="button" className={styles.heroTab} onClick={() => document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth' })}>오시는 길</button>
           </div>

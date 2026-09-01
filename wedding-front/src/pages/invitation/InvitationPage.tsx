@@ -56,7 +56,6 @@ function InvitationContent() {
   const [dynamicContentRows, setDynamicContentRows] = useState<any[]>([])
   const [heroIndex, setHeroIndex] = useState(0)
   const [openAccordion, setOpenAccordion] = useState<'groom' | 'bride' | null>(null)
-  const heroVideoRef = useRef<HTMLVideoElement | null>(null)
   const swiperRef = useRef<SwiperType | null>(null)
   const lightboxOverlayRef = useRef<HTMLDivElement | null>(null)
   const zoomScaleRef = useRef(1)
@@ -69,15 +68,6 @@ function InvitationContent() {
     lastY: 0,
     lastTime: 0,
   })
-
-  // 인트로가 끝난 뒤에도 zoomInFromIntro/fadeInNormal 리빌 애니메이션이 0.6~1.2초 더 진행되는 동안
-  // 영상이 이미 재생되고 있으면 사용자가 화면을 온전히 보기 전에 시작 프레임을 놓치게 됨.
-  // 그 리빌 애니메이션이 완전히 끝난 시점에만 재생을 시작하도록 함
-  const handleContainerAnimationEnd = (e: React.AnimationEvent<HTMLDivElement>) => {
-    if (e.target !== e.currentTarget) return
-    if (e.animationName !== 'zoomInFromIntro' && e.animationName !== 'fadeInNormal') return
-    heroVideoRef.current?.play().catch(() => {})
-  }
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -285,10 +275,7 @@ function InvitationContent() {
       {showIntro && <NetflixIntro onComplete={(skipped) => { setWasSkipped(skipped); setShowIntro(false) }} />}
       <NaverMapScript />
 
-      <div
-        className={cn(styles.container, { [styles.zoomInFromIntro]: !showIntro && !wasSkipped, [styles.fadeInNormal]: !showIntro && wasSkipped })}
-        onAnimationEnd={handleContainerAnimationEnd}
-      >
+      <div className={cn(styles.container, { [styles.zoomInFromIntro]: !showIntro && !wasSkipped, [styles.fadeInNormal]: !showIntro && wasSkipped })}>
         <NetflixNav groomName={couple.groomName} brideName={couple.brideName} />
         {/* Hero */}
         <section className={styles.hero}>
@@ -301,7 +288,7 @@ function InvitationContent() {
 
           <div className={styles.heroCard}>
             <div className={cn(styles.heroPhotoWrap, { [styles.heroPhotoActive]: heroIndex === 0 })}>
-              <video ref={heroVideoRef} className={styles.heroVideoBg} src={HERO_VIDEO_SRC} loop muted playsInline preload="auto" />
+              <video className={styles.heroVideoBg} src={HERO_VIDEO_SRC} autoPlay loop muted playsInline />
             </div>
             {heroPhotoIds.slice(0, 6).map((id, i) => {
               const src = mediaResizedUrl(id)

@@ -113,13 +113,9 @@ export default function NetflixRow({ title, items, onItemClick, onVideoClick, ro
             className={styles.card}
             onClick={() => onItemClick?.(index)}
           >
-            <img
-              src={item.src}
-              alt={item.alt || ''}
-              className={styles.cardImage}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              loading="lazy"
-            />
+            {/* 세로/가로 어떤 비율의 사진이든 잘리지 않게: 흐린 배경(cover)이 카드를 채우고, 선명한 원본(contain)은 통째로 보임 */}
+            <img src={item.src} alt="" aria-hidden="true" className={styles.cardBackdrop} loading="lazy" />
+            <img src={item.src} alt={item.alt || ''} className={styles.cardImage} loading="lazy" />
           </div>
         );
 

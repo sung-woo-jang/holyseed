@@ -221,12 +221,47 @@ export default function NetflixRow({ title, items, onItemClick, onVideoClick, ro
       case 'top-ranked': {
         const glyph = RANK_GLYPHS[item.rank];
         const gradientId = `rankGradient-${item.rank}`;
+        // 커스텀 글리프가 없는 두 자리 순위(11, 12...)는 각 자릿수의 실제 넷플릭스 글리프를
+        // 나란히 이어붙여 구성 — "10"이 1+0을 조합한 것과 같은 방식
+        const digitGlyphs = !glyph && item.rank >= 10
+          ? String(item.rank).split('').map((d) => RANK_GLYPHS[Number(d)])
+          : null;
+        const composedGlyph = digitGlyphs?.every(Boolean) ? digitGlyphs : null;
         return (
           <div
             className={styles.topRankedCard}
             onClick={() => onItemClick?.(index)}
           >
-            {glyph ? (
+            {composedGlyph ? (
+              <svg
+                className={styles.rankNumberSvg}
+                viewBox={`0 0 ${85 * composedGlyph.length} 148`}
+                fill="none"
+                opacity={0.3}
+                preserveAspectRatio="xMaxYMid meet"
+              >
+                {composedGlyph.map((dg, di) => (
+                  <svg key={di} x={di * 85} y="0" width="85" height="148" viewBox={dg!.viewBox ?? '0 0 85 148'}>
+                    <g transform={`translate(${dg!.offsetX ?? 0}, 0)`}>
+                      <path fillRule="evenodd" clipRule="evenodd" d={dg!.d} fill={`url(#${gradientId}-${di})`} />
+                    </g>
+                    <defs>
+                      <linearGradient
+                        id={`${gradientId}-${di}`}
+                        x1={dg!.gradient.x1}
+                        y1={dg!.gradient.y1}
+                        x2={dg!.gradient.x2}
+                        y2={dg!.gradient.y2}
+                        gradientUnits="userSpaceOnUse"
+                      >
+                        <stop stopColor="white" />
+                        <stop offset="1" stopColor="white" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                ))}
+              </svg>
+            ) : glyph ? (
               <svg
                 className={styles.rankNumberSvg}
                 viewBox={glyph.viewBox ?? '0 0 85 148'}

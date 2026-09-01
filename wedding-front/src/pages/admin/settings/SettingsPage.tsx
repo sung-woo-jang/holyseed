@@ -235,44 +235,80 @@ export default function AdminSettingsPage() {
           </section>
 
           <section className={styles.section}>
-            <div className={styles.sectionHead}>
-              <h2 className={styles.sectionTitle}>축의금 계좌</h2>
-              <button
-                type="button"
-                className={styles.addAccountButton}
-                onClick={() => append({ relation: '', holder: '', bank: '', account: '' })}
-              >
-                + 계좌 추가
-              </button>
-            </div>
+            <h2 className={styles.sectionTitle}>축의금 계좌</h2>
 
             {fields.length === 0 && (
-              <p className={styles.accountEmpty}>등록된 계좌가 없습니다. "+ 계좌 추가"로 신랑/신부측 계좌를 입력하세요.</p>
+              <p className={styles.accountEmpty}>등록된 계좌가 없습니다. 아래 버튼으로 신랑측/신부측 계좌를 입력하세요.</p>
             )}
 
-            {fields.map((field, index) => (
-              <div key={field.id} className={styles.accountRow}>
-                <div className={styles.accountGrid}>
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>구분</label>
-                    <input {...register(`accountInfo.${index}.relation`)} type="text" placeholder="신랑측 / 신부측" className={styles.input} />
+            {(() => {
+              const watchedRelations = watch('accountInfo')?.map((a) => a?.relation ?? '') ?? []
+              const groups: { key: string; title: string; addRelation: string; indices: number[] }[] = [
+                { key: 'groom', title: '신랑측', addRelation: '신랑측', indices: [] },
+                { key: 'bride', title: '신부측', addRelation: '신부측', indices: [] },
+                { key: 'etc', title: '미분류', addRelation: '', indices: [] },
+              ]
+              fields.forEach((_, index) => {
+                const relation = watchedRelations[index] ?? ''
+                if (relation.includes('신랑')) groups[0].indices.push(index)
+                else if (relation.includes('신부')) groups[1].indices.push(index)
+                else groups[2].indices.push(index)
+              })
+
+              return groups.map((group) => {
+                if (group.key === 'etc' && group.indices.length === 0) return null
+                return (
+                  <div key={group.key} className={styles.accountGroup}>
+                    <div className={styles.accountGroupHead}>
+                      <h3 className={styles.accountGroupTitle}>{group.title}</h3>
+                      {group.key !== 'etc' && (
+                        <button
+                          type="button"
+                          className={styles.addGroupAccountButton}
+                          onClick={() => append({ relation: group.addRelation, holder: '', bank: '', account: '' })}
+                        >
+                          + {group.title} 계좌 추가
+                        </button>
+                      )}
+                    </div>
+                    {group.indices.length === 0 && (
+                      <p className={styles.accountEmpty}>등록된 계좌가 없습니다.</p>
+                    )}
+                    {group.indices.map((index) => {
+                      const field = fields[index]
+                      return (
+                        <div key={field.id} className={styles.accountCard}>
+                          <div className={styles.accountCardHead}>
+                            <span className={styles.accountBadge}>{index + 1}</span>
+                            <input
+                              {...register(`accountInfo.${index}.relation`)}
+                              type="text"
+                              placeholder="예: 신랑측 아버지"
+                              className={styles.accountCardLabel}
+                            />
+                            <button type="button" className={styles.removeAccountButton} onClick={() => remove(index)} title="삭제">✕</button>
+                          </div>
+                          <div className={styles.accountGrid}>
+                            <div className={styles.formGroup}>
+                              <label className={styles.label}>예금주</label>
+                              <input {...register(`accountInfo.${index}.holder`)} type="text" placeholder="홍길동" className={styles.input} />
+                            </div>
+                            <div className={styles.formGroup}>
+                              <label className={styles.label}>은행</label>
+                              <input {...register(`accountInfo.${index}.bank`)} type="text" placeholder="국민은행" className={styles.input} />
+                            </div>
+                            <div className={styles.formGroup}>
+                              <label className={styles.label}>계좌번호</label>
+                              <input {...register(`accountInfo.${index}.account`)} type="text" placeholder="123-456-789012" className={styles.input} />
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>예금주</label>
-                    <input {...register(`accountInfo.${index}.holder`)} type="text" placeholder="홍길동" className={styles.input} />
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>은행</label>
-                    <input {...register(`accountInfo.${index}.bank`)} type="text" placeholder="국민은행" className={styles.input} />
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>계좌번호</label>
-                    <input {...register(`accountInfo.${index}.account`)} type="text" placeholder="123-456-789012" className={styles.input} />
-                  </div>
-                </div>
-                <button type="button" className={styles.removeAccountButton} onClick={() => remove(index)} title="삭제">✕</button>
-              </div>
-            ))}
+                )
+              })
+            })()}
           </section>
 
           <div className={styles.actions}>

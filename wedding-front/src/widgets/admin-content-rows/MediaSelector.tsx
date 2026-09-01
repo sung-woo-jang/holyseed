@@ -22,6 +22,8 @@ export function MediaSelector({ coupleId, rowType, onSelect, onClose }: MediaSel
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [rotatingId, setRotatingId] = useState<string | null>(null);
+  const [cacheBust, setCacheBust] = useState<Record<string, number>>({});
   const [deleteMode, setDeleteMode] = useState(false);
   const [markedForDeleteIds, setMarkedForDeleteIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
@@ -101,6 +103,21 @@ export function MediaSelector({ coupleId, rowType, onSelect, onClose }: MediaSel
       toast.error('미디어 삭제에 실패했습니다.');
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleRotate = async (mediaId: string) => {
+    setRotatingId(mediaId);
+    try {
+      await api.post(`/media/${mediaId}/rotate`, { direction: 'cw' });
+      // 썸네일 URL이 그대로라 브라우저 캐시(1년, immutable)를 그대로 쓰므로
+      // 캐시 무효화용 쿼리스트링을 붙여서 강제로 다시 받아오게 함
+      setCacheBust((prev) => ({ ...prev, [mediaId]: Date.now() }));
+      toast.success('이미지를 회전했습니다.');
+    } catch {
+      toast.error('이미지 회전에 실패했습니다.');
+    } finally {
+      setRotatingId(null);
     }
   };
 
@@ -270,7 +287,7 @@ export function MediaSelector({ coupleId, rowType, onSelect, onClose }: MediaSel
                             />
                           ) : (
                             <img
-                              src={`/api/wedding/media/${m.id}/thumbnail`}
+                              src={`/api/wedding/media/${m.id}/thumbnail${cacheBust[m.id] ? `?v=${cacheBust[m.id]}` : ''}`}
                               alt={m.uploaderName || 'Media'}
                               className={styles.mediaThumbnail}
                               style={{ objectFit: 'cover', width: '100%', height: '100%' }}
@@ -290,6 +307,17 @@ export function MediaSelector({ coupleId, rowType, onSelect, onClose }: MediaSel
                               onClick={(e) => { e.stopPropagation(); setDeletingId(m.id); }}
                             >
                               ✕
+                            </button>
+                          )}
+                          {!deleteMode && !m.fileType.startsWith('video/') && (
+                            <button
+                              type="button"
+                              className={styles.rotateButton}
+                              title="시계 방향으로 90도 회전"
+                              disabled={rotatingId === m.id}
+                              onClick={(e) => { e.stopPropagation(); handleRotate(m.id); }}
+                            >
+                              {rotatingId === m.id ? '⋯' : '⟳'}
                             </button>
                           )}
                         </div>

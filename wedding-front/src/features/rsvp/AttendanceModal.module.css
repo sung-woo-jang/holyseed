@@ -58,19 +58,6 @@
   margin-bottom: 1.9rem;
 }
 
-.badge {
-  display: inline-flex;
-  align-items: center;
-  background: var(--netflix-red, #e50914);
-  color: white;
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  padding: 0.28rem 0.65rem;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-}
-
 .title {
   font-size: 1.6rem;
   font-weight: 800;

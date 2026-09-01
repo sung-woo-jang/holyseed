@@ -54,7 +54,6 @@ export default function AttendanceModal({
           ) : (
             <>
               <div className={styles.header}>
-                <span className={styles.badge}>RSVP</span>
                 <h2 className={styles.title}>참석 여부</h2>
                 <p className={styles.subtitle}>
                   <b>{groomName}</b> &amp; <b>{brideName}</b>의 결혼식{weddingDateLabel ? ` · ${weddingDateLabel}` : ''}

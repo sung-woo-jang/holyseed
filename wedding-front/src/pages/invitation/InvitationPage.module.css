@@ -269,6 +269,74 @@
   background: var(--netflix-dark-gray, #1f1f1f);
 }
 
+.inviteSection {
+  padding: 3.4rem 1.75rem 3.6rem;
+  text-align: center;
+  background: var(--netflix-black, #141414);
+}
+
+.inviteTitle {
+  font-family: 'Playfair Display', 'Noto Serif KR', serif;
+  font-weight: 800;
+  font-size: 1.7rem;
+  letter-spacing: 0.28em;
+  color: #f4f1ea;
+  margin: 0 0 0.9rem;
+  padding-left: 0.28em;
+}
+
+.inviteRule {
+  width: 34px;
+  height: 2px;
+  background: var(--netflix-red, #e50914);
+  margin: 0 auto 2.6rem;
+}
+
+.inviteBody {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 0.98rem;
+  line-height: 2.05;
+  color: #d9d5cd;
+  max-width: 340px;
+  margin: 0 auto;
+}
+
+.inviteBody p {
+  margin: 0 0 1.6rem;
+}
+
+.inviteBody p:last-child {
+  margin-bottom: 0;
+}
+
+.inviteVerse {
+  margin-top: 2.6rem;
+  padding-top: 2.2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  max-width: 340px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.inviteVerse q {
+  display: block;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: #f4f1ea;
+  quotes: '"' '"';
+  margin-bottom: 0.6rem;
+}
+
+.inviteVerse cite {
+  display: block;
+  font-style: normal;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  color: #8f8a83;
+}
+
 .guestbookSection {
   padding: var(--netflix-section-padding) 1.5rem;
   text-align: center;

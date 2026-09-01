@@ -322,6 +322,21 @@ function InvitationContent() {
           </div>
         </section>
 
+        {/* Invitation Letter */}
+        <section className={cn(styles.section, styles.inviteSection)}>
+          <h2 className={styles.inviteTitle}>INVITATION</h2>
+          <div className={styles.inviteRule} />
+          <div className={styles.inviteBody}>
+            <p>서로의 삶에 찾아온 소중한 인연을 따라<br />이제 두 사람이 한 길을 걸어가려 합니다.</p>
+            <p>기쁨은 함께 나누고 어려움은 서로 보듬으며<br />변하지 않는 사랑으로 살아가겠습니다.</p>
+            <p>저희가 함께 내딛는 첫걸음에<br />귀한 걸음 하시어 축복해 주세요.</p>
+          </div>
+          <div className={styles.inviteVerse}>
+            <q>Love never fails.</q>
+            <cite>고전 13:8</cite>
+          </div>
+        </section>
+
         {/* Calendar */}
         {weddingDate && (
           <section id="calendar-section" className={cn(styles.section, styles.calendarSection)}>

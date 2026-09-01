@@ -58,7 +58,9 @@ export class MediaController {
   async thumbnail(@Param('id') id: string, @Res() res: Response) {
     const { path, mimeType } = await this.mediaService.getFilePath(id, 'thumbnail');
     return res.sendFile(resolvePath(path), {
-      headers: { 'Content-Type': mimeType, 'Cache-Control': 'public, max-age=31536000, immutable' },
+      // 회전 등으로 같은 id의 파일 내용이 바뀔 수 있어 immutable/1년 캐시는 쓰지 않음 —
+      // 1시간마다 브라우저가 재검증(Express sendFile이 mtime/size 기반 ETag를 자동으로 붙여줌)
+      headers: { 'Content-Type': mimeType, 'Cache-Control': 'public, max-age=3600' },
     });
   }
 
@@ -68,7 +70,9 @@ export class MediaController {
   async resized(@Param('id') id: string, @Res() res: Response) {
     const { path, mimeType } = await this.mediaService.getFilePath(id, 'resized');
     return res.sendFile(resolvePath(path), {
-      headers: { 'Content-Type': mimeType, 'Cache-Control': 'public, max-age=31536000, immutable' },
+      // 회전 등으로 같은 id의 파일 내용이 바뀔 수 있어 immutable/1년 캐시는 쓰지 않음 —
+      // 1시간마다 브라우저가 재검증(Express sendFile이 mtime/size 기반 ETag를 자동으로 붙여줌)
+      headers: { 'Content-Type': mimeType, 'Cache-Control': 'public, max-age=3600' },
     });
   }
 
@@ -78,7 +82,9 @@ export class MediaController {
   async original(@Param('id') id: string, @Res() res: Response) {
     const { path, mimeType } = await this.mediaService.getFilePath(id, 'original');
     return res.sendFile(resolvePath(path), {
-      headers: { 'Content-Type': mimeType, 'Cache-Control': 'public, max-age=31536000, immutable' },
+      // 회전 등으로 같은 id의 파일 내용이 바뀔 수 있어 immutable/1년 캐시는 쓰지 않음 —
+      // 1시간마다 브라우저가 재검증(Express sendFile이 mtime/size 기반 ETag를 자동으로 붙여줌)
+      headers: { 'Content-Type': mimeType, 'Cache-Control': 'public, max-age=3600' },
     });
   }
 

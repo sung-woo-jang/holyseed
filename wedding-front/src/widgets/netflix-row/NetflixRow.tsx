@@ -254,22 +254,28 @@ export default function NetflixRow({ title, items, onItemClick, onVideoClick, ro
             ) : (
               <svg
                 className={styles.rankNumberSvg}
-                viewBox="0 0 140 200"
-                preserveAspectRatio="xMidYMax meet"
+                viewBox="0 0 85 148"
+                fill="none"
+                opacity={Math.max(0.18, 0.32 - (item.rank - 6) * 0.02)}
+                preserveAspectRatio="xMaxYMid meet"
               >
                 <text
-                  x="0"
-                  y="175"
-                  fill="#464646"
-                  stroke="#6e6e6e"
-                  strokeWidth="2"
-                  strokeLinejoin="round"
-                  fontSize="200"
-                  fontWeight="900"
+                  x="42.5"
+                  y="140"
+                  textAnchor="middle"
+                  fill={`url(#${gradientId})`}
+                  fontSize={item.rank >= 10 ? 95 : 148}
+                  fontWeight="800"
                   fontFamily="Helvetica Neue, Arial, sans-serif"
                 >
                   {item.rank}
                 </text>
+                <defs>
+                  <linearGradient id={gradientId} x1="0" y1="60" x2="85" y2="60" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="white" />
+                    <stop offset="1" stopColor="white" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
               </svg>
             )}
             <div className={styles.topRankedImageWrapper}>

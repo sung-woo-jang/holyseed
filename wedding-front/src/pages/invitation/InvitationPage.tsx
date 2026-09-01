@@ -313,7 +313,7 @@ function InvitationContent() {
             <button className={styles.playButton} onClick={() => { const v = document.querySelector('video[data-wedding-video]'); if (v) { v.scrollIntoView({ behavior: 'smooth', block: 'center' }); (v as HTMLVideoElement).play() } }}>
               <svg className={styles.playIcon} viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor" /></svg><span>재생</span>
             </button>
-            <button className={styles.moreInfoButton} onClick={() => document.getElementById('account-section')?.scrollIntoView({ behavior: 'smooth' })}>
+            <button className={styles.moreInfoButton} onClick={() => document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth' })}>
               <svg className={styles.infoIcon} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" fill="none" strokeWidth="2" /><text x="12" y="12" textAnchor="middle" dominantBaseline="central" fill="currentColor" fontSize="14" fontWeight="bold">i</text></svg><span>상세 정보</span>
             </button>
           </div>

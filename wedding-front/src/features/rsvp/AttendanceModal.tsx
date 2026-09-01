@@ -8,6 +8,7 @@ interface AttendanceModalProps {
   coupleId: string;
   groomName: string;
   brideName: string;
+  weddingDateLabel?: string;
 }
 
 export default function AttendanceModal({
@@ -16,6 +17,7 @@ export default function AttendanceModal({
   coupleId,
   groomName,
   brideName,
+  weddingDateLabel,
 }: AttendanceModalProps) {
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
@@ -52,9 +54,11 @@ export default function AttendanceModal({
           ) : (
             <>
               <div className={styles.header}>
-                <div className={styles.icon}>✉️</div>
-                <h2 className={styles.title}>참석 의사 전달</h2>
-                <p className={styles.subtitle}>{groomName} ❤️ {brideName}</p>
+                <span className={styles.badge}>RSVP</span>
+                <h2 className={styles.title}>참석 여부</h2>
+                <p className={styles.subtitle}>
+                  <b>{groomName}</b> &amp; <b>{brideName}</b>의 결혼식{weddingDateLabel ? ` · ${weddingDateLabel}` : ''}
+                </p>
               </div>
 
               <AttendanceForm coupleId={coupleId} onSuccess={handleSuccess} onCancel={onClose} />

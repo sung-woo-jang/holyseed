@@ -18,7 +18,6 @@
 }
 
 .formGroup input,
-.formGroup select,
 .formGroup textarea {
   width: 100%;
   box-sizing: border-box;
@@ -33,16 +32,10 @@
 }
 
 .formGroup input:focus,
-.formGroup select:focus,
 .formGroup textarea:focus {
   outline: none;
   border-color: var(--netflix-red, #e50914);
   background: rgba(47, 47, 47, 0.8);
-}
-
-.formGroup select option {
-  background: var(--netflix-gray, #2f2f2f);
-  color: white;
 }
 
 .formGroup textarea {
@@ -53,6 +46,42 @@
 .formGroup input::placeholder,
 .formGroup textarea::placeholder {
   color: #808080;
+}
+
+.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.statusRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.statusChip {
+  flex: 1;
+  text-align: center;
+  padding: 0.62rem 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #c7c3bb;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.statusChip:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.statusChipOn,
+.statusChipOn:hover {
+  background: var(--netflix-red, #e50914);
+  color: white;
 }
 
 .inputError {
@@ -77,42 +106,40 @@
 
 .formActions {
   display: flex;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.7rem;
   margin-top: 1rem;
 }
 
 .cancelButton,
 .submitButton {
-  flex: 1;
-  padding: 1rem 2rem;
-  font-size: 1rem;
+  width: 100%;
+  padding: 0.9rem 2rem;
+  font-size: 0.98rem;
   font-weight: 700;
-  border-radius: 6px;
+  border-radius: 999px;
   cursor: pointer;
   transition: all 0.3s ease;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
+  border: none;
 }
 
 .cancelButton {
-  background: var(--netflix-gray, #2f2f2f);
+  background: rgba(255, 255, 255, 0.08);
   color: white;
-  border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 .cancelButton:hover:not(:disabled) {
-  background: rgba(47, 47, 47, 0.7);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .submitButton {
   background: var(--netflix-red, #e50914);
   color: white;
-  border: none;
 }
 
 .submitButton:hover:not(:disabled) {
   background: var(--netflix-red-hover, #f40612);
-  transform: scale(1.02);
 }
 
 .cancelButton:disabled,
@@ -122,17 +149,12 @@
 }
 
 @media (max-width: 640px) {
-  .formActions {
-    flex-direction: column;
-  }
-
-  .cancelButton,
-  .submitButton {
-    width: 100%;
+  .row2 {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
 
   .formGroup input,
-  .formGroup select,
   .formGroup textarea {
     font-size: 16px; /* iOS 자동 줌 방지 */
   }

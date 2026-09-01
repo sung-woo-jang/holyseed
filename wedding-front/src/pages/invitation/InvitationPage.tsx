@@ -90,8 +90,13 @@ function InvitationContent() {
       .catch((e) => console.warn('하객 미디어 조회 실패', e))
   }, [couple?.id])
 
+  // Hero 배경: 관리자가 직접 고른 사진이 있으면 그것을, 없으면 하객 업로드 사진으로 자동 채움
+  const heroPhotoIds = couple?.heroImageMediaIds && couple.heroImageMediaIds.length > 0
+    ? couple.heroImageMediaIds.slice(0, 6)
+    : guestMedia.slice(0, 6).map((m) => m.id)
+
   // Hero 배경 자동 전환 (5초 간격 크로스페이드) — 동시 로딩 부담을 줄이기 위해 앞쪽 6장만 순환
-  const heroPoolSize = Math.min(guestMedia.length, 6)
+  const heroPoolSize = Math.min(heroPhotoIds.length, 6)
   useEffect(() => {
     if (heroPoolSize <= 1) return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
@@ -283,10 +288,10 @@ function InvitationContent() {
           </div>
 
           <div className={styles.heroCard}>
-            {guestMedia.slice(0, 6).map((m, i) => {
-              const src = mediaResizedUrl(m.id)
+            {heroPhotoIds.slice(0, 6).map((id, i) => {
+              const src = mediaResizedUrl(id)
               return (
-                <div key={m.id} className={cn(styles.heroPhotoWrap, { [styles.heroPhotoActive]: i === heroIndex })}>
+                <div key={id} className={cn(styles.heroPhotoWrap, { [styles.heroPhotoActive]: i === heroIndex })}>
                   {/* 세로 사진 등 비율이 다른 사진도 잘리지 않게: 흐린 배경(cover)이 카드를 채우고, 선명한 원본(contain)은 잘림 없이 통째로 보임 */}
                   <img src={src} alt="" aria-hidden="true" className={styles.heroPhotoBackdrop} loading={i === 0 ? 'eager' : 'lazy'} />
                   <img src={src} alt={`${couple.groomName} & ${couple.brideName}`} className={styles.heroPhotoMain} loading={i === 0 ? 'eager' : 'lazy'} />

@@ -408,9 +408,6 @@ function InvitationContent() {
                         </div>
                       ))}
                     </div>
-                    {venue.transportation.busRealtimeUrl && (
-                      <a className={styles.transportLinkButton} href={venue.transportation.busRealtimeUrl} target="_blank" rel="noopener noreferrer">실시간 버스노선</a>
-                    )}
                   </div>
                 )}
               </div>

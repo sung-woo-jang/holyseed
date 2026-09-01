@@ -95,7 +95,8 @@
 
   .card {
     width: 45.8vw;
-    aspect-ratio: 16/9;
+    height: 250px;
+    aspect-ratio: unset;
   }
 }
 

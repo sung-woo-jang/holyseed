@@ -147,8 +147,8 @@ function InvitationContent() {
   const groomAccounts = accountInfo.filter((a) => a.relation?.includes('신랑'))
   const brideAccounts = accountInfo.filter((a) => a.relation?.includes('신부'))
 
-  const copyAccount = (account: string) => {
-    navigator.clipboard.writeText(account)
+  const copyAccount = (bank: string, account: string) => {
+    navigator.clipboard.writeText(`${bank} ${account}`)
       .then(() => toast.success('계좌번호가 복사되었습니다.'))
       .catch(() => toast.error('계좌번호 복사에 실패했습니다.'))
   }
@@ -485,7 +485,7 @@ function InvitationContent() {
                           </span>
                           <span className={styles.accountRowRight}>
                             <span className={styles.accountRowNum}>{account.bank} {account.account}</span>
-                            <button type="button" className={styles.accountCopyBtn} onClick={() => copyAccount(account.account)}>복사</button>
+                            <button type="button" className={styles.accountCopyBtn} onClick={() => copyAccount(account.bank, account.account)}>복사</button>
                           </span>
                         </div>
                       ))}

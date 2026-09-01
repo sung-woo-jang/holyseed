@@ -57,7 +57,7 @@ export default function WeddingCalendar({ weddingDate, groomName, brideName }: W
   return (
     <div className={styles.card}>
       <div className={styles.dateHeading}>{format(weddingDate, 'yyyy. MM. dd')}</div>
-      <div className={styles.dateSub}>{format(weddingDate, 'EEEE', { locale: ko })}</div>
+      <div className={styles.dateSub}>{format(weddingDate, 'EEEE a h시', { locale: ko })}</div>
 
       <div className={styles.divider} />
 

@@ -10,6 +10,12 @@ import type { Media } from '@/shared/types'
 import styles from './SettingsPage.module.css'
 import adminStyles from '../admin-page.module.css'
 
+// datetime-local input은 로컬 타임존 기준 "yyyy-MM-ddTHH:mm" 문자열을 요구함
+const toDatetimeLocalValue = (d: Date) => {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 const accountSchema = z.object({
   relation: z.string().optional(),
   holder: z.string().optional(),
@@ -77,7 +83,7 @@ export default function AdminSettingsPage() {
         reset({
           groomName: c.groomName,
           brideName: c.brideName,
-          weddingDate: c.weddingDate ? new Date(c.weddingDate).toISOString().split('T')[0] : '',
+          weddingDate: c.weddingDate ? toDatetimeLocalValue(new Date(c.weddingDate)) : '',
           venueName: c.weddingVenue?.name ?? '',
           venueAddress: c.weddingVenue?.address ?? '',
           venueHall: c.weddingVenue?.hall ?? '',
@@ -144,8 +150,8 @@ export default function AdminSettingsPage() {
                 {errors.brideName && <p className={styles.error}>{errors.brideName.message}</p>}
               </div>
               <div className={styles.formGroupFull}>
-                <label htmlFor="weddingDate" className={styles.label}>결혼식 날짜</label>
-                <input {...register('weddingDate')} type="date" id="weddingDate" className={styles.input} />
+                <label htmlFor="weddingDate" className={styles.label}>결혼식 일시</label>
+                <input {...register('weddingDate')} type="datetime-local" id="weddingDate" className={styles.input} />
               </div>
             </div>
           </section>

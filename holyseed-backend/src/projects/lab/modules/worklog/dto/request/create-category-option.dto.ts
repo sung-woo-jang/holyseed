@@ -33,4 +33,25 @@ export class CreateCategoryOptionDto {
   @Min(0)
   @Max(1)
   overtimeExtraRate?: number;
+
+  @ApiPropertyOptional({ description: '기본 시작 시각', example: '08:00' })
+  @IsOptional()
+  @IsString()
+  defaultStartTime?: string | null;
+
+  @ApiPropertyOptional({ description: '기본 종료 시각', example: '22:00' })
+  @IsOptional()
+  @IsString()
+  defaultEndTime?: string | null;
+
+  @ApiPropertyOptional({ description: '기본 휴게시간 (시간, 미설정 시 1시간)', example: 1 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  defaultBreakHours?: number | null;
+
+  @ApiPropertyOptional({ description: '기본 주소' })
+  @IsOptional()
+  @IsString()
+  defaultAddress?: string | null;
 }

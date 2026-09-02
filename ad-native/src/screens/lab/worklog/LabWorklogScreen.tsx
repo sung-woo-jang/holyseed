@@ -109,6 +109,7 @@ export default function LabWorklogScreen({ navigation }: Props) {
   const displayWorkDays = summaryWorkRecords.length;
   const displayLaborUnits = summaryWorkRecords.reduce((sum, r) => sum + (r.halfPay ? 0.5 : 1), 0);
   const displayTotalNet = summaryWorkRecords.reduce((sum, r) => sum + r.netAmount, 0);
+  const displayTotalGross = summaryWorkRecords.reduce((sum, r) => sum + r.effectiveAmount, 0);
   const displayReceivedNet = summaryWorkRecords.filter((r) => r.payStatus === 'RECEIVED').reduce((sum, r) => sum + r.netAmount, 0);
   const displayPendingNet = summaryWorkRecords
     .filter((r) => r.payStatus === 'EXPECTED' || r.payStatus === 'UNPAID')
@@ -298,7 +299,10 @@ export default function LabWorklogScreen({ navigation }: Props) {
                   <Text style={{ color: theme.textMuted, fontSize: 12 }}>실수령 합계</Text>
                   <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{krw(displayTotalNet)}</Text>
                 </View>
-                <View style={styles.summaryItem} />
+                <View style={styles.summaryItem}>
+                  <Text style={{ color: theme.textMuted, fontSize: 12 }}>세전 수령액</Text>
+                  <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{krw(displayTotalGross)}</Text>
+                </View>
               </View>
               <View style={styles.summaryRow}>
                 <View style={styles.summaryItem}>

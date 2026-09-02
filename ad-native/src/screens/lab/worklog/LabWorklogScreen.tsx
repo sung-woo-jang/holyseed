@@ -290,7 +290,7 @@ export default function LabWorklogScreen({ navigation }: Props) {
                   <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{displayWorkDays}일</Text>
                 </View>
                 <View style={styles.summaryItem}>
-                  <Text style={{ color: theme.textMuted, fontSize: 12 }}>품</Text>
+                  <Text style={{ color: theme.textMuted, fontSize: 12 }}>품(대가리)</Text>
                   <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{displayLaborUnits}품</Text>
                 </View>
               </View>

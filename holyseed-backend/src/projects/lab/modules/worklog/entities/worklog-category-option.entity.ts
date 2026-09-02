@@ -47,4 +47,20 @@ export class WorklogCategoryOption {
     transformer: numeric,
   })
   overtimeExtraRate: number;
+
+  @ApiPropertyOptional({ description: '기본 시작 시각', example: '08:00' })
+  @Column({ name: 'default_start_time', length: 5, nullable: true })
+  defaultStartTime: string | null;
+
+  @ApiPropertyOptional({ description: '기본 종료 시각', example: '22:00' })
+  @Column({ name: 'default_end_time', length: 5, nullable: true })
+  defaultEndTime: string | null;
+
+  @ApiPropertyOptional({ description: '기본 휴게시간 (시간, 미설정 시 1시간)', example: 1 })
+  @Column({ name: 'default_break_hours', type: 'decimal', precision: 4, scale: 2, nullable: true, transformer: numeric })
+  defaultBreakHours: number | null;
+
+  @ApiPropertyOptional({ description: '기본 주소' })
+  @Column({ name: 'default_address', length: 500, nullable: true })
+  defaultAddress: string | null;
 }

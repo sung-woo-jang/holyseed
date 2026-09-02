@@ -61,6 +61,21 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [error, setError] = useState('');
 
+  function applyCategoryDefaults(categoryName: string) {
+    const opt = categories.find((c) => c.name === categoryName);
+    setStartTime(opt?.defaultStartTime ?? '');
+    setEndTime(opt?.defaultEndTime ?? '');
+    setBreakHours(opt?.defaultBreakHours != null ? String(opt.defaultBreakHours) : '');
+    setDailyWage(opt?.defaultDailyWage != null ? String(opt.defaultDailyWage) : '');
+    setWithholdingApplied(opt?.defaultWithholdingApplied ?? false);
+    setAddress(opt?.defaultAddress ?? '');
+  }
+
+  function handleSelectCategory(categoryName: string) {
+    setCategory(categoryName);
+    if (!isEdit) applyCategoryDefaults(categoryName);
+  }
+
   const jobOptionsQ = useQuery({ queryKey: ['lab-worklog-jobs'], queryFn: labWorklogApi.jobOptions, enabled: visible, staleTime: 60_000 });
   const jobChoices = (jobOptionsQ.data ?? []).filter((j) => j.category === category);
   const titlesQ = useQuery({ queryKey: ['lab-worklog-titles'], queryFn: labWorklogApi.titles, enabled: visible, staleTime: 60_000 });
@@ -85,18 +100,19 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
       setPhotos(record.photos ?? []);
       setMemo(record.memo ?? '');
     } else {
+      const initialCategory = categories[0];
       setTitle('');
       setWorkDate(defaultDate > todayLocal() ? defaultDate : todayLocal());
-      setCategory(categories[0]?.name ?? '');
+      setCategory(initialCategory?.name ?? '');
       setPayStatus('EXPECTED');
-      setStartTime('');
-      setEndTime('');
-      setBreakHours('');
-      setDailyWage('');
+      setStartTime(initialCategory?.defaultStartTime ?? '');
+      setEndTime(initialCategory?.defaultEndTime ?? '');
+      setBreakHours(initialCategory?.defaultBreakHours != null ? String(initialCategory.defaultBreakHours) : '');
+      setDailyWage(initialCategory?.defaultDailyWage != null ? String(initialCategory.defaultDailyWage) : '');
       setAmountOverride('');
-      setWithholdingApplied(categories[0]?.defaultWithholdingApplied ?? false);
+      setWithholdingApplied(initialCategory?.defaultWithholdingApplied ?? false);
       setHalfPay(false);
-      setAddress('');
+      setAddress(initialCategory?.defaultAddress ?? '');
       setJobs([]);
       setPhotos([]);
       setMemo('');
@@ -234,7 +250,7 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
               return (
                 <Pressable
                   key={c.id}
-                  onPress={() => setCategory(c.name)}
+                  onPress={() => handleSelectCategory(c.name)}
                   style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
                 >
                   <Text style={{ fontSize: 13, fontWeight: '700', color: active ? theme.brand : theme.text }}>{c.name}</Text>

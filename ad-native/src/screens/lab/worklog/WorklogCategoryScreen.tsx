@@ -7,7 +7,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import TextField from '../../../components/ui/TextField';
 import Switch from '../../../components/ui/Switch';
 import Button from '../../../components/ui/Button';
-import { labWorklogApi, type WorklogCategoryOption } from '../../../api/lab-worklog';
+import { labWorklogApi, type WorklogCategoryOption, type WorklogTitleOption } from '../../../api/lab-worklog';
+import Border from '../../../components/ui/Border';
 import { useTheme } from '../../../lib/theme';
 import { getErrorMessage } from '../../../lib/error';
 import { timeStringToDate, dateToTimeString } from '../../../lib/date';
@@ -50,9 +51,13 @@ export default function WorklogCategoryScreen() {
   const [addingCategory, setAddingCategory] = useState(false);
   const [defaultStartPickerVisible, setDefaultStartPickerVisible] = useState(false);
   const [defaultEndPickerVisible, setDefaultEndPickerVisible] = useState(false);
+  const [editingTitleId, setEditingTitleId] = useState<number | null>(null);
+  const [editingTitleName, setEditingTitleName] = useState('');
 
   const categoriesQ = useQuery({ queryKey: ['lab-worklog-categories'], queryFn: labWorklogApi.categoryOptions });
   const jobsQ = useQuery({ queryKey: ['lab-worklog-jobs'], queryFn: labWorklogApi.jobOptions });
+  const titleOptionsQ = useQuery({ queryKey: ['lab-worklog-title-options'], queryFn: labWorklogApi.titleOptions });
+  const titleOptions = titleOptionsQ.data ?? [];
 
   const categories = [...(categoriesQ.data ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
   const jobs = jobsQ.data ?? [];
@@ -135,6 +140,27 @@ export default function WorklogCategoryScreen() {
   async function handleDeleteJob(id: number) {
     await labWorklogApi.deleteJobOption(id);
     jobsQ.refetch();
+  }
+
+  function startEditTitle(t: WorklogTitleOption) {
+    setEditingTitleId(t.id);
+    setEditingTitleName(t.name);
+  }
+
+  async function handleSaveTitle() {
+    if (editingTitleId == null || !editingTitleName.trim()) return;
+    try {
+      await labWorklogApi.renameTitleOption(editingTitleId, editingTitleName.trim());
+      setEditingTitleId(null);
+      titleOptionsQ.refetch();
+    } catch (e) {
+      setError(getErrorMessage(e, '현장명 수정에 실패했어요'));
+    }
+  }
+
+  async function handleDeleteTitle(id: number) {
+    await labWorklogApi.deleteTitleOption(id);
+    titleOptionsQ.refetch();
   }
 
   function renderItem({ item: c, getIndex, drag, isActive }: RenderItemParams<WorklogCategoryOption>) {
@@ -309,6 +335,36 @@ export default function WorklogCategoryScreen() {
                 <Text style={{ color: theme.brand, fontSize: 13, fontWeight: '700' }}>+ 분류 추가</Text>
               </Pressable>
             )}
+
+            {titleOptions.length > 0 && (
+              <View style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card, marginTop: 20, padding: 14 }]}>
+                <Text style={{ color: theme.text, fontSize: 14.5, fontWeight: '700', marginBottom: 4 }}>현장명</Text>
+                <Text style={{ color: theme.textMuted, fontSize: 11.5, marginBottom: 10 }}>수정·삭제는 추천 목록에만 반영되고, 이미 저장된 근무 기록의 현장명은 바뀌지 않아요</Text>
+                {titleOptions.map((t, i) => (
+                  <View key={t.id}>
+                    {i > 0 && <Border type="full" />}
+                    {editingTitleId === t.id ? (
+                      <View style={[styles.row2, { marginTop: 10, marginBottom: 10 }]}>
+                        <TextField variant="box" value={editingTitleName} onChangeText={setEditingTitleName} style={{ flex: 1 }} autoFocus />
+                        <Pressable style={[styles.smallBtn, { borderColor: theme.border }]} onPress={handleSaveTitle}>
+                          <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700' }}>저장</Text>
+                        </Pressable>
+                      </View>
+                    ) : (
+                      <View style={[styles.titleRow]}>
+                        <Text style={{ color: theme.text, fontSize: 13.5, flex: 1 }} numberOfLines={1}>{t.name}</Text>
+                        <Pressable hitSlop={8} onPress={() => startEditTitle(t)}>
+                          <Text style={{ color: theme.brand, fontSize: 12.5, fontWeight: '700' }}>수정</Text>
+                        </Pressable>
+                        <Pressable hitSlop={8} onPress={() => handleDeleteTitle(t.id)}>
+                          <Text style={{ color: theme.danger, fontSize: 12.5, fontWeight: '700' }}>삭제</Text>
+                        </Pressable>
+                      </View>
+                    )}
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         }
       />
@@ -329,6 +385,7 @@ const styles = StyleSheet.create({
   timeField: { flex: 1, height: 38, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, justifyContent: 'center' },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   jobChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 10 },
   jobChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
   addBtn: { borderWidth: 1, borderStyle: 'dashed', borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
   smallBtn: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 14, justifyContent: 'center', alignItems: 'center' },

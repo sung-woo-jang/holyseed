@@ -63,6 +63,8 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
 
   const jobOptionsQ = useQuery({ queryKey: ['lab-worklog-jobs'], queryFn: labWorklogApi.jobOptions, enabled: visible, staleTime: 60_000 });
   const jobChoices = (jobOptionsQ.data ?? []).filter((j) => j.category === category);
+  const titlesQ = useQuery({ queryKey: ['lab-worklog-titles'], queryFn: labWorklogApi.titles, enabled: visible, staleTime: 60_000 });
+  const titleSuggestions = titlesQ.data ?? [];
 
   useEffect(() => {
     if (!visible) return;
@@ -207,7 +209,18 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
       }
       overlay={<DatePicker visible={datePickerVisible} value={workDate} onSelect={setWorkDate} onClose={() => setDatePickerVisible(false)} />}
     >
-      <TextField variant="line" placeholder="현장명 (예: 송도 / 학익)" value={title} onChangeText={setTitle} style={{ marginBottom: 12 }} />
+      <TextField variant="line" placeholder="현장명 (예: 송도 / 학익)" value={title} onChangeText={setTitle} style={{ marginBottom: 10 }} />
+      {titleSuggestions.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+          <View style={styles.chipRow}>
+            {titleSuggestions.map((s) => (
+              <Pressable key={s.name} onPress={() => setTitle(s.name)} style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.card }]}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text }}>{s.name}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+      )}
 
       <View style={[styles.fieldsCard, { borderColor: theme.border }]}>
         <FormRow label="근무일" value={workDate === todayLocal() ? `오늘 (${workDate.slice(5).replace('-', '/')})` : workDate} onPress={() => setDatePickerVisible(true)} />

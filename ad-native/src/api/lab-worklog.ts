@@ -107,6 +107,8 @@ export interface QueryParams {
 }
 
 export const labWorklogApi = {
+  titles: () => labApi.get<{ name: string; count: number }[]>('/worklog/titles').then((r) => r.data),
+
   search: (year: number, month: number) =>
     labApi.post<{ records: WorklogRecord[]; summary: WorklogSummary }>('/worklog/search', { year, month }).then((r) => r.data),
 

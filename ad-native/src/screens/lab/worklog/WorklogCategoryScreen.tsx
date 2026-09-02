@@ -3,12 +3,14 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import DraggableFlatList, { ScaleDecorator, type RenderItemParams } from 'react-native-draggable-flatlist';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import TextField from '../../../components/ui/TextField';
 import Switch from '../../../components/ui/Switch';
 import Button from '../../../components/ui/Button';
 import { labWorklogApi, type WorklogCategoryOption } from '../../../api/lab-worklog';
 import { useTheme } from '../../../lib/theme';
 import { getErrorMessage } from '../../../lib/error';
+import { timeStringToDate, dateToTimeString } from '../../../lib/date';
 
 interface EditState {
   name: string;
@@ -16,6 +18,10 @@ interface EditState {
   defaultWithholdingApplied: boolean;
   overtimeThresholdHours: string;
   overtimeExtraRatePct: string;
+  defaultStartTime: string;
+  defaultEndTime: string;
+  defaultBreakHours: string;
+  defaultAddress: string;
 }
 
 function toEditState(c: WorklogCategoryOption): EditState {
@@ -25,6 +31,10 @@ function toEditState(c: WorklogCategoryOption): EditState {
     defaultWithholdingApplied: c.defaultWithholdingApplied,
     overtimeThresholdHours: String(c.overtimeThresholdHours),
     overtimeExtraRatePct: String(Math.round(c.overtimeExtraRate * 1000) / 10),
+    defaultStartTime: c.defaultStartTime ?? '',
+    defaultEndTime: c.defaultEndTime ?? '',
+    defaultBreakHours: c.defaultBreakHours != null ? String(c.defaultBreakHours) : '',
+    defaultAddress: c.defaultAddress ?? '',
   };
 }
 
@@ -38,6 +48,8 @@ export default function WorklogCategoryScreen() {
   const [newJobName, setNewJobName] = useState('');
   const [newCategoryName, setNewCategoryName] = useState('');
   const [addingCategory, setAddingCategory] = useState(false);
+  const [defaultStartPickerVisible, setDefaultStartPickerVisible] = useState(false);
+  const [defaultEndPickerVisible, setDefaultEndPickerVisible] = useState(false);
 
   const categoriesQ = useQuery({ queryKey: ['lab-worklog-categories'], queryFn: labWorklogApi.categoryOptions });
   const jobsQ = useQuery({ queryKey: ['lab-worklog-jobs'], queryFn: labWorklogApi.jobOptions });
@@ -73,6 +85,10 @@ export default function WorklogCategoryScreen() {
         defaultWithholdingApplied: editState.defaultWithholdingApplied,
         overtimeThresholdHours: editState.overtimeThresholdHours ? Number(editState.overtimeThresholdHours) : undefined,
         overtimeExtraRate: editState.overtimeExtraRatePct ? Number(editState.overtimeExtraRatePct) / 100 : undefined,
+        defaultStartTime: editState.defaultStartTime || null,
+        defaultEndTime: editState.defaultEndTime || null,
+        defaultBreakHours: editState.defaultBreakHours ? Number(editState.defaultBreakHours) : null,
+        defaultAddress: editState.defaultAddress || null,
       });
       refetchAll();
       setExpandedId(null);
@@ -173,10 +189,64 @@ export default function WorklogCategoryScreen() {
                     style={{ flex: 1 }}
                   />
                 </View>
-                <View style={styles.switchRow}>
+                <View style={[styles.switchRow, { marginBottom: 10 }]}>
                   <Text style={{ color: theme.text, fontSize: 13.5, fontWeight: '600' }}>원천징수(3.3%) 기본 적용</Text>
                   <Switch checked={editState.defaultWithholdingApplied} onCheckedChange={(v) => setEditState({ ...editState, defaultWithholdingApplied: v })} />
                 </View>
+
+                <View style={styles.row2}>
+                  <Pressable onPress={() => setDefaultStartPickerVisible(true)} style={[styles.timeField, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    <Text numberOfLines={1} style={{ fontSize: 14, color: editState.defaultStartTime ? theme.text : theme.textMuted }}>
+                      {editState.defaultStartTime || '기본 시작 시간'}
+                    </Text>
+                  </Pressable>
+                  <Pressable onPress={() => setDefaultEndPickerVisible(true)} style={[styles.timeField, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    <Text numberOfLines={1} style={{ fontSize: 14, color: editState.defaultEndTime ? theme.text : theme.textMuted }}>
+                      {editState.defaultEndTime || '기본 종료 시간'}
+                    </Text>
+                  </Pressable>
+                </View>
+                {defaultStartPickerVisible && (
+                  <DateTimePicker
+                    value={editState.defaultStartTime ? timeStringToDate(editState.defaultStartTime) : new Date()}
+                    mode="time"
+                    is24Hour
+                    display="default"
+                    onChange={(event, selectedDate) => {
+                      setDefaultStartPickerVisible(false);
+                      if (event.type === 'set' && selectedDate) setEditState({ ...editState, defaultStartTime: dateToTimeString(selectedDate) });
+                    }}
+                  />
+                )}
+                {defaultEndPickerVisible && (
+                  <DateTimePicker
+                    value={editState.defaultEndTime ? timeStringToDate(editState.defaultEndTime) : new Date()}
+                    mode="time"
+                    is24Hour
+                    display="default"
+                    onChange={(event, selectedDate) => {
+                      setDefaultEndPickerVisible(false);
+                      if (event.type === 'set' && selectedDate) setEditState({ ...editState, defaultEndTime: dateToTimeString(selectedDate) });
+                    }}
+                  />
+                )}
+                <View style={styles.row2}>
+                  <TextField
+                    variant="box"
+                    placeholder="기본 휴게시간"
+                    value={editState.defaultBreakHours}
+                    onChangeText={(v) => setEditState({ ...editState, defaultBreakHours: v })}
+                    keyboardType="numeric"
+                    suffix="시간"
+                    style={{ flex: 1 }}
+                  />
+                </View>
+                <TextField
+                  variant="box"
+                  placeholder="기본 주소"
+                  value={editState.defaultAddress}
+                  onChangeText={(v) => setEditState({ ...editState, defaultAddress: v })}
+                />
               </View>
 
               <View style={[styles.section, { backgroundColor: theme.bg, marginTop: 10 }]}>
@@ -256,6 +326,7 @@ const styles = StyleSheet.create({
   section: { borderRadius: 12, padding: 12 },
   sectionLabel: { fontSize: 11.5, fontWeight: '800', marginBottom: 10, letterSpacing: 0.2 },
   row2: { flexDirection: 'row', gap: 10, marginBottom: 10, alignItems: 'center' },
+  timeField: { flex: 1, height: 38, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, justifyContent: 'center' },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   jobChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
   jobChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },

@@ -105,6 +105,9 @@ export default function LabWorklogScreen({ navigation }: Props) {
     if (categoryFilter && r.category !== categoryFilter) return false;
     return true;
   });
+  const summaryWorkRecords = filteredRecords.filter((r) => r.payStatus !== 'DAYOFF');
+  const displayWorkDays = summaryWorkRecords.length;
+  const displayLaborUnits = summaryWorkRecords.reduce((sum, r) => sum + (r.halfPay ? 0.5 : 1), 0);
   const sortedRecords = sortByDate(filteredRecords, sortDir);
   const recordsByDate = new Map<string, WorklogRecord[]>();
   filteredRecords.forEach((r) => {
@@ -278,11 +281,11 @@ export default function LabWorklogScreen({ navigation }: Props) {
               <View style={styles.summaryRow}>
                 <View style={styles.summaryItem}>
                   <Text style={{ color: theme.textMuted, fontSize: 12 }}>근무일수</Text>
-                  <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{summary.workDays}일</Text>
+                  <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{displayWorkDays}일</Text>
                 </View>
                 <View style={styles.summaryItem}>
                   <Text style={{ color: theme.textMuted, fontSize: 12 }}>품</Text>
-                  <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{summary.laborUnits}품</Text>
+                  <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{displayLaborUnits}품</Text>
                 </View>
               </View>
               <View style={styles.summaryRow}>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { useQuery } from '@tanstack/react-query';
 import SheetModal from '../../../components/sheets/SheetModal';
@@ -22,6 +23,16 @@ interface WorklogEntryFormProps {
   defaultDate: string;
   onClose: () => void;
   onSaved: (mode: 'create' | 'edit' | 'delete') => void;
+}
+
+function timeStringToDate(time: string): Date {
+  const [h, m] = time.split(':').map(Number);
+  const d = new Date();
+  d.setHours(h || 0, m || 0, 0, 0);
+  return d;
+}
+function dateToTimeString(d: Date): string {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
 const PAY_STATUS_OPTIONS: { value: PayStatus; label: string }[] = [
@@ -51,6 +62,8 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
   const [photos, setPhotos] = useState<WorklogPhoto[]>([]);
   const [memo, setMemo] = useState('');
   const [datePickerVisible, setDatePickerVisible] = useState(false);
+  const [startPickerVisible, setStartPickerVisible] = useState(false);
+  const [endPickerVisible, setEndPickerVisible] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -233,9 +246,37 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
       </View>
 
       <View style={styles.row2}>
-        <TextField variant="box" placeholder="시작 (08:00)" value={startTime} onChangeText={setStartTime} style={{ flex: 1 }} />
-        <TextField variant="box" placeholder="종료 (22:00)" value={endTime} onChangeText={setEndTime} style={{ flex: 1 }} />
+        <Pressable onPress={() => setStartPickerVisible(true)} style={[styles.timeField, { backgroundColor: theme.bg }]}>
+          <Text style={{ fontSize: 15, color: startTime ? theme.text : theme.textMuted }}>{startTime || '시작 시간'}</Text>
+        </Pressable>
+        <Pressable onPress={() => setEndPickerVisible(true)} style={[styles.timeField, { backgroundColor: theme.bg }]}>
+          <Text style={{ fontSize: 15, color: endTime ? theme.text : theme.textMuted }}>{endTime || '종료 시간'}</Text>
+        </Pressable>
       </View>
+      {startPickerVisible && (
+        <DateTimePicker
+          value={startTime ? timeStringToDate(startTime) : new Date()}
+          mode="time"
+          is24Hour
+          display="default"
+          onChange={(event, selectedDate) => {
+            setStartPickerVisible(false);
+            if (event.type === 'set' && selectedDate) setStartTime(dateToTimeString(selectedDate));
+          }}
+        />
+      )}
+      {endPickerVisible && (
+        <DateTimePicker
+          value={endTime ? timeStringToDate(endTime) : new Date()}
+          mode="time"
+          is24Hour
+          display="default"
+          onChange={(event, selectedDate) => {
+            setEndPickerVisible(false);
+            if (event.type === 'set' && selectedDate) setEndTime(dateToTimeString(selectedDate));
+          }}
+        />
+      )}
       <View style={styles.row2}>
         <TextField variant="box" placeholder="휴게시간" value={breakHours} onChangeText={setBreakHours} keyboardType="numeric" suffix="시간" style={{ flex: 1 }} />
         <TextField variant="box" placeholder="일급여 (미지정 시 자동)" value={dailyWage} onChangeText={setDailyWage} keyboardType="numeric" suffix="원" style={{ flex: 1 }} />
@@ -334,6 +375,7 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
   segWrap: { marginBottom: 12 },
   row2: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  timeField: { flex: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 13 },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   memoInput: { minHeight: 72, borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingTop: 10, fontSize: 14, textAlignVertical: 'top', marginBottom: 8 },
   deleteRow: { alignItems: 'center', paddingVertical: 12 },

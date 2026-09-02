@@ -236,12 +236,31 @@ export class WorklogService {
     }
   }
 
+  /** 팔레트 테이블이 비어있으면(최초 도입 시점) 기존 근무 기록의 현장명들로 1회 백필 */
+  private async ensureTitleOptionsSeeded(): Promise<void> {
+    const count = await this.titleOptionRepo.count();
+    if (count > 0) return;
+    const rows = await this.worklogRepo.find({ select: ['title', 'workDate'], order: { workDate: 'DESC' } });
+    const map = new Map<string, { count: number; lastUsedAt: Date }>();
+    for (const r of rows) {
+      const cur = map.get(r.title);
+      if (cur) cur.count += 1;
+      else map.set(r.title, { count: 1, lastUsedAt: new Date(r.workDate) });
+    }
+    if (map.size === 0) return;
+    await this.titleOptionRepo.save(
+      [...map.entries()].map(([name, v]) => this.titleOptionRepo.create({ name, lastUsedAt: v.lastUsedAt, count: v.count })),
+    );
+  }
+
   async getTitleSuggestions(): Promise<{ name: string; count: number }[]> {
+    await this.ensureTitleOptionsSeeded();
     const rows = await this.titleOptionRepo.find({ order: { lastUsedAt: 'DESC' }, take: 12 });
     return rows.map(({ name, count }) => ({ name, count }));
   }
 
   async getTitleOptions(): Promise<WorklogTitleOption[]> {
+    await this.ensureTitleOptionsSeeded();
     return this.titleOptionRepo.find({ order: { lastUsedAt: 'DESC' } });
   }
 

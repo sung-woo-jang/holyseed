@@ -224,6 +224,22 @@ export class WorklogService {
     await this.worklogRepo.remove(log);
   }
 
+  /** 현장명 추천 — 빈도순(동률이면 최근순) 상위 12개 */
+  async getTitleSuggestions(): Promise<{ name: string; count: number }[]> {
+    const rows = await this.worklogRepo.find({ select: ['title', 'workDate'], order: { workDate: 'DESC' } });
+    const map = new Map<string, { count: number; lastDate: string }>();
+    for (const r of rows) {
+      const cur = map.get(r.title);
+      if (cur) cur.count += 1;
+      else map.set(r.title, { count: 1, lastDate: r.workDate });
+    }
+    return [...map.entries()]
+      .map(([name, v]) => ({ name, count: v.count, lastDate: v.lastDate }))
+      .sort((a, b) => b.count - a.count || (a.lastDate < b.lastDate ? 1 : -1))
+      .slice(0, 12)
+      .map(({ name, count }) => ({ name, count }));
+  }
+
   /** 업무 팔레트 조회 — 최초 호출 시(테이블이 비어있으면) 기본 6개(인테리어 소속) 자동 시딩 */
   async getJobOptions(): Promise<WorklogJobOption[]> {
     const count = await this.jobOptionRepo.count();

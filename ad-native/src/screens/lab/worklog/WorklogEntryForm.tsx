@@ -13,7 +13,7 @@ import ConfirmDialog from '../../../components/common/ConfirmDialog';
 import DatePicker from '../../../components/common/DatePicker';
 import { labWorklogApi, type WorklogRecord, type WorklogCategoryOption, type WorklogPhoto, type PayStatus } from '../../../api/lab-worklog';
 import { useTheme } from '../../../lib/theme';
-import { todayLocal } from '../../../lib/date';
+import { todayLocal, timeStringToDate, dateToTimeString } from '../../../lib/date';
 import { getErrorMessage } from '../../../lib/error';
 
 interface WorklogEntryFormProps {
@@ -25,15 +25,6 @@ interface WorklogEntryFormProps {
   onSaved: (mode: 'create' | 'edit' | 'delete') => void;
 }
 
-function timeStringToDate(time: string): Date {
-  const [h, m] = time.split(':').map(Number);
-  const d = new Date();
-  d.setHours(h || 0, m || 0, 0, 0);
-  return d;
-}
-function dateToTimeString(d: Date): string {
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-}
 
 const PAY_STATUS_OPTIONS: { value: PayStatus; label: string }[] = [
   { value: 'RECEIVED', label: '수령완료' },
@@ -52,7 +43,7 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
   const [payStatus, setPayStatus] = useState<PayStatus>('EXPECTED');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
-  const [breakHours, setBreakHours] = useState('1');
+  const [breakHours, setBreakHours] = useState('');
   const [dailyWage, setDailyWage] = useState('');
   const [amountOverride, setAmountOverride] = useState('');
   const [withholdingApplied, setWithholdingApplied] = useState(false);
@@ -98,7 +89,7 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
       setPayStatus('EXPECTED');
       setStartTime('');
       setEndTime('');
-      setBreakHours('1');
+      setBreakHours('');
       setDailyWage('');
       setAmountOverride('');
       setWithholdingApplied(categories[0]?.defaultWithholdingApplied ?? false);
@@ -247,10 +238,10 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
 
       <View style={styles.row2}>
         <Pressable onPress={() => setStartPickerVisible(true)} style={[styles.timeField, { backgroundColor: theme.bg }]}>
-          <Text style={{ fontSize: 15, color: startTime ? theme.text : theme.textMuted }}>{startTime || '시작 시간'}</Text>
+          <Text numberOfLines={1} style={{ fontSize: 15, color: startTime ? theme.text : theme.textMuted }}>{startTime || '시작 시간'}</Text>
         </Pressable>
         <Pressable onPress={() => setEndPickerVisible(true)} style={[styles.timeField, { backgroundColor: theme.bg }]}>
-          <Text style={{ fontSize: 15, color: endTime ? theme.text : theme.textMuted }}>{endTime || '종료 시간'}</Text>
+          <Text numberOfLines={1} style={{ fontSize: 15, color: endTime ? theme.text : theme.textMuted }}>{endTime || '종료 시간'}</Text>
         </Pressable>
       </View>
       {startPickerVisible && (
@@ -278,7 +269,7 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
         />
       )}
       <View style={styles.row2}>
-        <TextField variant="box" placeholder="휴게시간" value={breakHours} onChangeText={setBreakHours} keyboardType="numeric" suffix="시간" style={{ flex: 1 }} />
+        <TextField variant="box" placeholder="휴게시간 (미지정 시 자동)" value={breakHours} onChangeText={setBreakHours} keyboardType="numeric" suffix="시간" style={{ flex: 1 }} />
         <TextField variant="box" placeholder="일급여 (미지정 시 자동)" value={dailyWage} onChangeText={setDailyWage} keyboardType="numeric" suffix="원" style={{ flex: 1 }} />
       </View>
 
@@ -317,7 +308,7 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
         </View>
       )}
 
-      <TextField variant="box" placeholder="주소 (선택)" value={address} onChangeText={setAddress} style={{ marginBottom: 12 }} />
+      <TextField variant="box" placeholder="주소 (미지정 시 자동)" value={address} onChangeText={setAddress} style={{ marginBottom: 12 }} />
 
       <View style={{ marginBottom: 12 }}>
         <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>사진 ({photos.length}/5)</Text>

@@ -47,6 +47,10 @@ export interface WorklogCategoryOption {
   defaultWithholdingApplied: boolean;
   overtimeThresholdHours: number;
   overtimeExtraRate: number;
+  defaultStartTime: string | null;
+  defaultEndTime: string | null;
+  defaultBreakHours: number | null;
+  defaultAddress: string | null;
 }
 
 export interface WorklogJobOption {
@@ -79,6 +83,10 @@ export interface CategoryOptionInput {
   defaultWithholdingApplied?: boolean;
   overtimeThresholdHours?: number;
   overtimeExtraRate?: number;
+  defaultStartTime?: string | null;
+  defaultEndTime?: string | null;
+  defaultBreakHours?: number | null;
+  defaultAddress?: string | null;
 }
 
 export interface SortPref {

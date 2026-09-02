@@ -26,6 +26,19 @@ export function isSameMonth(a: string, b: string): boolean {
   return a.slice(0, 7) === b.slice(0, 7);
 }
 
+/** 'HH:mm' → 오늘 날짜의 그 시각을 갖는 Date (시간 피커 value용) */
+export function timeStringToDate(time: string): Date {
+  const [h, m] = time.split(':').map(Number);
+  const d = new Date();
+  d.setHours(h || 0, m || 0, 0, 0);
+  return d;
+}
+
+/** Date → 'HH:mm' */
+export function dateToTimeString(d: Date): string {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 /** 기준일이 속한 달의 직전 달 말일 (YYYY-MM-DD) */
 export function lastDayOfPrevMonth(dateStr: string): string {
   const [y, m] = dateStr.split('-').map(Number);

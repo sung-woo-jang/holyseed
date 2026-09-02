@@ -224,7 +224,7 @@ export class WorklogService {
     await this.worklogRepo.remove(log);
   }
 
-  /** 현장명 추천 — 빈도순(동률이면 최근순) 상위 12개 */
+  /** 현장명 추천 — 최근 사용순(동률 없음, lastDate 기준) 상위 12개 */
   async getTitleSuggestions(): Promise<{ name: string; count: number }[]> {
     const rows = await this.worklogRepo.find({ select: ['title', 'workDate'], order: { workDate: 'DESC' } });
     const map = new Map<string, { count: number; lastDate: string }>();
@@ -235,7 +235,7 @@ export class WorklogService {
     }
     return [...map.entries()]
       .map(([name, v]) => ({ name, count: v.count, lastDate: v.lastDate }))
-      .sort((a, b) => b.count - a.count || (a.lastDate < b.lastDate ? 1 : -1))
+      .sort((a, b) => (a.lastDate < b.lastDate ? 1 : a.lastDate > b.lastDate ? -1 : 0))
       .slice(0, 12)
       .map(({ name, count }) => ({ name, count }));
   }

@@ -227,7 +227,7 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
     >
       <TextField variant="line" placeholder="현장명 (예: 송도 / 학익)" value={title} onChangeText={setTitle} style={{ marginBottom: 10 }} />
       {titleSuggestions.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled style={{ marginBottom: 12 }}>
           <View style={styles.chipRow}>
             {titleSuggestions.map((s) => (
               <Pressable key={s.name} onPress={() => setTitle(s.name)} style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.card }]}>
@@ -243,7 +243,7 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
       </View>
 
       {categories.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled style={{ marginBottom: 12 }}>
           <View style={styles.chipRow}>
             {categories.map((c) => {
               const active = c.name === category;
@@ -341,7 +341,7 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
 
       <View style={{ marginBottom: 12 }}>
         <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>사진 ({photos.length}/5)</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled>
           <View style={styles.photoRow}>
             {photos.map((p) => (
               <View key={p.filename} style={styles.photoThumbWrap}>

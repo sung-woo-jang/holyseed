@@ -12,7 +12,6 @@ import ConfirmDialog from '../../../components/common/ConfirmDialog';
 import Segmented from '../../../components/common/Segmented';
 import { Icon } from '../../../components/common/Icon';
 import WorklogEntryForm from './WorklogEntryForm';
-import WorklogCategorySheet from './WorklogCategorySheet';
 import { labWorklogApi, type WorklogRecord } from '../../../api/lab-worklog';
 import { getWorklogSortPref, setWorklogSortPref } from '../../../lib/lab-prefs';
 import { useTheme } from '../../../lib/theme';
@@ -46,7 +45,6 @@ export default function LabWorklogScreen({ navigation }: Props) {
   });
   const [formVisible, setFormVisible] = useState(false);
   const [editRecord, setEditRecord] = useState<WorklogRecord | null>(null);
-  const [categorySheetVisible, setCategorySheetVisible] = useState(false);
   const [toast, setToast] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [view, setView] = useState<'목록' | '캘린더'>('목록');
@@ -234,7 +232,7 @@ export default function LabWorklogScreen({ navigation }: Props) {
           <Text style={{ color: theme.brand, fontSize: 12, fontWeight: '700' }}>정산</Text>
         </Pressable>
         <View style={{ flex: 1 }} />
-        <Pressable style={[styles.toolChip, { borderColor: theme.border }]} onPress={() => setCategorySheetVisible(true)}>
+        <Pressable style={[styles.toolChip, { borderColor: theme.border }]} onPress={() => navigation.navigate('WorklogCategory')}>
           <Text style={{ color: theme.text, fontSize: 12, fontWeight: '700' }}>관리</Text>
         </Pressable>
         <Pressable style={[styles.toolChip, { borderColor: selectMode ? theme.brand : theme.border }]} onPress={toggleSelectMode}>
@@ -404,7 +402,6 @@ export default function LabWorklogScreen({ navigation }: Props) {
           worklogQ.refetch();
         }}
       />
-      <WorklogCategorySheet visible={categorySheetVisible} onClose={() => setCategorySheetVisible(false)} />
       <ConfirmDialog
         visible={bulkDeleteConfirm}
         title={`선택한 ${selectedIds.size}건을 삭제할까요?`}

@@ -108,6 +108,11 @@ export default function LabWorklogScreen({ navigation }: Props) {
   const summaryWorkRecords = filteredRecords.filter((r) => r.payStatus !== 'DAYOFF');
   const displayWorkDays = summaryWorkRecords.length;
   const displayLaborUnits = summaryWorkRecords.reduce((sum, r) => sum + (r.halfPay ? 0.5 : 1), 0);
+  const displayTotalNet = summaryWorkRecords.reduce((sum, r) => sum + r.netAmount, 0);
+  const displayReceivedNet = summaryWorkRecords.filter((r) => r.payStatus === 'RECEIVED').reduce((sum, r) => sum + r.netAmount, 0);
+  const displayPendingNet = summaryWorkRecords
+    .filter((r) => r.payStatus === 'EXPECTED' || r.payStatus === 'UNPAID')
+    .reduce((sum, r) => sum + r.netAmount, 0);
   const sortedRecords = sortByDate(filteredRecords, sortDir);
   const recordsByDate = new Map<string, WorklogRecord[]>();
   filteredRecords.forEach((r) => {
@@ -291,18 +296,18 @@ export default function LabWorklogScreen({ navigation }: Props) {
               <View style={styles.summaryRow}>
                 <View style={styles.summaryItem}>
                   <Text style={{ color: theme.textMuted, fontSize: 12 }}>실수령 합계</Text>
-                  <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{krw(summary.totalNet)}</Text>
+                  <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{krw(displayTotalNet)}</Text>
                 </View>
                 <View style={styles.summaryItem} />
               </View>
               <View style={styles.summaryRow}>
                 <View style={styles.summaryItem}>
                   <Text style={{ color: theme.textMuted, fontSize: 12 }}>수령완료</Text>
-                  <Text style={{ color: theme.brand, fontSize: 13, fontWeight: '700' }}>{krw(summary.receivedNet)}</Text>
+                  <Text style={{ color: theme.brand, fontSize: 13, fontWeight: '700' }}>{krw(displayReceivedNet)}</Text>
                 </View>
                 <View style={styles.summaryItem}>
                   <Text style={{ color: theme.textMuted, fontSize: 12 }}>미수령</Text>
-                  <Text style={{ color: theme.danger, fontSize: 13, fontWeight: '700' }}>{krw(summary.pendingNet)}</Text>
+                  <Text style={{ color: theme.danger, fontSize: 13, fontWeight: '700' }}>{krw(displayPendingNet)}</Text>
                 </View>
               </View>
             </View>

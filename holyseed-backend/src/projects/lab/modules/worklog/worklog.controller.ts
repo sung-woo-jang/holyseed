@@ -25,6 +25,7 @@ import {
   UpdateCategoryOptionDto,
   ReorderCategoryOptionsDto,
   SaveSortPrefDto,
+  UpdateTitleOptionDto,
 } from './dto/request';
 
 const ok = (message: string, data: unknown) => ({
@@ -68,9 +69,15 @@ export class WorklogController {
   }
 
   @Get('titles')
-  @ApiOperation({ summary: '현장명 추천 목록 (빈도순, 최근 12개)' })
+  @ApiOperation({ summary: '현장명 추천 목록 (최근 사용순, 상위 12개)' })
   async getTitles() {
     return ok('조회 성공', await this.worklogService.getTitleSuggestions());
+  }
+
+  @Get('title-options')
+  @ApiOperation({ summary: '현장명 팔레트 전체 조회 (관리 화면용)' })
+  async getTitleOptions() {
+    return ok('조회 성공', await this.worklogService.getTitleOptions());
   }
 
   @Get('job-options')
@@ -114,6 +121,19 @@ export class WorklogController {
   @ApiOperation({ summary: '분류 팔레트 순서 재배치' })
   async reorderCategoryOptions(@Body() dto: ReorderCategoryOptionsDto) {
     return ok('분류 순서가 변경되었습니다.', await this.worklogService.reorderCategoryOptions(dto.ids));
+  }
+
+  @Post('title-options/:id/update')
+  @ApiOperation({ summary: '현장명 팔레트 표기 수정 — 과거 근무 기록의 현장명에는 영향 없음' })
+  async renameTitleOption(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTitleOptionDto) {
+    return ok('현장명이 수정되었습니다.', await this.worklogService.renameTitleOption(id, dto.name));
+  }
+
+  @Post('title-options/:id/delete')
+  @ApiOperation({ summary: '현장명 팔레트에서 삭제 — 과거 근무 기록에는 영향 없음' })
+  async deleteTitleOption(@Param('id', ParseIntPipe) id: number) {
+    await this.worklogService.deleteTitleOption(id);
+    return ok('현장명이 삭제되었습니다.', null);
   }
 
   @Get('sort-pref')

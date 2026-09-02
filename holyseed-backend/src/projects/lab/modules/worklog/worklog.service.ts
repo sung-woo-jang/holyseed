@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, FindOptionsWhere, Repository } from 'typeorm';
-import { Worklog, PayStatus, WorklogJobOption, WorklogCategoryOption } from './entities';
+import { Worklog, PayStatus, WorklogJobOption, WorklogCategoryOption, WorklogTitleOption } from './entities';
 import {
   CreateWorklogDto,
   UpdateWorklogDto,
@@ -43,6 +43,8 @@ export class WorklogService {
     private readonly jobOptionRepo: Repository<WorklogJobOption>,
     @InjectRepository(WorklogCategoryOption)
     private readonly categoryOptionRepo: Repository<WorklogCategoryOption>,
+    @InjectRepository(WorklogTitleOption)
+    private readonly titleOptionRepo: Repository<WorklogTitleOption>,
   ) {}
 
   getDailyWage(date: string): number {
@@ -202,7 +204,9 @@ export class WorklogService {
       overtimeExtraRate: categoryOption?.overtimeExtraRate ?? 0.1,
     });
     log.amount = this.calcAmount(log);
-    return this.toView(await this.worklogRepo.save(log));
+    const saved = await this.worklogRepo.save(log);
+    await this.touchTitleOption(saved.title);
+    return this.toView(saved);
   }
 
   async update(id: number, dto: UpdateWorklogDto): Promise<WorklogView> {
@@ -215,29 +219,48 @@ export class WorklogService {
     if (hasOverrideKey) log.amountOverride = amountOverride ?? null;
 
     log.amount = this.calcAmount(log);
-    return this.toView(await this.worklogRepo.save(log));
+    const saved = await this.worklogRepo.save(log);
+    if (dto.title) await this.touchTitleOption(saved.title);
+    return this.toView(saved);
+  }
+
+  /** 현장명 팔레트 upsert — 있으면 마지막 사용 시각/카운트 갱신, 없으면 새로 등록 */
+  private async touchTitleOption(name: string): Promise<void> {
+    const option = await this.titleOptionRepo.findOne({ where: { name } });
+    if (option) {
+      option.lastUsedAt = new Date();
+      option.count += 1;
+      await this.titleOptionRepo.save(option);
+    } else {
+      await this.titleOptionRepo.save(this.titleOptionRepo.create({ name, lastUsedAt: new Date(), count: 1 }));
+    }
+  }
+
+  async getTitleSuggestions(): Promise<{ name: string; count: number }[]> {
+    const rows = await this.titleOptionRepo.find({ order: { lastUsedAt: 'DESC' }, take: 12 });
+    return rows.map(({ name, count }) => ({ name, count }));
+  }
+
+  async getTitleOptions(): Promise<WorklogTitleOption[]> {
+    return this.titleOptionRepo.find({ order: { lastUsedAt: 'DESC' } });
+  }
+
+  /** 팔레트 표기만 수정 — 과거 근무 기록의 title은 그대로 유지(동명이현장 가능성 때문에 소급 반영 안 함) */
+  async renameTitleOption(id: number, name: string): Promise<WorklogTitleOption> {
+    const option = await this.titleOptionRepo.findOne({ where: { id } });
+    if (!option) throw new NotFoundException('현장명을 찾을 수 없습니다.');
+    option.name = name;
+    return this.titleOptionRepo.save(option);
+  }
+
+  async deleteTitleOption(id: number): Promise<void> {
+    await this.titleOptionRepo.delete(id);
   }
 
   async delete(id: number): Promise<void> {
     const log = await this.worklogRepo.findOne({ where: { id } });
     if (!log) throw new NotFoundException('근무 기록을 찾을 수 없습니다.');
     await this.worklogRepo.remove(log);
-  }
-
-  /** 현장명 추천 — 최근 사용순(동률 없음, lastDate 기준) 상위 12개 */
-  async getTitleSuggestions(): Promise<{ name: string; count: number }[]> {
-    const rows = await this.worklogRepo.find({ select: ['title', 'workDate'], order: { workDate: 'DESC' } });
-    const map = new Map<string, { count: number; lastDate: string }>();
-    for (const r of rows) {
-      const cur = map.get(r.title);
-      if (cur) cur.count += 1;
-      else map.set(r.title, { count: 1, lastDate: r.workDate });
-    }
-    return [...map.entries()]
-      .map(([name, v]) => ({ name, count: v.count, lastDate: v.lastDate }))
-      .sort((a, b) => (a.lastDate < b.lastDate ? 1 : a.lastDate > b.lastDate ? -1 : 0))
-      .slice(0, 12)
-      .map(({ name, count }) => ({ name, count }));
   }
 
   /** 업무 팔레트 조회 — 최초 호출 시(테이블이 비어있으면) 기본 6개(인테리어 소속) 자동 시딩 */

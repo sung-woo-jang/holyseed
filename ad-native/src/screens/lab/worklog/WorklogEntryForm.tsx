@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { useQuery } from '@tanstack/react-query';
@@ -60,6 +60,7 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [previewPhoto, setPreviewPhoto] = useState<WorklogPhoto | null>(null);
   const [error, setError] = useState('');
 
   function applyCategoryDefaults(categoryName: string) {
@@ -346,7 +347,9 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
           <View style={styles.photoRow}>
             {photos.map((p) => (
               <View key={p.filename} style={styles.photoThumbWrap}>
-                <Image source={{ uri: p.url }} style={styles.photoThumb} />
+                <Pressable onPress={() => setPreviewPhoto(p)}>
+                  <Image source={{ uri: p.url }} style={styles.photoThumb} />
+                </Pressable>
                 <Pressable style={styles.photoRemove} onPress={() => removePhoto(p.filename)} hitSlop={6}>
                   <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>×</Text>
                 </Pressable>
@@ -354,7 +357,7 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
             ))}
             {photos.length < 5 && (
               <Pressable style={[styles.photoAdd, { borderColor: theme.border }]} onPress={handlePickPhotos} disabled={uploadingPhoto}>
-                <Text style={{ color: theme.textMuted, fontSize: 20 }}>{uploadingPhoto ? '···' : '+'}</Text>
+                {uploadingPhoto ? <ActivityIndicator size="small" color={theme.brand} /> : <Text style={{ color: theme.textMuted, fontSize: 20 }}>+</Text>}
               </Pressable>
             )}
           </View>
@@ -386,6 +389,15 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
         onConfirm={handleDelete}
         onClose={() => setDeleteConfirm(false)}
       />
+
+      <Modal visible={!!previewPhoto} transparent animationType="fade" onRequestClose={() => setPreviewPhoto(null)}>
+        <Pressable style={styles.photoPreviewBackdrop} onPress={() => setPreviewPhoto(null)}>
+          <Image source={{ uri: previewPhoto?.url }} style={styles.photoPreviewImage} resizeMode="contain" />
+          <Pressable style={styles.photoPreviewClose} onPress={() => setPreviewPhoto(null)} hitSlop={12}>
+            <Text style={{ color: '#fff', fontSize: 22 }}>×</Text>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SheetModal>
   );
 }
@@ -406,4 +418,17 @@ const styles = StyleSheet.create({
   photoThumb: { width: 64, height: 64, borderRadius: 10 },
   photoRemove: { position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' },
   photoAdd: { width: 64, height: 64, borderRadius: 10, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
+  photoPreviewBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center' },
+  photoPreviewImage: { width: '100%', height: '80%' },
+  photoPreviewClose: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

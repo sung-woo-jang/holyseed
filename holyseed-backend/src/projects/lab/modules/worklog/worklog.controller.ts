@@ -69,12 +69,6 @@ export class WorklogController {
     return ok('근무 기록이 추가되었습니다.', await this.worklogService.create(dto));
   }
 
-  @Get('titles')
-  @ApiOperation({ summary: '현장명 추천 목록 (최근 사용순, 상위 12개)' })
-  async getTitles() {
-    return ok('조회 성공', await this.worklogService.getTitleSuggestions());
-  }
-
   @Get('title-options')
   @ApiOperation({ summary: '현장명 팔레트 전체 조회 (관리 화면용)' })
   async getTitleOptions() {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -92,7 +92,8 @@ export default function WorklogScheduleScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView edges={['bottom']} style={[styles.root, { backgroundColor: theme.bg }]}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={{ color: theme.textMuted, fontSize: 12, marginBottom: 12 }}>
           현장명·분류를 한 번 입력하고, 아래 달력에서 근무 예정인 날짜들을 체크해서 한번에 등록해요. 이미 기록이 있는 날짜는 선택할 수 없어요.
         </Text>
@@ -183,6 +184,7 @@ export default function WorklogScheduleScreen({ navigation }: Props) {
           </Button>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
       <AppToast open={!!toast} text={toast} onClose={() => setToast('')} />
     </SafeAreaView>
   );

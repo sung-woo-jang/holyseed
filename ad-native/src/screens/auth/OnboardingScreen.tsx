@@ -28,7 +28,7 @@ export default function OnboardingScreen() {
   return (
     <KeyboardAvoidingView
       style={[styles.screen, { backgroundColor: theme.card }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
         <Text style={[styles.title, { color: theme.text }]}>가구를 만들어보세요</Text>

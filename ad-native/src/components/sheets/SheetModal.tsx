@@ -112,7 +112,7 @@ export default function SheetModal({ visible, onClose, header, headerRight, cta,
     <>
       <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
         <Pressable style={styles.scrim} onPress={onClose}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.kav}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
             <AnimatedPressable
               onPress={(e) => e.stopPropagation()}
               style={[styles.sheet, { backgroundColor: theme.card, transform: [{ translateY }] }]}

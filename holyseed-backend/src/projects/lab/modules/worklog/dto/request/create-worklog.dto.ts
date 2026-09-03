@@ -6,7 +6,6 @@ import {
   IsEnum,
   IsInt,
   IsNumber,
-  IsObject,
   IsOptional,
   IsString,
   Matches,
@@ -14,7 +13,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import { PayStatus, WorklogPhoto } from '../../entities';
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -98,8 +97,7 @@ export class CreateWorklogDto {
   @ApiPropertyOptional({ description: '근무 사진', type: [WorklogPhoto] })
   @IsOptional()
   @IsArray()
-  @IsObject({ each: true })
   @ValidateNested({ each: true })
-  @Type(() => WorklogPhoto)
+  @Transform(({ value }) => (Array.isArray(value) ? value.map((v) => Object.assign(new WorklogPhoto(), v)) : value))
   photos?: WorklogPhoto[];
 }

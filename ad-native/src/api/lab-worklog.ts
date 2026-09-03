@@ -1,6 +1,6 @@
 import { labApi } from '../lib/lab-api';
 
-export type PayStatus = 'RECEIVED' | 'EXPECTED' | 'UNPAID' | 'DAYOFF';
+export type PayStatus = 'RECEIVED' | 'EXPECTED' | 'UNPAID' | 'DAYOFF' | 'SCHEDULED';
 
 export interface WorklogPhoto {
   filename: string;

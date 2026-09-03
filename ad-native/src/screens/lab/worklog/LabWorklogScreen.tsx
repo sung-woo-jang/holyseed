@@ -28,6 +28,7 @@ const PAY_STATUS_LABEL: Record<WorklogRecord['payStatus'], string> = {
   EXPECTED: '수령예정',
   UNPAID: '미수령',
   DAYOFF: '휴무',
+  SCHEDULED: '근무예정',
 };
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -222,6 +223,9 @@ export default function LabWorklogScreen({ navigation }: Props) {
           <Text style={{ color: theme.text, fontSize: 20 }}>›</Text>
         </Pressable>
         <View style={{ flex: 1 }} />
+        <Pressable style={[styles.toolChip, { borderColor: theme.border, marginRight: 8 }]} onPress={() => navigation.navigate('WorklogSchedule')}>
+          <Text style={{ color: theme.text, fontSize: 12, fontWeight: '700' }}>+ 예정</Text>
+        </Pressable>
         <Pressable style={[styles.addBtn, { backgroundColor: theme.brand }]} onPress={openAdd}>
           <Text style={styles.addBtnText}>+ 추가</Text>
         </Pressable>

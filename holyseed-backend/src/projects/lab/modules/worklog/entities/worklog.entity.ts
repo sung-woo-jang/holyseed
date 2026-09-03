@@ -8,6 +8,8 @@ export enum PayStatus {
   EXPECTED = 'EXPECTED',
   UNPAID = 'UNPAID',
   DAYOFF = 'DAYOFF',
+  /** 아직 근무 전, 미리 등록해둔 예정일 — 근무일수/합계 집계에는 다른 상태와 동일하게 포함됨(휴무만 제외) */
+  SCHEDULED = 'SCHEDULED',
 }
 
 export class WorklogPhoto {

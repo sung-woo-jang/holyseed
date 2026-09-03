@@ -27,6 +27,7 @@ interface WorklogEntryFormProps {
 
 
 const PAY_STATUS_OPTIONS: { value: PayStatus; label: string }[] = [
+  { value: 'SCHEDULED', label: '근무예정' },
   { value: 'RECEIVED', label: '수령완료' },
   { value: 'EXPECTED', label: '수령예정' },
   { value: 'UNPAID', label: '미수령' },

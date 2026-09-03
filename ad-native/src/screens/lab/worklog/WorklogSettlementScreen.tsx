@@ -25,6 +25,7 @@ const PAY_STATUS_LABEL: Record<PayStatus, string> = {
   EXPECTED: '수령예정',
   UNPAID: '미수령',
   DAYOFF: '휴무',
+  SCHEDULED: '근무예정',
 };
 
 const STATUS_OPTIONS: PayStatus[] = ['RECEIVED', 'EXPECTED', 'UNPAID'];

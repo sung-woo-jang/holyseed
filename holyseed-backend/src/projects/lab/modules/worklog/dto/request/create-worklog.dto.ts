@@ -6,6 +6,7 @@ import {
   IsEnum,
   IsInt,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   Matches,
@@ -97,6 +98,7 @@ export class CreateWorklogDto {
   @ApiPropertyOptional({ description: '근무 사진', type: [WorklogPhoto] })
   @IsOptional()
   @IsArray()
+  @IsObject({ each: true })
   @ValidateNested({ each: true })
   @Type(() => WorklogPhoto)
   photos?: WorklogPhoto[];

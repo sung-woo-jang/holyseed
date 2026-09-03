@@ -1,5 +1,6 @@
 import { Column, Entity } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString } from 'class-validator';
 import { BaseEntity } from '@common/entities/base.entity';
 import { numeric } from '../../../common/numeric.transformer';
 
@@ -14,12 +15,15 @@ export enum PayStatus {
 
 export class WorklogPhoto {
   @ApiProperty({ example: 'a1b2c3.webp' })
+  @IsString()
   filename: string;
 
   @ApiProperty({ example: 'worklog/a1b2c3.webp' })
+  @IsString()
   path: string;
 
   @ApiProperty({ example: 'https://holyseed.p-e.kr/uploads/worklog/a1b2c3.webp' })
+  @IsString()
   url: string;
 }
 

@@ -305,6 +305,13 @@ export class WorklogService {
     await this.jobOptionRepo.remove(option);
   }
 
+  async renameJobOption(id: number, name: string): Promise<WorklogJobOption> {
+    const option = await this.jobOptionRepo.findOne({ where: { id } });
+    if (!option) throw new NotFoundException('업무 항목을 찾을 수 없습니다.');
+    option.name = name;
+    return this.jobOptionRepo.save(option);
+  }
+
   /**
    * 분류 팔레트 조회 — 최초 호출 시(테이블이 비어있으면) 기본 2개 자동 시딩 + 레거시 enum 값
    * ('INTERIOR'/'COUPANG') → 새 분류명('인테리어'/'쿠팡') 1회 백필. 이미 변환된 경우 매칭 0건이라 안전.
@@ -335,6 +342,13 @@ export class WorklogService {
     const { id: _id, ...rest } = dto;
     Object.assign(option, rest);
     return this.categoryOptionRepo.save(option);
+  }
+
+  /** 분류 팔레트에서 삭제 — 과거 근무 기록의 category는 단순 문자열이라 영향 없음 */
+  async deleteCategoryOption(id: number): Promise<void> {
+    const option = await this.categoryOptionRepo.findOne({ where: { id } });
+    if (!option) throw new NotFoundException('분류를 찾을 수 없습니다.');
+    await this.categoryOptionRepo.remove(option);
   }
 
   /** 분류 순서 재배치 — 전달된 id 배열의 인덱스를 sortOrder로 일괄 반영 */

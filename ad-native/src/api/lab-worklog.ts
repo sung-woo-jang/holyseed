@@ -136,9 +136,11 @@ export const labWorklogApi = {
   updateCategoryOption: (dto: Partial<CategoryOptionInput> & { id: number }) =>
     labApi.post<WorklogCategoryOption>('/worklog/category-options/update', dto).then((r) => r.data),
   reorderCategoryOptions: (ids: number[]) => labApi.post('/worklog/category-options/reorder', { ids }).then((r) => r.data),
+  deleteCategoryOption: (id: number) => labApi.post(`/worklog/category-options/${id}/delete`).then((r) => r.data),
 
   jobOptions: () => labApi.get<WorklogJobOption[]>('/worklog/job-options').then((r) => r.data),
   createJobOption: (name: string, category: string) => labApi.post<WorklogJobOption>('/worklog/job-options', { name, category }).then((r) => r.data),
+  renameJobOption: (id: number, name: string) => labApi.post<WorklogJobOption>(`/worklog/job-options/${id}/update`, { name }).then((r) => r.data),
   deleteJobOption: (id: number) => labApi.post(`/worklog/job-options/${id}/delete`).then((r) => r.data),
 
   uploadPhotos: (files: { uri: string; name: string; type: string }[]) => {

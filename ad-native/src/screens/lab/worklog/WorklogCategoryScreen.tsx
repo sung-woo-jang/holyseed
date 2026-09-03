@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import DraggableFlatList, { ScaleDecorator, type RenderItemParams } from 'react-native-draggable-flatlist';
@@ -393,6 +393,7 @@ export default function WorklogCategoryScreen() {
 
   return (
     <SafeAreaView edges={['bottom']} style={[styles.root, { backgroundColor: theme.bg }]}>
+      <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <DraggableFlatList
         data={categories}
         keyExtractor={(c) => String(c.id)}
@@ -421,6 +422,7 @@ export default function WorklogCategoryScreen() {
           </View>
         }
       />
+      </KeyboardAvoidingView>
 
       <ConfirmDialog
         visible={deletingCategoryId != null}

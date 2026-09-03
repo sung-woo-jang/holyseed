@@ -7,7 +7,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import TextField from '../../../components/ui/TextField';
 import Switch from '../../../components/ui/Switch';
 import Button from '../../../components/ui/Button';
-import { labWorklogApi, type WorklogCategoryOption, type WorklogTitleOption } from '../../../api/lab-worklog';
+import ConfirmDialog from '../../../components/common/ConfirmDialog';
+import { labWorklogApi, type WorklogCategoryOption, type WorklogJobOption, type WorklogTitleOption } from '../../../api/lab-worklog';
 import Border from '../../../components/ui/Border';
 import { useTheme } from '../../../lib/theme';
 import { getErrorMessage } from '../../../lib/error';
@@ -53,6 +54,10 @@ export default function WorklogCategoryScreen() {
   const [defaultEndPickerVisible, setDefaultEndPickerVisible] = useState(false);
   const [editingTitleId, setEditingTitleId] = useState<number | null>(null);
   const [editingTitleName, setEditingTitleName] = useState('');
+  const [editingJobId, setEditingJobId] = useState<number | null>(null);
+  const [editingJobName, setEditingJobName] = useState('');
+  const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState(false);
 
   const categoriesQ = useQuery({ queryKey: ['lab-worklog-categories'], queryFn: labWorklogApi.categoryOptions });
   const jobsQ = useQuery({ queryKey: ['lab-worklog-jobs'], queryFn: labWorklogApi.jobOptions });
@@ -110,6 +115,23 @@ export default function WorklogCategoryScreen() {
     refetchAll();
   }
 
+  async function handleDeleteCategory(id: number) {
+    setDeletingCategory(true);
+    try {
+      await labWorklogApi.deleteCategoryOption(id);
+      setDeletingCategoryId(null);
+      if (expandedId === id) {
+        setExpandedId(null);
+        setEditState(null);
+      }
+      refetchAll();
+    } catch (e) {
+      setError(getErrorMessage(e, '분류 삭제에 실패했어요'));
+    } finally {
+      setDeletingCategory(false);
+    }
+  }
+
   async function handleAddCategory() {
     if (!newCategoryName.trim()) return;
     setSaving(true);
@@ -140,6 +162,22 @@ export default function WorklogCategoryScreen() {
   async function handleDeleteJob(id: number) {
     await labWorklogApi.deleteJobOption(id);
     jobsQ.refetch();
+  }
+
+  function startEditJob(j: WorklogJobOption) {
+    setEditingJobId(j.id);
+    setEditingJobName(j.name);
+  }
+
+  async function handleSaveJobName() {
+    if (editingJobId == null || !editingJobName.trim()) return;
+    try {
+      await labWorklogApi.renameJobOption(editingJobId, editingJobName.trim());
+      setEditingJobId(null);
+      jobsQ.refetch();
+    } catch (e) {
+      setError(getErrorMessage(e, '업무 이름 수정에 실패했어요'));
+    }
   }
 
   function startEditTitle(t: WorklogTitleOption) {
@@ -173,6 +211,9 @@ export default function WorklogCategoryScreen() {
           <Pressable style={styles.headerRow} onPress={() => toggleExpand(c)}>
             <Text style={{ color: theme.text, fontSize: 14.5, fontWeight: '700' }}>{c.name}</Text>
             <View style={styles.moveRow}>
+              <Pressable hitSlop={10} onPress={() => setDeletingCategoryId(c.id)}>
+                <Text style={{ color: theme.danger, fontSize: 16, fontWeight: '700' }}>×</Text>
+              </Pressable>
               <Pressable hitSlop={10} onLongPress={drag} disabled={isActive}>
                 <Text style={{ color: theme.textMuted, fontSize: 18, fontWeight: '700' }}>≡</Text>
               </Pressable>
@@ -275,17 +316,28 @@ export default function WorklogCategoryScreen() {
                 />
               </View>
 
-              <View style={[styles.section, { backgroundColor: theme.bg, marginTop: 10 }]}>
+              <View style={[styles.section, { backgroundColor: theme.bg, borderWidth: 1, borderColor: theme.border, marginTop: 10 }]}>
                 <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>업무 목록</Text>
                 <View style={styles.jobChipRow}>
-                  {catJobs.map((j) => (
-                    <View key={j.id} style={[styles.jobChip, { borderColor: theme.border, backgroundColor: theme.card }]}>
-                      <Text style={{ color: theme.text, fontSize: 12.5 }}>{j.name}</Text>
-                      <Pressable hitSlop={8} onPress={() => handleDeleteJob(j.id)}>
-                        <Text style={{ color: theme.danger, fontSize: 13, fontWeight: '700', marginLeft: 6 }}>×</Text>
-                      </Pressable>
-                    </View>
-                  ))}
+                  {catJobs.map((j) =>
+                    editingJobId === j.id ? (
+                      <View key={j.id} style={[styles.jobChip, { borderColor: theme.border, backgroundColor: theme.card }]}>
+                        <TextField variant="line" value={editingJobName} onChangeText={setEditingJobName} autoFocus style={styles.jobChipInput} />
+                        <Pressable hitSlop={8} onPress={handleSaveJobName}>
+                          <Text style={{ color: theme.brand, fontSize: 14, fontWeight: '700', marginLeft: 6 }}>✓</Text>
+                        </Pressable>
+                      </View>
+                    ) : (
+                      <View key={j.id} style={[styles.jobChip, { borderColor: theme.border, backgroundColor: theme.card }]}>
+                        <Pressable onPress={() => startEditJob(j)}>
+                          <Text style={{ color: theme.text, fontSize: 12.5 }}>{j.name}</Text>
+                        </Pressable>
+                        <Pressable hitSlop={8} onPress={() => handleDeleteJob(j.id)}>
+                          <Text style={{ color: theme.danger, fontSize: 13, fontWeight: '700', marginLeft: 6 }}>×</Text>
+                        </Pressable>
+                      </View>
+                    ),
+                  )}
                 </View>
                 <View style={styles.row2}>
                   <TextField variant="box" placeholder="새 업무 이름" value={newJobName} onChangeText={setNewJobName} style={{ flex: 1 }} />
@@ -357,7 +409,7 @@ export default function WorklogCategoryScreen() {
                           <Text style={{ color: theme.brand, fontSize: 12.5, fontWeight: '700' }}>수정</Text>
                         </Pressable>
                         <Pressable hitSlop={8} onPress={() => handleDeleteTitle(t.id)}>
-                          <Text style={{ color: theme.danger, fontSize: 12.5, fontWeight: '700' }}>삭제</Text>
+                          <Text style={{ color: theme.danger, fontSize: 16, fontWeight: '700' }}>×</Text>
                         </Pressable>
                       </View>
                     )}
@@ -367,6 +419,16 @@ export default function WorklogCategoryScreen() {
             )}
           </View>
         }
+      />
+
+      <ConfirmDialog
+        visible={deletingCategoryId != null}
+        title="이 분류를 삭제할까요?"
+        confirmText="삭제하기"
+        danger
+        loading={deletingCategory}
+        onConfirm={() => deletingCategoryId != null && handleDeleteCategory(deletingCategoryId)}
+        onClose={() => setDeletingCategoryId(null)}
       />
     </SafeAreaView>
   );
@@ -387,6 +449,7 @@ const styles = StyleSheet.create({
   jobChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 10 },
   jobChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
+  jobChipInput: { width: 90 },
   addBtn: { borderWidth: 1, borderStyle: 'dashed', borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
   smallBtn: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 14, justifyContent: 'center', alignItems: 'center' },
 });

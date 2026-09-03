@@ -21,6 +21,7 @@ import {
   SearchWorklogDto,
   QueryWorklogDto,
   CreateJobOptionDto,
+  UpdateJobOptionDto,
   CreateCategoryOptionDto,
   UpdateCategoryOptionDto,
   ReorderCategoryOptionsDto,
@@ -92,6 +93,12 @@ export class WorklogController {
     return ok('업무 항목이 추가되었습니다.', await this.worklogService.createJobOption(dto.name, dto.category));
   }
 
+  @Post('job-options/:id/update')
+  @ApiOperation({ summary: '업무 팔레트 이름 수정 — 기존 기록의 업무 태그에는 영향 없음' })
+  async renameJobOption(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateJobOptionDto) {
+    return ok('업무 이름이 수정되었습니다.', await this.worklogService.renameJobOption(id, dto.name));
+  }
+
   @Post('job-options/:id/delete')
   @ApiOperation({ summary: '업무 팔레트에서 항목 삭제 (기존 기록의 업무 태그는 유지)' })
   async deleteJobOption(@Param('id', ParseIntPipe) id: number) {
@@ -121,6 +128,13 @@ export class WorklogController {
   @ApiOperation({ summary: '분류 팔레트 순서 재배치' })
   async reorderCategoryOptions(@Body() dto: ReorderCategoryOptionsDto) {
     return ok('분류 순서가 변경되었습니다.', await this.worklogService.reorderCategoryOptions(dto.ids));
+  }
+
+  @Post('category-options/:id/delete')
+  @ApiOperation({ summary: '분류 팔레트에서 삭제 — 과거 근무 기록에는 영향 없음' })
+  async deleteCategoryOption(@Param('id', ParseIntPipe) id: number) {
+    await this.worklogService.deleteCategoryOption(id);
+    return ok('분류가 삭제되었습니다.', null);
   }
 
   @Post('title-options/:id/update')

@@ -80,8 +80,8 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
 
   const jobOptionsQ = useQuery({ queryKey: ['lab-worklog-jobs'], queryFn: labWorklogApi.jobOptions, enabled: visible, staleTime: 60_000 });
   const jobChoices = (jobOptionsQ.data ?? []).filter((j) => j.category === category);
-  const titlesQ = useQuery({ queryKey: ['lab-worklog-titles'], queryFn: labWorklogApi.titles, enabled: visible, staleTime: 60_000 });
-  const titleSuggestions = titlesQ.data ?? [];
+  const titleOptionsQ = useQuery({ queryKey: ['lab-worklog-title-options'], queryFn: labWorklogApi.titleOptions, enabled: visible, staleTime: 60_000 });
+  const titleSuggestions = (titleOptionsQ.data ?? []).filter((t) => t.category === category).slice(0, 12);
 
   useEffect(() => {
     if (!visible) return;
@@ -232,7 +232,7 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
         <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled style={{ marginBottom: 12 }}>
           <View style={styles.chipRow}>
             {titleSuggestions.map((s) => (
-              <Pressable key={s.name} onPress={() => setTitle(s.name)} style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.card }]}>
+              <Pressable key={s.id} onPress={() => setTitle(s.name)} style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.card }]}>
                 <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text }}>{s.name}</Text>
               </Pressable>
             ))}

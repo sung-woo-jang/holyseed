@@ -204,6 +204,7 @@ export default function WorklogCategoryScreen() {
   function renderItem({ item: c, getIndex, drag, isActive }: RenderItemParams<WorklogCategoryOption>) {
     const expanded = expandedId === c.id;
     const catJobs = jobs.filter((j) => j.category === c.name);
+    const catTitles = titleOptions.filter((t) => t.category === c.name);
     const index = getIndex() ?? 0;
     return (
       <ScaleDecorator>
@@ -347,6 +348,36 @@ export default function WorklogCategoryScreen() {
                 </View>
               </View>
 
+              {catTitles.length > 0 && (
+                <View style={[styles.section, { backgroundColor: theme.bg, borderWidth: 1, borderColor: theme.border, marginTop: 10 }]}>
+                  <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>현장명</Text>
+                  <Text style={{ color: theme.textMuted, fontSize: 11.5, marginBottom: 8 }}>수정·삭제는 추천 목록에만 반영되고, 이미 저장된 근무 기록의 현장명은 바뀌지 않아요</Text>
+                  {catTitles.map((t, i) => (
+                    <View key={t.id}>
+                      {i > 0 && <Border type="full" />}
+                      {editingTitleId === t.id ? (
+                        <View style={[styles.row2, { marginTop: 10, marginBottom: 10 }]}>
+                          <TextField variant="box" value={editingTitleName} onChangeText={setEditingTitleName} style={{ flex: 1 }} autoFocus />
+                          <Pressable style={[styles.smallBtn, { borderColor: theme.border }]} onPress={handleSaveTitle}>
+                            <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700' }}>저장</Text>
+                          </Pressable>
+                        </View>
+                      ) : (
+                        <View style={styles.titleRow}>
+                          <Text style={{ color: theme.text, fontSize: 13.5, flex: 1 }} numberOfLines={1}>{t.name}</Text>
+                          <Pressable hitSlop={8} onPress={() => startEditTitle(t)}>
+                            <Text style={{ color: theme.brand, fontSize: 12.5, fontWeight: '700' }}>수정</Text>
+                          </Pressable>
+                          <Pressable hitSlop={8} onPress={() => handleDeleteTitle(t.id)}>
+                            <Text style={{ color: theme.danger, fontSize: 16, fontWeight: '700' }}>×</Text>
+                          </Pressable>
+                        </View>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              )}
+
               {error ? <Text style={{ color: theme.danger, fontSize: 12, marginTop: 10 }}>{error}</Text> : null}
               <View style={{ marginTop: 10 }}>
                 <Button display="full" size="small" type="primary" loading={saving} onPress={() => handleSaveEdit(c.id)}>
@@ -386,36 +417,6 @@ export default function WorklogCategoryScreen() {
               <Pressable style={[styles.addBtn, { borderColor: theme.border }]} onPress={() => setAddingCategory(true)}>
                 <Text style={{ color: theme.brand, fontSize: 13, fontWeight: '700' }}>+ 분류 추가</Text>
               </Pressable>
-            )}
-
-            {titleOptions.length > 0 && (
-              <View style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card, marginTop: 20, padding: 14 }]}>
-                <Text style={{ color: theme.text, fontSize: 14.5, fontWeight: '700', marginBottom: 4 }}>현장명</Text>
-                <Text style={{ color: theme.textMuted, fontSize: 11.5, marginBottom: 10 }}>수정·삭제는 추천 목록에만 반영되고, 이미 저장된 근무 기록의 현장명은 바뀌지 않아요</Text>
-                {titleOptions.map((t, i) => (
-                  <View key={t.id}>
-                    {i > 0 && <Border type="full" />}
-                    {editingTitleId === t.id ? (
-                      <View style={[styles.row2, { marginTop: 10, marginBottom: 10 }]}>
-                        <TextField variant="box" value={editingTitleName} onChangeText={setEditingTitleName} style={{ flex: 1 }} autoFocus />
-                        <Pressable style={[styles.smallBtn, { borderColor: theme.border }]} onPress={handleSaveTitle}>
-                          <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700' }}>저장</Text>
-                        </Pressable>
-                      </View>
-                    ) : (
-                      <View style={[styles.titleRow]}>
-                        <Text style={{ color: theme.text, fontSize: 13.5, flex: 1 }} numberOfLines={1}>{t.name}</Text>
-                        <Pressable hitSlop={8} onPress={() => startEditTitle(t)}>
-                          <Text style={{ color: theme.brand, fontSize: 12.5, fontWeight: '700' }}>수정</Text>
-                        </Pressable>
-                        <Pressable hitSlop={8} onPress={() => handleDeleteTitle(t.id)}>
-                          <Text style={{ color: theme.danger, fontSize: 16, fontWeight: '700' }}>×</Text>
-                        </Pressable>
-                      </View>
-                    )}
-                  </View>
-                ))}
-              </View>
             )}
           </View>
         }

@@ -62,6 +62,7 @@ export interface WorklogJobOption {
 export interface WorklogTitleOption {
   id: number;
   name: string;
+  category: string;
   lastUsedAt: string;
   count: number;
 }
@@ -114,7 +115,6 @@ export interface QueryParams {
 }
 
 export const labWorklogApi = {
-  titles: () => labApi.get<{ name: string; count: number }[]>('/worklog/titles').then((r) => r.data),
   titleOptions: () => labApi.get<WorklogTitleOption[]>('/worklog/title-options').then((r) => r.data),
   renameTitleOption: (id: number, name: string) => labApi.post<WorklogTitleOption>(`/worklog/title-options/${id}/update`, { name }).then((r) => r.data),
   deleteTitleOption: (id: number) => labApi.post(`/worklog/title-options/${id}/delete`).then((r) => r.data),

@@ -205,7 +205,7 @@ export class WorklogService {
     });
     log.amount = this.calcAmount(log);
     const saved = await this.worklogRepo.save(log);
-    await this.touchTitleOption(saved.title);
+    await this.touchTitleOption(saved.title, saved.category);
     return this.toView(saved);
   }
 
@@ -220,43 +220,38 @@ export class WorklogService {
 
     log.amount = this.calcAmount(log);
     const saved = await this.worklogRepo.save(log);
-    if (dto.title) await this.touchTitleOption(saved.title);
+    if (dto.title) await this.touchTitleOption(saved.title, saved.category);
     return this.toView(saved);
   }
 
-  /** 현장명 팔레트 upsert — 있으면 마지막 사용 시각/카운트 갱신, 없으면 새로 등록 */
-  private async touchTitleOption(name: string): Promise<void> {
-    const option = await this.titleOptionRepo.findOne({ where: { name } });
+  /** 현장명 팔레트 upsert(분류별) — 있으면 마지막 사용 시각/카운트 갱신, 없으면 새로 등록 */
+  private async touchTitleOption(name: string, category: string): Promise<void> {
+    const option = await this.titleOptionRepo.findOne({ where: { name, category } });
     if (option) {
       option.lastUsedAt = new Date();
       option.count += 1;
       await this.titleOptionRepo.save(option);
     } else {
-      await this.titleOptionRepo.save(this.titleOptionRepo.create({ name, lastUsedAt: new Date(), count: 1 }));
+      await this.titleOptionRepo.save(this.titleOptionRepo.create({ name, category, lastUsedAt: new Date(), count: 1 }));
     }
   }
 
-  /** 팔레트 테이블이 비어있으면(최초 도입 시점) 기존 근무 기록의 현장명들로 1회 백필 */
+  /** 팔레트 테이블이 비어있으면(최초 도입 시점) 기존 근무 기록의 (현장명, 분류)로 1회 백필 */
   private async ensureTitleOptionsSeeded(): Promise<void> {
     const count = await this.titleOptionRepo.count();
     if (count > 0) return;
-    const rows = await this.worklogRepo.find({ select: ['title', 'workDate'], order: { workDate: 'DESC' } });
-    const map = new Map<string, { count: number; lastUsedAt: Date }>();
+    const rows = await this.worklogRepo.find({ select: ['title', 'category', 'workDate'], order: { workDate: 'DESC' } });
+    const map = new Map<string, { name: string; category: string; count: number; lastUsedAt: Date }>();
     for (const r of rows) {
-      const cur = map.get(r.title);
+      const key = `${r.title} ${r.category}`;
+      const cur = map.get(key);
       if (cur) cur.count += 1;
-      else map.set(r.title, { count: 1, lastUsedAt: new Date(r.workDate) });
+      else map.set(key, { name: r.title, category: r.category, count: 1, lastUsedAt: new Date(r.workDate) });
     }
     if (map.size === 0) return;
     await this.titleOptionRepo.save(
-      [...map.entries()].map(([name, v]) => this.titleOptionRepo.create({ name, lastUsedAt: v.lastUsedAt, count: v.count })),
+      [...map.values()].map((v) => this.titleOptionRepo.create(v)),
     );
-  }
-
-  async getTitleSuggestions(): Promise<{ name: string; count: number }[]> {
-    await this.ensureTitleOptionsSeeded();
-    const rows = await this.titleOptionRepo.find({ order: { lastUsedAt: 'DESC' }, take: 12 });
-    return rows.map(({ name, count }) => ({ name, count }));
   }
 
   async getTitleOptions(): Promise<WorklogTitleOption[]> {

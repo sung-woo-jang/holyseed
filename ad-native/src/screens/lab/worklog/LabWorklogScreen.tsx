@@ -17,6 +17,7 @@ import { getWorklogSortPref, setWorklogSortPref } from '../../../lib/lab-prefs';
 import { useTheme } from '../../../lib/theme';
 import { krw } from '../../../lib/format';
 import { toLocalDateString, todayLocal } from '../../../lib/date';
+import { isKoreanHoliday } from '../../../lib/koreanHolidays';
 import { TE } from '../../../lib/toss-emoji';
 import type { WorklogStackParamList } from '../../../navigation/WorklogStack';
 
@@ -333,10 +334,13 @@ export default function LabWorklogScreen({ navigation }: Props) {
                     const dayNet = dayRecords.reduce((sum, r) => sum + r.effectiveAmount, 0);
                     const selected = dateStr === calendarSelectedDate;
                     const isToday = dateStr === today;
+                    const weekday = i % 7;
+                    const holiday = isKoreanHoliday(dateStr);
+                    const dateColor = holiday || weekday === 0 ? theme.danger : weekday === 6 ? theme.brand : theme.text;
                     return (
                       <Pressable key={i} style={styles.cell} onPress={() => setCalendarSelectedDate(selected ? null : dateStr)}>
                         <View style={[styles.dayCircle, selected && { backgroundColor: theme.brand }]}>
-                          <Text style={{ color: selected ? '#fff' : theme.text, fontSize: 13, fontWeight: isToday || selected ? '700' : '500' }}>{day}</Text>
+                          <Text style={{ color: selected ? '#fff' : dateColor, fontSize: 13, fontWeight: isToday || selected ? '700' : '500' }}>{day}</Text>
                         </View>
                         <View style={styles.dayIndicator}>
                           {dayRecords.length > 0 && <View style={[styles.dayDot, { backgroundColor: selected ? '#fff' : theme.brand }]} />}

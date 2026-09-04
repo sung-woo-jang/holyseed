@@ -343,7 +343,13 @@ export default function LabWorklogScreen({ navigation }: Props) {
                     const dateColor = holiday || weekday === 0 ? theme.danger : weekday === 6 ? theme.brand : theme.text;
                     return (
                       <Pressable key={i} style={styles.cell} onPress={() => setCalendarSelectedDate(selected ? null : dateStr)}>
-                        <View style={[styles.dayCircle, selected && { backgroundColor: theme.brand }]}>
+                        <View
+                          style={[
+                            styles.dayCircle,
+                            selected && { backgroundColor: theme.brand },
+                            isToday && !selected && { borderWidth: 1.5, borderColor: theme.brand },
+                          ]}
+                        >
                           <Text style={{ color: selected ? '#fff' : dateColor, fontSize: 13, fontWeight: isToday || selected ? '700' : '500' }}>{day}</Text>
                         </View>
                         <View style={styles.dayIndicator}>

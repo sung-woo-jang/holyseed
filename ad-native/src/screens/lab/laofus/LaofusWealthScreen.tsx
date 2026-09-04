@@ -1,13 +1,20 @@
 import { useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import Loader from '../../../components/ui/Loader';
 import Button from '../../../components/ui/Button';
 import AppToast from '../../../components/common/AppToast';
+import Segmented from '../../../components/common/Segmented';
+import WorkCalendar, { type CalLog } from '../../../components/WorkCalendar';
 import { laofusRestApi } from '../../../api/laofus';
 import { useTheme } from '../../../lib/theme';
 import { getErrorMessage } from '../../../lib/error';
 import { todayLocal } from '../../../lib/date';
+
+function todayMonth(): string {
+  return todayLocal().slice(0, 7);
+}
+const pad = (n: number) => String(n).padStart(2, '0');
 
 function n(v: string | number | null | undefined): number {
   return Number(v ?? 0);
@@ -34,6 +41,9 @@ export default function LaofusWealthScreen() {
   const [recording, setRecording] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [toast, setToast] = useState('');
+  const [month, setMonth] = useState(todayMonth());
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
 
   const accountQ = useQuery({ queryKey: ['laofus-account'], queryFn: laofusRestApi.account });
   const snapshotsQ = useQuery({ queryKey: ['laofus-account-snapshots'], queryFn: laofusRestApi.accountSnapshots });
@@ -78,6 +88,30 @@ export default function LaofusWealthScreen() {
   const totalValueKrw = fx ? totalValueUsd * fx + cashKrw : null;
   const alreadyRecordedToday = snapshots[0]?.date === todayLocal();
 
+  const deltaByDate = new Map<string, number>();
+  const chronological = [...snapshots].reverse();
+  chronological.forEach((s, i) => {
+    const prev = chronological[i - 1];
+    if (prev) deltaByDate.set(s.date, n(s.totalValueKrw) - n(prev.totalValueKrw));
+  });
+
+  const monthSnapshots = snapshots.filter((s) => s.date.startsWith(month));
+
+  function shiftMonth(delta: number) {
+    const [y, m] = month.split('-').map(Number);
+    const d = new Date(y, (m ?? 1) - 1 + delta, 1);
+    setMonth(`${d.getFullYear()}-${pad(d.getMonth() + 1)}`);
+    setSelectedDate(undefined);
+  }
+  const monthLabel = `${Number(month.slice(5))}월 (${month.slice(0, 4)})`;
+
+  const calLogs: CalLog[] = monthSnapshots.map((s) => {
+    const delta = deltaByDate.get(s.date);
+    return { id: s.id, date: s.date, colorLabel: delta == null ? theme.textMuted : delta >= 0 ? theme.brand : theme.danger, settled: true };
+  });
+  const selectedSnapshot = selectedDate ? monthSnapshots.find((s) => s.date === selectedDate) : undefined;
+  const selectedDelta = selectedSnapshot ? deltaByDate.get(selectedSnapshot.date) ?? null : null;
+
   return (
     <ScrollView
       style={[styles.root, { backgroundColor: theme.bg }]}
@@ -104,27 +138,77 @@ export default function LaofusWealthScreen() {
         )}
       </View>
 
-      <Text style={[styles.sectionTitle, { color: theme.text }]}>일별 기록 ({snapshots.length}건)</Text>
-      {snapshots.length === 0 ? (
-        <Text style={{ color: theme.textMuted, fontSize: 13 }}>아직 기록 없음 — 위 버튼으로 오늘자를 기록해보세요</Text>
-      ) : (
-        <View style={[styles.listCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          {snapshots.map((s, i) => {
-            const prev = snapshots[i + 1];
-            const delta = prev ? n(s.totalValueKrw) - n(prev.totalValueKrw) : null;
-            return (
-              <View key={s.id} style={[styles.snapRow, i > 0 && { borderTopWidth: 1, borderColor: theme.border }]}>
-                <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700' }}>{s.date}</Text>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700' }}>{krw(n(s.totalValueKrw))}</Text>
-                  <Text style={{ color: delta == null ? theme.textMuted : delta >= 0 ? theme.brand : theme.danger, fontSize: 11.5 }}>
-                    {delta == null ? '—' : `${delta >= 0 ? '+' : ''}${krw(delta)}`}
-                  </Text>
+      <View style={styles.monthNav}>
+        <Pressable style={[styles.monthBtn, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={() => shiftMonth(-1)}>
+          <Text style={{ color: theme.text, fontSize: 18 }}>‹</Text>
+        </Pressable>
+        <Text style={[styles.monthLabel, { color: theme.text }]}>{monthLabel}</Text>
+        <Pressable style={[styles.monthBtn, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={() => shiftMonth(1)}>
+          <Text style={{ color: theme.text, fontSize: 18 }}>›</Text>
+        </Pressable>
+      </View>
+
+      <View style={{ marginTop: 12, marginBottom: 12 }}>
+        <Segmented
+          options={['리스트', '캘린더']}
+          value={viewMode === 'list' ? '리스트' : '캘린더'}
+          onChange={(v) => setViewMode(v === '리스트' ? 'list' : 'calendar')}
+          small
+          alignment="fluid"
+        />
+      </View>
+
+      {viewMode === 'calendar' ? (
+        <>
+          <View style={[styles.calCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <WorkCalendar month={month} logs={calLogs} selectedDate={selectedDate} onSelectDay={setSelectedDate} />
+          </View>
+
+          {selectedDate && (
+            <View style={{ marginTop: 16 }}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>{selectedDate}</Text>
+              {selectedSnapshot ? (
+                <View style={[styles.listCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                  <View style={styles.snapRow}>
+                    <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700' }}>{selectedSnapshot.date}</Text>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700' }}>{krw(n(selectedSnapshot.totalValueKrw))}</Text>
+                      <Text style={{ color: selectedDelta == null ? theme.textMuted : selectedDelta >= 0 ? theme.brand : theme.danger, fontSize: 11.5 }}>
+                        {selectedDelta == null ? '—' : `${selectedDelta >= 0 ? '+' : ''}${krw(selectedDelta)}`}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-              </View>
-            );
-          })}
-        </View>
+              ) : (
+                <Text style={{ color: theme.textMuted, fontSize: 13 }}>이 날 기록이 없어요</Text>
+              )}
+            </View>
+          )}
+        </>
+      ) : (
+        <>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>일별 기록 ({monthSnapshots.length}건)</Text>
+          {monthSnapshots.length === 0 ? (
+            <Text style={{ color: theme.textMuted, fontSize: 13 }}>이 달 기록이 없어요</Text>
+          ) : (
+            <View style={[styles.listCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              {monthSnapshots.map((s, i) => {
+                const delta = deltaByDate.get(s.date) ?? null;
+                return (
+                  <View key={s.id} style={[styles.snapRow, i > 0 && { borderTopWidth: 1, borderColor: theme.border }]}>
+                    <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700' }}>{s.date}</Text>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700' }}>{krw(n(s.totalValueKrw))}</Text>
+                      <Text style={{ color: delta == null ? theme.textMuted : delta >= 0 ? theme.brand : theme.danger, fontSize: 11.5 }}>
+                        {delta == null ? '—' : `${delta >= 0 ? '+' : ''}${krw(delta)}`}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+        </>
       )}
       <AppToast open={!!toast} text={toast} onClose={() => setToast('')} />
     </ScrollView>
@@ -139,4 +223,8 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 14, fontWeight: '700', marginBottom: 8 },
   listCard: { borderWidth: 1, borderRadius: 14, overflow: 'hidden' },
   snapRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12 },
+  monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginTop: 4 },
+  monthBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  monthLabel: { fontSize: 15, fontWeight: '700', minWidth: 90, textAlign: 'center' },
+  calCard: { borderRadius: 16, borderWidth: 1 },
 });

@@ -30,9 +30,14 @@ export default function VrFillsScreen() {
   const [deleteTarget, setDeleteTarget] = useState<VrFill | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [toast, setToast] = useState('');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
   const fillsQ = useQuery({ queryKey: ['vr-fills'], queryFn: vrApi.fills });
-  const fills = [...(fillsQ.data ?? [])].reverse();
+  const fills = sortDir === 'asc' ? [...(fillsQ.data ?? [])].reverse() : (fillsQ.data ?? []);
+
+  function changeSortDir() {
+    setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+  }
 
   async function handleDelete() {
     if (!deleteTarget) return;
@@ -53,7 +58,14 @@ export default function VrFillsScreen() {
   return (
     <View style={[styles.root, { backgroundColor: theme.bg }]}>
       <View style={styles.header}>
-        <Text style={{ color: theme.textMuted, fontSize: 12.5 }}>{fills.length}건</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text style={{ color: theme.textMuted, fontSize: 12.5 }}>{fills.length}건</Text>
+          <Pressable onPress={changeSortDir} style={[styles.sortChip, { borderColor: theme.border, backgroundColor: theme.card }]}>
+            <Text style={{ fontSize: 11.5, fontWeight: '700', color: theme.text }}>
+              {sortDir === 'asc' ? '오래된순 ↑' : '최신순 ↓'}
+            </Text>
+          </Pressable>
+        </View>
         <Pressable style={[styles.addBtn, { backgroundColor: theme.brand }]} onPress={() => setFormVisible(true)}>
           <Text style={styles.addBtnText}>+ 체결 등록</Text>
         </Pressable>
@@ -127,6 +139,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12 },
   addBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
+  sortChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14, borderWidth: 1 },
   addBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   listCard: { borderWidth: 1, borderRadius: 14, overflow: 'hidden' },
   kindDot: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },

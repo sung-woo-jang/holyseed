@@ -44,6 +44,16 @@ export default function LaofusWealthScreen() {
   const [month, setMonth] = useState(todayMonth());
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
+  const [sortKey, setSortKey] = useState<'date' | 'amount'>('date');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  function selectSort(key: 'date' | 'amount') {
+    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortKey(key);
+      setSortDir('desc');
+    }
+  }
 
   const accountQ = useQuery({ queryKey: ['laofus-account'], queryFn: laofusRestApi.account });
   const snapshotsQ = useQuery({ queryKey: ['laofus-account-snapshots'], queryFn: laofusRestApi.accountSnapshots });
@@ -96,6 +106,12 @@ export default function LaofusWealthScreen() {
   });
 
   const monthSnapshots = snapshots.filter((s) => s.date.startsWith(month));
+  const sortedMonthSnapshots = [...monthSnapshots].sort((a, b) => {
+    const av = sortKey === 'date' ? a.date : n(a.totalValueKrw);
+    const bv = sortKey === 'date' ? b.date : n(b.totalValueKrw);
+    const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+    return sortDir === 'asc' ? cmp : -cmp;
+  });
 
   function shiftMonth(delta: number) {
     const [y, m] = month.split('-').map(Number);
@@ -187,12 +203,26 @@ export default function LaofusWealthScreen() {
         </>
       ) : (
         <>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>일별 기록 ({monthSnapshots.length}건)</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 0 }]}>일별 기록 ({monthSnapshots.length}건)</Text>
+            <View style={{ flexDirection: 'row', gap: 6 }}>
+              <Pressable onPress={() => selectSort('date')} style={[styles.sortChip, { borderColor: theme.border, backgroundColor: sortKey === 'date' ? theme.brandSoft : theme.card }]}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: sortKey === 'date' ? theme.brand : theme.text }}>
+                  날짜순{sortKey === 'date' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
+                </Text>
+              </Pressable>
+              <Pressable onPress={() => selectSort('amount')} style={[styles.sortChip, { borderColor: theme.border, backgroundColor: sortKey === 'amount' ? theme.brandSoft : theme.card }]}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: sortKey === 'amount' ? theme.brand : theme.text }}>
+                  금액순{sortKey === 'amount' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
           {monthSnapshots.length === 0 ? (
             <Text style={{ color: theme.textMuted, fontSize: 13 }}>이 달 기록이 없어요</Text>
           ) : (
             <View style={[styles.listCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              {monthSnapshots.map((s, i) => {
+              {sortedMonthSnapshots.map((s, i) => {
                 const delta = deltaByDate.get(s.date) ?? null;
                 return (
                   <View key={s.id} style={[styles.snapRow, i > 0 && { borderTopWidth: 1, borderColor: theme.border }]}>
@@ -227,4 +257,5 @@ const styles = StyleSheet.create({
   monthBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   monthLabel: { fontSize: 15, fontWeight: '700', minWidth: 90, textAlign: 'center' },
   calCard: { borderRadius: 16, borderWidth: 1 },
+  sortChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14, borderWidth: 1 },
 });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import ListRow from '../../../components/ui/ListRow';
@@ -12,6 +12,7 @@ import { vrApi, type VrFill } from '../../../api/vr';
 import { useTheme } from '../../../lib/theme';
 import { getErrorMessage } from '../../../lib/error';
 import { TE } from '../../../lib/toss-emoji';
+import { getVrFillsSortDir, setVrFillsSortDir } from '../../../lib/lab-prefs';
 
 const KIND_LABEL: Record<VrFill['kind'], string> = {
   INITIAL_BUY: '초기매수',
@@ -32,11 +33,19 @@ export default function VrFillsScreen() {
   const [toast, setToast] = useState('');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
+  useEffect(() => {
+    getVrFillsSortDir().then((d) => {
+      if (d) setSortDir(d);
+    });
+  }, []);
+
   const fillsQ = useQuery({ queryKey: ['vr-fills'], queryFn: vrApi.fills });
   const fills = sortDir === 'asc' ? [...(fillsQ.data ?? [])].reverse() : (fillsQ.data ?? []);
 
   function changeSortDir() {
-    setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    const next = sortDir === 'asc' ? 'desc' : 'asc';
+    setSortDir(next);
+    setVrFillsSortDir(next);
   }
 
   async function handleDelete() {

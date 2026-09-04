@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import Loader from '../../../components/ui/Loader';
@@ -10,6 +10,7 @@ import { laofusRestApi } from '../../../api/laofus';
 import { useTheme } from '../../../lib/theme';
 import { getErrorMessage } from '../../../lib/error';
 import { todayLocal } from '../../../lib/date';
+import { getLaofusWealthSortPref, setLaofusWealthSortPref } from '../../../lib/lab-prefs';
 
 function todayMonth(): string {
   return todayLocal().slice(0, 7);
@@ -47,12 +48,20 @@ export default function LaofusWealthScreen() {
   const [sortKey, setSortKey] = useState<'date' | 'amount'>('date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
+  useEffect(() => {
+    getLaofusWealthSortPref().then((pref) => {
+      if (pref) {
+        setSortKey(pref.key);
+        setSortDir(pref.dir);
+      }
+    });
+  }, []);
+
   function selectSort(key: 'date' | 'amount') {
-    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    else {
-      setSortKey(key);
-      setSortDir('desc');
-    }
+    const nextDir = sortKey === key ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc';
+    setSortKey(key);
+    setSortDir(nextDir);
+    setLaofusWealthSortPref({ key, dir: nextDir });
   }
 
   const accountQ = useQuery({ queryKey: ['laofus-account'], queryFn: laofusRestApi.account });

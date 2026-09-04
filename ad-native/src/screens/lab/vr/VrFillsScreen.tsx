@@ -95,7 +95,7 @@ export default function VrFillsScreen() {
                           {KIND_LABEL[f.kind]} · {f.fillDate}
                         </Text>
                         <Text style={{ color: theme.textMuted, fontSize: 11.5, marginTop: 2 }}>
-                          {f.kind === 'DEPOSIT' ? `입금 ${usd(f.price)}` : `${usd(f.price)} × ${f.quantity}주`} · 잔고 {f.qtyAfter}주 / Pool {usd(f.poolAfter)}
+                          {f.kind === 'DEPOSIT' ? `입금 ${usd(f.price)}` : `${usd(f.price)} × ${f.quantity}주`} · 잔고 {f.qtyAfter}주 · 평단 {usd(f.avgPriceAfter)} / Pool {usd(f.poolAfter)}
                         </Text>
                         {f.note && (
                           <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 2, fontStyle: 'italic' }}>{f.note}</Text>

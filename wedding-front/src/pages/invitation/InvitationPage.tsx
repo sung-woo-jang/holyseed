@@ -519,7 +519,6 @@ function InvitationContent() {
                     >
                       <span className={styles.accHeadLeft}>
                         <span className={styles.accSide}>{label}</span>
-                        <span className={styles.accHint}>{accounts.length}명</span>
                       </span>
                       <span className={styles.chevron}>⌄</span>
                     </button>

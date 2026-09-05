@@ -437,11 +437,6 @@
   color: #fff;
 }
 
-.accHint {
-  font-size: 0.72rem;
-  color: var(--netflix-text-muted, #b3b3b3);
-}
-
 .chevron {
   font-size: 0.8rem;
   color: var(--netflix-text-muted, #b3b3b3);

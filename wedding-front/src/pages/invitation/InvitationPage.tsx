@@ -144,8 +144,16 @@ function InvitationContent() {
   const topItems = topSources.map((src, i) => ({ type: 'top-ranked', src, rank: i + 1, alt: `Top ${i + 1}` }))
 
   // 계좌를 신랑측/신부측으로 분류 (relation에 '신랑'/'신부'가 포함되는지로 판단 — 스키마 변경 없이 자유 텍스트 그대로 활용)
-  const groomAccounts = accountInfo.filter((a) => a.relation?.includes('신랑'))
-  const brideAccounts = accountInfo.filter((a) => a.relation?.includes('신부'))
+  // 계좌번호가 없는 항목(혼주 성함 표시 전용으로만 등록된 경우)은 계좌 목록에서는 제외
+  const groomAccounts = accountInfo.filter((a) => a.relation?.includes('신랑') && a.account?.trim())
+  const brideAccounts = accountInfo.filter((a) => a.relation?.includes('신부') && a.account?.trim())
+
+  // 혼주 성함 (계좌 정보에 등록된 이름을 그대로 재사용 — 별도 필드 없이 relation으로 구분)
+  const findParentName = (relation: string) => accountInfo.find((a) => a.relation === relation)?.holder
+  const groomFather = findParentName('신랑측 아버지')
+  const groomMother = findParentName('신랑측 어머니')
+  const brideFather = findParentName('신부측 아버지')
+  const brideMother = findParentName('신부측 어머니')
 
   const copyAccount = (bank: string, account: string) => {
     navigator.clipboard.writeText(`${bank} ${account}`)
@@ -336,6 +344,29 @@ function InvitationContent() {
             <cite>고전 13:8</cite>
           </div>
         </section>
+
+        {/* Parents */}
+        {(groomFather || groomMother || brideFather || brideMother) && (
+          <section className={cn(styles.section, styles.parentsSection)}>
+            {(groomFather || groomMother) && (
+              <p className={styles.parentsRow}>
+                <span className={styles.parentsNames}>{[groomFather, groomMother].filter(Boolean).join(' · ')}</span>
+                <span className={styles.parentsRel}>의 아들</span>{' '}
+                <span className={styles.parentsChild}>{couple.groomName}</span>
+              </p>
+            )}
+            {(groomFather || groomMother) && (brideFather || brideMother) && (
+              <div className={styles.parentsDivider} />
+            )}
+            {(brideFather || brideMother) && (
+              <p className={styles.parentsRow}>
+                <span className={styles.parentsNames}>{[brideFather, brideMother].filter(Boolean).join(' · ')}</span>
+                <span className={styles.parentsRel}>의 딸</span>{' '}
+                <span className={styles.parentsChild}>{couple.brideName}</span>
+              </p>
+            )}
+          </section>
+        )}
 
         {/* Calendar */}
         {weddingDate && (

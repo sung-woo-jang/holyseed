@@ -337,6 +337,41 @@
   color: #8f8a83;
 }
 
+.parentsSection {
+  padding: 0.5rem 1.75rem 2.8rem;
+  text-align: center;
+  background: var(--netflix-black, #141414);
+}
+
+.parentsRow {
+  margin: 0;
+  font-family: 'Noto Serif KR', serif;
+  font-size: 0.92rem;
+  line-height: 1.9;
+  color: #b3aea6;
+}
+
+.parentsNames {
+  color: #b3aea6;
+}
+
+.parentsRel {
+  color: #7a756e;
+  font-size: 0.8rem;
+}
+
+.parentsChild {
+  color: #f4f1ea;
+  font-weight: 600;
+}
+
+.parentsDivider {
+  width: 22px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0.9rem auto;
+}
+
 .guestbookSection {
   padding: var(--netflix-section-padding) 1.5rem;
   text-align: center;

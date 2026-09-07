@@ -8,6 +8,8 @@ import EmptyState from '../components/common/EmptyState';
 import TossEmoji from '../components/common/TossEmoji';
 import JointAvatar from '../components/common/JointAvatar';
 import AppToast from '../components/common/AppToast';
+import AssetCategoryIcon from '../components/common/AssetCategoryIcon';
+import DonutChart from '../components/charts/DonutChart';
 import AddAssetSheet from '../components/sheets/AddAssetSheet';
 import SnapshotSheet from '../components/sheets/SnapshotSheet';
 import Border from '../components/ui/Border';
@@ -88,13 +90,38 @@ export default function AssetsScreen({ navigation }: Props) {
   });
 
   const total = filteredAssets.reduce((s, a) => s + (a.isLiability ? -a.value : a.value), 0);
+  const totalAssets = filteredAssets.reduce((s, a) => s + (a.isLiability ? 0 : a.value), 0);
+  const totalLiabilities = filteredAssets.reduce((s, a) => s + (a.isLiability ? a.value : 0), 0);
+  const totalDelta = filteredAssets.reduce((s, a) => s + (a.delta ?? 0), 0);
+  const prevTotal = total - totalDelta;
+  const totalDeltaPct = prevTotal !== 0 ? (totalDelta / prevTotal) * 100 : 0;
 
-  function ownerBadge(ownerUserId: number | null | undefined, size = 24) {
-    if (ownerUserId == null) return <JointAvatar size={size} brand={theme.brand} muted={theme.textMuted} />;
+  const grossAssetsTotal = totalAssets || 1;
+  const compositionList = (Object.entries(grouped) as [AssetCategory, HouseholdAsset[]][])
+    .filter(([cat]) => cat !== 'LIABILITY')
+    .map(([cat, items]) => {
+      const meta = getAssetCategoryMeta(cat);
+      const value = items.reduce((s, a) => s + a.value, 0);
+      return { cat, label: meta.label, color: meta.color, value, pct: (value / grossAssetsTotal) * 100 };
+    })
+    .sort((a, b) => b.value - a.value);
+  const compositionData = compositionList.map((c) => ({ value: c.value, color: c.color }));
+
+  function ownerLabel(ownerUserId: number | null | undefined): { color: string; text: string } {
+    if (ownerUserId == null) return { color: theme.textMuted, text: '共' };
     const owner = data.members.find((m) => Number(m.id) === ownerUserId);
+    return { color: owner?.avatar ?? theme.textMuted, text: owner?.initial ?? '?' };
+  }
+
+  function assetRowIcon(a: HouseholdAsset) {
+    const meta = getAssetCategoryMeta(a.category);
+    const owner = ownerLabel(a.ownerUserId);
     return (
-      <View style={[styles.ownerBadge, { width: size, height: size, borderRadius: size / 2, backgroundColor: owner?.avatar ?? theme.textMuted }]}>
-        <Text style={styles.ownerBadgeText}>{owner?.initial ?? '?'}</Text>
+      <View style={[styles.assetIconWrap, { backgroundColor: meta.color + '22' }]}>
+        <AssetCategoryIcon category={a.category} size={17} color={meta.color} />
+        <View style={[styles.ownerBadgeSmall, { backgroundColor: owner.color, borderColor: theme.card }]}>
+          <Text style={styles.ownerBadgeSmallText}>{owner.text}</Text>
+        </View>
       </View>
     );
   }
@@ -108,7 +135,45 @@ export default function AssetsScreen({ navigation }: Props) {
         <View style={styles.header}>
           <Text style={[styles.headerLabel, { color: theme.textMuted }]}>총 순자산</Text>
           <Text style={[styles.headerValue, { color: theme.text }]}>{krw(total)}</Text>
+          {filteredAssets.length > 0 && (
+            <>
+              <Text style={[styles.netSubText, { color: theme.textMuted }]}>
+                총자산 <Text style={{ color: theme.text, fontWeight: '700' }}>{krwShort(totalAssets)}</Text>
+                {totalLiabilities > 0 && (
+                  <>
+                    {' '}
+                    · 총부채 <Text style={{ color: theme.danger, fontWeight: '700' }}>{krwShort(totalLiabilities)}</Text>
+                  </>
+                )}
+              </Text>
+              {totalDelta !== 0 && (
+                <View style={[styles.deltaPill, { backgroundColor: totalDelta >= 0 ? 'rgba(18,185,129,0.12)' : 'rgba(255,59,48,0.12)' }]}>
+                  <Text style={{ color: totalDelta >= 0 ? '#0E9F6E' : theme.danger, fontSize: 11.5, fontWeight: '800' }}>
+                    {totalDelta >= 0 ? '▲' : '▼'} 직전 대비 {totalDelta > 0 ? '+' : ''}
+                    {krw(totalDelta)} ({pct(totalDeltaPct)})
+                  </Text>
+                </View>
+              )}
+            </>
+          )}
         </View>
+
+        {compositionData.length > 0 && (
+          <View style={[styles.donutCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <DonutChart data={compositionData} size={86} thickness={12} dark={theme.dark} />
+            <View style={styles.legend}>
+              {compositionList.map((c) => (
+                <View key={c.cat} style={styles.legendRow}>
+                  <View style={[styles.legendDot, { backgroundColor: c.color }]} />
+                  <Text style={[styles.legendName, { color: theme.text }]} numberOfLines={1}>
+                    {c.label}
+                  </Text>
+                  <Text style={[styles.legendPct, { color: theme.textMuted }]}>{c.pct.toFixed(1)}%</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
 
         {data.isLoading && (
           <View style={styles.ownerFilterSkeleton}>
@@ -174,17 +239,24 @@ export default function AssetsScreen({ navigation }: Props) {
             <View key={cat} style={styles.groupBlock}>
               <View style={styles.groupHeader}>
                 <View style={styles.groupHeaderLeft}>
-                  <TossEmoji code={meta.iconCode} size={18} />
+                  <View style={[styles.catIconWrap, { backgroundColor: meta.color + '22' }]}>
+                    <AssetCategoryIcon category={cat} size={15} color={meta.color} />
+                  </View>
                   <Text style={[styles.groupLabel, { color: theme.text }]}>{meta.label}</Text>
                   <Text style={[styles.groupCount, { color: theme.textMuted }]}>· {items.length}건</Text>
                 </View>
-                <Text style={[styles.groupSum, { color: theme.textMuted }]}>{krwShort(sum)}원</Text>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={[styles.groupSum, { color: cat === 'LIABILITY' ? theme.danger : theme.textMuted }]}>{krwShort(sum)}원</Text>
+                  {cat !== 'LIABILITY' && (
+                    <Text style={[styles.shareTag, { color: theme.textMuted }]}>{((sum / grossAssetsTotal) * 100).toFixed(1)}%</Text>
+                  )}
+                </View>
               </View>
               <View style={[styles.groupCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 {items.map((a, i) => (
                   <View key={a.id}>
                     <ListRow
-                      left={ownerBadge(a.ownerUserId)}
+                      left={assetRowIcon(a)}
                       contents={
                         <View style={{ minWidth: 0 }}>
                           <Text style={[styles.assetName, { color: theme.text }]} numberOfLines={1}>
@@ -271,6 +343,14 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16 },
   headerLabel: { fontSize: 13, fontWeight: '500', marginBottom: 4 },
   headerValue: { fontSize: 28, fontWeight: '800', letterSpacing: -0.8 },
+  netSubText: { fontSize: 12, fontWeight: '600', marginTop: 6 },
+  deltaPill: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', paddingVertical: 5, paddingHorizontal: 10, borderRadius: 999, marginTop: 10 },
+  donutCard: { flexDirection: 'row', alignItems: 'center', gap: 14, marginHorizontal: 20, marginBottom: 16, padding: 14, borderRadius: 16, borderWidth: 1 },
+  legend: { flex: 1, gap: 6 },
+  legendRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  legendDot: { width: 8, height: 8, borderRadius: 999 },
+  legendName: { flex: 1, fontSize: 11, fontWeight: '600' },
+  legendPct: { fontSize: 11, fontWeight: '700' },
   ownerFilterSkeleton: { flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingBottom: 12 },
   ownerChipSkeleton: { width: 64, height: 30, borderRadius: 999, opacity: 0.5 },
   ownerFilterRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingBottom: 12 },
@@ -278,18 +358,21 @@ const styles = StyleSheet.create({
   ownerChipDot: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   ownerChipDotText: { color: '#fff', fontSize: 9, fontWeight: '800' },
   ownerChipLabel: { fontSize: 12.5, fontWeight: '700' },
-  ownerBadge: { alignItems: 'center', justifyContent: 'center' },
-  ownerBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
   actionRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingBottom: 16 },
   actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderRadius: 12 },
   actionBtnPrimary: { color: '#fff', fontSize: 13, fontWeight: '700' },
   groupBlock: { paddingHorizontal: 20, paddingBottom: 14 },
   groupHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, paddingHorizontal: 4 },
-  groupHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  groupHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  catIconWrap: { width: 26, height: 26, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   groupLabel: { fontSize: 13, fontWeight: '700' },
   groupCount: { fontSize: 11 },
   groupSum: { fontSize: 12, fontWeight: '600' },
+  shareTag: { fontSize: 10.5, fontWeight: '700', marginTop: 1 },
   groupCard: { borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
+  assetIconWrap: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  ownerBadgeSmall: { position: 'absolute', right: -4, bottom: -4, width: 16, height: 16, borderRadius: 999, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
+  ownerBadgeSmallText: { color: '#fff', fontSize: 8, fontWeight: '800' },
   assetName: { fontSize: 14, fontWeight: '600' },
   assetRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   assetValue: { fontSize: 14, fontWeight: '700' },

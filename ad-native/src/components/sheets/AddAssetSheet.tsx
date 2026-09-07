@@ -4,11 +4,9 @@ import Button from '../ui/Button';
 import TextField from '../ui/TextField';
 import SheetModal from './SheetModal';
 import { useTheme } from '../../lib/theme';
-import { TE } from '../../lib/toss-emoji';
-import TossEmoji from '../common/TossEmoji';
 import { Icon } from '../common/Icon';
 import JointAvatar from '../common/JointAvatar';
-import { ASSET_CATEGORY_META } from '../../lib/category-meta';
+import AssetCategoryIcon from '../common/AssetCategoryIcon';
 import { useCreateAsset, useUpdateAsset, useUpsertSnapshot } from '../../queries/mutations';
 import { useHouseholdData, type HouseholdAsset } from '../../queries/useHouseholdData';
 import { useAuthStore } from '../../stores/auth.store';
@@ -155,7 +153,7 @@ export default function AddAssetSheet({ visible, onClose, editAsset, onSaved }: 
                 ]}
                 onPress={() => setCategory(opt.key)}
               >
-                <TossEmoji code={ASSET_CATEGORY_META[opt.key].iconCode} size={20} />
+                <AssetCategoryIcon category={opt.key} size={20} color={selected ? (isLiab ? theme.danger : theme.brand) : theme.textMuted} />
                 <Text style={{ fontSize: 13, fontWeight: '600', color: selected ? (isLiab ? theme.danger : theme.brand) : theme.text }}>{opt.label}</Text>
               </Pressable>
             );

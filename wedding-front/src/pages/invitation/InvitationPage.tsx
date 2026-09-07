@@ -311,11 +311,36 @@ function InvitationContent() {
             })}
             <div className={styles.heroCardGradient} />
             <div className={styles.heroCardCopy}>
-              <h1 className={styles.heroNames}>{couple.groomName}<span className={styles.ampersand}>&</span>{couple.brideName}</h1>
-              {weddingDate && (
-                <time className={styles.heroDate} dateTime={weddingDate.toISOString()}>
-                  {format(weddingDate, 'yyyy. MM. dd a h시', { locale: ko })}{venue?.name ? ` · ${venue.name}` : ''}
-                </time>
+              <span className={styles.originalBadge}>N 홀리씨드 오리지널</span>
+              <h1 className={styles.heroNames}>{couple.groomName} & {couple.brideName}</h1>
+              <div className={styles.heroMetaRow}>
+                <span className={styles.matchBadge}>찰떡 케미 98%</span>
+                {weddingDate && (
+                  <>
+                    <span className={styles.heroMetaDot}>·</span>
+                    <span>{format(weddingDate, 'yyyy', { locale: ko })}</span>
+                  </>
+                )}
+                <span className={styles.heroMetaDot}>·</span>
+                <span>단 하루, 1부작</span>
+              </div>
+              <div className={styles.heroGenreRow}>
+                <span className={styles.genrePill}>로맨스</span>
+                <span className={styles.genrePill}>드라마</span>
+                <span className={styles.genrePill}>실화</span>
+              </div>
+              <p className={styles.heroSynopsis}>
+                우연히 만난 두 사람이 2년의 연애 끝에 결혼을 결심하기까지.
+                {weddingDate && ` ${format(weddingDate, 'M', { locale: ko })}월, `}
+                {venue?.name ?? '이곳'}에서 단 하루만 공개됩니다.
+              </p>
+              {(groomFather || groomMother || brideFather || brideMother) && (
+                <p className={styles.heroCreditLine}>
+                  <b>출연</b> {couple.groomName}, {couple.brideName}
+                  {(groomFather || groomMother || brideFather || brideMother) && (
+                    <> · <b>제작</b> {[[groomFather, groomMother].filter(Boolean).join('·'), [brideFather, brideMother].filter(Boolean).join('·')].filter(Boolean).join(', ')}</>
+                  )}
+                </p>
               )}
             </div>
           </div>

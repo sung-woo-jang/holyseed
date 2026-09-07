@@ -61,7 +61,7 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [toast, setToast] = useState('');
-  const { scrollRef, scrollToInput } = useKeyboardScrollRegistration();
+  const { scrollRef, scrollToInput, onScroll } = useKeyboardScrollRegistration();
 
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
@@ -207,7 +207,7 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
   return (
     <View style={[styles.root, { backgroundColor: theme.bg }]}>
       <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: 32 }} onScroll={onScroll} scrollEventThrottle={16}>
         <KeyboardScrollProvider value={scrollToInput}>
         <View style={styles.iconWrap}>
           <Pressable disabled={isBuiltin} onPress={() => openIconPicker('main')} style={[styles.iconBig, { backgroundColor: color + '22' }]}>

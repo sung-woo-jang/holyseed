@@ -58,7 +58,7 @@ export default function SheetModal({ visible, onClose, header, headerRight, cta,
   const insets = useSafeAreaInsets();
   const dragY = useRef(new Animated.Value(0)).current;
   const scrollYRef = useRef(0);
-  const { scrollRef, scrollToInput } = useKeyboardScrollRegistration();
+  const { scrollRef, scrollToInput, onScroll: onKeyboardScroll } = useKeyboardScrollRegistration();
 
   useEffect(() => {
     if (visible) dragY.setValue(0);
@@ -135,7 +135,10 @@ export default function SheetModal({ visible, onClose, header, headerRight, cta,
                 contentContainerStyle={[styles.body, !cta && { paddingBottom: 24 + insets.bottom }]}
                 keyboardShouldPersistTaps="handled"
                 overScrollMode="always"
-                onScroll={(e) => onBodyScroll(e.nativeEvent.contentOffset.y)}
+                onScroll={(e) => {
+                  onBodyScroll(e.nativeEvent.contentOffset.y);
+                  onKeyboardScroll(e);
+                }}
                 onScrollEndDrag={onBodyScrollEndDrag}
                 scrollEventThrottle={16}
               >

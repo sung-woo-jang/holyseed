@@ -70,7 +70,7 @@ export default function LaofusHomeScreen({ navigation }: Props) {
   const [simInput, setSimInput] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const simInputRef = useRef<TextInput>(null);
-  const { scrollRef, scrollToInput } = useKeyboardScrollRegistration();
+  const { scrollRef, scrollToInput, onScroll } = useKeyboardScrollRegistration();
 
   const statusQ = useQuery({ queryKey: ['laofus-status'], queryFn: laofusRestApi.status, refetchInterval: 30_000 });
   const priceQ = useQuery({ queryKey: ['laofus-price'], queryFn: laofusRestApi.price, refetchInterval: 60_000 });
@@ -124,6 +124,8 @@ export default function LaofusHomeScreen({ navigation }: Props) {
       style={[styles.root, { backgroundColor: theme.bg }]}
       contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.brand} colors={[theme.brand]} />}
+      onScroll={onScroll}
+      scrollEventThrottle={16}
     >
       <KeyboardScrollProvider value={scrollToInput}>
       <View style={styles.navRow}>

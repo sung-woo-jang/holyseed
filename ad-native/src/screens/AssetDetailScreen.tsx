@@ -46,7 +46,7 @@ export default function AssetDetailScreen({ navigation, route }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const updateAsset = useUpdateAsset();
   const deleteAsset = useDeleteAsset();
-  const { scrollRef, scrollToInput } = useKeyboardScrollRegistration();
+  const { scrollRef, scrollToInput, onScroll } = useKeyboardScrollRegistration();
 
   const assetId = route.params.id;
   const asset = data.assets.find((a) => String(a.id) === assetId);
@@ -121,6 +121,8 @@ export default function AssetDetailScreen({ navigation, route }: Props) {
         ref={scrollRef}
         contentContainerStyle={{ paddingBottom: 32 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.brand} colors={[theme.brand]} />}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
       >
         <KeyboardScrollProvider value={scrollToInput}>
         <View style={[styles.summaryCard, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>

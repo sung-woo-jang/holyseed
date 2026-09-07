@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -14,6 +14,7 @@ import { useHouseholdData } from '../../queries/useHouseholdData';
 import { getCategoryDef } from '../../lib/category-meta';
 import { CATEGORY_ICON_SECTIONS } from '../../lib/toss-emoji';
 import { getHiddenIconIds, setHiddenIconIds } from '../../lib/icon-prefs';
+import { useKeyboardScrollRegistration, KeyboardScrollProvider } from '../../lib/keyboard-scroll';
 import { getErrorMessage } from '../../lib/error';
 import { useCreateCategory, useUpdateCategory, useDeleteCategory, useUploadCategoryIcon } from '../../queries/mutations';
 import { categoriesApi } from '../../api';
@@ -60,6 +61,7 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [toast, setToast] = useState('');
+  const { scrollRef, scrollToInput } = useKeyboardScrollRegistration();
 
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
@@ -204,7 +206,9 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
 
   return (
     <View style={[styles.root, { backgroundColor: theme.bg }]}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+      <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: 32 }}>
+        <KeyboardScrollProvider value={scrollToInput}>
         <View style={styles.iconWrap}>
           <Pressable disabled={isBuiltin} onPress={() => openIconPicker('main')} style={[styles.iconBig, { backgroundColor: color + '22' }]}>
             <CategoryIcon icon={icon} size={60} />
@@ -269,6 +273,7 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
             </Pressable>
           </View>
         )}
+        </KeyboardScrollProvider>
       </ScrollView>
 
       <View style={[styles.ctaWrap, { backgroundColor: theme.card, borderTopColor: theme.border }]}>
@@ -276,6 +281,7 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
           저장하기
         </Button>
       </View>
+      </KeyboardAvoidingView>
 
       <SheetModal
         visible={!!iconPickerFor}
@@ -360,6 +366,7 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
       </SheetModal>
 
       <Modal visible={!!subModal} transparent animationType="fade" onRequestClose={() => setSubModal(null)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <Pressable style={styles.scrim} onPress={() => setSubModal(null)}>
           <Pressable style={[styles.subModal, { backgroundColor: theme.card }]} onPress={(e) => e.stopPropagation()}>
             <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800', marginBottom: 14 }}>세부 카테고리 {subModal && subModal.index === -1 ? '추가' : '수정'}</Text>
@@ -388,6 +395,7 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
             </View>
           </Pressable>
         </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
 
       <AppToast open={!!toast} text={toast} onClose={() => setToast('')} />

@@ -3,6 +3,7 @@ import { Animated, KeyboardAvoidingView, Modal, PanResponder, Platform, Pressabl
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../lib/theme';
 import { useSheetStore } from '../../stores/sheet.store';
+import { useKeyboardScrollRegistration, KeyboardScrollProvider } from '../../lib/keyboard-scroll';
 
 interface SheetModalProps {
   visible: boolean;
@@ -57,6 +58,7 @@ export default function SheetModal({ visible, onClose, header, headerRight, cta,
   const insets = useSafeAreaInsets();
   const dragY = useRef(new Animated.Value(0)).current;
   const scrollYRef = useRef(0);
+  const { scrollRef, scrollToInput } = useKeyboardScrollRegistration();
 
   useEffect(() => {
     if (visible) dragY.setValue(0);
@@ -129,6 +131,7 @@ export default function SheetModal({ visible, onClose, header, headerRight, cta,
                 )}
               </View>
               <ScrollView
+                ref={scrollRef}
                 contentContainerStyle={[styles.body, !cta && { paddingBottom: 24 + insets.bottom }]}
                 keyboardShouldPersistTaps="handled"
                 overScrollMode="always"
@@ -136,7 +139,7 @@ export default function SheetModal({ visible, onClose, header, headerRight, cta,
                 onScrollEndDrag={onBodyScrollEndDrag}
                 scrollEventThrottle={16}
               >
-                {children}
+                <KeyboardScrollProvider value={scrollToInput}>{children}</KeyboardScrollProvider>
               </ScrollView>
               {cta && (
                 <View style={[styles.ctaWrap, { paddingBottom: 20 + insets.bottom, borderTopColor: theme.border, backgroundColor: theme.card }]}>

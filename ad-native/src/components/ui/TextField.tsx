@@ -1,6 +1,7 @@
-import { forwardRef } from 'react';
+import { forwardRef, useRef } from 'react';
 import { StyleSheet, Text, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '../../lib/theme';
+import { useKeyboardScroll } from '../../lib/keyboard-scroll';
 
 interface TextFieldProps {
   variant?: 'line' | 'box';
@@ -22,6 +23,20 @@ const TextField = forwardRef<TextInput, TextFieldProps>(function TextField(
   ref,
 ) {
   const theme = useTheme();
+  const innerRef = useRef<TextInput>(null);
+  const scrollToInput = useKeyboardScroll();
+
+  function setRefs(node: TextInput | null) {
+    innerRef.current = node;
+    if (typeof ref === 'function') ref(node);
+    else if (ref) ref.current = node;
+  }
+
+  function handleFocus() {
+    scrollToInput?.(innerRef.current);
+    onFocus?.();
+  }
+
   return (
     <View style={style}>
       {label && <Text style={[styles.label, { color: theme.textMuted }]}>{label}</Text>}
@@ -34,7 +49,7 @@ const TextField = forwardRef<TextInput, TextFieldProps>(function TextField(
         ]}
       >
         <TextInput
-          ref={ref}
+          ref={setRefs}
           style={[styles.input, { color: theme.text }]}
           placeholder={placeholder}
           placeholderTextColor={theme.textMuted}
@@ -43,7 +58,7 @@ const TextField = forwardRef<TextInput, TextFieldProps>(function TextField(
           autoFocus={autoFocus}
           keyboardType={keyboardType === 'numeric' ? 'number-pad' : 'default'}
           onChangeText={onChangeText}
-          onFocus={onFocus}
+          onFocus={handleFocus}
           onSubmitEditing={onSubmitEditing}
           returnKeyType="next"
         />

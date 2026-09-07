@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import DraggableFlatList, { ScaleDecorator, type RenderItemParams } from 'react-native-draggable-flatlist';
+import type { FlatList } from 'react-native-gesture-handler';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import TextField from '../../../components/ui/TextField';
 import Switch from '../../../components/ui/Switch';
@@ -58,6 +59,7 @@ export default function WorklogCategoryScreen() {
   const [editingJobName, setEditingJobName] = useState('');
   const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(null);
   const [deletingCategory, setDeletingCategory] = useState(false);
+  const listRef = useRef<FlatList<WorklogCategoryOption>>(null);
 
   const categoriesQ = useQuery({ queryKey: ['lab-worklog-categories'], queryFn: labWorklogApi.categoryOptions });
   const jobsQ = useQuery({ queryKey: ['lab-worklog-jobs'], queryFn: labWorklogApi.jobOptions });
@@ -395,6 +397,7 @@ export default function WorklogCategoryScreen() {
     <SafeAreaView edges={['bottom']} style={[styles.root, { backgroundColor: theme.bg }]}>
       <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <DraggableFlatList
+        ref={listRef}
         data={categories}
         keyExtractor={(c) => String(c.id)}
         onDragEnd={({ data }) => handleReorder(data)}
@@ -408,7 +411,14 @@ export default function WorklogCategoryScreen() {
             {addingCategory ? (
               <View style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card, padding: 12 }]}>
                 <View style={styles.row2}>
-                  <TextField variant="box" placeholder="새 분류 이름" value={newCategoryName} onChangeText={setNewCategoryName} style={{ flex: 1 }} />
+                  <TextField
+                    variant="box"
+                    placeholder="새 분류 이름"
+                    value={newCategoryName}
+                    onChangeText={setNewCategoryName}
+                    onFocus={() => listRef.current?.scrollToEnd({ animated: true })}
+                    style={{ flex: 1 }}
+                  />
                   <Button size="small" type="primary" loading={saving} onPress={handleAddCategory}>
                     추가
                   </Button>

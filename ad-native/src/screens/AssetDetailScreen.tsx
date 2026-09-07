@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState } from 'react';
-import { Dimensions, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Border from '../components/ui/Border';
@@ -18,6 +18,7 @@ import LineChart from '../components/charts/LineChart';
 import SnapshotSheet from '../components/sheets/SnapshotSheet';
 import EditSnapshotSheet, { type EditableSnapshot } from '../components/sheets/EditSnapshotSheet';
 import { getAssetCategoryMeta } from '../lib/category-meta';
+import { useKeyboardScrollRegistration, KeyboardScrollProvider } from '../lib/keyboard-scroll';
 import { krw, krwShort, pct } from '../lib/format';
 import { TE } from '../lib/toss-emoji';
 import { Icon } from '../components/common/Icon';
@@ -45,6 +46,7 @@ export default function AssetDetailScreen({ navigation, route }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const updateAsset = useUpdateAsset();
   const deleteAsset = useDeleteAsset();
+  const { scrollRef, scrollToInput } = useKeyboardScrollRegistration();
 
   const assetId = route.params.id;
   const asset = data.assets.find((a) => String(a.id) === assetId);
@@ -114,10 +116,13 @@ export default function AssetDetailScreen({ navigation, route }: Props) {
 
   return (
     <View style={[styles.root, { backgroundColor: theme.bg }]}>
+      <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={{ paddingBottom: 32 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.brand} colors={[theme.brand]} />}
       >
+        <KeyboardScrollProvider value={scrollToInput}>
         <View style={[styles.summaryCard, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
           <View style={styles.summaryTop}>
             <TossEmoji code={meta.iconCode} size={48} bg={meta.color + '22'} />
@@ -226,7 +231,9 @@ export default function AssetDetailScreen({ navigation, route }: Props) {
             })}
           </View>
         )}
+        </KeyboardScrollProvider>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <SnapshotSheet visible={snapshotOpen} focusAssetId={asset.id} onClose={() => setSnapshotOpen(false)} onSaved={() => setToast('스냅샷을 저장했어요')} />
       <EditSnapshotSheet visible={!!editSnap} assetId={Number(asset.id)} snapshot={editSnap} onClose={() => setEditSnap(null)} onDone={setToast} />

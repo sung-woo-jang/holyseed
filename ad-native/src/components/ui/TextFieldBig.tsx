@@ -1,5 +1,7 @@
+import { useRef } from 'react';
 import { StyleSheet, Text, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '../../lib/theme';
+import { useKeyboardScroll } from '../../lib/keyboard-scroll';
 
 interface TextFieldBigProps {
   placeholder?: string;
@@ -13,9 +15,12 @@ interface TextFieldBigProps {
 
 export default function TextFieldBig({ placeholder, value, onChangeText, keyboardType = 'default', suffix, autoFocus, style }: TextFieldBigProps) {
   const theme = useTheme();
+  const inputRef = useRef<TextInput>(null);
+  const scrollToInput = useKeyboardScroll();
   return (
     <View style={[styles.field, style]}>
       <TextInput
+        ref={inputRef}
         style={[styles.input, { color: theme.text }]}
         placeholder={placeholder}
         placeholderTextColor={theme.textMuted}
@@ -23,6 +28,7 @@ export default function TextFieldBig({ placeholder, value, onChangeText, keyboar
         value={value}
         onChangeText={onChangeText}
         autoFocus={autoFocus}
+        onFocus={() => scrollToInput?.(inputRef.current)}
       />
       {suffix && <Text style={[styles.suffix, { color: theme.textMuted }]}>{suffix}</Text>}
     </View>

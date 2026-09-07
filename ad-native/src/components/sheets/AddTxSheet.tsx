@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Button from '../ui/Button';
 import TextFieldBig from '../ui/TextFieldBig';
@@ -12,6 +12,7 @@ import FormRow from '../common/FormRow';
 import DatePicker from '../common/DatePicker';
 import PickerOverlay from './PickerOverlay';
 import { CATEGORY_DEFS, getCategoryDef } from '../../lib/category-meta';
+import { useKeyboardScroll } from '../../lib/keyboard-scroll';
 import { Icon } from '../common/Icon';
 import { useCreateTx, useUpdateTx } from '../../queries/mutations';
 import { todayLocal } from '../../lib/date';
@@ -48,6 +49,9 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
   const [error, setError] = useState('');
   const createTx = useCreateTx();
   const updateTx = useUpdateTx();
+  const titleRef = useRef<TextInput>(null);
+  const memoRef = useRef<TextInput>(null);
+  const scrollToInput = useKeyboardScroll();
 
   useEffect(() => {
     if (!visible) return;
@@ -216,13 +220,16 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
       </View>
 
       <TextInput
+        ref={titleRef}
         style={[styles.titleInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.bg }]}
         placeholder="제목 (선택)"
         placeholderTextColor={theme.textMuted}
         value={title}
         onChangeText={setTitle}
+        onFocus={() => scrollToInput?.(titleRef.current)}
       />
       <TextInput
+        ref={memoRef}
         style={[styles.memoInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.bg }]}
         placeholder="메모 (선택)"
         placeholderTextColor={theme.textMuted}
@@ -230,6 +237,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
         numberOfLines={3}
         value={memo}
         onChangeText={setMemo}
+        onFocus={() => scrollToInput?.(memoRef.current)}
       />
     </SheetModal>
   );

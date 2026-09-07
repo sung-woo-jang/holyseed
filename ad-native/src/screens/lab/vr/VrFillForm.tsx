@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Text, TextInput, View, StyleSheet } from 'react-native';
 import SheetModal from '../../../components/sheets/SheetModal';
 import Button from '../../../components/ui/Button';
@@ -8,6 +8,7 @@ import FormRow from '../../../components/common/FormRow';
 import DatePicker from '../../../components/common/DatePicker';
 import { vrApi, type VrFillKind } from '../../../api/vr';
 import { useTheme } from '../../../lib/theme';
+import { useKeyboardScroll } from '../../../lib/keyboard-scroll';
 import { todayLocal } from '../../../lib/date';
 import { getErrorMessage } from '../../../lib/error';
 
@@ -34,6 +35,8 @@ export default function VrFillForm({ visible, onClose, onSaved }: VrFillFormProp
   const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const noteRef = useRef<TextInput>(null);
+  const scrollToInput = useKeyboardScroll();
 
   useEffect(() => {
     if (!visible) return;
@@ -101,6 +104,7 @@ export default function VrFillForm({ visible, onClose, onSaved }: VrFillFormProp
       {!isDeposit && <TextField variant="box" placeholder="수량 (주)" value={quantity} onChangeText={setQuantity} keyboardType="numeric" style={{ marginBottom: 12 }} />}
 
       <TextInput
+        ref={noteRef}
         style={[styles.memoInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.bg }]}
         placeholder="메모 (선택)"
         placeholderTextColor={theme.textMuted}
@@ -108,6 +112,7 @@ export default function VrFillForm({ visible, onClose, onSaved }: VrFillFormProp
         numberOfLines={2}
         value={note}
         onChangeText={setNote}
+        onFocus={() => scrollToInput?.(noteRef.current)}
       />
     </SheetModal>
   );

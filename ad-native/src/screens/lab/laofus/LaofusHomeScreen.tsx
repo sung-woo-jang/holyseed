@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Loader from '../../../components/ui/Loader';
 import { laofusRestApi, type EventDto } from '../../../api/laofus';
 import { computeIndicators, decide, applyFill, type ImuState, type Decision } from '../../../lib/laofus-core';
 import { useTheme } from '../../../lib/theme';
+import { useKeyboardScrollRegistration, KeyboardScrollProvider } from '../../../lib/keyboard-scroll';
 import type { LaofusStackParamList } from '../../../navigation/LaofusStack';
 
 type Props = NativeStackScreenProps<LaofusStackParamList, 'LaofusHome'>;
@@ -68,6 +69,8 @@ export default function LaofusHomeScreen({ navigation }: Props) {
   const theme = useTheme();
   const [simInput, setSimInput] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const simInputRef = useRef<TextInput>(null);
+  const { scrollRef, scrollToInput } = useKeyboardScrollRegistration();
 
   const statusQ = useQuery({ queryKey: ['laofus-status'], queryFn: laofusRestApi.status, refetchInterval: 30_000 });
   const priceQ = useQuery({ queryKey: ['laofus-price'], queryFn: laofusRestApi.price, refetchInterval: 60_000 });
@@ -115,11 +118,14 @@ export default function LaofusHomeScreen({ navigation }: Props) {
   const next = engine?.nextRuns?.[0] ?? null;
 
   return (
+    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
     <ScrollView
+      ref={scrollRef}
       style={[styles.root, { backgroundColor: theme.bg }]}
       contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.brand} colors={[theme.brand]} />}
     >
+      <KeyboardScrollProvider value={scrollToInput}>
       <View style={styles.navRow}>
         <Pressable style={[styles.navChip, { borderColor: theme.border }]} onPress={() => navigation.navigate('LaofusCycles')}>
           <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>사이클 기록</Text>
@@ -179,12 +185,14 @@ export default function LaofusHomeScreen({ navigation }: Props) {
             <View style={{ marginTop: 10 }}>
               <Text style={{ color: theme.textMuted, fontSize: 12, marginBottom: 6 }}>가상 가격으로 확인</Text>
               <TextInput
+                ref={simInputRef}
                 style={[styles.simInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.bg }]}
                 placeholder={price ? String(price.price) : '가격 입력'}
                 placeholderTextColor={theme.textMuted}
                 keyboardType="numeric"
                 value={simInput}
                 onChangeText={setSimInput}
+                onFocus={() => scrollToInput(simInputRef.current)}
               />
               {simPrice !== null && simPrice > 0 && <DecisionCard theme={theme} title={`종가가 ${usd(simPrice)} 이라면`} s={s} price={simPrice} />}
             </View>
@@ -209,7 +217,9 @@ export default function LaofusHomeScreen({ navigation }: Props) {
           </View>
         ))}
       </View>
+      </KeyboardScrollProvider>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

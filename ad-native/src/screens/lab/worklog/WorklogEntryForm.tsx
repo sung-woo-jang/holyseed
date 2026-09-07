@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
@@ -13,6 +13,7 @@ import ConfirmDialog from '../../../components/common/ConfirmDialog';
 import DatePicker from '../../../components/common/DatePicker';
 import { labWorklogApi, type WorklogRecord, type WorklogCategoryOption, type WorklogPhoto, type PayStatus } from '../../../api/lab-worklog';
 import { useTheme } from '../../../lib/theme';
+import { useKeyboardScroll } from '../../../lib/keyboard-scroll';
 import { todayLocal, timeStringToDate, dateToTimeString } from '../../../lib/date';
 import { getErrorMessage } from '../../../lib/error';
 
@@ -62,6 +63,8 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [previewPhoto, setPreviewPhoto] = useState<WorklogPhoto | null>(null);
   const [error, setError] = useState('');
+  const memoRef = useRef<TextInput>(null);
+  const scrollToInput = useKeyboardScroll();
 
   function applyCategoryDefaults(categoryName: string) {
     const opt = categories.find((c) => c.name === categoryName);
@@ -365,6 +368,7 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
       </View>
 
       <TextInput
+        ref={memoRef}
         style={[styles.memoInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.bg }]}
         placeholder="메모 (선택)"
         placeholderTextColor={theme.textMuted}
@@ -372,6 +376,7 @@ export default function WorklogEntryForm({ visible, record, categories, defaultD
         numberOfLines={3}
         value={memo}
         onChangeText={setMemo}
+        onFocus={() => scrollToInput?.(memoRef.current)}
       />
 
       {isEdit && (

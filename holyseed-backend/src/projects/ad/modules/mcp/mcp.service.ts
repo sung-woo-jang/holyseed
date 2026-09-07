@@ -8,11 +8,17 @@ import axios, { AxiosInstance } from 'axios';
 import { z } from 'zod';
 import { AdUser } from '../users/entities/ad-user.entity';
 import { McpToken } from './entities/mcp-token.entity';
+import { LabMcpService } from '@lab/modules/mcp/mcp.service';
 
 /**
  * 자산일기 API를 MCP 도구로 노출 (조회 + 입력, 수정·삭제 제외).
  * 도구는 요청 시 URL의 개인 토큰으로 식별된 계정의 내부 JWT로 자기 REST API를 호출한다
  * — 가드·검증·멤버십 로직을 그대로 재사용. 계정마다 다른 요청일 수 있어 캐싱하지 않는다.
+ *
+ * lab(근무일지/VR/지출내역) 도구도 여기서 같이 노출한다 — 단, 토큰 소유자 이메일이
+ * LAB_MCP_USER_EMAIL(소유자 계정)과 일치할 때만. AD는 가구 멤버 여러 명이 각자 자기
+ * 토큰을 발급받을 수 있는 멀티테넌트 구조라서, 이 게이트가 없으면 다른 가구 멤버도
+ * 소유자의 개인 근무일지·매매 데이터에 접근할 수 있게 되어버린다.
  */
 @Injectable()
 export class McpService {
@@ -21,6 +27,7 @@ export class McpService {
     private readonly jwtService: JwtService,
     @InjectRepository(McpToken)
     private readonly tokenRepo: Repository<McpToken>,
+    private readonly labMcpService: LabMcpService,
   ) {}
 
   /** 토큰 → 소유 계정 조회. 없으면 null (컨트롤러가 404 처리) */
@@ -330,6 +337,12 @@ export class McpService {
       },
       () => this.call(user, async (api, hid) => this.unwrap(await api.get(`/households/${hid}/comparison/yearly`))),
     );
+
+    // 소유자 계정일 때만 lab(근무일지/VR/지출내역) 도구도 같이 노출
+    const labOwnerEmail = (this.configService.get('LAB_MCP_USER_EMAIL') || '').toLowerCase();
+    if (labOwnerEmail && user.email.toLowerCase() === labOwnerEmail) {
+      this.labMcpService.registerTools(server);
+    }
 
     return server;
   }

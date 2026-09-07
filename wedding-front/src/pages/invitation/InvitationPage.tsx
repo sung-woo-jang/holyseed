@@ -334,14 +334,9 @@ function InvitationContent() {
                 {weddingDate && ` ${format(weddingDate, 'M', { locale: ko })}월, `}
                 {venue?.name ?? '이곳'}에서 단 하루만 공개됩니다.
               </p>
-              {(groomFather || groomMother || brideFather || brideMother) && (
-                <p className={styles.heroCreditLine}>
-                  <b>출연</b> {couple.groomName}, {couple.brideName}
-                  {(groomFather || groomMother || brideFather || brideMother) && (
-                    <> · <b>제작</b> {[[groomFather, groomMother].filter(Boolean).join('·'), [brideFather, brideMother].filter(Boolean).join('·')].filter(Boolean).join(', ')}</>
-                  )}
-                </p>
-              )}
+              <p className={styles.heroCreditLine}>
+                <b>출연</b> {couple.groomName}, {couple.brideName}
+              </p>
             </div>
           </div>
 

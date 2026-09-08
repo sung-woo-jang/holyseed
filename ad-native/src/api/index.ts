@@ -7,6 +7,7 @@ import type {
   Category,
   CategoryIconAsset,
   CategoryType,
+  CostType,
   Invitation,
   McpToken,
   Member,
@@ -90,10 +91,11 @@ export const txApi = {
       fromAssetId?: number;
       toAssetId?: number;
       tags?: string[];
+      costType?: CostType;
     },
   ) => api.post<Transaction>(`/households/${householdId}/transactions`, dto).then((r) => r.data),
 
-  update: (id: number, dto: Partial<{ date: string; type: TxType; amount: number; categoryId: number; fromAssetId: number; toAssetId: number; title: string; memo: string }>) =>
+  update: (id: number, dto: Partial<{ date: string; type: TxType; amount: number; categoryId: number; fromAssetId: number; toAssetId: number; title: string; memo: string; costType: CostType | null }>) =>
     api.post<Transaction>(`/transactions/${id}/update`, dto).then((r) => r.data),
 
   delete: (id: number) => api.post(`/transactions/${id}/delete`).then((r) => r.data),
@@ -140,10 +142,10 @@ export const categoriesApi = {
   list: (householdId: number) =>
     api.get<Category[]>(`/households/${householdId}/categories`).then((r) => r.data),
 
-  create: (householdId: number, dto: { type: CategoryType; name: string; icon?: string; color?: string; parentId?: number }) =>
+  create: (householdId: number, dto: { type: CategoryType; name: string; icon?: string; color?: string; parentId?: number; defaultCostType?: CostType | null }) =>
     api.post<Category>(`/households/${householdId}/categories`, dto).then((r) => r.data),
 
-  update: (id: number, dto: Partial<{ name: string; icon: string; color: string; parentId: number }>) =>
+  update: (id: number, dto: Partial<{ name: string; icon: string; color: string; parentId: number; defaultCostType: CostType | null }>) =>
     api.post<Category>(`/categories/${id}/update`, dto).then((r) => r.data),
 
   delete: (id: number) => api.post(`/categories/${id}/delete`).then((r) => r.data),

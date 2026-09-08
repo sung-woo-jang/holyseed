@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
-import { CategoryType } from '../../entities/category.entity';
+import { CategoryType, CostType } from '../../entities/category.entity';
 
 export class CreateCategoryDto {
   @ApiProperty({ enum: CategoryType })
@@ -31,4 +31,9 @@ export class CreateCategoryDto {
   @IsOptional()
   @IsNumber()
   parentId?: number;
+
+  @ApiPropertyOptional({ enum: CostType, description: '기본 분류 (지출 카테고리에 소비 성격을 미리 지정 — 거래 기록 시 자동 반영됨)' })
+  @IsOptional()
+  @IsEnum(CostType)
+  defaultCostType?: CostType;
 }

@@ -1,5 +1,6 @@
 import { Column, Entity, Index } from 'typeorm';
 import { BaseEntity } from '@common/entities/base.entity';
+import { CostType } from '@ad/modules/categories/entities/category.entity';
 
 export enum TransactionType {
   INCOME = 'INCOME',
@@ -23,6 +24,9 @@ export class Transaction extends BaseEntity {
 
   @Column({ name: 'category_id', nullable: true })
   categoryId: number;
+
+  @Column({ name: 'cost_type', type: 'enum', enum: CostType, nullable: true })
+  costType?: CostType | null;
 
   @Column({ name: 'from_asset_id', nullable: true })
   fromAssetId: number;

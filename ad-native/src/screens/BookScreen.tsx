@@ -13,6 +13,7 @@ import { useAuthStore } from '../stores/auth.store';
 import { krw } from '../lib/format';
 import { TE } from '../lib/toss-emoji';
 import { getCategoryDef, resolveCategoryVisual, resolveRootCategoryId } from '../lib/category-meta';
+import type { CostType } from '../types/api';
 import TossEmoji from '../components/common/TossEmoji';
 import CategoryIcon from '../components/common/CategoryIcon';
 import { Icon } from '../components/common/Icon';
@@ -60,6 +61,7 @@ export default function BookScreen({ navigation }: Props) {
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [typeFilter, setTypeFilter] = useState<'all' | 'INCOME' | 'EXPENSE'>('all');
   const [catFilter, setCatFilter] = useState<Set<string>>(new Set());
+  const [costFilter, setCostFilter] = useState<Set<CostType>>(new Set());
   const [recOpen, setRecOpen] = useState(false);
 
   const [addTxVisible, setAddTxVisible] = useState(false);
@@ -133,6 +135,16 @@ export default function BookScreen({ navigation }: Props) {
     setTypeFilter(v);
     const scopedCats = new Set((v === 'all' ? monthTx : monthTx.filter((t) => t.type === v)).map((t) => rootCategoryName(t)));
     setCatFilter((prev) => new Set([...prev].filter((c) => scopedCats.has(c))));
+    if (v === 'INCOME') setCostFilter(new Set());
+  }
+
+  function toggleCostFilter(c: CostType) {
+    setCostFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(c)) next.delete(c);
+      else next.add(c);
+      return next;
+    });
   }
 
   const filteredTx = useMemo(
@@ -140,9 +152,10 @@ export default function BookScreen({ navigation }: Props) {
       monthTx.filter((t) => {
         if (typeFilter !== 'all' && t.type !== typeFilter) return false;
         if (catFilter.size > 0 && !catFilter.has(rootCategoryName(t))) return false;
+        if (costFilter.size > 0 && (!t.costType || !costFilter.has(t.costType))) return false;
         return true;
       }),
-    [monthTx, typeFilter, catFilter, data.categories],
+    [monthTx, typeFilter, catFilter, costFilter, data.categories],
   );
 
   const recurring = data.recurring;
@@ -160,6 +173,7 @@ export default function BookScreen({ navigation }: Props) {
     setSelectedDate(undefined);
     setTypeFilter('all');
     setCatFilter(new Set());
+    setCostFilter(new Set());
   }
   const monthLabel = `${Number(month.slice(5))}월 (${month.slice(0, 4)})`;
 
@@ -240,6 +254,7 @@ export default function BookScreen({ navigation }: Props) {
   function resetFilters() {
     setTypeFilter('all');
     setCatFilter(new Set());
+    setCostFilter(new Set());
   }
 
   function openAddForDay() {
@@ -490,6 +505,22 @@ export default function BookScreen({ navigation }: Props) {
                 small
                 alignment="fluid"
               />
+              {typeFilter !== 'INCOME' && (
+                <View style={[styles.chipRow, { marginTop: 8 }]}>
+                  {(['FIXED', 'VARIABLE'] as CostType[]).map((c) => {
+                    const active = costFilter.has(c);
+                    return (
+                      <Pressable
+                        key={c}
+                        onPress={() => toggleCostFilter(c)}
+                        style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
+                      >
+                        <Text style={{ fontSize: 11.5, fontWeight: '700', color: active ? theme.brand : theme.textMuted }}>{c === 'FIXED' ? '고정비' : '변동비'}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
               {monthCats.length > 0 && (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow} style={{ marginTop: 8 }}>
                   {monthCats.map((cat) => {

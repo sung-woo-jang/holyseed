@@ -1,4 +1,4 @@
-import type { AssetCategory, Category, CategoryType } from '../types/api';
+import type { AssetCategory, Category, CategoryType, CostType } from '../types/api';
 import { TE } from './toss-emoji';
 
 export interface AssetCategoryMeta {
@@ -89,4 +89,17 @@ export function resolveRootCategoryId(categoryId: number | null | undefined, cat
   const cat = categories.find((c) => c.id === categoryId);
   if (!cat) return categoryId;
   return cat.parentId ?? cat.id;
+}
+
+/** 카테고리의 고정비/변동비 기본값 — 소분류는 자기 값이 없으면 대분류 값으로 폴백(icon/color와 동일한 상속 규칙) */
+export function resolveCostType(categoryId: number | null | undefined, categories: Category[]): CostType | null {
+  if (categoryId == null) return null;
+  const cat = categories.find((c) => c.id === categoryId);
+  if (!cat) return null;
+  if (cat.defaultCostType) return cat.defaultCostType;
+  if (cat.parentId != null) {
+    const parent = categories.find((c) => c.id === cat.parentId);
+    return parent?.defaultCostType ?? null;
+  }
+  return null;
 }

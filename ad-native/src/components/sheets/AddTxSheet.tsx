@@ -11,8 +11,9 @@ import CategoryIcon from '../common/CategoryIcon';
 import FormRow from '../common/FormRow';
 import DatePicker from '../common/DatePicker';
 import PickerOverlay from './PickerOverlay';
-import { CATEGORY_DEFS, getCategoryDef } from '../../lib/category-meta';
+import { CATEGORY_DEFS, getCategoryDef, resolveCostType } from '../../lib/category-meta';
 import { useKeyboardScroll } from '../../lib/keyboard-scroll';
+import type { CostType } from '../../types/api';
 import { Icon } from '../common/Icon';
 import { useCreateTx, useUpdateTx } from '../../queries/mutations';
 import { todayLocal } from '../../lib/date';
@@ -40,6 +41,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
   const [type, setType] = useState<TxType>('EXPENSE');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<{ id: number; name: string } | null>(null);
+  const [costType, setCostType] = useState<CostType | null>(null);
   const [title, setTitle] = useState('');
   const [memo, setMemo] = useState('');
   const [txDate, setTxDate] = useState<string>('');
@@ -60,6 +62,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
       setAmount(formatNum(String(editTx.amount)));
       const c = data.categories.find((x) => x.name === editTx.category);
       setCategory({ id: c?.id ?? 0, name: editTx.category });
+      setCostType(editTx.costType ?? resolveCostType(editTx.categoryId, data.categories));
       setTitle(editTx.rawTitle ?? '');
       setMemo(editTx.memo ?? '');
       setTxDate(editTx.date);
@@ -82,24 +85,32 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
     setType('EXPENSE');
     setAmount('');
     setCategory(null);
+    setCostType(null);
     setTitle('');
     setMemo('');
     setError('');
   }
 
+  function selectCategory(id: number, name: string) {
+    setCategory({ id, name });
+    setCostType(resolveCostType(id, data.categories));
+    setCatPicker(false);
+  }
+
   async function handleSave() {
     setError('');
     try {
+      const costTypeDto = type === 'EXPENSE' && costType ? { costType } : {};
       if (isEdit && editTx) {
         await updateTx.mutateAsync({
           id: Number(editTx.id),
-          dto: { date: txDate, type, amount: rawAmount, ...(category && category.id > 0 ? { categoryId: category.id } : {}), title, memo },
+          dto: { date: txDate, type, amount: rawAmount, ...(category && category.id > 0 ? { categoryId: category.id } : {}), title, memo, ...costTypeDto },
         });
         onClose();
         onSaved?.('edit');
         return;
       }
-      await createTx.mutateAsync({ date: txDate, type, amount: rawAmount, ...(category ? { categoryId: category.id } : {}), title, memo });
+      await createTx.mutateAsync({ date: txDate, type, amount: rawAmount, ...(category ? { categoryId: category.id } : {}), title, memo, ...costTypeDto });
       reset();
       onClose();
       onSaved?.('create');
@@ -152,10 +163,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
                             )}
                           </View>
                         }
-                        onPress={() => {
-                          setCategory({ id: c.id, name: c.name });
-                          setCatPicker(false);
-                        }}
+                        onPress={() => selectCategory(c.id, c.name)}
                         verticalPadding={6}
                       />
                       {isExpanded && (
@@ -166,10 +174,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
                               left={<CategoryIcon icon={k.icon || c.icon || def.iconCode} size={20} bg={(c.color || def.color) + '22'} />}
                               contents={<Text style={{ color: theme.text, fontSize: 13.5, fontWeight: '500' }}>{k.name}</Text>}
                               right={category?.id === k.id ? Icon.check(theme.brand, 16) : undefined}
-                              onPress={() => {
-                                setCategory({ id: k.id, name: k.name });
-                                setCatPicker(false);
-                              }}
+                              onPress={() => selectCategory(k.id, k.name)}
                               verticalPadding={4}
                             />
                           ))}
@@ -188,6 +193,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
                       right={category?.name === name ? Icon.check(theme.brand, 16) : undefined}
                       onPress={() => {
                         setCategory({ id: 0, name });
+                        setCostType(null);
                         setCatPicker(false);
                       }}
                       verticalPadding="small"
@@ -205,6 +211,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
           onChange={(v) => {
             setType(v === '지출' ? 'EXPENSE' : 'INCOME');
             setCategory(null);
+            setCostType(null);
             setExpandedCatId(null);
           }}
         />
@@ -218,6 +225,17 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
         <FormRow label="날짜" value={txDate === todayLocal() ? `오늘 (${txDate.slice(5).replace('-', '/')})` : txDate} onPress={() => setDatePicker(true)} />
         <FormRow label="카테고리" value={category?.name || ''} onPress={() => setCatPicker(true)} />
       </View>
+
+      {type === 'EXPENSE' && (
+        <View style={{ marginBottom: 12 }}>
+          <Segmented
+            options={['고정비', '변동비']}
+            value={costType === 'VARIABLE' ? '변동비' : '고정비'}
+            onChange={(v) => setCostType(v === '변동비' ? 'VARIABLE' : 'FIXED')}
+            small
+          />
+        </View>
+      )}
 
       <TextInput
         ref={titleRef}

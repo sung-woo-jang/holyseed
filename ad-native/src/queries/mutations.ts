@@ -10,7 +10,7 @@ import {
   usersApi,
 } from '../api';
 import { useAuthStore } from '../stores/auth.store';
-import type { AssetCategory, CategoryType, MemberRole } from '../types/api';
+import type { AssetCategory, CategoryType, CostType, MemberRole } from '../types/api';
 import { qk } from './keys';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -117,6 +117,7 @@ export function useCreateTx() {
       categoryId?: number;
       fromAssetId?: number;
       toAssetId?: number;
+      costType?: CostType;
     }) => txApi.create(hid!, dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.transactions(hid!) });
@@ -132,7 +133,7 @@ export function useUpdateTx() {
   return useMutation({
     mutationFn: ({ id, dto }: {
       id: number;
-      dto: Partial<{ date: string; type: 'INCOME' | 'EXPENSE'; amount: number; categoryId: number; fromAssetId: number; toAssetId: number; title: string; memo: string }>;
+      dto: Partial<{ date: string; type: 'INCOME' | 'EXPENSE'; amount: number; categoryId: number; fromAssetId: number; toAssetId: number; title: string; memo: string; costType: CostType | null }>;
     }) => txApi.update(id, dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.transactions(hid!) });
@@ -237,7 +238,7 @@ export function useCreateCategory() {
   const qc = useQueryClient();
   const hid = useHid();
   return useMutation({
-    mutationFn: (dto: { type: CategoryType; name: string; icon?: string; color?: string; parentId?: number }) =>
+    mutationFn: (dto: { type: CategoryType; name: string; icon?: string; color?: string; parentId?: number; defaultCostType?: CostType | null }) =>
       categoriesApi.create(hid!, dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.categories(hid!) });
@@ -249,7 +250,7 @@ export function useUpdateCategory() {
   const qc = useQueryClient();
   const hid = useHid();
   return useMutation({
-    mutationFn: ({ id, dto }: { id: number; dto: Partial<{ name: string; icon: string; color: string; parentId: number }> }) =>
+    mutationFn: ({ id, dto }: { id: number; dto: Partial<{ name: string; icon: string; color: string; parentId: number; defaultCostType: CostType | null }> }) =>
       categoriesApi.update(id, dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.categories(hid!) });

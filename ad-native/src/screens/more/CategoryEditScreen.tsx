@@ -7,6 +7,7 @@ import Button from '../../components/ui/Button';
 import Border from '../../components/ui/Border';
 import TextField from '../../components/ui/TextField';
 import AppToast from '../../components/common/AppToast';
+import Segmented from '../../components/common/Segmented';
 import SheetModal from '../../components/sheets/SheetModal';
 import CategoryIcon from '../../components/common/CategoryIcon';
 import { useTheme } from '../../lib/theme';
@@ -20,6 +21,7 @@ import { useCreateCategory, useUpdateCategory, useDeleteCategory, useUploadCateg
 import { categoriesApi } from '../../api';
 import { qk } from '../../queries/keys';
 import { useAuthStore } from '../../stores/auth.store';
+import type { CostType } from '../../types/api';
 import type { MoreStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<MoreStackParamList, 'CategoryEdit'>;
@@ -49,6 +51,7 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
   const [name, setName] = useState(existing?.name ?? '');
   const [icon, setIcon] = useState(existing?.icon || defFallback?.iconCode || CATEGORY_ICON_SECTIONS[0]!.items[0]!.code);
   const [color, setColor] = useState(existing?.color || defFallback?.color || COLORS[0]!);
+  const [costType, setCostType] = useState<CostType | null>(existing?.defaultCostType ?? null);
   const [subs, setSubs] = useState<SubDraft[]>(() =>
     categoryId ? data.categories.filter((c) => c.parentId === categoryId).map((c) => ({ id: c.id, name: c.name, icon: c.icon || null, isNew: false })) : [],
   );
@@ -161,11 +164,15 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
     setSaving(true);
     try {
       let parentId = categoryId;
+      const costTypeDto = type === 'EXPENSE' ? { defaultCostType: costType } : {};
       if (mode === 'add') {
-        const created = await createCategory.mutateAsync({ type, name: name.trim(), icon, color });
+        const created = await createCategory.mutateAsync({ type, name: name.trim(), icon, color, ...costTypeDto });
         parentId = created.id;
       } else if (!isBuiltin) {
-        await updateCategory.mutateAsync({ id: categoryId!, dto: { name: name.trim(), icon, color } });
+        await updateCategory.mutateAsync({ id: categoryId!, dto: { name: name.trim(), icon, color, ...costTypeDto } });
+      } else if (existing?.defaultCostType !== costType) {
+        // builtin 카테고리는 이름/아이콘/색상은 잠겨있지만 기본 분류만은 예외로 수정 가능
+        await updateCategory.mutateAsync({ id: categoryId!, dto: costTypeDto });
       }
 
       for (const s of subs) {
@@ -241,6 +248,20 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
                 />
               ))}
             </View>
+          </View>
+        )}
+
+        {type === 'EXPENSE' && (
+          <View style={styles.sectionPad}>
+            <Text style={[styles.fieldLabel, { color: theme.textMuted, marginBottom: 8 }]}>기본 분류</Text>
+            <Segmented
+              options={['고정비', '변동비', '미지정']}
+              value={costType === 'FIXED' ? '고정비' : costType === 'VARIABLE' ? '변동비' : '미지정'}
+              onChange={(v) => setCostType(v === '고정비' ? 'FIXED' : v === '변동비' ? 'VARIABLE' : null)}
+            />
+            <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 6 }}>
+              이 카테고리로 거래를 기록할 때 자동으로 채워지고, 거래마다 직접 바꿀 수도 있어요.
+            </Text>
           </View>
         )}
 

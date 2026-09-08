@@ -6,6 +6,11 @@ export enum CategoryType {
   EXPENSE = 'EXPENSE',
 }
 
+export enum CostType {
+  FIXED = 'FIXED',
+  VARIABLE = 'VARIABLE',
+}
+
 @Entity('categories', { schema: 'ad' })
 export class Category extends BaseEntity {
   @Column({ name: 'household_id', nullable: true })
@@ -31,4 +36,7 @@ export class Category extends BaseEntity {
 
   @Column({ name: 'parent_id', nullable: true })
   parentId?: number | null;
+
+  @Column({ name: 'default_cost_type', type: 'enum', enum: CostType, nullable: true })
+  defaultCostType?: CostType | null;
 }

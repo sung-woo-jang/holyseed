@@ -44,6 +44,11 @@ export default function CashflowScreen({ navigation }: Props) {
   const expense = filtered.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
   const savingsRate = income > 0 ? ((income - expense) / income) * 100 : 0;
 
+  const expenseTx = filtered.filter((t) => t.type === 'EXPENSE');
+  const fixedTotal = expenseTx.filter((t) => t.costType === 'FIXED').reduce((s, t) => s + t.amount, 0);
+  const variableTotal = expenseTx.filter((t) => t.costType === 'VARIABLE').reduce((s, t) => s + t.amount, 0);
+  const classifiedTotal = fixedTotal + variableTotal;
+
   const catMap = new Map<string, { amount: number; categoryId: number | null; name: string }>();
   filtered
     .filter((t) => t.type === 'EXPENSE')
@@ -134,6 +139,29 @@ export default function CashflowScreen({ navigation }: Props) {
             </View>
           )}
 
+          {classifiedTotal > 0 && (
+            <View style={[styles.section, { backgroundColor: theme.card }]}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>고정비 · 변동비</Text>
+              <View style={[styles.costSplitBar, { backgroundColor: theme.border }]}>
+                <View style={{ flex: fixedTotal || 0.0001, backgroundColor: theme.brand, borderRadius: 4 }} />
+                <View style={{ flex: variableTotal || 0.0001, backgroundColor: '#F59E0B', borderRadius: 4 }} />
+              </View>
+              <View style={styles.costSplitLegend}>
+                <Text style={{ color: theme.brand, fontSize: 12, fontWeight: '700' }}>
+                  고정비 {classifiedTotal > 0 ? ((fixedTotal / classifiedTotal) * 100).toFixed(0) : 0}% · {krwShort(fixedTotal)}
+                </Text>
+                <Text style={{ color: '#F59E0B', fontSize: 12, fontWeight: '700' }}>
+                  변동비 {classifiedTotal > 0 ? ((variableTotal / classifiedTotal) * 100).toFixed(0) : 0}% · {krwShort(variableTotal)}
+                </Text>
+              </View>
+              {expense > classifiedTotal && (
+                <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 8 }}>
+                  분류 안 된 지출 {krwShort(expense - classifiedTotal)} — 카테고리 편집에서 기본 분류를 지정해두면 자동으로 채워져요
+                </Text>
+              )}
+            </View>
+          )}
+
           <View style={[styles.section, { backgroundColor: theme.card }]}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>지출 카테고리</Text>
             {catBreakdown.length === 0 ? (
@@ -192,4 +220,6 @@ const styles = StyleSheet.create({
   trendBar: { width: 8, borderRadius: 2 },
   catRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   catTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  costSplitBar: { flexDirection: 'row', height: 10, borderRadius: 5, overflow: 'hidden', gap: 2 },
+  costSplitLegend: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
 });

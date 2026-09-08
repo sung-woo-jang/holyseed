@@ -5,6 +5,7 @@ import type { SortPref } from '../api/lab-worklog';
 const KEY_WORKLOG_SORT = 'lab_worklogSortPref';
 const KEY_VR_FILLS_SORT = 'lab_vrFillsSortPref';
 const KEY_LAOFUS_WEALTH_SORT = 'lab_laofusWealthSortPref';
+const KEY_LAOFUS_LAST_COPY = 'lab_laofusWealthLastCopyDate';
 const isWeb = Platform.OS === 'web';
 
 async function readRaw(key: string): Promise<string | null> {
@@ -65,4 +66,12 @@ export async function getLaofusWealthSortPref(): Promise<LaofusWealthSortPref | 
 
 export async function setLaofusWealthSortPref(pref: LaofusWealthSortPref): Promise<void> {
   return setPref(KEY_LAOFUS_WEALTH_SORT, pref);
+}
+
+export async function getLaofusLastCopyDate(): Promise<string | null> {
+  return getPref<string>(KEY_LAOFUS_LAST_COPY);
+}
+
+export async function setLaofusLastCopyDate(date: string): Promise<void> {
+  return setPref(KEY_LAOFUS_LAST_COPY, date);
 }

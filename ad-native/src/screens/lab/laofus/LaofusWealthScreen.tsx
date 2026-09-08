@@ -1,16 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useQuery } from '@tanstack/react-query';
 import Loader from '../../../components/ui/Loader';
 import Button from '../../../components/ui/Button';
 import AppToast from '../../../components/common/AppToast';
 import Segmented from '../../../components/common/Segmented';
+import FormRow from '../../../components/common/FormRow';
+import DatePicker from '../../../components/common/DatePicker';
+import SheetModal from '../../../components/sheets/SheetModal';
+import { Icon } from '../../../components/common/Icon';
 import WorkCalendar, { type CalLog } from '../../../components/WorkCalendar';
-import { laofusRestApi } from '../../../api/laofus';
+import { laofusRestApi, type AccountSnapshotDto } from '../../../api/laofus';
 import { useTheme } from '../../../lib/theme';
 import { getErrorMessage } from '../../../lib/error';
 import { todayLocal } from '../../../lib/date';
-import { getLaofusWealthSortPref, setLaofusWealthSortPref } from '../../../lib/lab-prefs';
+import { getLaofusWealthSortPref, setLaofusWealthSortPref, getLaofusLastCopyDate, setLaofusLastCopyDate } from '../../../lib/lab-prefs';
 
 function todayMonth(): string {
   return todayLocal().slice(0, 7);
@@ -47,6 +52,14 @@ export default function LaofusWealthScreen() {
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
   const [sortKey, setSortKey] = useState<'date' | 'amount'>('date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [copyMode, setCopyMode] = useState<'none' | 'select'>('none');
+  const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set());
+  const [rangeSheetOpen, setRangeSheetOpen] = useState(false);
+  const [rangeFrom, setRangeFrom] = useState('');
+  const [rangeTo, setRangeTo] = useState('');
+  const [fromPickerOpen, setFromPickerOpen] = useState(false);
+  const [toPickerOpen, setToPickerOpen] = useState(false);
+  const [lastCopyDate, setLastCopyDate] = useState<string | null>(null);
 
   useEffect(() => {
     getLaofusWealthSortPref().then((pref) => {
@@ -55,6 +68,7 @@ export default function LaofusWealthScreen() {
         setSortDir(pref.dir);
       }
     });
+    getLaofusLastCopyDate().then(setLastCopyDate);
   }, []);
 
   function selectSort(key: 'date' | 'amount') {
@@ -62,6 +76,85 @@ export default function LaofusWealthScreen() {
     setSortKey(key);
     setSortDir(nextDir);
     setLaofusWealthSortPref({ key, dir: nextDir });
+  }
+
+  function shiftDateStr(dateStr: string, deltaDays: number): string {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y ?? 1970, (m ?? 1) - 1, (d ?? 1) + deltaDays);
+    return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+  }
+
+  function toClipboardPayload(rows: AccountSnapshotDto[]): string {
+    return JSON.stringify(
+      rows.map((s) => ({ date: s.date, value: n(s.totalValueKrw), totalValueUsd: n(s.totalValueUsd), fxRateToKRW: n(s.fxRate) })),
+      null,
+      2,
+    );
+  }
+
+  async function copyRows(rows: AccountSnapshotDto[], successLabel: string) {
+    if (rows.length === 0) {
+      setToast('복사할 기록이 없어요');
+      return;
+    }
+    await Clipboard.setStringAsync(toClipboardPayload(rows));
+    const latest = rows.reduce((max, r) => (r.date > max ? r.date : max), rows[0]!.date);
+    await setLaofusLastCopyDate(latest);
+    setLastCopyDate(latest);
+    setToast(successLabel);
+  }
+
+  function toggleCopyMode() {
+    if (copyMode === 'select') {
+      setCopyMode('none');
+      setSelectedDates(new Set());
+    } else {
+      setCopyMode('select');
+    }
+  }
+
+  function toggleDateSelected(date: string) {
+    setSelectedDates((prev) => {
+      const next = new Set(prev);
+      if (next.has(date)) next.delete(date);
+      else next.add(date);
+      return next;
+    });
+  }
+
+  function selectAllVisible(dates: string[]) {
+    setSelectedDates(new Set(dates));
+  }
+
+  async function copySelected() {
+    const rows = chronological.filter((s) => selectedDates.has(s.date));
+    await copyRows(rows, `${rows.length}건 복사됨`);
+    setCopyMode('none');
+    setSelectedDates(new Set());
+  }
+
+  function openRangeSheet() {
+    if (!rangeFrom && !rangeTo) applyPreset(lastCopyDate ? 'sinceLast' : 'all');
+    setRangeSheetOpen(true);
+  }
+
+  function applyPreset(preset: 'all' | '7d' | '30d' | 'sinceLast') {
+    const latest = chronological[chronological.length - 1]?.date;
+    const earliest = chronological[0]?.date;
+    if (!latest) return;
+    if (preset === 'all') {
+      setRangeFrom(earliest ?? latest);
+      setRangeTo(latest);
+    } else if (preset === '7d') {
+      setRangeFrom(shiftDateStr(latest, -6));
+      setRangeTo(latest);
+    } else if (preset === '30d') {
+      setRangeFrom(shiftDateStr(latest, -29));
+      setRangeTo(latest);
+    } else if (preset === 'sinceLast' && lastCopyDate) {
+      setRangeFrom(shiftDateStr(lastCopyDate, 1));
+      setRangeTo(latest);
+    }
   }
 
   const accountQ = useQuery({ queryKey: ['laofus-account'], queryFn: laofusRestApi.account });
@@ -137,9 +230,13 @@ export default function LaofusWealthScreen() {
   const selectedSnapshot = selectedDate ? monthSnapshots.find((s) => s.date === selectedDate) : undefined;
   const selectedDelta = selectedSnapshot ? deltaByDate.get(selectedSnapshot.date) ?? null : null;
 
+  const latestOverallDate = chronological[chronological.length - 1]?.date;
+  const rangeRows = chronological.filter((s) => (!rangeFrom || s.date >= rangeFrom) && (!rangeTo || s.date <= rangeTo));
+
   return (
+    <View style={{ flex: 1, backgroundColor: theme.bg }}>
     <ScrollView
-      style={[styles.root, { backgroundColor: theme.bg }]}
+      style={styles.root}
       contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.brand} colors={[theme.brand]} />}
     >
@@ -213,36 +310,78 @@ export default function LaofusWealthScreen() {
       ) : (
         <>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 0 }]}>일별 기록 ({monthSnapshots.length}건)</Text>
-            <View style={{ flexDirection: 'row', gap: 6 }}>
-              <Pressable onPress={() => selectSort('date')} style={[styles.sortChip, { borderColor: theme.border, backgroundColor: sortKey === 'date' ? theme.brandSoft : theme.card }]}>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: sortKey === 'date' ? theme.brand : theme.text }}>
-                  날짜순{sortKey === 'date' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
-                </Text>
-              </Pressable>
-              <Pressable onPress={() => selectSort('amount')} style={[styles.sortChip, { borderColor: theme.border, backgroundColor: sortKey === 'amount' ? theme.brandSoft : theme.card }]}>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: sortKey === 'amount' ? theme.brand : theme.text }}>
-                  금액순{sortKey === 'amount' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
-                </Text>
-              </Pressable>
+            {copyMode === 'select' ? (
+              <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 0 }]}>
+                {selectedDates.size}건 선택 / {monthSnapshots.length}건
+              </Text>
+            ) : (
+              <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 0 }]}>일별 기록 ({monthSnapshots.length}건)</Text>
+            )}
+            <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+              {copyMode === 'select' ? (
+                <>
+                  <Pressable onPress={() => selectAllVisible(monthSnapshots.map((s) => s.date))}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: theme.brand }}>전체</Text>
+                  </Pressable>
+                  <Pressable onPress={toggleCopyMode}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: theme.textMuted }}>취소</Text>
+                  </Pressable>
+                </>
+              ) : (
+                <View style={{ flexDirection: 'row', gap: 6 }}>
+                  <Pressable onPress={() => selectSort('date')} style={[styles.sortChip, { borderColor: theme.border, backgroundColor: sortKey === 'date' ? theme.brandSoft : theme.card }]}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: sortKey === 'date' ? theme.brand : theme.text }}>
+                      날짜순{sortKey === 'date' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
+                    </Text>
+                  </Pressable>
+                  <Pressable onPress={() => selectSort('amount')} style={[styles.sortChip, { borderColor: theme.border, backgroundColor: sortKey === 'amount' ? theme.brandSoft : theme.card }]}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: sortKey === 'amount' ? theme.brand : theme.text }}>
+                      금액순{sortKey === 'amount' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
+                    </Text>
+                  </Pressable>
+                  <Pressable onPress={toggleCopyMode} style={[styles.iconBtn, { backgroundColor: theme.brandSoft }]}>
+                    {Icon.checkSquare(theme.brand, 16)}
+                  </Pressable>
+                  <Pressable onPress={openRangeSheet} style={[styles.iconBtn, { backgroundColor: theme.brandSoft }]}>
+                    {Icon.clipboard(theme.brand, 16)}
+                  </Pressable>
+                </View>
+              )}
             </View>
           </View>
+          {copyMode === 'none' && (
+            <Text style={{ color: theme.textMuted, fontSize: 11, marginBottom: 8, marginTop: -4 }}>
+              행을 탭하면 그 날짜만 바로 복사, 체크 아이콘을 누르면 여러 날짜를 골라 복사돼요
+            </Text>
+          )}
           {monthSnapshots.length === 0 ? (
             <Text style={{ color: theme.textMuted, fontSize: 13 }}>이 달 기록이 없어요</Text>
           ) : (
             <View style={[styles.listCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
               {sortedMonthSnapshots.map((s, i) => {
                 const delta = deltaByDate.get(s.date) ?? null;
+                const selected = selectedDates.has(s.date);
                 return (
-                  <View key={s.id} style={[styles.snapRow, i > 0 && { borderTopWidth: 1, borderColor: theme.border }]}>
-                    <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700' }}>{s.date}</Text>
+                  <Pressable
+                    key={s.id}
+                    style={[styles.snapRow, i > 0 && { borderTopWidth: 1, borderColor: theme.border }]}
+                    onPress={() => (copyMode === 'select' ? toggleDateSelected(s.date) : copyRows([s], `${s.date} 복사됨`))}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      {copyMode === 'select' && (
+                        <View style={[styles.checkbox, { borderColor: theme.border }, selected && { backgroundColor: theme.brand, borderColor: theme.brand }]}>
+                          {selected && Icon.check('#fff', 12)}
+                        </View>
+                      )}
+                      <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700' }}>{s.date}</Text>
+                    </View>
                     <View style={{ alignItems: 'flex-end' }}>
                       <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700' }}>{krw(n(s.totalValueKrw))}</Text>
                       <Text style={{ color: delta == null ? theme.textMuted : delta >= 0 ? theme.brand : theme.danger, fontSize: 11.5 }}>
                         {delta == null ? '—' : `${delta >= 0 ? '+' : ''}${krw(delta)}`}
                       </Text>
                     </View>
-                  </View>
+                  </Pressable>
                 );
               })}
             </View>
@@ -251,6 +390,64 @@ export default function LaofusWealthScreen() {
       )}
       <AppToast open={!!toast} text={toast} onClose={() => setToast('')} />
     </ScrollView>
+
+    {copyMode === 'select' && (
+      <View style={[styles.selectBar, { backgroundColor: theme.text }]}>
+        <Text style={{ color: theme.bg, fontSize: 13, fontWeight: '700' }}>{selectedDates.size}건 선택됨</Text>
+        <Pressable
+          disabled={selectedDates.size === 0}
+          onPress={copySelected}
+          style={[styles.selectBarBtn, { backgroundColor: theme.brand, opacity: selectedDates.size === 0 ? 0.4 : 1 }]}
+        >
+          <Text style={{ color: '#fff', fontSize: 13, fontWeight: '800' }}>복사</Text>
+        </Pressable>
+      </View>
+    )}
+
+    <SheetModal
+      visible={rangeSheetOpen}
+      onClose={() => setRangeSheetOpen(false)}
+      header="JSON 복사"
+      cta={
+        <Button display="full" size="big" type="primary" disabled={rangeRows.length === 0} onPress={async () => {
+          await copyRows(rangeRows, `${rangeRows.length}건 복사됨 (${rangeFrom} ~ ${rangeTo})`);
+          setRangeSheetOpen(false);
+        }}>
+          JSON 복사
+        </Button>
+      }
+      overlay={
+        <>
+          <DatePicker visible={fromPickerOpen} value={rangeFrom} maxDate={latestOverallDate} onSelect={setRangeFrom} onClose={() => setFromPickerOpen(false)} />
+          <DatePicker visible={toPickerOpen} value={rangeTo} maxDate={latestOverallDate} onSelect={setRangeTo} onClose={() => setToPickerOpen(false)} />
+        </>
+      }
+    >
+      <Text style={{ color: theme.textMuted, fontSize: 12.5, lineHeight: 18, marginBottom: 16 }}>
+        선택한 구간의 일별 기록을 자산일기에 붙여넣기 좋은 형식으로 복사해요.
+      </Text>
+      <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+        {(['all', '7d', '30d', 'sinceLast'] as const)
+          .filter((p) => p !== 'sinceLast' || !!lastCopyDate)
+          .map((p) => {
+            const label = p === 'all' ? '전체' : p === '7d' ? '최근 7일' : p === '30d' ? '최근 30일' : '지난 복사 이후';
+            return (
+              <Pressable key={p} onPress={() => applyPreset(p)} style={[styles.sortChip, { borderColor: theme.border, backgroundColor: theme.card }]}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text }}>{label}</Text>
+              </Pressable>
+            );
+          })}
+      </View>
+      <FormRow label="시작일" value={rangeFrom} onPress={() => setFromPickerOpen(true)} />
+      <FormRow label="종료일" value={rangeTo} onPress={() => setToPickerOpen(true)} />
+      <View style={[styles.rangeCount, { backgroundColor: theme.brandSoft }]}>
+        <Text style={{ color: theme.brand, fontSize: 12.5, fontWeight: '700' }}>{rangeRows.length}건 복사돼요</Text>
+        <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 2 }}>
+          {rangeFrom || '?'} ~ {rangeTo || '?'}
+        </Text>
+      </View>
+    </SheetModal>
+    </View>
   );
 }
 
@@ -267,4 +464,20 @@ const styles = StyleSheet.create({
   monthLabel: { fontSize: 15, fontWeight: '700', minWidth: 90, textAlign: 'center' },
   calCard: { borderRadius: 16, borderWidth: 1 },
   sortChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14, borderWidth: 1 },
+  iconBtn: { width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  checkbox: { width: 20, height: 20, borderRadius: 6, borderWidth: 1.6, alignItems: 'center', justifyContent: 'center' },
+  selectBar: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    bottom: 16,
+    borderRadius: 16,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    elevation: 6,
+  },
+  selectBarBtn: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 10 },
+  rangeCount: { padding: 12, borderRadius: 12, marginTop: 4, marginBottom: 8 },
 });

@@ -1,4 +1,4 @@
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 export const Icon = {
   home: (color = '#8B95A1', size = 24) => (
@@ -80,6 +80,18 @@ export const Icon = {
   check: (color = '#3182F6', size = 20) => (
     <Svg width={size} height={size} viewBox="0 0 20 20" fill="none" pointerEvents="none">
       <Path d="M4 10l4 4 8-8" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  ),
+  checkSquare: (color = '#8B95A1', size = 18) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" pointerEvents="none">
+      <Rect x={3} y={3} width={18} height={18} rx={4} stroke={color} strokeWidth={1.8} />
+      <Path d="M9 12l2 2 4-4" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  ),
+  clipboard: (color = '#8B95A1', size = 18) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" pointerEvents="none">
+      <Rect x={8} y={8} width={12} height={12} rx={2} stroke={color} strokeWidth={1.8} />
+      <Path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   ),
   refresh: (color = '#8B95A1', size = 18) => (

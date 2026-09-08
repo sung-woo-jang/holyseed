@@ -329,6 +329,28 @@ export class McpService {
     );
 
     registerTool(
+      'create_category',
+      {
+        title: '카테고리 생성',
+        description:
+          '거래 카테고리(수입/지출)를 새로 만듭니다. parentId를 넘기면 그 카테고리의 소분류로 생성됩니다(소분류 아래에 또 소분류는 불가). ' +
+          'defaultCostType(고정비/변동비)은 지출(EXPENSE) 카테고리에만 의미가 있고, 이 카테고리로 거래를 기록할 때 자동으로 채워지는 기본값이에요 — 거래 자체는 건별로 다르게 바꿀 수 있습니다.',
+        inputSchema: {
+          type: z.enum(['INCOME', 'EXPENSE']).describe('카테고리 종류'),
+          name: z.string().describe('카테고리명 (예: 통신비)'),
+          icon: z.string().optional().describe('아이콘 — 이모지 문자 그대로(예: 📱)'),
+          color: z.string().optional().describe('색상 hex 코드 (예: #3182F6), 생략 가능'),
+          parentId: z.number().optional().describe('상위 카테고리 id — 지정 시 그 카테고리의 소분류로 생성'),
+          defaultCostType: z.enum(['FIXED', 'VARIABLE']).optional().describe('기본 분류(고정비/변동비) — EXPENSE 카테고리에서만 의미 있음'),
+        },
+      },
+      ({ type, name, icon, color, parentId, defaultCostType }) =>
+        this.call(user, async (api, hid) =>
+          this.unwrap(await api.post(`/households/${hid}/categories`, { type, name, icon, color, parentId, defaultCostType })),
+        ),
+    );
+
+    registerTool(
       'get_yearly_comparison',
       {
         title: '연간 비교',

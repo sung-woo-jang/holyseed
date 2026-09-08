@@ -46,7 +46,7 @@ export default function AssetDetailScreen({ navigation, route }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const updateAsset = useUpdateAsset();
   const deleteAsset = useDeleteAsset();
-  const { scrollRef, scrollToInput, onScroll } = useKeyboardScrollRegistration();
+  const { scrollRef, scrollToInput, onScroll, keyboardHeight } = useKeyboardScrollRegistration();
 
   const assetId = route.params.id;
   const asset = data.assets.find((a) => String(a.id) === assetId);
@@ -119,7 +119,7 @@ export default function AssetDetailScreen({ navigation, route }: Props) {
       <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
         ref={scrollRef}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingBottom: 32 + keyboardHeight }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.brand} colors={[theme.brand]} />}
         onScroll={onScroll}
         scrollEventThrottle={16}

@@ -58,7 +58,7 @@ export default function SheetModal({ visible, onClose, header, headerRight, cta,
   const insets = useSafeAreaInsets();
   const dragY = useRef(new Animated.Value(0)).current;
   const scrollYRef = useRef(0);
-  const { scrollRef, scrollToInput, onScroll: onKeyboardScroll } = useKeyboardScrollRegistration();
+  const { scrollRef, scrollToInput, onScroll: onKeyboardScroll, keyboardHeight } = useKeyboardScrollRegistration();
 
   useEffect(() => {
     if (visible) dragY.setValue(0);
@@ -132,7 +132,7 @@ export default function SheetModal({ visible, onClose, header, headerRight, cta,
               </View>
               <ScrollView
                 ref={scrollRef}
-                contentContainerStyle={[styles.body, !cta && { paddingBottom: 24 + insets.bottom }]}
+                contentContainerStyle={[styles.body, { paddingBottom: (cta ? 0 : 24 + insets.bottom) + keyboardHeight }]}
                 keyboardShouldPersistTaps="handled"
                 overScrollMode="always"
                 onScroll={(e) => {

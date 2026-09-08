@@ -1,5 +1,5 @@
-import { createContext, useCallback, useContext, useRef, type RefObject } from 'react';
-import { ScrollView, type NativeScrollEvent, type NativeSyntheticEvent, type TextInput } from 'react-native';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type RefObject } from 'react';
+import { Keyboard, Platform, ScrollView, type NativeScrollEvent, type NativeSyntheticEvent, type TextInput } from 'react-native';
 
 type ScrollToInput = (input: TextInput | null) => void;
 type OnScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
@@ -19,9 +19,27 @@ export const KeyboardScrollProvider = KeyboardScrollContext.Provider;
  * 오프셋(onScroll로 계속 추적)을 더해 목표 offset을 직접 계산하는 더 단순한 방식을 쓴다.
  * 포커스 직후 바로 재면 애니메이션/레이아웃이 아직 안 정착해 값이 튈 수 있어 한 프레임 미룬다.
  */
-export function useKeyboardScrollRegistration(): { scrollRef: RefObject<ScrollView | null>; scrollToInput: ScrollToInput; onScroll: OnScroll } {
+export function useKeyboardScrollRegistration(): {
+  scrollRef: RefObject<ScrollView | null>;
+  scrollToInput: ScrollToInput;
+  onScroll: OnScroll;
+  /** 키보드가 열려있는 동안의 높이(px), 닫혀있으면 0 — 스크롤 콘텐츠 하단에 이만큼 여백을 더 주면 마지막 필드도 키보드 위까지 끌어올릴 여유 공간이 항상 확보된다. */
+  keyboardHeight: number;
+} {
   const scrollRef = useRef<ScrollView>(null);
   const scrollOffsetRef = useRef(0);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvent, (e) => setKeyboardHeight(e.endCoordinates.height));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardHeight(0));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const onScroll = useCallback<OnScroll>((e) => {
     scrollOffsetRef.current = e.nativeEvent.contentOffset.y;
@@ -43,7 +61,7 @@ export function useKeyboardScrollRegistration(): { scrollRef: RefObject<ScrollVi
     });
   }, []);
 
-  return { scrollRef, scrollToInput, onScroll };
+  return { scrollRef, scrollToInput, onScroll, keyboardHeight };
 }
 
 /** Provider 밖에서 쓰이면 null이라 안전하게 no-op 처리하면 된다. */

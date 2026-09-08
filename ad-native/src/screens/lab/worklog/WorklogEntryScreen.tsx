@@ -32,7 +32,7 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
   const theme = useTheme();
   const { record, defaultDate } = route.params;
   const isEdit = !!record;
-  const { scrollRef, scrollToInput } = useKeyboardScrollRegistration();
+  const { scrollRef, scrollToInput, keyboardHeight } = useKeyboardScrollRegistration();
 
   const [title, setTitle] = useState('');
   const [workDate, setWorkDate] = useState(todayLocal());
@@ -219,7 +219,7 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView ref={scrollRef} contentContainerStyle={styles.scrollContent}>
+        <ScrollView ref={scrollRef} contentContainerStyle={[styles.scrollContent, { paddingBottom: 32 + keyboardHeight }]}>
           <KeyboardScrollProvider value={scrollToInput}>
             <TextField variant="line" placeholder="현장명 (예: 송도 / 학익)" value={title} onChangeText={setTitle} style={{ marginBottom: 10 }} />
             {titleSuggestions.length > 0 && (
@@ -234,7 +234,7 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
               </ScrollView>
             )}
 
-            <View style={[styles.fieldsCard, { borderColor: theme.border }]}>
+            <View style={[styles.fieldsCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
               <FormRow label="근무일" value={workDate === todayLocal() ? `오늘 (${workDate.slice(5).replace('-', '/')})` : workDate} onPress={() => setDatePickerVisible(true)} />
             </View>
 
@@ -266,10 +266,10 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
             </View>
 
             <View style={styles.row2}>
-              <Pressable onPress={() => setStartPickerVisible(true)} style={[styles.timeField, { backgroundColor: theme.bg }]}>
+              <Pressable onPress={() => setStartPickerVisible(true)} style={[styles.timeField, { backgroundColor: theme.card }]}>
                 <Text numberOfLines={1} style={{ fontSize: 15, color: startTime ? theme.text : theme.textMuted }}>{startTime || '시작 시간'}</Text>
               </Pressable>
-              <Pressable onPress={() => setEndPickerVisible(true)} style={[styles.timeField, { backgroundColor: theme.bg }]}>
+              <Pressable onPress={() => setEndPickerVisible(true)} style={[styles.timeField, { backgroundColor: theme.card }]}>
                 <Text numberOfLines={1} style={{ fontSize: 15, color: endTime ? theme.text : theme.textMuted }}>{endTime || '종료 시간'}</Text>
               </Pressable>
             </View>
@@ -298,11 +298,11 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
               />
             )}
             <View style={styles.row2}>
-              <TextField variant="box" placeholder="휴게시간 (미지정 시 자동)" value={breakHours} onChangeText={setBreakHours} keyboardType="numeric" suffix="시간" style={{ flex: 1 }} />
-              <TextField variant="box" placeholder="일급여 (미지정 시 자동)" value={dailyWage} onChangeText={setDailyWage} keyboardType="numeric" suffix="원" style={{ flex: 1 }} />
+              <TextField variant="box" placeholder="휴게시간 (미지정 시 자동)" value={breakHours} onChangeText={setBreakHours} keyboardType="numeric" suffix="시간" fieldBg={theme.card} style={{ flex: 1 }} />
+              <TextField variant="box" placeholder="일급여 (미지정 시 자동)" value={dailyWage} onChangeText={setDailyWage} keyboardType="numeric" suffix="원" fieldBg={theme.card} style={{ flex: 1 }} />
             </View>
 
-            <TextField variant="box" placeholder="실수령 직접입력 (선택)" value={amountOverride} onChangeText={setAmountOverride} keyboardType="numeric" suffix="원" style={{ marginBottom: 12 }} />
+            <TextField variant="box" placeholder="실수령 직접입력 (선택)" value={amountOverride} onChangeText={setAmountOverride} keyboardType="numeric" suffix="원" fieldBg={theme.card} style={{ marginBottom: 12 }} />
 
             <View style={styles.switchRow}>
               <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>원천징수(3.3%) 적용</Text>
@@ -337,7 +337,7 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
               </View>
             )}
 
-            <TextField variant="box" placeholder="주소 (미지정 시 자동)" value={address} onChangeText={setAddress} style={{ marginBottom: 12 }} />
+            <TextField variant="box" placeholder="주소 (미지정 시 자동)" value={address} onChangeText={setAddress} fieldBg={theme.card} style={{ marginBottom: 12 }} />
 
             <View style={{ marginBottom: 12 }}>
               <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>사진 ({photos.length}/5)</Text>
@@ -364,7 +364,7 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
 
             <TextInput
               ref={memoRef}
-              style={[styles.memoInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.bg }]}
+              style={[styles.memoInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.card }]}
               placeholder="메모 (선택)"
               placeholderTextColor={theme.textMuted}
               multiline

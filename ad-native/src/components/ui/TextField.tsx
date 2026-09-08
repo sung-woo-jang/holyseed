@@ -14,12 +14,14 @@ interface TextFieldProps {
   maxLength?: number;
   autoFocus?: boolean;
   style?: StyleProp<ViewStyle>;
+  /** box variant의 필드 배경색 — 기본은 theme.bg(회색). 화면 배경 자체가 theme.bg인 plain 화면에서는 theme.card를 넘겨 구분되게 한다. */
+  fieldBg?: string;
   onFocus?: () => void;
   onSubmitEditing?: () => void;
 }
 
 const TextField = forwardRef<TextInput, TextFieldProps>(function TextField(
-  { variant = 'box', placeholder, value, onChangeText, label, keyboardType = 'default', suffix, maxLength, autoFocus, style, onFocus, onSubmitEditing },
+  { variant = 'box', placeholder, value, onChangeText, label, keyboardType = 'default', suffix, maxLength, autoFocus, style, fieldBg, onFocus, onSubmitEditing },
   ref,
 ) {
   const theme = useTheme();
@@ -45,7 +47,7 @@ const TextField = forwardRef<TextInput, TextFieldProps>(function TextField(
           styles.field,
           variant === 'line'
             ? { borderBottomWidth: 1, borderColor: theme.border }
-            : { backgroundColor: theme.bg, borderRadius: 10, paddingHorizontal: 12 },
+            : { backgroundColor: fieldBg ?? theme.bg, borderRadius: 10, paddingHorizontal: 12 },
         ]}
       >
         <TextInput

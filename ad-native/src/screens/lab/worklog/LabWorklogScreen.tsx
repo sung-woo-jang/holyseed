@@ -234,7 +234,7 @@ export default function LabWorklogScreen({ navigation }: Props) {
       <View style={styles.toolRow}>
         <Segmented options={['목록', '캘린더']} value={view} onChange={(v) => setView(v as '목록' | '캘린더')} small />
         <Pressable style={[styles.toolChip, { borderColor: theme.brand }]} onPress={() => navigation.navigate('WorklogSettlement')}>
-          <Text style={{ color: theme.brand, fontSize: 12, fontWeight: '700' }}>정산</Text>
+          <Text style={{ color: theme.brand, fontSize: 12, fontWeight: '700' }}>수령 처리</Text>
         </Pressable>
         <View style={{ flex: 1 }} />
         <Pressable style={[styles.toolChip, { borderColor: theme.border }]} onPress={() => navigation.navigate('WorklogCategory')}>

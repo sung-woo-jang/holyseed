@@ -197,7 +197,7 @@ export default function WorklogSettlementScreen({ navigation }: Props) {
           <Loader size="large" />
         </View>
       ) : displayRecords.length === 0 ? (
-        <EmptyState iconCode={TE.receipt} title={scope === '월별' && viewFilter !== 'ALL' ? '해당 조건의 기록이 없어요' : '정산할 미수령 기록이 없어요'} />
+        <EmptyState iconCode={TE.receipt} title={scope === '월별' && viewFilter !== 'ALL' ? '해당 조건의 기록이 없어요' : '처리할 미수령 기록이 없어요'} />
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
           <View style={[styles.listCard, { backgroundColor: theme.card, borderColor: theme.border }]}>

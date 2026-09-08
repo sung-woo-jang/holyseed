@@ -17,7 +17,7 @@ export default function WorklogStack() {
   return (
     <Stack.Navigator>
       <Stack.Screen name="WorklogHome" component={LabWorklogScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="WorklogSettlement" component={WorklogSettlementScreen} options={{ title: '월급 정산' }} />
+      <Stack.Screen name="WorklogSettlement" component={WorklogSettlementScreen} options={{ title: '수령 처리' }} />
       <Stack.Screen name="WorklogCategory" component={WorklogCategoryScreen} options={{ title: '분류/업무 관리' }} />
       <Stack.Screen name="WorklogSchedule" component={WorklogScheduleScreen} options={{ title: '예정 근무일 등록' }} />
     </Stack.Navigator>

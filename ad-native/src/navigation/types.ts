@@ -13,13 +13,13 @@ export type AssetsStackParamList = {
 export type BookStackParamList = {
   BookHome: undefined;
   TransactionDetail: { id: string };
+  Categories: undefined;
+  CategoryEdit: { mode: 'add'; type: 'INCOME' | 'EXPENSE' } | { mode: 'edit'; categoryId: number };
 };
 
 export type MoreStackParamList = {
   MoreHome: undefined;
   Cashflow: undefined;
-  Categories: undefined;
-  CategoryEdit: { mode: 'add'; type: 'INCOME' | 'EXPENSE' } | { mode: 'edit'; categoryId: number };
   CategoryTransactions: { categoryId: number | null; categoryName: string; from?: string; to?: string };
   TransactionDetail: { id: string };
   Compare: undefined;

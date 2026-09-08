@@ -1,20 +1,20 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import Button from '../../components/ui/Button';
-import ConfirmDialog from '../../components/common/ConfirmDialog';
-import AppToast from '../../components/common/AppToast';
-import CategoryIcon from '../../components/common/CategoryIcon';
-import Segmented from '../../components/common/Segmented';
-import { useTheme } from '../../lib/theme';
-import { useHouseholdData, type HouseholdData } from '../../queries/useHouseholdData';
-import { useAuthStore } from '../../stores/auth.store';
-import { getCategoryDef } from '../../lib/category-meta';
-import { useDeleteCategory } from '../../queries/mutations';
-import type { CategoryType } from '../../types/api';
-import type { MoreStackParamList } from '../../navigation/types';
+import Button from '../components/ui/Button';
+import ConfirmDialog from '../components/common/ConfirmDialog';
+import AppToast from '../components/common/AppToast';
+import CategoryIcon from '../components/common/CategoryIcon';
+import Segmented from '../components/common/Segmented';
+import { useTheme } from '../lib/theme';
+import { useHouseholdData, type HouseholdData } from '../queries/useHouseholdData';
+import { useAuthStore } from '../stores/auth.store';
+import { getCategoryDef } from '../lib/category-meta';
+import { useDeleteCategory } from '../queries/mutations';
+import type { CategoryType } from '../types/api';
+import type { BookStackParamList } from '../navigation/types';
 
-type Props = NativeStackScreenProps<MoreStackParamList, 'Categories'>;
+type Props = NativeStackScreenProps<BookStackParamList, 'Categories'>;
 type CategoryItem = HouseholdData['categories'][number];
 
 const TYPE_LABELS: Record<CategoryType, string> = { INCOME: '수입', EXPENSE: '지출' };

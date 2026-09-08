@@ -445,12 +445,18 @@ export default function BookScreen({ navigation }: Props) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.brand} colors={[theme.brand]} />}
       >
         <View style={styles.monthNav}>
-          <Pressable style={[styles.monthBtn, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={() => shiftMonth(-1)}>
-            <Text style={{ color: theme.text, fontSize: 18 }}>‹</Text>
-          </Pressable>
-          <Text style={[styles.monthLabel, { color: theme.text }]}>{monthLabel}</Text>
-          <Pressable style={[styles.monthBtn, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={() => shiftMonth(1)}>
-            <Text style={{ color: theme.text, fontSize: 18 }}>›</Text>
+          <View style={styles.monthNavSpacer} />
+          <View style={styles.monthNavCenter}>
+            <Pressable style={[styles.monthBtn, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={() => shiftMonth(-1)}>
+              <Text style={{ color: theme.text, fontSize: 18 }}>‹</Text>
+            </Pressable>
+            <Text style={[styles.monthLabel, { color: theme.text }]}>{monthLabel}</Text>
+            <Pressable style={[styles.monthBtn, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={() => shiftMonth(1)}>
+              <Text style={{ color: theme.text, fontSize: 18 }}>›</Text>
+            </Pressable>
+          </View>
+          <Pressable style={[styles.catIconBtn, { backgroundColor: theme.brandSoft }]} onPress={() => navigation.navigate('Categories')}>
+            {Icon.folder(theme.brand)}
           </Pressable>
         </View>
 
@@ -722,8 +728,11 @@ export default function BookScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingBottom: 100 },
-  monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, paddingTop: 12 },
+  monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, paddingHorizontal: 20 },
+  monthNavSpacer: { width: 32 },
+  monthNavCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16 },
   monthBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  catIconBtn: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   monthLabel: { fontSize: 15, fontWeight: '700', minWidth: 90, textAlign: 'center' },
   sectionPad: { paddingHorizontal: 20, paddingTop: 16 },
   summary: { flexDirection: 'row', justifyContent: 'space-between', borderRadius: 14, padding: 16 },

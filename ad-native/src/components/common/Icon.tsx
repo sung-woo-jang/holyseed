@@ -94,6 +94,11 @@ export const Icon = {
       <Path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   ),
+  folder: (color = '#8B95A1', size = 18) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" pointerEvents="none">
+      <Path d="M3 7a2 2 0 012-2h4l2 2.5h8a2 2 0 012 2V17a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
+    </Svg>
+  ),
   refresh: (color = '#8B95A1', size = 18) => (
     <Svg width={size} height={size} viewBox="0 0 18 18" fill="none" pointerEvents="none">
       <Path

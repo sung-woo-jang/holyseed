@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -7,7 +7,6 @@ import EmptyState from '../../components/common/EmptyState';
 import Loader from '../../components/ui/Loader';
 import ListRow from '../../components/ui/ListRow';
 import Border from '../../components/ui/Border';
-import AddTxSheet from '../../components/sheets/AddTxSheet';
 import ActionSheet from '../../components/common/ActionSheet';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import AppToast from '../../components/common/AppToast';
@@ -35,8 +34,6 @@ export default function CategoryTransactionsScreen({ navigation, route }: Props)
   const data = useHouseholdData();
   const deleteTx = useDeleteTx();
 
-  const [addTxVisible, setAddTxVisible] = useState(false);
-  const [editTx, setEditTx] = useState<HouseholdTransaction | null>(null);
   const [actionTx, setActionTx] = useState<HouseholdTransaction | null>(null);
   const [deleteTxState, setDeleteTxState] = useState<HouseholdTransaction | null>(null);
   const [toast, setToast] = useState('');
@@ -45,6 +42,14 @@ export default function CategoryTransactionsScreen({ navigation, route }: Props)
   useLayoutEffect(() => {
     navigation.setOptions({ title: categoryName });
   }, [navigation, categoryName]);
+
+  useEffect(() => {
+    if (!route.params.savedMode) return;
+    const label = { create: '거래를 저장했어요', edit: '거래를 수정했어요', delete: '거래를 삭제했어요' }[route.params.savedMode];
+    setToast(label);
+    navigation.setParams({ savedMode: undefined, savedAt: undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route.params.savedAt]);
 
   // 대분류를 탭한 경우 그 아래 소분류 거래까지 함께 조회(현금흐름 breakdown이 대분류 기준으로 합산되므로 상세 화면도 맞춰야 함)
   const childIds = categoryId != null ? data.categories.filter((c) => c.parentId === categoryId).map((c) => c.id) : [];
@@ -103,8 +108,7 @@ export default function CategoryTransactionsScreen({ navigation, route }: Props)
     setActionTx(null);
     if (!t) return;
     if (value === 'edit') {
-      setEditTx(t);
-      setAddTxVisible(true);
+      navigation.navigate('TransactionEdit', { mode: 'edit', txId: t.id, returnTo: 'CategoryTransactions' });
     } else if (value === 'delete') setDeleteTxState(t);
   }
 
@@ -197,15 +201,6 @@ export default function CategoryTransactionsScreen({ navigation, route }: Props)
       </View>
       </ScrollView>
 
-      <AddTxSheet
-        visible={addTxVisible}
-        editTx={editTx ?? undefined}
-        onClose={() => {
-          setAddTxVisible(false);
-          setEditTx(null);
-        }}
-        onSaved={(mode) => setToast(mode === 'edit' ? '거래를 수정했어요' : '거래를 저장했어요')}
-      />
       <ActionSheet
         visible={!!actionTx}
         title={actionTx?.title}

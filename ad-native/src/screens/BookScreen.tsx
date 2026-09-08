@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
@@ -19,7 +19,6 @@ import CategoryIcon from '../components/common/CategoryIcon';
 import { Icon } from '../components/common/Icon';
 import WorkCalendar, { type CalLog } from '../components/WorkCalendar';
 import Segmented from '../components/common/Segmented';
-import AddTxSheet from '../components/sheets/AddTxSheet';
 import AddRecurringSheet from '../components/sheets/AddRecurringSheet';
 import MissedRecurringSheet from '../components/sheets/MissedRecurringSheet';
 import { recurringApi } from '../api';
@@ -49,7 +48,7 @@ type DayItem =
 
 type Props = NativeStackScreenProps<BookStackParamList, 'BookHome'>;
 
-export default function BookScreen({ navigation }: Props) {
+export default function BookScreen({ navigation, route }: Props) {
   const theme = useTheme();
   const data = useHouseholdData();
   const currentHousehold = useAuthStore((s) => s.currentHousehold);
@@ -64,8 +63,6 @@ export default function BookScreen({ navigation }: Props) {
   const [costFilter, setCostFilter] = useState<Set<CostType>>(new Set());
   const [recOpen, setRecOpen] = useState(false);
 
-  const [addTxVisible, setAddTxVisible] = useState(false);
-  const [editTx, setEditTx] = useState<HouseholdTransaction | null>(null);
   const [actionTx, setActionTx] = useState<HouseholdTransaction | null>(null);
   const [deleteTxState, setDeleteTxState] = useState<HouseholdTransaction | null>(null);
   const [addRecVisible, setAddRecVisible] = useState(false);
@@ -88,6 +85,14 @@ export default function BookScreen({ navigation }: Props) {
   const deleteRecurring = useDeleteRecurring();
   const deleteTx = useDeleteTx();
 
+  useEffect(() => {
+    if (!route.params?.savedMode) return;
+    const label = { create: '거래를 저장했어요', edit: '거래를 수정했어요', delete: '거래를 삭제했어요' }[route.params.savedMode];
+    setToast(label);
+    navigation.setParams({ savedMode: undefined, savedAt: undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route.params?.savedAt]);
+
   async function onRefresh() {
     setRefreshing(true);
     try {
@@ -102,8 +107,7 @@ export default function BookScreen({ navigation }: Props) {
     setActionTx(null);
     if (!t) return;
     if (value === 'edit') {
-      setEditTx(t);
-      setAddTxVisible(true);
+      navigation.navigate('TransactionEdit', { mode: 'edit', txId: t.id, returnTo: 'BookHome' });
     } else if (value === 'delete') setDeleteTxState(t);
   }
   async function confirmDeleteTx() {
@@ -263,7 +267,7 @@ export default function BookScreen({ navigation }: Props) {
   }
   function handleAddPick(value: string) {
     setAddPicker(false);
-    if (value === 'tx') setAddTxVisible(true);
+    if (value === 'tx') navigation.navigate('TransactionEdit', { mode: 'add', date: selectedDate, returnTo: 'BookHome' });
     else if (value === 'rec') setAddRecVisible(true);
   }
 
@@ -289,14 +293,6 @@ export default function BookScreen({ navigation }: Props) {
   }
 
   const selectedLabel = selectedDate ? `${Number(selectedDate.slice(5, 7))}월 ${Number(selectedDate.slice(8, 10))}일` : '';
-
-  function openTxEdit(txId: string) {
-    const tx = data.transactions.find((t) => t.id === txId);
-    if (tx) {
-      setEditTx(tx);
-      setAddTxVisible(true);
-    }
-  }
 
   function renderTxRow(tx: HouseholdTransaction, i: number, total: number) {
     const isInc = tx.type === 'INCOME';
@@ -667,16 +663,6 @@ export default function BookScreen({ navigation }: Props) {
         onClose={() => setAddPicker(false)}
       />
 
-      <AddTxSheet
-        visible={addTxVisible}
-        date={editTx ? undefined : selectedDate}
-        editTx={editTx ?? undefined}
-        onClose={() => {
-          setAddTxVisible(false);
-          setEditTx(null);
-        }}
-        onSaved={(mode) => setToast(mode === 'edit' ? '거래를 수정했어요' : '거래를 저장했어요')}
-      />
       <AddRecurringSheet
         visible={addRecVisible}
         editRec={editRec ?? undefined}

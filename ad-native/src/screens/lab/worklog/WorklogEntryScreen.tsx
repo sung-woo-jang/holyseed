@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { useQuery } from '@tanstack/react-query';
@@ -8,7 +9,6 @@ import Button from '../../../components/ui/Button';
 import TextField from '../../../components/ui/TextField';
 import Segmented from '../../../components/common/Segmented';
 import Switch from '../../../components/ui/Switch';
-import FormRow from '../../../components/common/FormRow';
 import ConfirmDialog from '../../../components/common/ConfirmDialog';
 import DatePicker from '../../../components/common/DatePicker';
 import { labWorklogApi, type WorklogPhoto, type PayStatus } from '../../../api/lab-worklog';
@@ -27,6 +27,58 @@ const PAY_STATUS_OPTIONS: { value: PayStatus; label: string }[] = [
   { value: 'UNPAID', label: '미수령' },
   { value: 'DAYOFF', label: '휴무' },
 ];
+
+const ICON = { fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+
+function IconInfo({ color }: { color: string }) {
+  const p = { ...ICON, stroke: color };
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24">
+      <Rect x={4} y={5} width={16} height={16} rx={2.5} {...p} />
+      <Path d="M8 3v4M16 3v4M4 10h16" {...p} />
+    </Svg>
+  );
+}
+function IconClock({ color }: { color: string }) {
+  const p = { ...ICON, stroke: color };
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24">
+      <Circle cx={12} cy={12} r={8.5} {...p} />
+      <Path d="M12 7v5l3.5 2" {...p} />
+    </Svg>
+  );
+}
+function IconWallet({ color }: { color: string }) {
+  const p = { ...ICON, stroke: color };
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24">
+      <Path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3" {...p} />
+      <Path d="M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-4" {...p} />
+      <Path d="M16 13h3a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-3a2 2 0 0 1 0-4Z" {...p} />
+    </Svg>
+  );
+}
+function IconNotes({ color }: { color: string }) {
+  const p = { ...ICON, stroke: color };
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24">
+      <Path d="M7 3h7l4 4v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" {...p} />
+      <Path d="M9 12h6M9 16h6" {...p} />
+    </Svg>
+  );
+}
+
+function Section({ icon, title, theme, children }: { icon: React.ReactNode; title: string; theme: ReturnType<typeof useTheme>; children: React.ReactNode }) {
+  return (
+    <View style={[styles.section, { backgroundColor: theme.card }]}>
+      <View style={styles.sectionHead}>
+        <View style={[styles.sectionIconWrap, { backgroundColor: theme.brandSoft }]}>{icon}</View>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>{title}</Text>
+      </View>
+      {children}
+    </View>
+  );
+}
 
 export default function WorklogEntryScreen({ navigation, route }: Props) {
   const theme = useTheme();
@@ -221,158 +273,164 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView ref={scrollRef} contentContainerStyle={[styles.scrollContent, { paddingBottom: 32 + keyboardHeight }]}>
           <KeyboardScrollProvider value={scrollToInput}>
-            <TextField variant="line" placeholder="현장명 (예: 송도 / 학익)" value={title} onChangeText={setTitle} style={{ marginBottom: 10 }} />
-            {titleSuggestions.length > 0 && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled style={{ marginBottom: 12 }}>
-                <View style={styles.chipRow}>
-                  {titleSuggestions.map((s) => (
-                    <Pressable key={s.id} onPress={() => setTitle(s.name)} style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.card }]}>
-                      <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text }}>{s.name}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </ScrollView>
-            )}
-
-            <View style={[styles.fieldsCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
-              <FormRow label="근무일" value={workDate === todayLocal() ? `오늘 (${workDate.slice(5).replace('-', '/')})` : workDate} onPress={() => setDatePickerVisible(true)} />
-            </View>
-
-            {categories.length > 0 && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled style={{ marginBottom: 12 }}>
-                <View style={styles.chipRow}>
-                  {categories.map((c) => {
-                    const active = c.name === category;
-                    return (
-                      <Pressable
-                        key={c.id}
-                        onPress={() => handleSelectCategory(c.name)}
-                        style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
-                      >
-                        <Text style={{ fontSize: 13, fontWeight: '700', color: active ? theme.brand : theme.text }}>{c.name}</Text>
+            <Section icon={<IconInfo color={theme.brand} />} title="기본 정보" theme={theme}>
+              <TextField variant="line" placeholder="현장명 (예: 송도 / 학익)" value={title} onChangeText={setTitle} style={{ marginBottom: 10 }} />
+              {titleSuggestions.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled style={{ marginBottom: 12 }}>
+                  <View style={styles.chipRow}>
+                    {titleSuggestions.map((s) => (
+                      <Pressable key={s.id} onPress={() => setTitle(s.name)} style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.bg }]}>
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text }}>{s.name}</Text>
                       </Pressable>
-                    );
-                  })}
-                </View>
-              </ScrollView>
-            )}
+                    ))}
+                  </View>
+                </ScrollView>
+              )}
 
-            <View style={styles.segWrap}>
+              {categories.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled style={{ marginBottom: 12 }}>
+                  <View style={styles.chipRow}>
+                    {categories.map((c) => {
+                      const active = c.name === category;
+                      return (
+                        <Pressable
+                          key={c.id}
+                          onPress={() => handleSelectCategory(c.name)}
+                          style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.bg }]}
+                        >
+                          <Text style={{ fontSize: 13, fontWeight: '700', color: active ? theme.brand : theme.text }}>{c.name}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </ScrollView>
+              )}
+
+              <Pressable onPress={() => setDatePickerVisible(true)} style={[styles.box, { backgroundColor: theme.bg, marginBottom: 12 }]}>
+                <Text style={{ fontSize: 15, color: theme.text, fontWeight: '600' }}>{workDate === todayLocal() ? `오늘 (${workDate.slice(5).replace('-', '/')})` : workDate}</Text>
+              </Pressable>
+
               <Segmented
                 options={PAY_STATUS_OPTIONS.map((o) => o.label)}
                 value={PAY_STATUS_OPTIONS.find((o) => o.value === payStatus)?.label ?? '수령예정'}
                 onChange={(label) => setPayStatus(PAY_STATUS_OPTIONS.find((o) => o.label === label)!.value)}
               />
-            </View>
+            </Section>
 
-            <View style={styles.row2}>
-              <Pressable onPress={() => setStartPickerVisible(true)} style={[styles.timeField, { backgroundColor: theme.card }]}>
-                <Text numberOfLines={1} style={{ fontSize: 15, color: startTime ? theme.text : theme.textMuted }}>{startTime || '시작 시간'}</Text>
-              </Pressable>
-              <Pressable onPress={() => setEndPickerVisible(true)} style={[styles.timeField, { backgroundColor: theme.card }]}>
-                <Text numberOfLines={1} style={{ fontSize: 15, color: endTime ? theme.text : theme.textMuted }}>{endTime || '종료 시간'}</Text>
-              </Pressable>
-            </View>
-            {startPickerVisible && (
-              <DateTimePicker
-                value={startTime ? timeStringToDate(startTime) : new Date()}
-                mode="time"
-                is24Hour
-                display="default"
-                onChange={(event, selectedDate) => {
-                  setStartPickerVisible(false);
-                  if (event.type === 'set' && selectedDate) setStartTime(dateToTimeString(selectedDate));
-                }}
-              />
-            )}
-            {endPickerVisible && (
-              <DateTimePicker
-                value={endTime ? timeStringToDate(endTime) : new Date()}
-                mode="time"
-                is24Hour
-                display="default"
-                onChange={(event, selectedDate) => {
-                  setEndPickerVisible(false);
-                  if (event.type === 'set' && selectedDate) setEndTime(dateToTimeString(selectedDate));
-                }}
-              />
-            )}
-            <View style={styles.row2}>
-              <TextField variant="box" placeholder="휴게시간 (미지정 시 자동)" value={breakHours} onChangeText={setBreakHours} keyboardType="numeric" suffix="시간" fieldBg={theme.card} style={{ flex: 1 }} />
-              <TextField variant="box" placeholder="일급여 (미지정 시 자동)" value={dailyWage} onChangeText={setDailyWage} keyboardType="numeric" suffix="원" fieldBg={theme.card} style={{ flex: 1 }} />
-            </View>
-
-            <TextField variant="box" placeholder="실수령 직접입력 (선택)" value={amountOverride} onChangeText={setAmountOverride} keyboardType="numeric" suffix="원" fieldBg={theme.card} style={{ marginBottom: 12 }} />
-
-            <View style={styles.switchRow}>
-              <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>원천징수(3.3%) 적용</Text>
-              <Switch checked={withholdingApplied} onCheckedChange={setWithholdingApplied} />
-            </View>
-
-            <View style={styles.switchRow}>
-              <View>
-                <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>반액 지급</Text>
-                <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 2 }}>사정으로 일당의 절반만 받는 경우</Text>
+            <Section icon={<IconClock color={theme.brand} />} title="근무 시간" theme={theme}>
+              <View style={styles.row2}>
+                <Pressable onPress={() => setStartPickerVisible(true)} style={[styles.box, { backgroundColor: theme.bg, flex: 1 }]}>
+                  <Text numberOfLines={1} style={{ fontSize: 15, color: startTime ? theme.text : theme.textMuted, fontWeight: '600' }}>{startTime || '시작 시간'}</Text>
+                </Pressable>
+                <Pressable onPress={() => setEndPickerVisible(true)} style={[styles.box, { backgroundColor: theme.bg, flex: 1 }]}>
+                  <Text numberOfLines={1} style={{ fontSize: 15, color: endTime ? theme.text : theme.textMuted, fontWeight: '600' }}>{endTime || '종료 시간'}</Text>
+                </Pressable>
               </View>
-              <Switch checked={halfPay} onCheckedChange={setHalfPay} />
-            </View>
+              {startPickerVisible && (
+                <DateTimePicker
+                  value={startTime ? timeStringToDate(startTime) : new Date()}
+                  mode="time"
+                  is24Hour
+                  display="default"
+                  onChange={(event, selectedDate) => {
+                    setStartPickerVisible(false);
+                    if (event.type === 'set' && selectedDate) setStartTime(dateToTimeString(selectedDate));
+                  }}
+                />
+              )}
+              {endPickerVisible && (
+                <DateTimePicker
+                  value={endTime ? timeStringToDate(endTime) : new Date()}
+                  mode="time"
+                  is24Hour
+                  display="default"
+                  onChange={(event, selectedDate) => {
+                    setEndPickerVisible(false);
+                    if (event.type === 'set' && selectedDate) setEndTime(dateToTimeString(selectedDate));
+                  }}
+                />
+              )}
+              <TextField variant="box" placeholder="휴게시간 (미지정 시 자동)" value={breakHours} onChangeText={setBreakHours} keyboardType="numeric" suffix="시간" />
+            </Section>
 
-            {jobChoices.length > 0 && (
+            <Section icon={<IconWallet color={theme.brand} />} title="급여" theme={theme}>
+              <View style={styles.row2}>
+                <TextField variant="box" placeholder="일급여 (미지정 시 자동)" value={dailyWage} onChangeText={setDailyWage} keyboardType="numeric" suffix="원" style={{ flex: 1 }} />
+                <TextField variant="box" placeholder="실수령 직접입력 (선택)" value={amountOverride} onChangeText={setAmountOverride} keyboardType="numeric" suffix="원" style={{ flex: 1 }} />
+              </View>
+
+              <View style={styles.switchRow}>
+                <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>원천징수(3.3%) 적용</Text>
+                <Switch checked={withholdingApplied} onCheckedChange={setWithholdingApplied} />
+              </View>
+
+              <View style={[styles.switchRow, { marginBottom: 0 }]}>
+                <View>
+                  <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>반액 지급</Text>
+                  <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 2 }}>사정으로 일당의 절반만 받는 경우</Text>
+                </View>
+                <Switch checked={halfPay} onCheckedChange={setHalfPay} />
+              </View>
+            </Section>
+
+            <Section icon={<IconNotes color={theme.brand} />} title="추가 정보" theme={theme}>
+              {jobChoices.length > 0 && (
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>업무 (다중 선택)</Text>
+                  <View style={styles.chipRow}>
+                    {jobChoices.map((j) => {
+                      const active = jobs.includes(j.name);
+                      return (
+                        <Pressable
+                          key={j.id}
+                          onPress={() => toggleJob(j.name)}
+                          style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.bg }]}
+                        >
+                          <Text style={{ fontSize: 12.5, fontWeight: '700', color: active ? theme.brand : theme.text }}>{j.name}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
+
+              <TextField variant="box" placeholder="주소 (미지정 시 자동)" value={address} onChangeText={setAddress} style={{ marginBottom: 12 }} />
+
               <View style={{ marginBottom: 12 }}>
-                <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>업무 (다중 선택)</Text>
-                <View style={styles.chipRow}>
-                  {jobChoices.map((j) => {
-                    const active = jobs.includes(j.name);
-                    return (
-                      <Pressable
-                        key={j.id}
-                        onPress={() => toggleJob(j.name)}
-                        style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
-                      >
-                        <Text style={{ fontSize: 12.5, fontWeight: '700', color: active ? theme.brand : theme.text }}>{j.name}</Text>
+                <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>사진 ({photos.length}/5)</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled>
+                  <View style={styles.photoRow}>
+                    {photos.map((p) => (
+                      <View key={p.filename} style={styles.photoThumbWrap}>
+                        <Pressable onPress={() => setPreviewPhoto(p)}>
+                          <Image source={{ uri: p.url }} style={styles.photoThumb} />
+                        </Pressable>
+                        <Pressable style={styles.photoRemove} onPress={() => removePhoto(p.filename)} hitSlop={6}>
+                          <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>×</Text>
+                        </Pressable>
+                      </View>
+                    ))}
+                    {photos.length < 5 && (
+                      <Pressable style={[styles.photoAdd, { borderColor: theme.border }]} onPress={handlePickPhotos} disabled={uploadingPhoto}>
+                        {uploadingPhoto ? <ActivityIndicator size="small" color={theme.brand} /> : <Text style={{ color: theme.textMuted, fontSize: 20 }}>+</Text>}
                       </Pressable>
-                    );
-                  })}
-                </View>
+                    )}
+                  </View>
+                </ScrollView>
               </View>
-            )}
 
-            <TextField variant="box" placeholder="주소 (미지정 시 자동)" value={address} onChangeText={setAddress} fieldBg={theme.card} style={{ marginBottom: 12 }} />
-
-            <View style={{ marginBottom: 12 }}>
-              <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>사진 ({photos.length}/5)</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled>
-                <View style={styles.photoRow}>
-                  {photos.map((p) => (
-                    <View key={p.filename} style={styles.photoThumbWrap}>
-                      <Pressable onPress={() => setPreviewPhoto(p)}>
-                        <Image source={{ uri: p.url }} style={styles.photoThumb} />
-                      </Pressable>
-                      <Pressable style={styles.photoRemove} onPress={() => removePhoto(p.filename)} hitSlop={6}>
-                        <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>×</Text>
-                      </Pressable>
-                    </View>
-                  ))}
-                  {photos.length < 5 && (
-                    <Pressable style={[styles.photoAdd, { borderColor: theme.border }]} onPress={handlePickPhotos} disabled={uploadingPhoto}>
-                      {uploadingPhoto ? <ActivityIndicator size="small" color={theme.brand} /> : <Text style={{ color: theme.textMuted, fontSize: 20 }}>+</Text>}
-                    </Pressable>
-                  )}
-                </View>
-              </ScrollView>
-            </View>
-
-            <TextInput
-              ref={memoRef}
-              style={[styles.memoInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.card }]}
-              placeholder="메모 (선택)"
-              placeholderTextColor={theme.textMuted}
-              multiline
-              numberOfLines={3}
-              value={memo}
-              onChangeText={setMemo}
-              onFocus={() => scrollToInput(memoRef.current)}
-            />
+              <TextInput
+                ref={memoRef}
+                style={[styles.memoInput, { color: theme.text, backgroundColor: theme.bg }]}
+                placeholder="메모 (선택)"
+                placeholderTextColor={theme.textMuted}
+                multiline
+                numberOfLines={3}
+                value={memo}
+                onChangeText={setMemo}
+                onFocus={() => scrollToInput(memoRef.current)}
+              />
+            </Section>
 
             {isEdit && (
               <Pressable style={styles.deleteRow} onPress={() => setDeleteConfirm(true)}>
@@ -417,14 +475,16 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   scrollContent: { padding: 20, paddingBottom: 32 },
   ctaWrap: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20, borderTopWidth: 1 },
-  fieldsCard: { borderWidth: 1, borderRadius: 12, marginBottom: 12, overflow: 'hidden' },
+  section: { borderRadius: 18, padding: 16, marginBottom: 14 },
+  sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
+  sectionIconWrap: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  sectionTitle: { fontSize: 13.5, fontWeight: '800' },
+  box: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 13 },
   chipRow: { flexDirection: 'row', gap: 8, paddingBottom: 4 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
-  segWrap: { marginBottom: 12 },
   row2: { flexDirection: 'row', gap: 10, marginBottom: 12 },
-  timeField: { flex: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 13 },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  memoInput: { minHeight: 72, borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingTop: 10, fontSize: 14, textAlignVertical: 'top', marginBottom: 8 },
+  memoInput: { minHeight: 72, borderRadius: 10, paddingHorizontal: 14, paddingTop: 10, fontSize: 14, textAlignVertical: 'top' },
   deleteRow: { alignItems: 'center', paddingVertical: 12 },
   fieldLabel: { fontSize: 12, fontWeight: '700', marginBottom: 8 },
   photoRow: { flexDirection: 'row', gap: 10 },

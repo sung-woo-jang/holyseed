@@ -11,7 +11,6 @@ import AppToast from '../../../components/common/AppToast';
 import ConfirmDialog from '../../../components/common/ConfirmDialog';
 import Segmented from '../../../components/common/Segmented';
 import { Icon } from '../../../components/common/Icon';
-import WorklogEntryForm from './WorklogEntryForm';
 import { labWorklogApi, type WorklogRecord } from '../../../api/lab-worklog';
 import { getWorklogSortPref, setWorklogSortPref } from '../../../lib/lab-prefs';
 import { useTheme } from '../../../lib/theme';
@@ -39,14 +38,12 @@ function sortByDate(records: WorklogRecord[], dir: 'asc' | 'desc'): WorklogRecor
   return sorted;
 }
 
-export default function LabWorklogScreen({ navigation }: Props) {
+export default function LabWorklogScreen({ navigation, route }: Props) {
   const theme = useTheme();
   const [ym, setYm] = useState(() => {
     const d = new Date();
     return { year: d.getFullYear(), month: d.getMonth() + 1 };
   });
-  const [formVisible, setFormVisible] = useState(false);
-  const [editRecord, setEditRecord] = useState<WorklogRecord | null>(null);
   const [toast, setToast] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [view, setView] = useState<'목록' | '캘린더'>('목록');
@@ -63,6 +60,15 @@ export default function LabWorklogScreen({ navigation }: Props) {
       if (pref) setSortDir(pref.dir);
     });
   }, []);
+
+  useEffect(() => {
+    if (!route.params?.savedMode) return;
+    const label = { create: '근무 기록을 추가했어요', edit: '근무 기록을 수정했어요', delete: '근무 기록을 삭제했어요' }[route.params.savedMode];
+    setToast(label);
+    worklogQ.refetch();
+    navigation.setParams({ savedMode: undefined, savedAt: undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route.params?.savedAt]);
 
   const worklogQ = useQuery({
     queryKey: ['lab-worklog', ym.year, ym.month],
@@ -123,8 +129,7 @@ export default function LabWorklogScreen({ navigation }: Props) {
   });
 
   function openAdd() {
-    setEditRecord(null);
-    setFormVisible(true);
+    navigation.navigate('WorklogEntry', { record: null, defaultDate: `${ym.year}-${String(ym.month).padStart(2, '0')}-01` });
   }
 
   function openEdit(record: WorklogRecord) {
@@ -132,8 +137,7 @@ export default function LabWorklogScreen({ navigation }: Props) {
       toggleSelect(record.id);
       return;
     }
-    setEditRecord(record);
-    setFormVisible(true);
+    navigation.navigate('WorklogEntry', { record, defaultDate: `${ym.year}-${String(ym.month).padStart(2, '0')}-01` });
   }
 
   function toggleSelect(id: number) {
@@ -404,18 +408,6 @@ export default function LabWorklogScreen({ navigation }: Props) {
         </View>
       )}
 
-      <WorklogEntryForm
-        visible={formVisible}
-        record={editRecord}
-        categories={categories}
-        defaultDate={`${ym.year}-${String(ym.month).padStart(2, '0')}-01`}
-        onClose={() => setFormVisible(false)}
-        onSaved={(mode) => {
-          setFormVisible(false);
-          setToast(mode === 'edit' ? '근무 기록을 수정했어요' : mode === 'delete' ? '근무 기록을 삭제했어요' : '근무 기록을 추가했어요');
-          worklogQ.refetch();
-        }}
-      />
       <ConfirmDialog
         visible={bulkDeleteConfirm}
         title={`선택한 ${selectedIds.size}건을 삭제할까요?`}

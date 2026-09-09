@@ -74,6 +74,12 @@ export const Icon = {
       <path d="M4 10l4 4 8-8" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  folder: (color = '#8B95A1', size = 18) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M3 7a2 2 0 012-2h4l2 2.5h8a2 2 0 012 2V17a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
+        stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
+    </svg>
+  ),
   refresh: (color = '#8B95A1', size = 18) => (
     <svg width={size} height={size} viewBox="0 0 18 18" fill="none">
       <path d="M3 9a6 6 0 0110-4.5L15 6M15 9a6 6 0 01-10 4.5L3 12M15 3v3h-3M3 15v-3h3"

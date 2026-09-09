@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import Button from '../ui/Button';
 import TextFieldBig from '../ui/TextFieldBig';
-import ListRow from '../ui/ListRow';
 import SegmentedControl from '../ui/SegmentedControl';
 import SheetModal from './SheetModal';
 import { useTheme } from '../../lib/theme';
@@ -10,11 +9,12 @@ import TossEmoji from '../common/TossEmoji';
 import FormRow from '../common/FormRow';
 import DatePicker from '../common/DatePicker';
 import PickerOverlay from './PickerOverlay';
-import { CATEGORY_DEFS, getCategoryDef } from '../../lib/category-meta';
+import { CATEGORY_DEFS, getCategoryDef, resolveCostType } from '../../lib/category-meta';
 import { Icon } from '../common/Icon';
 import { useCreateTx, useUpdateTx } from '../../queries/mutations';
 import { todayLocal } from '../../lib/date';
 import { getErrorMessage } from '../../lib/error';
+import type { CostType } from '../../types/api';
 import type { MockTransaction } from '../../lib/mock-data';
 import styles from './AddTxSheet.module.css';
 
@@ -48,10 +48,12 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
   const [type, setType] = useState<TxType>('EXPENSE');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<{ id: number; name: string } | null>(null);
+  const [costType, setCostType] = useState<CostType | null>(null);
   const [title, setTitle] = useState('');
   const [memo, setMemo] = useState('');
   const [txDate, setTxDate] = useState<string>(''); // YYYY-MM-DD (편집 시 표시·조정)
   const [catPicker, setCatPicker] = useState(false);
+  const [chipParentId, setChipParentId] = useState<number | null>(null);
   const [datePicker, setDatePicker] = useState(false);
   const [error, setError] = useState('');
   const createTx = useCreateTx();
@@ -65,6 +67,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
       setAmount(formatNum(String(editTx.amount)));
       const c = data.categories.find((x) => x.name === editTx.category);
       setCategory({ id: c?.id ?? 0, name: editTx.category });
+      setCostType(editTx.costType ?? resolveCostType(editTx.categoryId, data.categories));
       setTitle(editTx.rawTitle ?? '');
       setMemo(editTx.memo ?? '');
       setTxDate(editTx.date);
@@ -87,14 +90,40 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
     setType('EXPENSE');
     setAmount('');
     setCategory(null);
+    setCostType(null);
+    setChipParentId(null);
     setTitle('');
     setMemo('');
     setError('');
   }
 
+  function openCatPicker() {
+    const cur = category ? data.categories.find((x) => x.id === category.id) : undefined;
+    setChipParentId(cur ? (cur.parentId ?? cur.id) : null);
+    setCatPicker(true);
+  }
+
+  function selectTopLevel(c: { id: number; name: string }) {
+    const kids = data.categories.filter((x) => x.parentId === c.id);
+    setCategory({ id: c.id, name: c.name });
+    setCostType(resolveCostType(c.id, data.categories));
+    if (kids.length > 0) {
+      setChipParentId(c.id);
+    } else {
+      setCatPicker(false);
+    }
+  }
+
+  function selectChip(id: number, name: string) {
+    setCategory({ id, name });
+    setCostType(resolveCostType(id, data.categories));
+    setCatPicker(false);
+  }
+
   async function handleSave() {
     setError('');
     try {
+      const costTypeDto = type === 'EXPENSE' && costType ? { costType } : {};
       if (isEdit && editTx) {
         await updateTx.mutateAsync({
           id: Number(editTx.id),
@@ -105,6 +134,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
             ...(category && category.id > 0 ? { categoryId: category.id } : {}),
             title,
             memo,
+            ...costTypeDto,
           },
         });
         onClose();
@@ -118,6 +148,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
         ...(category ? { categoryId: category.id } : {}),
         title,
         memo,
+        ...costTypeDto,
       });
       reset();
       onClose();
@@ -126,6 +157,9 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
       setError(getErrorMessage(e, '저장에 실패했어요. 다시 시도해 주세요.'));
     }
   }
+
+  const catListSource = data.categories.filter((c) => c.type === type && !c.parentId);
+  const childrenOf = (id: number) => data.categories.filter((c) => c.parentId === id);
 
   return (
     <SheetModal
@@ -151,36 +185,104 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
             onClose={() => setDatePicker(false)}
           />
 
-          {/* 카테고리 피커 */}
+          {/* 카테고리 피커 — 아이콘 그리드 + 소분류 칩 */}
           <PickerOverlay visible={catPicker} title="카테고리 선택" onClose={() => setCatPicker(false)}>
-            {(data.categories.filter((c) => c.type === type).length > 0
-              ? data.categories.filter((c) => c.type === type)
-                  .map((c) => {
+            {catListSource.length > 0 ? (
+              <>
+                <div className={styles.pickerGrid}>
+                  {catListSource.map((c) => {
                     const def = getCategoryDef(c.name);
+                    const kids = childrenOf(c.id);
+                    const ringed = category?.id === c.id || chipParentId === c.id;
+                    const iconColor = c.color || def.color;
                     return (
-                      <ListRow
-                        key={c.id}
-                        left={<TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />}
-                        contents={<span style={{ color: theme.text, fontSize: 15, fontWeight: 500 }}>{c.name}</span>}
-                        right={category?.id === c.id ? Icon.check(theme.brand, 16) : undefined}
-                        onPress={() => { setCategory({ id: c.id, name: c.name }); setCatPicker(false); }}
-                        verticalPadding="small"
-                      />
+                      <button type="button" key={c.id} className={styles.pickerCell} onClick={() => selectTopLevel(c)}>
+                        <div
+                          className={`${styles.pickerCellIcon} ${ringed ? styles.pickerCellIconRinged : ''}`}
+                          style={{ backgroundColor: iconColor + '22', ['--brand-color' as any]: theme.brand }}
+                        >
+                          <TossEmoji code={c.icon || def.iconCode} size={26} />
+                          {category?.id === c.id && (
+                            <div className={styles.pickerBadge} style={{ backgroundColor: theme.brand, borderColor: theme.card }}>
+                              {Icon.check('#fff', 9)}
+                            </div>
+                          )}
+                        </div>
+                        <span className={styles.pickerCellName} style={{ color: theme.text }}>{c.name}</span>
+                        {kids.length > 0 && <span className={styles.pickerCellSub} style={{ color: theme.textMuted }}>{kids.length}개</span>}
+                      </button>
                     );
-                  })
-              : catOptions.map((name) => {
+                  })}
+                </div>
+
+                {chipParentId != null &&
+                  (() => {
+                    const parent = data.categories.find((x) => x.id === chipParentId);
+                    const kids = childrenOf(chipParentId);
+                    if (!parent || kids.length === 0) return null;
+                    return (
+                      <div className={styles.chipPanel} style={{ borderTopColor: theme.border }}>
+                        <div className={styles.chipPanelLabelRow}>
+                          {Icon.chevronRight(theme.textMuted, 12)}
+                          <span className={styles.chipPanelLabel} style={{ color: theme.textMuted }}>{parent.name}의 세부 카테고리</span>
+                        </div>
+                        <div className={styles.chipRow}>
+                          <button
+                            type="button"
+                            className={styles.chip}
+                            style={{
+                              borderColor: category?.id === parent.id ? theme.brand : theme.border,
+                              backgroundColor: category?.id === parent.id ? theme.brand : theme.card,
+                              color: category?.id === parent.id ? '#fff' : theme.textMuted,
+                            }}
+                            onClick={() => selectChip(parent.id, parent.name)}
+                          >
+                            전체
+                          </button>
+                          {kids.map((k) => (
+                            <button
+                              type="button"
+                              key={k.id}
+                              className={styles.chip}
+                              style={{
+                                borderColor: category?.id === k.id ? theme.brand : theme.border,
+                                backgroundColor: category?.id === k.id ? theme.brand : theme.card,
+                                color: category?.id === k.id ? '#fff' : theme.textMuted,
+                              }}
+                              onClick={() => selectChip(k.id, k.name)}
+                            >
+                              {k.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+              </>
+            ) : (
+              <div className={styles.pickerGrid}>
+                {catOptions.map((name) => {
                   const def = getCategoryDef(name);
+                  const selected = category?.name === name;
                   return (
-                    <ListRow
+                    <button
+                      type="button"
                       key={name}
-                      left={<TossEmoji code={def.iconCode} size={28} bg={def.color + '22'} />}
-                      contents={<span style={{ color: theme.text, fontSize: 15, fontWeight: 500 }}>{name}</span>}
-                      right={category?.name === name ? Icon.check(theme.brand, 16) : undefined}
-                      onPress={() => { setCategory({ id: 0, name }); setCatPicker(false); }}
-                      verticalPadding="small"
-                    />
+                      className={styles.pickerCell}
+                      onClick={() => {
+                        setCategory({ id: 0, name });
+                        setCostType(null);
+                        setCatPicker(false);
+                      }}
+                    >
+                      <div className={`${styles.pickerCellIcon} ${selected ? styles.pickerCellIconRinged : ''}`} style={{ backgroundColor: def.color + '22', ['--brand-color' as any]: theme.brand }}>
+                        <TossEmoji code={def.iconCode} size={26} />
+                      </div>
+                      <span className={styles.pickerCellName} style={{ color: theme.text }}>{name}</span>
+                    </button>
                   );
-                })
+                })}
+              </div>
             )}
           </PickerOverlay>
         </>
@@ -191,7 +293,7 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
         <div className={styles.segWrap}>
           <SegmentedControl.Root
             value={type}
-            onChange={(v) => { setType(v as TxType); setCategory(null); }}
+            onChange={(v) => { setType(v as TxType); setCategory(null); setCostType(null); setChipParentId(null); }}
             name="txType"
             size="large"
             alignment="fixed"
@@ -219,8 +321,28 @@ export default function AddTxSheet({ visible, onClose, date, editTx, onSaved }: 
         {/* 날짜 / 카테고리 (카테고리는 선택사항) */}
         <div className={styles.fieldsCard} style={{ borderColor: theme.border }}>
           <FormRow label="날짜" value={txDate === todayLocal() ? `오늘 (${txDate.slice(5).replace('-', '/')})` : txDate} onPress={() => setDatePicker(true)} />
-          <FormRow label="카테고리" value={category?.name || ''} onPress={() => setCatPicker(true)} />
+          <FormRow label="카테고리" value={category?.name || ''} onPress={openCatPicker} />
         </div>
+
+        {/* 기본 분류 (고정비/변동비) — 지출일 때만 */}
+        {type === 'EXPENSE' && (
+          <div className={styles.costWrap}>
+            <SegmentedControl.Root
+              value={costType ?? 'NONE'}
+              onChange={(v) => setCostType(v === 'NONE' ? null : (v as CostType))}
+              name="costType"
+              size="small"
+              alignment="fixed"
+            >
+              <SegmentedControl.Item value="FIXED">고정비</SegmentedControl.Item>
+              <SegmentedControl.Item value="VARIABLE">변동비</SegmentedControl.Item>
+              <SegmentedControl.Item value="NONE">미지정</SegmentedControl.Item>
+            </SegmentedControl.Root>
+            <p className={styles.costHint} style={{ color: theme.textMuted }}>
+              카테고리 기본값에서 자동으로 채워지고, 거래마다 직접 바꿀 수도 있어요.
+            </p>
+          </div>
+        )}
 
         {/* 제목 / 메모 */}
         <input

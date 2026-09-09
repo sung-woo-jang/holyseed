@@ -169,6 +169,8 @@ export function useHouseholdData(): MockPersona {
     type: t.type,
     amount: Number(t.amount) || 0,
     category: categoryById.get(t.categoryId)?.name ?? '기타',
+    categoryId: t.categoryId ?? null,
+    costType: t.costType ?? null,
     title: t.title || t.memo || categoryById.get(t.categoryId)?.name || '거래',
     rawTitle: t.title || undefined,
     memo: t.memo ?? undefined,
@@ -209,6 +211,9 @@ export function useHouseholdData(): MockPersona {
     type: c.type,
     name: c.name,
     icon: c.icon,
+    color: c.color ?? undefined,
+    parentId: c.parentId ?? null,
+    defaultCostType: c.defaultCostType ?? null,
     isBuiltin: c.isBuiltin ?? false,
   }));
 

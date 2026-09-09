@@ -1,4 +1,4 @@
-import type { AssetCategory, Category, MemberRole } from '../types/api';
+import type { AssetCategory, Category, CostType, MemberRole } from '../types/api';
 
 export interface MockAsset {
   id: string;
@@ -31,6 +31,8 @@ export interface MockTransaction {
   type: 'INCOME' | 'EXPENSE';
   amount: number;
   category: string;
+  categoryId?: number | null;
+  costType?: CostType | null;
   title: string;
   /** 백엔드 원본 title 값 (title은 화면 표시용 폴백 포함 — 수정 폼 프리필엔 이 필드를 사용) */
   rawTitle?: string;

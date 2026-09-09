@@ -1,4 +1,4 @@
-import type { AssetCategory, CategoryType } from '../types/api';
+import type { AssetCategory, Category, CategoryType, CostType } from '../types/api';
 import { TE } from './toss-emoji';
 
 export interface AssetCategoryMeta {
@@ -58,4 +58,36 @@ export const CATEGORY_DEFS: Record<string, CategoryDef> = {
 
 export function getCategoryDef(name: string): CategoryDef {
   return CATEGORY_DEFS[name] ?? { type: 'EXPENSE', iconCode: TE.cyclone, color: '#94A3B8' };
+}
+
+/** 실제 카테고리(icon/color)를 우선 쓰고, 없으면 이름 기반 CATEGORY_DEFS로 폴백 */
+export function resolveCategoryVisual(
+  categoryId: number | null | undefined,
+  categoryName: string,
+  categories: Category[],
+): { icon: string; color: string } {
+  const cat = categoryId != null ? categories.find((c) => c.id === categoryId) : categories.find((c) => c.name === categoryName);
+  const def = getCategoryDef(categoryName);
+  return { icon: cat?.icon || def.iconCode, color: cat?.color || def.color };
+}
+
+/** 카테고리의 기본 분류(고정비/변동비) — 본인 값 없으면 상위(대분류) 값으로 폴백 */
+export function resolveCostType(categoryId: number | null | undefined, categories: Category[]): CostType | null {
+  if (categoryId == null) return null;
+  const cat = categories.find((c) => c.id === categoryId);
+  if (!cat) return null;
+  if (cat.defaultCostType) return cat.defaultCostType;
+  if (cat.parentId != null) {
+    const parent = categories.find((c) => c.id === cat.parentId);
+    return parent?.defaultCostType ?? null;
+  }
+  return null;
+}
+
+/** 소분류면 상위(대분류) id, 대분류면 자기 자신의 id를 반환 — 카테고리별 집계·필터를 대분류 기준으로 묶을 때 사용 */
+export function resolveRootCategoryId(categoryId: number | null | undefined, categories: Category[]): number | null {
+  if (categoryId == null) return null;
+  const cat = categories.find((c) => c.id === categoryId);
+  if (!cat) return null;
+  return cat.parentId ?? cat.id;
 }

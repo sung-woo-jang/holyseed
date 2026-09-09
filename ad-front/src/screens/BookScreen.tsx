@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Border from '../components/ui/Border';
 import ListRow from '../components/ui/ListRow';
@@ -8,7 +9,7 @@ import { useTheme } from '../lib/theme';
 import { useAuthStore } from '../stores/auth.store';
 import { krw } from '../lib/format';
 import { TE } from '../lib/toss-emoji';
-import { getCategoryDef } from '../lib/category-meta';
+import { getCategoryDef, resolveCategoryVisual, resolveRootCategoryId } from '../lib/category-meta';
 import TossEmoji from '../components/common/TossEmoji';
 import { Icon } from '../components/common/Icon';
 import WorkCalendar, { type CalLog } from '../components/WorkCalendar';
@@ -16,6 +17,7 @@ import Segmented from '../components/common/Segmented';
 import AddTxSheet from '../components/sheets/AddTxSheet';
 import AddRecurringSheet from '../components/sheets/AddRecurringSheet';
 import MissedRecurringSheet from '../components/sheets/MissedRecurringSheet';
+import PickerOverlay from '../components/sheets/PickerOverlay';
 import { recurringApi } from '../api';
 import { qk } from '../queries/keys';
 import EmptyState from '../components/common/EmptyState';
@@ -24,6 +26,7 @@ import ConfirmDialog from '../components/common/ConfirmDialog';
 import AppToast from '../components/common/AppToast';
 import { useToggleRecurring, useDeleteRecurring, useDeleteTx } from '../queries/mutations';
 import type { MockRecurring, MockTransaction } from '../lib/mock-data';
+import type { CostType } from '../types/api';
 import { todayLocal } from '../lib/date';
 import styles from './BookScreen.module.css';
 
@@ -42,11 +45,12 @@ function recurringActiveOn(r: MockRecurring, dateStr: string): boolean {
 
 /** 통합 선택일 리스트 항목 */
 type DayItem =
-  | { kind: 'tx'; id: string; title: string; amount: number; type: 'INCOME' | 'EXPENSE'; category: string; sub?: string }
+  | { kind: 'tx'; id: string; title: string; amount: number; type: 'INCOME' | 'EXPENSE'; category: string; categoryId: number | null; sub?: string }
   | { kind: 'rec'; id: string; title: string; amount: number; type: 'INCOME' | 'EXPENSE'; rec: MockRecurring };
 
 export default function BookScreen() {
   const theme = useTheme();
+  const navigate = useNavigate();
   const role = useMockRole();
   const data = useDataSource();
   const { useMock, currentHousehold } = useAuthStore();
@@ -60,6 +64,10 @@ export default function BookScreen() {
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [recOpen, setRecOpen] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<'all' | 'INCOME' | 'EXPENSE'>('all');
+  const [costFilter, setCostFilter] = useState<Set<CostType>>(new Set());
+  const [catFilter, setCatFilter] = useState<Set<string>>(new Set());
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
   // 시트 상태
   const [addTxVisible, setAddTxVisible] = useState(false);
@@ -126,32 +134,80 @@ export default function BookScreen() {
   const monthIncome = monthTx.filter((t) => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
   const monthExpense = monthTx.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
 
+  // 카테고리 소분류 → 대분류 이름 (필터·집계는 대분류 기준으로 묶음)
+  function rootCategoryName(t: MockTransaction): string {
+    const rootId = resolveRootCategoryId(t.categoryId, data.categories);
+    const rootCat = rootId != null ? data.categories.find((c) => c.id === rootId) : undefined;
+    return rootCat?.name ?? t.category;
+  }
+
+  // 리스트 뷰 필터 적용
+  const filteredTx = useMemo(
+    () =>
+      monthTx.filter((t) => {
+        if (typeFilter !== 'all' && t.type !== typeFilter) return false;
+        if (costFilter.size > 0 && (!t.costType || !costFilter.has(t.costType))) return false;
+        if (catFilter.size > 0 && !catFilter.has(rootCategoryName(t))) return false;
+        return true;
+      }),
+    [monthTx, typeFilter, costFilter, catFilter, data.categories],
+  );
+
+  // 이번 달에 실제로 등장한 대분류 목록 (필터 시트용)
+  const monthCats = useMemo(
+    () => [...new Set((typeFilter === 'all' ? monthTx : monthTx.filter((t) => t.type === typeFilter)).map((t) => rootCategoryName(t)))],
+    [monthTx, typeFilter, data.categories],
+  );
+
+  function toggleCostFilter(c: CostType) {
+    setCostFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(c)) next.delete(c);
+      else next.add(c);
+      return next;
+    });
+  }
+  function toggleCatFilter(name: string) {
+    setCatFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }
+
   // 리스트 뷰: 일별 그룹(최신순)
   const groupedTx = useMemo(() => {
     const map = new Map<string, MockTransaction[]>();
-    for (const t of monthTx) {
+    for (const t of filteredTx) {
       const arr = map.get(t.date) ?? [];
       arr.push(t);
       map.set(t.date, arr);
     }
     return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
-  }, [monthTx]);
+  }, [filteredTx]);
 
-  // 리스트 뷰: 카테고리별 지출 통계 (top 5)
+  // 리스트 뷰: 카테고리별 지출 통계 (top 5, 필터 결과 기준)
   const catBreakdown = useMemo(() => {
     const map = new Map<string, number>();
-    monthTx.filter((t) => t.type === 'EXPENSE').forEach((t) => map.set(t.category, (map.get(t.category) ?? 0) + t.amount));
+    filteredTx.filter((t) => t.type === 'EXPENSE').forEach((t) => {
+      const name = rootCategoryName(t);
+      map.set(name, (map.get(name) ?? 0) + t.amount);
+    });
     return [...map.entries()]
-      .map(([name, value]) => ({ name, value, color: getCategoryDef(name).color }))
+      .map(([name, value]) => {
+        const cat = data.categories.find((c) => c.name === name && !c.parentId);
+        return { name, value, color: resolveCategoryVisual(cat?.id, name, data.categories).color };
+      })
       .sort((a, b) => b.value - a.value)
       .slice(0, 5);
-  }, [monthTx]);
+  }, [filteredTx, data.categories]);
 
   // 캘린더 점
   const calLogs: CalLog[] = useMemo(() => {
     const out: CalLog[] = [];
     for (const t of monthTx) {
-      out.push({ id: `t${t.id}`, date: t.date, colorLabel: getCategoryDef(t.category).color, settled: true });
+      out.push({ id: `t${t.id}`, date: t.date, colorLabel: resolveCategoryVisual(t.categoryId, t.category, data.categories).color, settled: true });
     }
     for (const r of recurring) {
       const d = recDateForMonth(r);
@@ -169,7 +225,7 @@ export default function BookScreen() {
     const items: DayItem[] = [];
     monthTx.filter((t) => t.date === selectedDate).forEach((t) => {
       const from = data.assets.find((a) => a.id === t.from);
-      items.push({ kind: 'tx', id: t.id, title: t.title, amount: t.amount, type: t.type === 'INCOME' ? 'INCOME' : 'EXPENSE', category: t.category, sub: from ? from.name : undefined });
+      items.push({ kind: 'tx', id: t.id, title: t.title, amount: t.amount, type: t.type === 'INCOME' ? 'INCOME' : 'EXPENSE', category: t.category, categoryId: t.categoryId ?? null, sub: from ? from.name : undefined });
     });
     recurring.filter((r) => recDateForMonth(r) === selectedDate && recurringActiveOn(r, selectedDate)).forEach((r) => {
       items.push({ kind: 'rec', id: r.id, title: r.title, amount: r.amount, type: r.type === 'INCOME' ? 'INCOME' : 'EXPENSE', rec: r });
@@ -226,12 +282,12 @@ export default function BookScreen() {
   // 거래 행 (캘린더 선택일·리스트 뷰 공용)
   function renderTxRow(tx: MockTransaction, i: number, total: number) {
     const isInc = tx.type === 'INCOME';
-    const def = getCategoryDef(tx.category);
+    const visual = resolveCategoryVisual(tx.categoryId, tx.category, data.categories);
     const canEdit = !isViewer && !useMock;
     return (
       <React.Fragment key={tx.id}>
         <ListRow
-          left={<div className={styles.itemIcon} style={{ backgroundColor: theme.bg }}><TossEmoji code={def.iconCode} size={18} /></div>}
+          left={<div className={styles.itemIcon} style={{ backgroundColor: theme.bg }}><TossEmoji code={visual.icon} size={18} /></div>}
           contents={
             <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
               <span className={styles.itemTitle} style={{ color: theme.text }}>{tx.title}</span>
@@ -263,7 +319,8 @@ export default function BookScreen() {
   function renderDayItem(item: DayItem, i: number, total: number) {
     const isInc = item.type === 'INCOME';
     const catName = item.kind === 'tx' ? item.category : item.rec.category;
-    const def = getCategoryDef(catName);
+    const catId = item.kind === 'tx' ? item.categoryId : null;
+    const visual = resolveCategoryVisual(catId, catName, data.categories);
     const canEditTx = item.kind === 'tx' && !isViewer && !useMock;
     const right = (
       <div className={styles.recRight}>
@@ -284,7 +341,7 @@ export default function BookScreen() {
     return (
       <React.Fragment key={`${item.kind}-${item.id}`}>
         <ListRow
-          left={<div className={styles.itemIcon} style={{ backgroundColor: theme.bg }}><TossEmoji code={def.iconCode} size={18} /></div>}
+          left={<div className={styles.itemIcon} style={{ backgroundColor: theme.bg }}><TossEmoji code={visual.icon} size={18} /></div>}
           contents={
             <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
               <div className={styles.itemTitleRow}>
@@ -347,12 +404,18 @@ export default function BookScreen() {
       <div className={styles.scroll}>
         {/* 월 네비 */}
         <div className={styles.monthNav}>
-          <button type="button" className={styles.monthBtn} style={{ backgroundColor: theme.card, borderColor: theme.border }} onClick={() => shiftMonth(-1)}>
-            <span className={styles.monthArrow} style={{ color: theme.text }}>‹</span>
-          </button>
-          <span className={styles.monthLabel} style={{ color: theme.text }}>{monthLabel}</span>
-          <button type="button" className={styles.monthBtn} style={{ backgroundColor: theme.card, borderColor: theme.border }} onClick={() => shiftMonth(1)}>
-            <span className={styles.monthArrow} style={{ color: theme.text }}>›</span>
+          <div className={styles.monthNavSpacer} />
+          <div className={styles.monthNavCenter}>
+            <button type="button" className={styles.monthBtn} style={{ backgroundColor: theme.card, borderColor: theme.border }} onClick={() => shiftMonth(-1)}>
+              <span className={styles.monthArrow} style={{ color: theme.text }}>‹</span>
+            </button>
+            <span className={styles.monthLabel} style={{ color: theme.text }}>{monthLabel}</span>
+            <button type="button" className={styles.monthBtn} style={{ backgroundColor: theme.card, borderColor: theme.border }} onClick={() => shiftMonth(1)}>
+              <span className={styles.monthArrow} style={{ color: theme.text }}>›</span>
+            </button>
+          </div>
+          <button type="button" className={styles.catShortcutBtn} style={{ backgroundColor: theme.brandSoft }} onClick={() => navigate('/more/categories')}>
+            {Icon.folder(theme.brand)}
           </button>
         </div>
 
@@ -410,6 +473,37 @@ export default function BookScreen() {
           </>
         ) : (
           <>
+            {/* 유형/카테고리 필터 */}
+            <div className={styles.sectionPad}>
+              <Segmented
+                options={['전체', '수입', '지출']}
+                value={typeFilter === 'all' ? '전체' : typeFilter === 'INCOME' ? '수입' : '지출'}
+                onChange={(v) => {
+                  setTypeFilter(v === '전체' ? 'all' : v === '수입' ? 'INCOME' : 'EXPENSE');
+                  if (v === '수입') setCostFilter(new Set());
+                }}
+                small
+              />
+              <div className={styles.filterRow} style={{ marginTop: 8 }}>
+                {typeFilter !== 'INCOME' &&
+                  [...costFilter].map((c) => (
+                    <button key={c} type="button" className={styles.tag} style={{ backgroundColor: theme.brandSoft, color: theme.brand }} onClick={() => toggleCostFilter(c)}>
+                      {c === 'FIXED' ? '고정비' : '변동비'}
+                      <span className={styles.tagX} style={{ backgroundColor: theme.brand + '22' }}>✕</span>
+                    </button>
+                  ))}
+                {[...catFilter].map((name) => (
+                  <button key={name} type="button" className={styles.tag} style={{ backgroundColor: theme.brandSoft, color: theme.brand }} onClick={() => toggleCatFilter(name)}>
+                    {name}
+                    <span className={styles.tagX} style={{ backgroundColor: theme.brand + '22' }}>✕</span>
+                  </button>
+                ))}
+                <button type="button" className={styles.addFilterBtn} style={{ borderColor: theme.border, color: theme.textMuted }} onClick={() => setFilterSheetOpen(true)}>
+                  + 필터
+                </button>
+              </div>
+            </div>
+
             {/* 카테고리별 지출 통계 */}
             {catBreakdown.length > 0 && (
               <div className={styles.sectionPad}>
@@ -542,6 +636,67 @@ export default function BookScreen() {
         onSelect={handleAddPick}
         onClose={() => setAddPicker(false)}
       />
+
+      <PickerOverlay visible={filterSheetOpen} title="필터" onClose={() => setFilterSheetOpen(false)}>
+        {typeFilter !== 'INCOME' && (
+          <div className={styles.filterSection}>
+            <span className={styles.filterSectionLabel} style={{ color: theme.textMuted }}>고정비 · 변동비</span>
+            <div className={styles.costToggleRow}>
+              {(['FIXED', 'VARIABLE'] as CostType[]).map((c) => {
+                const active = costFilter.has(c);
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    className={styles.costToggle}
+                    style={{ borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card, color: active ? theme.brand : theme.textMuted }}
+                    onClick={() => toggleCostFilter(c)}
+                  >
+                    {c === 'FIXED' ? '고정비' : '변동비'}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {monthCats.length > 0 && (
+          <div className={styles.filterSection}>
+            <span className={styles.filterSectionLabel} style={{ color: theme.textMuted }}>카테고리 (복수 선택)</span>
+            <div className={styles.filterGrid}>
+              {monthCats.map((name) => {
+                const cat = data.categories.find((c) => c.name === name && !c.parentId);
+                const visual = resolveCategoryVisual(cat?.id, name, data.categories);
+                const active = catFilter.has(name);
+                return (
+                  <button key={name} type="button" className={styles.filterCell} onClick={() => toggleCatFilter(name)}>
+                    <div
+                      className={styles.filterCellIcon}
+                      style={{ backgroundColor: visual.color + '22', border: active ? `2px solid ${theme.brand}` : 'none' }}
+                    >
+                      <TossEmoji code={visual.icon} size={22} />
+                      {active && (
+                        <div className={styles.filterCheck} style={{ backgroundColor: theme.brand, borderColor: theme.card }}>
+                          {Icon.check('#fff', 8)}
+                        </div>
+                      )}
+                    </div>
+                    <span className={styles.filterCellName} style={{ color: theme.text }}>{name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {(costFilter.size > 0 || catFilter.size > 0) && (
+          <button
+            type="button"
+            style={{ display: 'block', margin: '4px auto 14px', color: theme.danger, fontSize: 12.5, fontWeight: 700 }}
+            onClick={() => { setCostFilter(new Set()); setCatFilter(new Set()); }}
+          >
+            필터 초기화
+          </button>
+        )}
+      </PickerOverlay>
 
       <AddTxSheet
         visible={addTxVisible}

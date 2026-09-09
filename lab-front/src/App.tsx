@@ -4,6 +4,9 @@ import AuthBootstrap from '@/components/AuthBootstrap'
 import LoginPage from '@/pages/auth/LoginPage'
 import FinanceDashboardPage from '@/pages/dashboard/FinanceDashboardPage'
 import ExpensePage from '@/pages/expense/ExpensePage'
+import LedgerAssetsPage from '@/pages/ledger/LedgerAssetsPage'
+import LedgerCategoriesPage from '@/pages/ledger/LedgerCategoriesPage'
+import LedgerPage from '@/pages/ledger/LedgerPage'
 import CycleDetailPage from '@/pages/quant/CycleDetailPage'
 import CyclesPage from '@/pages/quant/CyclesPage'
 import HomePage from '@/pages/quant/HomePage'
@@ -47,6 +50,10 @@ export default function App() {
           <Route path="/worklog/dashboard" element={<FinanceDashboardPage />} />
           <Route path="/worklog" element={<WorklogPage />} />
           <Route path="/worklog/expense" element={<ExpensePage />} />
+
+          <Route path="/ledger" element={<LedgerPage />} />
+          <Route path="/ledger/assets" element={<LedgerAssetsPage />} />
+          <Route path="/ledger/categories" element={<LedgerCategoriesPage />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

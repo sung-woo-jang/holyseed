@@ -13,7 +13,7 @@ interface SegmentedProps {
 export default function Segmented({ options, value, onChange, small = false, alignment = 'fixed' }: SegmentedProps) {
   const theme = useTheme();
   return (
-    <View style={[styles.wrap, { backgroundColor: theme.bg }, alignment === 'fluid' && { alignSelf: 'flex-start' }]}>
+    <View style={[styles.wrap, { backgroundColor: theme.border }, alignment === 'fluid' && { alignSelf: 'flex-start' }]}>
       {options.map((o) => {
         const active = o === value;
         return (

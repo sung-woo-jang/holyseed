@@ -57,20 +57,3 @@ export const EXPENSE_API = {
   UPDATE: (id: number | string) => `/expense/${id}/update`,
   DELETE: (id: number | string) => `/expense/${id}/delete`,
 } as const
-
-// ===== 자산관리 · 거래장부 API =====
-export const LEDGER_API = {
-  CATEGORIES: '/ledger/categories',
-  CREATE_CATEGORY: '/ledger/categories',
-  UPDATE_CATEGORY: (id: number | string) => `/ledger/categories/${id}/update`,
-  DELETE_CATEGORY: (id: number | string) => `/ledger/categories/${id}/delete`,
-  ASSETS: '/ledger/assets',
-  CREATE_ASSET: '/ledger/assets',
-  UPDATE_ASSET: (id: number | string) => `/ledger/assets/${id}/update`,
-  DELETE_ASSET: (id: number | string) => `/ledger/assets/${id}/delete`,
-  TRANSACTIONS: '/ledger/transactions',
-  SEARCH_TRANSACTIONS: '/ledger/transactions/search',
-  CREATE_TRANSACTION: '/ledger/transactions',
-  UPDATE_TRANSACTION: (id: number | string) => `/ledger/transactions/${id}/update`,
-  DELETE_TRANSACTION: (id: number | string) => `/ledger/transactions/${id}/delete`,
-} as const

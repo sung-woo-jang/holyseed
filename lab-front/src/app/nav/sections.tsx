@@ -1,4 +1,4 @@
-import { Infinity as InfinityIcon, PiggyBank, Wallet, type LucideIcon } from 'lucide-react'
+import { Infinity as InfinityIcon, Wallet, type LucideIcon } from 'lucide-react'
 
 export interface LabPage {
   /** 라우트 경로 */
@@ -83,21 +83,6 @@ export const SECTIONS: LabSection[] = [
           { path: '/worklog/dashboard', label: '대시보드', end: true },
           { path: '/worklog', label: '근무 기록', end: true },
           { path: '/worklog/expense', label: '지출내역', end: true },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'ledger',
-    label: '자산관리',
-    icon: PiggyBank,
-    basePaths: ['/ledger'],
-    groups: [
-      {
-        pages: [
-          { path: '/ledger', label: '거래장부', end: true },
-          { path: '/ledger/assets', label: '자산', end: true },
-          { path: '/ledger/categories', label: '카테고리', end: true },
         ],
       },
     ],

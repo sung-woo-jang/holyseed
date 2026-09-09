@@ -15,7 +15,7 @@ export interface Theme {
 export const LightTheme: Theme = {
   brand: '#3182F6',
   brandSoft: '#EBF3FF',
-  bg: '#F2F4F6',
+  bg: '#FFFFFF',
   card: '#FFFFFF',
   border: '#F2F4F6',
   text: '#191F28',

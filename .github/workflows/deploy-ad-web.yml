@@ -1,14 +1,14 @@
-name: Deploy AD Front
+name: Deploy AD Web (ad-native web export)
 
 on:
   push:
     branches: [master]
     paths:
-      - 'ad-front/**'
+      - 'ad-native/**'
   workflow_dispatch:
 
 concurrency:
-  group: deploy-ad-front
+  group: deploy-ad-web
   cancel-in-progress: false
 
 jobs:
@@ -21,14 +21,14 @@ jobs:
           git -C /Users/jangseong-u/project/holyseed fetch origin master
           git -C /Users/jangseong-u/project/holyseed reset --hard origin/master
 
-      - name: Install dependencies & build
-        working-directory: /Users/jangseong-u/project/holyseed/ad-front
+      - name: Install dependencies & export web build
+        working-directory: /Users/jangseong-u/project/holyseed/ad-native
         run: |
           yarn install
-          yarn build
+          npx expo export -p web
 
       - name: Publish to /var/www/ad-front
-        working-directory: /Users/jangseong-u/project/holyseed/ad-front
+        working-directory: /Users/jangseong-u/project/holyseed/ad-native
         run: rsync -a --delete dist/ /var/www/ad-front/
 
       - name: Verify

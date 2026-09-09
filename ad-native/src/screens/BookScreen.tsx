@@ -21,6 +21,7 @@ import WorkCalendar, { type CalLog } from '../components/WorkCalendar';
 import Segmented from '../components/common/Segmented';
 import AddRecurringSheet from '../components/sheets/AddRecurringSheet';
 import MissedRecurringSheet from '../components/sheets/MissedRecurringSheet';
+import PickerOverlay from '../components/sheets/PickerOverlay';
 import { recurringApi } from '../api';
 import { qk } from '../queries/keys';
 import EmptyState from '../components/common/EmptyState';
@@ -61,6 +62,7 @@ export default function BookScreen({ navigation, route }: Props) {
   const [typeFilter, setTypeFilter] = useState<'all' | 'INCOME' | 'EXPENSE'>('all');
   const [catFilter, setCatFilter] = useState<Set<string>>(new Set());
   const [costFilter, setCostFilter] = useState<Set<CostType>>(new Set());
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [recOpen, setRecOpen] = useState(false);
 
   const [actionTx, setActionTx] = useState<HouseholdTransaction | null>(null);
@@ -507,40 +509,32 @@ export default function BookScreen({ navigation, route }: Props) {
                 small
                 alignment="fluid"
               />
-              {typeFilter !== 'INCOME' && (
-                <View style={[styles.chipRow, { marginTop: 8 }]}>
-                  {(['FIXED', 'VARIABLE'] as CostType[]).map((c) => {
-                    const active = costFilter.has(c);
-                    return (
-                      <Pressable
-                        key={c}
-                        onPress={() => toggleCostFilter(c)}
-                        style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
-                      >
-                        <Text style={{ fontSize: 11.5, fontWeight: '700', color: active ? theme.brand : theme.textMuted }}>{c === 'FIXED' ? '고정비' : '변동비'}</Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              )}
-              {monthCats.length > 0 && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow} style={{ marginTop: 8 }}>
-                  {monthCats.map((cat) => {
-                    const active = catFilter.has(cat);
-                    const def = getCategoryDef(cat);
-                    return (
-                      <Pressable
-                        key={cat}
-                        onPress={() => toggleCatFilter(cat)}
-                        style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
-                      >
-                        <View style={[styles.chipDot, { backgroundColor: def.color }]} />
-                        <Text style={{ fontSize: 11.5, fontWeight: '700', color: active ? theme.brand : theme.textMuted }}>{cat}</Text>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-              )}
+              <View style={[styles.chipRow, { marginTop: 8 }]}>
+                {typeFilter !== 'INCOME' &&
+                  [...costFilter].map((c) => (
+                    <Pressable key={c} onPress={() => toggleCostFilter(c)} style={[styles.tag, { backgroundColor: theme.brandSoft }]}>
+                      <Text style={[styles.tagText, { color: theme.brand }]}>{c === 'FIXED' ? '고정비' : '변동비'}</Text>
+                      <View style={[styles.tagX, { backgroundColor: theme.brand + '22' }]}>
+                        <Text style={{ color: theme.brand, fontSize: 10, fontWeight: '800' }}>✕</Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                {[...catFilter].map((cat) => {
+                  const def = getCategoryDef(cat);
+                  return (
+                    <Pressable key={cat} onPress={() => toggleCatFilter(cat)} style={[styles.tag, { backgroundColor: theme.brandSoft }]}>
+                      <View style={[styles.chipDot, { backgroundColor: def.color }]} />
+                      <Text style={[styles.tagText, { color: theme.brand }]}>{cat}</Text>
+                      <View style={[styles.tagX, { backgroundColor: theme.brand + '22' }]}>
+                        <Text style={{ color: theme.brand, fontSize: 10, fontWeight: '800' }}>✕</Text>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+                <Pressable onPress={() => setFilterSheetOpen(true)} style={[styles.addFilterBtn, { borderColor: theme.border }]}>
+                  <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '700' }}>+ 필터</Text>
+                </Pressable>
+              </View>
             </View>
 
             {catBreakdown.length > 0 && (
@@ -674,6 +668,63 @@ export default function BookScreen({ navigation, route }: Props) {
       />
       <MissedRecurringSheet visible={missedVisible} onClose={() => setMissedVisible(false)} onApplied={(count) => setToast(`누락된 정기거래 ${count}건을 반영했어요`)} />
 
+      <PickerOverlay visible={filterSheetOpen} title="필터" onClose={() => setFilterSheetOpen(false)}>
+        {typeFilter !== 'INCOME' && (
+          <View style={styles.filterSection}>
+            <Text style={[styles.filterSectionLabel, { color: theme.textMuted }]}>고정비 · 변동비</Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {(['FIXED', 'VARIABLE'] as CostType[]).map((c) => {
+                const active = costFilter.has(c);
+                return (
+                  <Pressable
+                    key={c}
+                    onPress={() => toggleCostFilter(c)}
+                    style={[styles.costToggle, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
+                  >
+                    <Text style={{ color: active ? theme.brand : theme.textMuted, fontWeight: '700', fontSize: 13 }}>{c === 'FIXED' ? '고정비' : '변동비'}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        )}
+        {monthCats.length > 0 && (
+          <View style={styles.filterSection}>
+            <Text style={[styles.filterSectionLabel, { color: theme.textMuted }]}>카테고리 (복수 선택)</Text>
+            <View style={styles.filterGrid}>
+              {monthCats.map((cat) => {
+                const def = getCategoryDef(cat);
+                const active = catFilter.has(cat);
+                return (
+                  <Pressable key={cat} onPress={() => toggleCatFilter(cat)} style={styles.filterCell}>
+                    <View style={[styles.filterCellIcon, { backgroundColor: def.color + '22' }, active && { borderWidth: 2, borderColor: theme.brand }]}>
+                      <CategoryIcon icon={def.iconCode} size={22} />
+                      {active && (
+                        <View style={[styles.filterCheck, { backgroundColor: theme.brand, borderColor: theme.card }]}>{Icon.check('#fff', 8)}</View>
+                      )}
+                    </View>
+                    <Text style={[styles.filterCellName, { color: theme.text }]} numberOfLines={1}>
+                      {cat}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        )}
+        {(costFilter.size > 0 || catFilter.size > 0) && (
+          <Pressable
+            onPress={() => {
+              setCostFilter(new Set());
+              setCatFilter(new Set());
+            }}
+            style={{ alignSelf: 'center', marginTop: 4, marginBottom: 14 }}
+          >
+            <Text style={{ color: theme.danger, fontSize: 12.5, fontWeight: '700' }}>필터 초기화</Text>
+          </Pressable>
+        )}
+      </PickerOverlay>
+
       <ActionSheet
         visible={!!actionTx}
         title={actionTx?.title}
@@ -736,9 +787,20 @@ const styles = StyleSheet.create({
   recSectionTitle: { fontSize: 12, fontWeight: '700', marginTop: 12, marginBottom: 8, color: '#8B95A1' },
   recAddBtn: { borderWidth: 1.4, borderRadius: 12, alignItems: 'center', paddingVertical: 12, marginTop: 12 },
   fab: { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', elevation: 4 },
-  chipRow: { flexDirection: 'row', gap: 6 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderWidth: 1 },
+  chipRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
   chipDot: { width: 6, height: 6, borderRadius: 3 },
+  tag: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 12, paddingRight: 6, paddingVertical: 6, borderRadius: 999 },
+  tagText: { fontSize: 11.5, fontWeight: '700' },
+  tagX: { width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  addFilterBtn: { borderWidth: 1.4, borderStyle: 'dashed', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  filterSection: { paddingHorizontal: 20, paddingBottom: 18 },
+  filterSectionLabel: { fontSize: 11.5, fontWeight: '800', marginBottom: 10 },
+  costToggle: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 10, borderWidth: 1.5 },
+  filterGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  filterCell: { width: '25%', alignItems: 'center', paddingVertical: 8, gap: 5 },
+  filterCellIcon: { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  filterCheck: { position: 'absolute', top: -4, right: -4, width: 16, height: 16, borderRadius: 8, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  filterCellName: { fontSize: 11, fontWeight: '600', maxWidth: 60, textAlign: 'center' },
   catCard: { borderRadius: 14, borderWidth: 1, padding: 14 },
   catCardTitle: { fontSize: 12.5, fontWeight: '700', marginBottom: 10 },
   catBarRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 7 },

@@ -15,9 +15,9 @@ export interface Theme {
 export const LightTheme: Theme = {
   brand: '#3182F6',
   brandSoft: '#EBF3FF',
-  bg: '#FFFFFF',
+  bg: '#F6F7F9',
   card: '#FFFFFF',
-  border: '#F2F4F6',
+  border: '#E6E8EB',
   text: '#191F28',
   textMuted: '#8B95A1',
   danger: '#FF3B30',
@@ -27,11 +27,11 @@ export const LightTheme: Theme = {
 export const DarkTheme: Theme = {
   brand: '#4D9FF6',
   brandSoft: '#1A2D45',
-  bg: '#0F1115',
-  card: '#1C2028',
-  border: '#2C313A',
+  bg: '#101114',
+  card: '#1B1E24',
+  border: '#2A2D33',
   text: '#F0F4F8',
-  textMuted: '#6B7684',
+  textMuted: '#9AA3B2',
   danger: '#FF453A',
   dark: true,
 };

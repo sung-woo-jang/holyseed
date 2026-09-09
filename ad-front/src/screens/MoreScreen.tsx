@@ -52,13 +52,6 @@ export default function MoreScreen() {
       route: '/more/compare',
     },
     {
-      emojiCode: TE.folder,
-      bgColor: theme.dark ? '#2a2010' : '#FEF9E7',
-      label: '카테고리 관리',
-      detail: '우리집만의 카테고리 설정',
-      route: '/more/categories',
-    },
-    {
       emojiCode: TE.gear,
       bgColor: theme.dark ? '#221a2e' : '#F5EEF8',
       label: '설정',

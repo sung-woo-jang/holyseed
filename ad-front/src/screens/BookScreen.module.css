@@ -21,6 +21,31 @@
   padding: 14px 20px 8px;
 }
 
+.monthNavSpacer {
+  width: 32px;
+  flex-shrink: 0;
+}
+
+.monthNavCenter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.catShortcutBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: none;
+  cursor: pointer;
+}
+
 .monthBtn {
   width: 32px;
   height: 32px;
@@ -295,4 +320,119 @@
   font-size: 13px;
   font-weight: 700;
   text-decoration: underline;
+}
+
+/* ── 리스트 뷰 필터 ── */
+.filterRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 6px 6px 12px;
+  border-radius: 999px;
+  border: none;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tagX {
+  width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+}
+
+.addFilterBtn {
+  border: 1.4px dashed;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.filterSection {
+  padding: 0 20px 18px;
+}
+
+.filterSectionLabel {
+  font-size: 11.5px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.costToggleRow {
+  display: flex;
+  gap: 8px;
+}
+
+.costToggle {
+  flex: 1;
+  text-align: center;
+  padding: 10px 0;
+  border-radius: 10px;
+  border: 1.5px solid;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filterGrid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.filterCell {
+  width: 25%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 2px;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.filterCellIcon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.filterCheck {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.filterCellName {
+  font-size: 11px;
+  font-weight: 600;
+  max-width: 60px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

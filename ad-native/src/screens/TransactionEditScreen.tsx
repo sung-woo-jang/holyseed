@@ -4,7 +4,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ParamListBase } from '@react-navigation/native';
 import Button from '../components/ui/Button';
 import TextFieldBig from '../components/ui/TextFieldBig';
-import ListRow from '../components/ui/ListRow';
 import Segmented from '../components/common/Segmented';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import CategoryIcon from '../components/common/CategoryIcon';
@@ -64,7 +63,7 @@ export default function TransactionEditScreen({ navigation, route }: Props) {
   const [memo, setMemo] = useState(editTx?.memo ?? '');
   const [txDate, setTxDate] = useState(editTx?.date ?? (params.mode === 'add' ? (params.date ?? todayLocal()) : todayLocal()));
   const [catPicker, setCatPicker] = useState(false);
-  const [expandedCatId, setExpandedCatId] = useState<number | null>(null);
+  const [chipParentId, setChipParentId] = useState<number | null>(null);
   const [datePicker, setDatePicker] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [error, setError] = useState('');
@@ -87,7 +86,24 @@ export default function TransactionEditScreen({ navigation, route }: Props) {
   const isValid = rawAmount > 0;
   const visual = resolveCategoryVisual(category?.id ?? null, category?.name ?? '', data.categories);
 
-  function selectCategory(id: number, name: string) {
+  function openCatPicker() {
+    const cur = category ? data.categories.find((x) => x.id === category.id) : undefined;
+    setChipParentId(cur ? (cur.parentId ?? cur.id) : null);
+    setCatPicker(true);
+  }
+
+  function selectTopLevel(c: { id: number; name: string }) {
+    const kids = childrenOf(c.id);
+    setCategory({ id: c.id, name: c.name });
+    setCostType(resolveCostType(c.id, data.categories));
+    if (kids.length > 0) {
+      setChipParentId(c.id);
+    } else {
+      setCatPicker(false);
+    }
+  }
+
+  function selectChip(id: number, name: string) {
     setCategory({ id, name });
     setCostType(resolveCostType(id, data.categories));
     setCatPicker(false);
@@ -144,7 +160,7 @@ export default function TransactionEditScreen({ navigation, route }: Props) {
                     setType(v === '지출' ? 'EXPENSE' : 'INCOME');
                     setCategory(null);
                     setCostType(null);
-                    setExpandedCatId(null);
+                    setChipParentId(null);
                   }}
                   small
                 />
@@ -154,7 +170,7 @@ export default function TransactionEditScreen({ navigation, route }: Props) {
             <Section label="분류">
               <FormRow label="날짜" value={txDate === todayLocal() ? `오늘 (${txDate.slice(5).replace('-', '/')})` : txDate} onPress={() => setDatePicker(true)} />
               <View style={[styles.rowDivider, { backgroundColor: theme.border }]} />
-              <FormRow label="카테고리" value={category?.name || ''} onPress={() => setCatPicker(true)} />
+              <FormRow label="카테고리" value={category?.name || ''} onPress={openCatPicker} />
               {type === 'EXPENSE' && (
                 <View style={[styles.costBlock, { borderTopColor: theme.border }]}>
                   <Segmented
@@ -213,67 +229,102 @@ export default function TransactionEditScreen({ navigation, route }: Props) {
 
       <DatePicker visible={datePicker} value={txDate} maxDate={todayLocal()} onSelect={setTxDate} onClose={() => setDatePicker(false)} />
       <PickerOverlay visible={catPicker} title="카테고리 선택" onClose={() => setCatPicker(false)}>
-        {catListSource.length > 0
-          ? catListSource.map((c) => {
-              const def = getCategoryDef(c.name);
-              const kids = childrenOf(c.id);
-              const isExpanded = expandedCatId === c.id;
-              return (
-                <View key={c.id}>
-                  <ListRow
-                    left={<CategoryIcon icon={c.icon || def.iconCode} size={26} bg={(c.color || def.color) + '22'} />}
-                    contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{c.name}</Text>}
-                    right={
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                        {category?.id === c.id && Icon.check(theme.brand, 16)}
-                        {kids.length > 0 && (
-                          <Pressable
-                            hitSlop={10}
-                            onPress={() => setExpandedCatId(isExpanded ? null : c.id)}
-                            style={({ pressed }) => [styles.expandBtn, { backgroundColor: pressed ? theme.border : 'transparent' }]}
-                          >
-                            <Text style={{ color: theme.textMuted, fontSize: 16 }}>{isExpanded ? '▴' : '▾'}</Text>
-                          </Pressable>
-                        )}
-                      </View>
-                    }
-                    onPress={() => selectCategory(c.id, c.name)}
-                    verticalPadding={6}
-                  />
-                  {isExpanded && (
-                    <View style={[styles.childGroup, { borderColor: theme.border }]}>
+        {catListSource.length > 0 ? (
+          <>
+            <View style={styles.pickerGrid}>
+              {catListSource.map((c) => {
+                const def = getCategoryDef(c.name);
+                const kids = childrenOf(c.id);
+                const ringed = category?.id === c.id || chipParentId === c.id;
+                return (
+                  <Pressable key={c.id} style={styles.pickerCell} onPress={() => selectTopLevel(c)}>
+                    <View
+                      style={[
+                        styles.pickerCellIcon,
+                        { backgroundColor: (c.color || def.color) + '22' },
+                        ringed && { borderWidth: 2, borderColor: theme.brand },
+                      ]}
+                    >
+                      <CategoryIcon icon={c.icon || def.iconCode} size={26} />
+                      {category?.id === c.id && (
+                        <View style={[styles.pickerBadge, { backgroundColor: theme.brand, borderColor: theme.card }]}>{Icon.check('#fff', 9)}</View>
+                      )}
+                    </View>
+                    <Text style={[styles.pickerCellName, { color: theme.text }]} numberOfLines={1}>
+                      {c.name}
+                    </Text>
+                    {kids.length > 0 && <Text style={[styles.pickerCellSub, { color: theme.textMuted }]}>{kids.length}개</Text>}
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {chipParentId != null &&
+              (() => {
+                const parent = data.categories.find((x) => x.id === chipParentId);
+                const kids = childrenOf(chipParentId);
+                if (!parent || kids.length === 0) return null;
+                return (
+                  <View style={[styles.chipPanel, { borderTopColor: theme.border }]}>
+                    <View style={styles.chipPanelLabelRow}>
+                      {Icon.chevronRight(theme.textMuted, 12)}
+                      <Text style={[styles.chipPanelLabel, { color: theme.textMuted }]}>{parent.name}의 세부 카테고리</Text>
+                    </View>
+                    <View style={styles.chipRow}>
+                      <Pressable
+                        onPress={() => selectChip(parent.id, parent.name)}
+                        style={[
+                          styles.chip,
+                          { borderColor: theme.border, backgroundColor: theme.card },
+                          category?.id === parent.id && { backgroundColor: theme.brand, borderColor: theme.brand },
+                        ]}
+                      >
+                        <Text style={[styles.chipText, { color: theme.textMuted }, category?.id === parent.id && { color: '#fff' }]}>전체</Text>
+                      </Pressable>
                       {kids.map((k) => (
-                        <ListRow
+                        <Pressable
                           key={k.id}
-                          left={<CategoryIcon icon={k.icon || c.icon || def.iconCode} size={20} bg={(c.color || def.color) + '22'} />}
-                          contents={<Text style={{ color: theme.text, fontSize: 13.5, fontWeight: '500' }}>{k.name}</Text>}
-                          right={category?.id === k.id ? Icon.check(theme.brand, 16) : undefined}
-                          onPress={() => selectCategory(k.id, k.name)}
-                          verticalPadding={4}
-                        />
+                          onPress={() => selectChip(k.id, k.name)}
+                          style={[
+                            styles.chip,
+                            { borderColor: theme.border, backgroundColor: theme.card },
+                            category?.id === k.id && { backgroundColor: theme.brand, borderColor: theme.brand },
+                          ]}
+                        >
+                          <Text style={[styles.chipText, { color: theme.textMuted }, category?.id === k.id && { color: '#fff' }]}>{k.name}</Text>
+                        </Pressable>
                       ))}
                     </View>
-                  )}
-                </View>
-              );
-            })
-          : catOptions.map((name) => {
+                  </View>
+                );
+              })()}
+          </>
+        ) : (
+          <View style={styles.pickerGrid}>
+            {catOptions.map((name) => {
               const def = getCategoryDef(name);
+              const selected = category?.name === name;
               return (
-                <ListRow
+                <Pressable
                   key={name}
-                  left={<CategoryIcon icon={def.iconCode} size={28} bg={def.color + '22'} />}
-                  contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '500' }}>{name}</Text>}
-                  right={category?.name === name ? Icon.check(theme.brand, 16) : undefined}
+                  style={styles.pickerCell}
                   onPress={() => {
                     setCategory({ id: 0, name });
                     setCostType(null);
                     setCatPicker(false);
                   }}
-                  verticalPadding="small"
-                />
+                >
+                  <View style={[styles.pickerCellIcon, { backgroundColor: def.color + '22' }, selected && { borderWidth: 2, borderColor: theme.brand }]}>
+                    <CategoryIcon icon={def.iconCode} size={26} />
+                  </View>
+                  <Text style={[styles.pickerCellName, { color: theme.text }]} numberOfLines={1}>
+                    {name}
+                  </Text>
+                </Pressable>
               );
             })}
+          </View>
+        )}
       </PickerOverlay>
 
       <ConfirmDialog
@@ -304,6 +355,16 @@ const styles = StyleSheet.create({
   titleInput: { height: 44, borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, fontSize: 14, marginBottom: 10 },
   memoInput: { minHeight: 72, borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingTop: 10, fontSize: 14, textAlignVertical: 'top' },
   ctaWrap: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20, borderTopWidth: 1 },
-  expandBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  childGroup: { marginLeft: 32, paddingLeft: 12, borderLeftWidth: 2, marginBottom: 4 },
+  pickerGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingTop: 4, paddingBottom: 8 },
+  pickerCell: { width: '25%', alignItems: 'center', paddingVertical: 10, gap: 5 },
+  pickerCellIcon: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  pickerBadge: { position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: 9, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  pickerCellName: { fontSize: 12, fontWeight: '600', maxWidth: 68, textAlign: 'center' },
+  pickerCellSub: { fontSize: 9.5 },
+  chipPanel: { borderTopWidth: 1, marginTop: 6, paddingTop: 14, paddingBottom: 4 },
+  chipPanelLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
+  chipPanelLabel: { fontSize: 11.5, fontWeight: '700' },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1.5 },
+  chipText: { fontSize: 12.5, fontWeight: '700' },
 });

@@ -1,6 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import * as Updates from 'expo-updates';
+
+/** ON_LOAD 자동 백그라운드 확인·다운로드가 끝나 재시작 대기 상태가 되면 즉시 재시작 — 껐다 켜기 한 번만으로 최신 버전이 뜨도록 함 */
+export function useAutoOtaReload() {
+  const { isUpdatePending } = Updates.useUpdates();
+  useEffect(() => {
+    if (isUpdatePending) Updates.reloadAsync();
+  }, [isUpdatePending]);
+}
 
 export function useOtaUpdate() {
   const [checking, setChecking] = useState(false);

@@ -502,13 +502,15 @@ export default function BookScreen({ navigation, route }: Props) {
         ) : (
           <>
             <View style={styles.sectionPad}>
-              <Segmented
-                options={['전체', '수입', '지출']}
-                value={typeFilter === 'all' ? '전체' : typeFilter === 'INCOME' ? '수입' : '지출'}
-                onChange={(v) => handleTypeFilter(v === '전체' ? 'all' : v === '수입' ? 'INCOME' : 'EXPENSE')}
-                small
-                alignment="fluid"
-              />
+              <View style={[styles.segCard, { backgroundColor: theme.card }]}>
+                <Segmented
+                  options={['전체', '수입', '지출']}
+                  value={typeFilter === 'all' ? '전체' : typeFilter === 'INCOME' ? '수입' : '지출'}
+                  onChange={(v) => handleTypeFilter(v === '전체' ? 'all' : v === '수입' ? 'INCOME' : 'EXPENSE')}
+                  small
+                  alignment="fluid"
+                />
+              </View>
               <View style={[styles.chipRow, { marginTop: 8 }]}>
                 {typeFilter !== 'INCOME' &&
                   [...costFilter].map((c) => (
@@ -772,6 +774,7 @@ const styles = StyleSheet.create({
   catIconBtn: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   monthLabel: { fontSize: 15, fontWeight: '700', minWidth: 90, textAlign: 'center' },
   sectionPad: { paddingHorizontal: 20, paddingTop: 16 },
+  segCard: { alignSelf: 'flex-start', borderRadius: 14, padding: 4 },
   summary: { flexDirection: 'row', justifyContent: 'space-between', borderRadius: 14, padding: 16 },
   calCard: { marginHorizontal: 20, marginTop: 16, borderRadius: 16, borderWidth: 1 },
   dayHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },

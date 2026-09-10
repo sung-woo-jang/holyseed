@@ -6,8 +6,8 @@ import ConfirmDialog from '../../components/common/ConfirmDialog';
 import TossEmoji from '../../components/common/TossEmoji';
 import Border from '../../components/ui/Border';
 import Button from '../../components/ui/Button';
-import ListHeader from '../../components/ui/ListHeader';
 import ListRow from '../../components/ui/ListRow';
+import Section from '../../components/common/Section';
 import AppSwitchSection from '../../components/common/AppSwitchSection';
 import { useHouseholdData } from '../../queries/useHouseholdData';
 import { clearTokens } from '../../lib/storage';
@@ -42,18 +42,18 @@ export default function MoreHomeScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView edges={['top']} style={[styles.root, { backgroundColor: theme.bg }]}>
-      <ScrollView>
-        <ListHeader
-          title={<ListHeader.TitleParagraph typography="t4">우리집</ListHeader.TitleParagraph>}
-          lower={<ListHeader.DescriptionParagraph>{`${memberCount}명 · ${owner?.name ?? '-'} 님이 소유`}</ListHeader.DescriptionParagraph>}
-          right={
-            <View style={[styles.bannerIcon, { backgroundColor: theme.brandSoft }]}>
-              <TossEmoji code={TE.house} size={32} />
+      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+        <View style={styles.headerWrap}>
+          <View style={[styles.headerCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <View>
+              <Text style={[styles.headerTitle, { color: theme.text }]}>우리집</Text>
+              <Text style={[styles.headerSub, { color: theme.textMuted }]}>{memberCount}명 · {owner?.name ?? '-'} 님이 소유</Text>
             </View>
-          }
-        />
-
-        <Border type="full" height={16} />
+            <View style={[styles.bannerIcon, { backgroundColor: theme.brandSoft }]}>
+              <TossEmoji code={TE.house} size={30} />
+            </View>
+          </View>
+        </View>
 
         {role && role !== 'OWNER' && (
           <View style={[styles.roleNotice, { backgroundColor: theme.brandSoft }]}>
@@ -61,33 +61,31 @@ export default function MoreHomeScreen({ navigation }: Props) {
           </View>
         )}
 
-        {menuItems.map((item, idx) => (
-          <View key={item.route}>
-            <ListRow
-              left={
-                <View style={[styles.menuIconBox, { backgroundColor: item.bgColor }]}>
-                  <TossEmoji code={item.emojiCode} size={28} />
-                </View>
-              }
-              contents={
-                <View>
-                  <Text style={{ color: theme.text, fontSize: 15, fontWeight: '600' }}>{item.label}</Text>
-                  <Text style={{ color: theme.textMuted, fontSize: 12, marginTop: 2 }}>{item.detail}</Text>
-                </View>
-              }
-              withArrow
-              onPress={() => navigation.navigate(item.route)}
-              verticalPadding="small"
-            />
-            {idx < menuItems.length - 1 && <Border type="full" />}
-          </View>
-        ))}
-
-        <Border type="full" height={16} />
+        <Section label="메뉴">
+          {menuItems.map((item, idx) => (
+            <View key={item.route}>
+              <ListRow
+                left={
+                  <View style={[styles.menuIconBox, { backgroundColor: item.bgColor }]}>
+                    <TossEmoji code={item.emojiCode} size={26} />
+                  </View>
+                }
+                contents={
+                  <View>
+                    <Text style={{ color: theme.text, fontSize: 14.5, fontWeight: '600' }}>{item.label}</Text>
+                    <Text style={{ color: theme.textMuted, fontSize: 11.5, marginTop: 2 }}>{item.detail}</Text>
+                  </View>
+                }
+                withArrow
+                onPress={() => navigation.navigate(item.route)}
+                verticalPadding="small"
+              />
+              {idx < menuItems.length - 1 && <Border type="full" />}
+            </View>
+          ))}
+        </Section>
 
         <AppSwitchSection />
-
-        <Border type="full" height={16} />
 
         <View style={styles.footer}>
           <Button display="full" size="big" type="danger" style="weak" onPress={() => setLogoutConfirm(true)}>
@@ -104,8 +102,12 @@ export default function MoreHomeScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  bannerIcon: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  roleNotice: { marginHorizontal: 20, marginBottom: 8, padding: 10, borderRadius: 10 },
-  menuIconBox: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  footer: { paddingHorizontal: 20, paddingVertical: 16 },
+  headerWrap: { paddingHorizontal: 20, paddingTop: 16 },
+  headerCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 18, borderWidth: 1, padding: 18 },
+  headerTitle: { fontSize: 18, fontWeight: '800' },
+  headerSub: { fontSize: 12.5, marginTop: 4 },
+  bannerIcon: { width: 52, height: 52, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  roleNotice: { marginHorizontal: 20, marginTop: 12, padding: 10, borderRadius: 10 },
+  menuIconBox: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  footer: { paddingHorizontal: 20, paddingTop: 22 },
 });

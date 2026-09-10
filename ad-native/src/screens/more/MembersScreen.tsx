@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Button from '../../components/ui/Button';
 import ListRow from '../../components/ui/ListRow';
 import Border from '../../components/ui/Border';
+import Section from '../../components/common/Section';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import AppToast from '../../components/common/AppToast';
 import RoleBadge from '../../components/common/RoleBadge';
@@ -66,48 +67,48 @@ export default function MembersScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: theme.bg }]}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 32, paddingTop: 4 }}>
         <Text style={[styles.subtitle, { color: theme.textMuted }]}>우리집 자산을 함께 기록·조회하는 멤버들이에요.</Text>
 
-        {data.members.map((m, idx) => {
-          const isMe = m.id === String(user?.id);
-          return (
-            <View key={m.id}>
-              <ListRow
-                left={
-                  <View style={[styles.avatar, { backgroundColor: m.avatar }]}>
-                    <Text style={styles.avatarText}>{m.initial}</Text>
-                  </View>
-                }
-                contents={<Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{m.name}</Text>}
-                right={
-                  <View style={styles.rightWrap}>
-                    <RoleBadge role={m.role as MemberRole} />
-                    {isMe && (
-                      <Pressable style={[styles.roleBtn, { borderColor: theme.border }]} onPress={() => setEditProfileOpen(true)}>
-                        <TossEmoji code={TE.pencil} size={14} />
-                      </Pressable>
-                    )}
-                    {isOwner && m.role !== 'OWNER' && (
-                      <>
-                        <Pressable style={[styles.roleBtn, { borderColor: theme.border }]} onPress={() => setRolePicker({ memberId: m.id, currentRole: m.role as MemberRole })}>
-                          {Icon.chevronDown(theme.textMuted, 14)}
+        <Section>
+          {data.members.map((m, idx) => {
+            const isMe = m.id === String(user?.id);
+            return (
+              <View key={m.id}>
+                <ListRow
+                  left={
+                    <View style={[styles.avatar, { backgroundColor: m.avatar }]}>
+                      <Text style={styles.avatarText}>{m.initial}</Text>
+                    </View>
+                  }
+                  contents={<Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{m.name}</Text>}
+                  right={
+                    <View style={styles.rightWrap}>
+                      <RoleBadge role={m.role as MemberRole} />
+                      {isMe && (
+                        <Pressable style={[styles.roleBtn, { borderColor: theme.border }]} onPress={() => setEditProfileOpen(true)}>
+                          <TossEmoji code={TE.pencil} size={14} />
                         </Pressable>
-                        <Pressable style={[styles.removeBtn, { borderColor: theme.danger }]} onPress={() => setRemoveTarget({ id: m.id, name: m.name })}>
-                          <Text style={{ color: theme.danger, fontSize: 11, fontWeight: '700' }}>내보내기</Text>
-                        </Pressable>
-                      </>
-                    )}
-                  </View>
-                }
-                verticalPadding="small"
-              />
-              {idx < data.members.length - 1 && <Border type="full" />}
-            </View>
-          );
-        })}
-
-        <Border type="full" height={16} />
+                      )}
+                      {isOwner && m.role !== 'OWNER' && (
+                        <>
+                          <Pressable style={[styles.roleBtn, { borderColor: theme.border }]} onPress={() => setRolePicker({ memberId: m.id, currentRole: m.role as MemberRole })}>
+                            {Icon.chevronDown(theme.textMuted, 14)}
+                          </Pressable>
+                          <Pressable style={[styles.removeBtn, { borderColor: theme.danger }]} onPress={() => setRemoveTarget({ id: m.id, name: m.name })}>
+                            <Text style={{ color: theme.danger, fontSize: 11, fontWeight: '700' }}>내보내기</Text>
+                          </Pressable>
+                        </>
+                      )}
+                    </View>
+                  }
+                  verticalPadding="small"
+                />
+                {idx < data.members.length - 1 && <Border type="full" />}
+              </View>
+            );
+          })}
+        </Section>
 
         {isOwner ? (
           <View style={styles.actions}>
@@ -126,7 +127,7 @@ export default function MembersScreen() {
             <Button display="full" size="big" type="primary" style="weak" onPress={() => setJoinOpen(true)}>
               초대 코드로 합류하기
             </Button>
-            <View style={[styles.lockBox, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+            <View style={[styles.lockBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <TossEmoji code={TE.lock} size={24} />
               <Text style={{ color: theme.textMuted, fontSize: 12, marginTop: 6, textAlign: 'center' }}>멤버 초대·관리는 소유자만 가능해요</Text>
             </View>
@@ -173,6 +174,6 @@ const styles = StyleSheet.create({
   rightWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   roleBtn: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   removeBtn: { paddingHorizontal: 8, height: 28, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  actions: { paddingHorizontal: 20, paddingTop: 12 },
+  actions: { paddingHorizontal: 20, paddingTop: 20 },
   lockBox: { borderWidth: 1, borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 12 },
 });

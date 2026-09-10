@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Border from '../ui/Border';
-import ListHeader from '../ui/ListHeader';
 import ListRow from '../ui/ListRow';
+import Section from './Section';
 import TossEmoji from './TossEmoji';
 import { useAppModeStore } from '../../stores/appMode.store';
 import { APP_CATALOG } from '../../lib/appCatalog';
@@ -17,20 +17,19 @@ export default function AppSwitchSection() {
   if (others.length === 0) return null;
 
   return (
-    <>
-      <ListHeader title={<ListHeader.TitleParagraph typography="t5">다른 앱</ListHeader.TitleParagraph>} />
+    <Section label="다른 앱">
       {others.map((app, idx) => (
         <View key={app.mode}>
           <ListRow
             left={
               <View style={[styles.iconBox, { backgroundColor: theme.brandSoft }]}>
-                <TossEmoji code={app.emojiCode} size={28} />
+                <TossEmoji code={app.emojiCode} size={26} />
               </View>
             }
             contents={
               <View>
-                <Text style={{ color: theme.text, fontSize: 15, fontWeight: '600' }}>{app.name}</Text>
-                <Text style={{ color: theme.textMuted, fontSize: 12, marginTop: 2 }}>{app.hint}</Text>
+                <Text style={{ color: theme.text, fontSize: 14.5, fontWeight: '600' }}>{app.name}</Text>
+                <Text style={{ color: theme.textMuted, fontSize: 11.5, marginTop: 2 }}>{app.hint}</Text>
               </View>
             }
             withArrow
@@ -40,10 +39,10 @@ export default function AppSwitchSection() {
           {idx < others.length - 1 && <Border type="full" />}
         </View>
       ))}
-    </>
+    </Section>
   );
 }
 
 const styles = StyleSheet.create({
-  iconBox: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  iconBox: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 });

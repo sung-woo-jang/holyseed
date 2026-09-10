@@ -3,9 +3,9 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import Border from '../../components/ui/Border';
 import Button from '../../components/ui/Button';
-import ListHeader from '../../components/ui/ListHeader';
 import ListRow from '../../components/ui/ListRow';
 import Switch from '../../components/ui/Switch';
+import Section from '../../components/common/Section';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import AppToast from '../../components/common/AppToast';
 import McpTokenSheet from '../../components/sheets/McpTokenSheet';
@@ -36,69 +36,65 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: theme.bg }]}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-        <Border type="full" height={16} />
+      <ScrollView contentContainerStyle={{ paddingBottom: 32, paddingTop: 4 }}>
+        <Section label="알림">
+          <ListRow contents={<Text style={{ color: theme.text, fontSize: 14.5, fontWeight: '600' }}>스냅샷 리마인더</Text>} right={<Switch checked={false} onCheckedChange={() => {}} disabled />} verticalPadding="small" />
+          <Border type="full" />
+          <ListRow contents={<Text style={{ color: theme.text, fontSize: 14.5, fontWeight: '600' }}>정기지출 알림</Text>} right={<Switch checked={false} onCheckedChange={() => {}} disabled />} verticalPadding="small" />
+        </Section>
 
-        <ListHeader title={<ListHeader.TitleParagraph typography="t5">알림</ListHeader.TitleParagraph>} />
-        <ListRow contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '600' }}>스냅샷 리마인더</Text>} right={<Switch checked={false} onCheckedChange={() => {}} disabled />} verticalPadding="small" />
-        <Border type="full" />
-        <ListRow contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '600' }}>정기지출 알림</Text>} right={<Switch checked={false} onCheckedChange={() => {}} disabled />} verticalPadding="small" />
+        <Section label="통화">
+          <ListRow contents={<Text style={{ color: theme.text, fontSize: 14.5, fontWeight: '600' }}>기본 통화</Text>} right={<Text style={{ color: theme.textMuted, fontSize: 14, fontWeight: '600' }}>KRW</Text>} verticalPadding="small" />
+        </Section>
 
-        <Border type="full" height={16} />
-
-        <ListHeader title={<ListHeader.TitleParagraph typography="t5">통화</ListHeader.TitleParagraph>} />
-        <ListRow contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '600' }}>기본 통화</Text>} right={<Text style={{ color: theme.textMuted, fontSize: 14, fontWeight: '600' }}>KRW</Text>} verticalPadding="small" />
-
-        <Border type="full" height={16} />
-
-        <ListHeader title={<ListHeader.TitleParagraph typography="t5">MCP 연동</ListHeader.TitleParagraph>} />
-        {mcpTokens.length === 0 ? (
-          <ListRow contents={<Text style={{ color: theme.textMuted, fontSize: 14 }}>발급된 토큰이 없어요</Text>} verticalPadding="small" />
-        ) : (
-          mcpTokens.map((t, idx) => (
-            <View key={t.id}>
-              <ListRow
-                contents={
-                  <View>
-                    <Text style={{ color: theme.text, fontSize: 15, fontWeight: '600' }}>{t.label || '라벨 없음'}</Text>
-                    <Text style={{ color: theme.textMuted, fontSize: 12, marginTop: 2 }}>{new Date(t.createdAt).toLocaleDateString('ko-KR')} 발급</Text>
-                  </View>
-                }
-                right={
-                  <View style={{ flexDirection: 'row', gap: 12 }}>
-                    <Pressable onPress={() => Clipboard.setStringAsync(t.connectorUrl)}>
-                      <Text style={{ color: theme.brand, fontSize: 13, fontWeight: '600' }}>복사</Text>
-                    </Pressable>
-                    <Pressable onPress={() => setDeleteTarget({ id: t.id, label: t.label || '라벨 없음' })}>
-                      <Text style={{ color: theme.danger, fontSize: 13, fontWeight: '600' }}>삭제</Text>
-                    </Pressable>
-                  </View>
-                }
-                verticalPadding="small"
-              />
-              {idx < mcpTokens.length - 1 && <Border type="full" />}
-            </View>
-          ))
-        )}
-        <View style={{ padding: 20 }}>
+        <Section label="MCP 연동">
+          <View>
+            {mcpTokens.length === 0 ? (
+              <ListRow contents={<Text style={{ color: theme.textMuted, fontSize: 14 }}>발급된 토큰이 없어요</Text>} verticalPadding="small" />
+            ) : (
+              mcpTokens.map((t, idx) => (
+                <View key={t.id}>
+                  <ListRow
+                    contents={
+                      <View>
+                        <Text style={{ color: theme.text, fontSize: 14.5, fontWeight: '600' }}>{t.label || '라벨 없음'}</Text>
+                        <Text style={{ color: theme.textMuted, fontSize: 11.5, marginTop: 2 }}>{new Date(t.createdAt).toLocaleDateString('ko-KR')} 발급</Text>
+                      </View>
+                    }
+                    right={
+                      <View style={{ flexDirection: 'row', gap: 12 }}>
+                        <Pressable onPress={() => Clipboard.setStringAsync(t.connectorUrl)}>
+                          <Text style={{ color: theme.brand, fontSize: 13, fontWeight: '600' }}>복사</Text>
+                        </Pressable>
+                        <Pressable onPress={() => setDeleteTarget({ id: t.id, label: t.label || '라벨 없음' })}>
+                          <Text style={{ color: theme.danger, fontSize: 13, fontWeight: '600' }}>삭제</Text>
+                        </Pressable>
+                      </View>
+                    }
+                    verticalPadding="small"
+                  />
+                  {idx < mcpTokens.length - 1 && <Border type="full" />}
+                </View>
+              ))
+            )}
+          </View>
+        </Section>
+        <View style={styles.mcpBtnWrap}>
           <Button display="full" size="big" type="primary" style="weak" onPress={() => setTokenSheetVisible(true)}>
             + 토큰 발급
           </Button>
         </View>
 
-        <Border type="full" height={16} />
+        <Section label="업데이트">
+          <View style={styles.updateBody}>
+            <Text style={{ color: theme.textMuted, fontSize: 12, marginBottom: 10 }}>{updateLabel}</Text>
+            <Button display="full" size="medium" type="primary" style="weak" loading={checkingUpdate} onPress={handleCheckUpdate}>
+              지금 업데이트 확인
+            </Button>
+          </View>
+        </Section>
 
-        <ListHeader title={<ListHeader.TitleParagraph typography="t5">업데이트</ListHeader.TitleParagraph>} />
-        <View style={{ paddingHorizontal: 20 }}>
-          <Text style={{ color: theme.textMuted, fontSize: 12, marginBottom: 10 }}>{updateLabel}</Text>
-          <Button display="full" size="medium" type="primary" style="weak" loading={checkingUpdate} onPress={handleCheckUpdate}>
-            지금 업데이트 확인
-          </Button>
-        </View>
-
-        <Border type="full" height={16} />
-
-        <Text style={{ textAlign: 'center', fontSize: 12, marginTop: 16, color: theme.textMuted }}>자산일기 v1.0</Text>
+        <Text style={{ textAlign: 'center', fontSize: 12, marginTop: 22, color: theme.textMuted }}>자산일기 v1.0</Text>
       </ScrollView>
 
       <McpTokenSheet visible={tokenSheetVisible} onClose={() => setTokenSheetVisible(false)} />
@@ -119,4 +115,6 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  mcpBtnWrap: { paddingHorizontal: 20, paddingTop: 10 },
+  updateBody: { padding: 16 },
 });

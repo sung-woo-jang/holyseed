@@ -77,10 +77,10 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
 
   const sortedTrades = [...c.trades].reverse();
   const real = c.trades.filter((t) => t.kind !== '이월');
-  const sells = real.filter((t) => t.side === 'SELL').reduce((a, t) => a + n(t.amount), 0);
-  // 쿼터매도는 평단을 안 바꾸므로 avgAfter가 곧 그 매도분의 원가 — 판매금액이 아니라 실현손익(판매금액-원가)을 보여준다
-  const quarterSells = real.filter((t) => t.kind === '쿼터매도');
-  const quarterSellPL = quarterSells.reduce((a, t) => a + (n(t.amount) - n(t.avgAfter) * n(t.quantity)), 0);
+  const sellTrades = real.filter((t) => t.side === 'SELL');
+  const sells = sellTrades.reduce((a, t) => a + n(t.amount), 0);
+  // 매도는 평단을 안 바꾸므로 avgAfter가 곧 그 매도분의 원가 — 판매금액이 아니라 실현손익(판매금액-원가)을 보여준다
+  const sellPL = sellTrades.reduce((a, t) => a + (n(t.amount) - n(t.avgAfter) * n(t.quantity)), 0);
   const last = real[real.length - 1];
   const days = last ? Math.round((new Date(last.date).getTime() - new Date(c.startDate).getTime()) / 86400000) + 1 : 0;
   const T = last ? n(last.tAfter) : 0;
@@ -100,13 +100,9 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
     plPct = c.profitPct !== null ? n(c.profitPct) * 100 : null;
   } else if (currentPrice != null) {
     // buys/sells 현금 합산 방식은 이월(금액 0, 실제 원가는 있음) 물량을 공짜로 취급해 손익을 부풀린다.
-    // 매도는 평단을 바꾸지 않으므로(매수 때만 갱신), 각 매도 시점 avgAfter가 곧 그 매도의 원가 — 이걸로 실현분을 계산하고
-    // 잔여 수량은 현재가-평단 차익으로 평가손익을 더해 이월 물량까지 정확히 반영한다.
-    const realizedFromSells = real
-      .filter((t) => t.side === 'SELL')
-      .reduce((a, t) => a + (n(t.amount) - n(t.avgAfter) * n(t.quantity)), 0);
+    // sellPL(매도손익)에 잔여 수량의 평가손익(현재가-평단 차익)을 더하면 이월 물량까지 정확히 반영된다.
     const unrealizedNow = qtyNow * (currentPrice - avgNow);
-    plAmount = realizedFromSells + unrealizedNow;
+    plAmount = sellPL + unrealizedNow;
     plPct = n(c.principal) > 0 ? (plAmount / n(c.principal)) * 100 : null;
   }
   const plColor = plAmount == null ? undefined : plAmount >= 0 ? theme.brand : theme.danger;
@@ -123,10 +119,10 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
         />
         <Tile
           theme={theme}
-          label="쿼터매도 손익"
-          value={`${quarterSellPL >= 0 ? '+' : ''}${usd(quarterSellPL)}`}
-          sub={`${quarterSells.length}건`}
-          valueColor={quarterSells.length > 0 ? (quarterSellPL >= 0 ? theme.brand : theme.danger) : undefined}
+          label="매도손익"
+          value={`${sellPL >= 0 ? '+' : ''}${usd(sellPL)}`}
+          sub={`${sellTrades.length}건`}
+          valueColor={sellTrades.length > 0 ? (sellPL >= 0 ? theme.brand : theme.danger) : undefined}
         />
         <Tile theme={theme} label="총 회수" value={usd(sells)} />
         <Tile theme={theme} label="현재 T" value={String(T)} sub={`남은 회차 ${40 - T}`} />

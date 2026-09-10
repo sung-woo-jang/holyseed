@@ -25,11 +25,23 @@ function kstDate(iso: string): string {
   return new Date(iso).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric' });
 }
 
-function Tile({ label, value, sub, theme }: { label: string; value: string; sub?: string; theme: ReturnType<typeof useTheme> }) {
+function Tile({
+  label,
+  value,
+  sub,
+  theme,
+  valueColor,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  theme: ReturnType<typeof useTheme>;
+  valueColor?: string;
+}) {
   return (
     <View style={[styles.tile, { backgroundColor: theme.card, borderColor: theme.border }]}>
       <Text style={{ color: theme.textMuted, fontSize: 11.5 }}>{label}</Text>
-      <Text style={{ color: theme.text, fontSize: 16, fontWeight: '800', marginTop: 2 }}>{value}</Text>
+      <Text style={{ color: valueColor ?? theme.text, fontSize: 16, fontWeight: '800', marginTop: 2 }}>{value}</Text>
       {sub && <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 2 }}>{sub}</Text>}
     </View>
   );
@@ -39,6 +51,7 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
   const theme = useTheme();
   const { cycleNo } = route.params;
   const statusQ = useQuery({ queryKey: ['laofus-status'], queryFn: laofusRestApi.status });
+  const priceQ = useQuery({ queryKey: ['laofus-price'], queryFn: laofusRestApi.price, refetchInterval: 60_000 });
   const [cardWidth, setCardWidth] = useState(Dimensions.get('window').width - 32 - 32);
 
   function onCardLayout(e: LayoutChangeEvent) {
@@ -70,9 +83,44 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
   const days = last ? Math.round((new Date(last.date).getTime() - new Date(c.startDate).getTime()) / 86400000) + 1 : 0;
   const T = last ? n(last.tAfter) : 0;
 
+  // 손익 카드 — 종료된 사이클은 백엔드가 확정한 실현손익을, 진행 중인 사이클은 현재가 기준 평가손익을 보여준다
+  const isDone = c.endDate !== null;
+  const qtyNow = last ? n(last.qtyAfter) : 0;
+  const avgNow = last ? n(last.avgAfter) : 0;
+  const currentPrice = priceQ.data?.price ?? null;
+  const marketValue = currentPrice != null ? qtyNow * currentPrice : null;
+
+  let plLabel = '평가손익';
+  let plAmount: number | null = null;
+  let plPct: number | null = null;
+  if (isDone && c.profit !== null) {
+    plLabel = '실현손익';
+    plAmount = n(c.profit);
+    plPct = c.profitPct !== null ? n(c.profitPct) * 100 : null;
+  } else if (marketValue != null) {
+    plAmount = marketValue + sells - buys;
+    plPct = n(c.principal) > 0 ? (plAmount / n(c.principal)) * 100 : null;
+  }
+  const plColor = plAmount == null ? undefined : plAmount >= 0 ? theme.brand : theme.danger;
+
   return (
     <ScrollView style={[styles.root, { backgroundColor: theme.bg }]} contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
       <View style={styles.tileGrid}>
+        <Tile
+          theme={theme}
+          label={plLabel}
+          value={plAmount != null ? `${plAmount >= 0 ? '+' : ''}${usd(plAmount)}` : '—'}
+          sub={plPct != null ? `${plPct >= 0 ? '+' : ''}${plPct.toFixed(2)}%` : undefined}
+          valueColor={plColor}
+        />
+        {!isDone && (
+          <Tile
+            theme={theme}
+            label="평가금액"
+            value={marketValue != null ? usd(marketValue) : '—'}
+            sub={`보유 ${qtyNow.toFixed(6)}주 · 평단 ${usd(avgNow)}`}
+          />
+        )}
         <Tile theme={theme} label="총 투입" value={usd(buys)} sub={`원금의 ${((buys / n(c.principal)) * 100).toFixed(0)}%`} />
         <Tile theme={theme} label="총 회수" value={usd(sells)} />
         <Tile theme={theme} label="현재 T" value={String(T)} sub={`남은 회차 ${40 - T}`} />

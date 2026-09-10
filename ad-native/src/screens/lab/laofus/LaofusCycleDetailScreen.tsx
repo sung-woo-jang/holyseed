@@ -78,8 +78,9 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
   const sortedTrades = [...c.trades].reverse();
   const real = c.trades.filter((t) => t.kind !== '이월');
   const sells = real.filter((t) => t.side === 'SELL').reduce((a, t) => a + n(t.amount), 0);
+  // 쿼터매도는 평단을 안 바꾸므로 avgAfter가 곧 그 매도분의 원가 — 판매금액이 아니라 실현손익(판매금액-원가)을 보여준다
   const quarterSells = real.filter((t) => t.kind === '쿼터매도');
-  const quarterSellTotal = quarterSells.reduce((a, t) => a + n(t.amount), 0);
+  const quarterSellPL = quarterSells.reduce((a, t) => a + (n(t.amount) - n(t.avgAfter) * n(t.quantity)), 0);
   const last = real[real.length - 1];
   const days = last ? Math.round((new Date(last.date).getTime() - new Date(c.startDate).getTime()) / 86400000) + 1 : 0;
   const T = last ? n(last.tAfter) : 0;
@@ -89,7 +90,6 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
   const qtyNow = last ? n(last.qtyAfter) : 0;
   const avgNow = last ? n(last.avgAfter) : 0;
   const currentPrice = priceQ.data?.price ?? null;
-  const marketValue = currentPrice != null ? qtyNow * currentPrice : null;
 
   let plLabel = '평가손익';
   let plAmount: number | null = null;
@@ -121,15 +121,13 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
           sub={plPct != null ? `${plPct >= 0 ? '+' : ''}${plPct.toFixed(2)}%` : undefined}
           valueColor={plColor}
         />
-        {!isDone && (
-          <Tile
-            theme={theme}
-            label="평가금액"
-            value={marketValue != null ? usd(marketValue) : '—'}
-            sub={`보유 ${qtyNow.toFixed(6)}주 · 평단 ${usd(avgNow)}`}
-          />
-        )}
-        <Tile theme={theme} label="쿼터매도 합계" value={usd(quarterSellTotal)} sub={`${quarterSells.length}건`} />
+        <Tile
+          theme={theme}
+          label="쿼터매도 손익"
+          value={`${quarterSellPL >= 0 ? '+' : ''}${usd(quarterSellPL)}`}
+          sub={`${quarterSells.length}건`}
+          valueColor={quarterSells.length > 0 ? (quarterSellPL >= 0 ? theme.brand : theme.danger) : undefined}
+        />
         <Tile theme={theme} label="총 회수" value={usd(sells)} />
         <Tile theme={theme} label="현재 T" value={String(T)} sub={`남은 회차 ${40 - T}`} />
         <Tile theme={theme} label="거래 횟수" value={`${real.length}차`} sub={`${days}일간`} />

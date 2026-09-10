@@ -79,6 +79,8 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
   const real = c.trades.filter((t) => t.kind !== '이월');
   const buys = real.filter((t) => t.side === 'BUY').reduce((a, t) => a + n(t.amount), 0);
   const sells = real.filter((t) => t.side === 'SELL').reduce((a, t) => a + n(t.amount), 0);
+  const quarterSells = real.filter((t) => t.kind === '쿼터매도');
+  const quarterSellTotal = quarterSells.reduce((a, t) => a + n(t.amount), 0);
   const last = real[real.length - 1];
   const days = last ? Math.round((new Date(last.date).getTime() - new Date(c.startDate).getTime()) / 86400000) + 1 : 0;
   const T = last ? n(last.tAfter) : 0;
@@ -121,7 +123,7 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
             sub={`보유 ${qtyNow.toFixed(6)}주 · 평단 ${usd(avgNow)}`}
           />
         )}
-        <Tile theme={theme} label="총 투입" value={usd(buys)} sub={`원금의 ${((buys / n(c.principal)) * 100).toFixed(0)}%`} />
+        <Tile theme={theme} label="쿼터매도 합계" value={usd(quarterSellTotal)} sub={`${quarterSells.length}건`} />
         <Tile theme={theme} label="총 회수" value={usd(sells)} />
         <Tile theme={theme} label="현재 T" value={String(T)} sub={`남은 회차 ${40 - T}`} />
         <Tile theme={theme} label="거래 횟수" value={`${real.length}차`} sub={`${days}일간`} />

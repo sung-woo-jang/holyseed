@@ -7,7 +7,6 @@ import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Button from '../../../components/ui/Button';
 import TextField from '../../../components/ui/TextField';
-import Segmented from '../../../components/common/Segmented';
 import Switch from '../../../components/ui/Switch';
 import ConfirmDialog from '../../../components/common/ConfirmDialog';
 import DatePicker from '../../../components/common/DatePicker';
@@ -311,13 +310,20 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
               </Pressable>
 
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <Segmented
-                  options={PAY_STATUS_OPTIONS.map((o) => o.label)}
-                  value={PAY_STATUS_OPTIONS.find((o) => o.value === payStatus)?.label ?? '수령예정'}
-                  onChange={(label) => setPayStatus(PAY_STATUS_OPTIONS.find((o) => o.label === label)!.value)}
-                  small
-                  alignment="fluid"
-                />
+                <View style={styles.chipRow}>
+                  {PAY_STATUS_OPTIONS.map((o) => {
+                    const active = o.value === payStatus;
+                    return (
+                      <Pressable
+                        key={o.value}
+                        onPress={() => setPayStatus(o.value)}
+                        style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.bg }]}
+                      >
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: active ? theme.brand : theme.text }}>{o.label}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
               </ScrollView>
             </Section>
 

@@ -1,6 +1,6 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { n, usd, kstDateOnly } from '@/features/quant/lib/types'
-import { useStatus } from '@/features/quant/lib/useStatus'
+import { useStatus, usePrice } from '@/features/quant/lib/useStatus'
 import { CycleChart } from '@/features/quant/ui/CycleChart'
 import { Tile } from '@/features/quant/ui/ui'
 import { useContainerWidth } from '@/shared/hooks/use-container-width'
@@ -11,6 +11,7 @@ const CHART_POINT_WIDTH = 28
 
 export default function CycleDetailPage() {
   const { status } = useStatus()
+  const priceInfo = usePrice()
   const { cycleNo } = useParams()
   const navigate = useNavigate()
   const isDesktop = useIsDesktopNav()
@@ -42,6 +43,26 @@ export default function CycleDetailPage() {
   const T = last ? n(last.tAfter) : 0
   const chartWidth = Math.max(chartsAreaWidth, real.length * CHART_POINT_WIDTH)
 
+  // 손익 카드 — 종료된 사이클은 백엔드가 확정한 실현손익을, 진행 중인 사이클은 현재가 기준 평가손익을 보여준다
+  const isDone = c.endDate !== null
+  const qtyNow = last ? n(last.qtyAfter) : 0
+  const avgNow = last ? n(last.avgAfter) : 0
+  const currentPrice = priceInfo?.price ?? null
+  const marketValue = currentPrice != null ? qtyNow * currentPrice : null
+
+  let plLabel = '평가손익'
+  let plAmount: number | null = null
+  let plPct: number | null = null
+  if (isDone && c.profit !== null) {
+    plLabel = '실현손익'
+    plAmount = n(c.profit)
+    plPct = c.profitPct !== null ? n(c.profitPct) * 100 : null
+  } else if (marketValue != null) {
+    plAmount = marketValue + sells - buys
+    plPct = n(c.principal) > 0 ? (plAmount / n(c.principal)) * 100 : null
+  }
+  const plColor = plAmount == null ? undefined : plAmount >= 0 ? 'var(--delta-good)' : 'var(--status-critical)'
+
   return (
     <main className="wrap">
       <div style={{ display: 'flex', gap: 12, alignItems: 'baseline', marginBottom: 12, flexWrap: 'wrap' }}>
@@ -68,6 +89,19 @@ export default function CycleDetailPage() {
           marginBottom: 14,
         }}
       >
+        <Tile
+          label={plLabel}
+          value={plAmount != null ? `${plAmount >= 0 ? '+' : ''}${usd(plAmount)}` : '—'}
+          sub={plPct != null ? `${plPct >= 0 ? '+' : ''}${plPct.toFixed(2)}%` : undefined}
+          valueColor={plColor}
+        />
+        {!isDone && (
+          <Tile
+            label="평가금액"
+            value={marketValue != null ? usd(marketValue) : '—'}
+            sub={`보유 ${qtyNow.toFixed(6)}주 · 평단 ${usd(avgNow)}`}
+          />
+        )}
         <Tile
           label="총 투입"
           value={usd(buys)}

@@ -310,11 +310,15 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
                 <Text style={{ fontSize: 15, color: theme.text, fontWeight: '600' }}>{workDate === todayLocal() ? `오늘 (${workDate.slice(5).replace('-', '/')})` : workDate}</Text>
               </Pressable>
 
-              <Segmented
-                options={PAY_STATUS_OPTIONS.map((o) => o.label)}
-                value={PAY_STATUS_OPTIONS.find((o) => o.value === payStatus)?.label ?? '수령예정'}
-                onChange={(label) => setPayStatus(PAY_STATUS_OPTIONS.find((o) => o.label === label)!.value)}
-              />
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <Segmented
+                  options={PAY_STATUS_OPTIONS.map((o) => o.label)}
+                  value={PAY_STATUS_OPTIONS.find((o) => o.value === payStatus)?.label ?? '수령예정'}
+                  onChange={(label) => setPayStatus(PAY_STATUS_OPTIONS.find((o) => o.label === label)!.value)}
+                  small
+                  alignment="fluid"
+                />
+              </ScrollView>
             </Section>
 
             <Section icon={<IconClock color={theme.brand} />} title="근무 시간" theme={theme}>

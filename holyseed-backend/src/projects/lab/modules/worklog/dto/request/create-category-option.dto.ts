@@ -54,4 +54,9 @@ export class CreateCategoryOptionDto {
   @IsOptional()
   @IsString()
   defaultAddress?: string | null;
+
+  @ApiPropertyOptional({ description: '휴무용 분류 여부 — true면 근무 기록 대신 휴무로 등록됨', default: false })
+  @IsOptional()
+  @IsBoolean()
+  isDayOff?: boolean;
 }

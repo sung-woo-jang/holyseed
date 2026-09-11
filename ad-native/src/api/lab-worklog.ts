@@ -51,6 +51,7 @@ export interface WorklogCategoryOption {
   defaultEndTime: string | null;
   defaultBreakHours: number | null;
   defaultAddress: string | null;
+  isDayOff: boolean;
 }
 
 export interface WorklogJobOption {
@@ -95,6 +96,7 @@ export interface CategoryOptionInput {
   defaultEndTime?: string | null;
   defaultBreakHours?: number | null;
   defaultAddress?: string | null;
+  isDayOff?: boolean;
 }
 
 export interface SortPref {

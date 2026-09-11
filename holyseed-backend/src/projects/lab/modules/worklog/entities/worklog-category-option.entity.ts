@@ -63,4 +63,8 @@ export class WorklogCategoryOption {
   @ApiPropertyOptional({ description: '기본 주소' })
   @Column({ name: 'default_address', length: 500, nullable: true })
   defaultAddress: string | null;
+
+  @ApiProperty({ description: '휴무용 분류 여부 — true면 근무 기록 대신 휴무로 등록됨', example: false })
+  @Column({ name: 'is_day_off', type: 'boolean', default: false })
+  isDayOff: boolean;
 }

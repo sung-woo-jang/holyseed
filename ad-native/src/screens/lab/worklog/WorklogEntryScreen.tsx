@@ -117,6 +117,7 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
 
   const categoriesQ = useQuery({ queryKey: ['lab-worklog-categories'], queryFn: labWorklogApi.categoryOptions, staleTime: 300_000 });
   const categories = categoriesQ.data ?? [];
+  const isDayOff = categories.find((c) => c.name === category)?.isDayOff ?? false;
 
   function applyCategoryDefaults(categoryName: string) {
     const opt = categories.find((c) => c.name === categoryName);
@@ -131,6 +132,8 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
   function handleSelectCategory(categoryName: string) {
     setCategory(categoryName);
     if (!isEdit) applyCategoryDefaults(categoryName);
+    const dayOff = categories.find((c) => c.name === categoryName)?.isDayOff ?? false;
+    setPayStatus(dayOff ? 'DAYOFF' : 'EXPECTED');
   }
 
   const jobOptionsQ = useQuery({ queryKey: ['lab-worklog-jobs'], queryFn: labWorklogApi.jobOptions, staleTime: 60_000 });
@@ -160,7 +163,7 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
       setTitle('');
       setWorkDate(defaultDate > todayLocal() ? defaultDate : todayLocal());
       setCategory(initialCategory?.name ?? '');
-      setPayStatus('EXPECTED');
+      setPayStatus(initialCategory?.isDayOff ? 'DAYOFF' : 'EXPECTED');
       setStartTime(initialCategory?.defaultStartTime ?? '');
       setEndTime(initialCategory?.defaultEndTime ?? '');
       setBreakHours(initialCategory?.defaultBreakHours != null ? String(initialCategory.defaultBreakHours) : '');
@@ -215,14 +218,14 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
     setPhotos((prev) => prev.filter((p) => p.filename !== filename));
   }
 
-  const isValid = title.trim().length > 0 && !!workDate;
+  const isValid = !!workDate && (isDayOff || title.trim().length > 0);
 
   async function handleSave() {
     setError('');
     setSaving(true);
     try {
       const dto = {
-        title: title.trim(),
+        title: isDayOff ? title.trim() || category : title.trim(),
         workDate,
         category: category || undefined,
         payStatus,
@@ -273,8 +276,12 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
         <ScrollView ref={scrollRef} contentContainerStyle={[styles.scrollContent, { paddingBottom: 32 + keyboardHeight }]}>
           <KeyboardScrollProvider value={scrollToInput}>
             <Section icon={<IconInfo color={theme.brand} />} title="기본 정보" theme={theme}>
-              <TextField variant="line" placeholder="현장명 (예: 송도 / 학익)" value={title} onChangeText={setTitle} style={{ marginBottom: 10 }} />
-              {titleSuggestions.length > 0 && (
+              {isDayOff ? (
+                <Text style={[styles.hint, { color: theme.textMuted, marginBottom: 12 }]}>현장명 없이 등록돼요</Text>
+              ) : (
+                <TextField variant="line" placeholder="현장명 (예: 송도 / 학익)" value={title} onChangeText={setTitle} style={{ marginBottom: 10 }} />
+              )}
+              {!isDayOff && titleSuggestions.length > 0 && (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled style={{ marginBottom: 12 }}>
                   <View style={styles.chipRow}>
                     {titleSuggestions.map((s) => (
@@ -309,82 +316,88 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
                 <Text style={{ fontSize: 15, color: theme.text, fontWeight: '600' }}>{workDate === todayLocal() ? `오늘 (${workDate.slice(5).replace('-', '/')})` : workDate}</Text>
               </Pressable>
 
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={styles.chipRow}>
-                  {PAY_STATUS_OPTIONS.map((o) => {
-                    const active = o.value === payStatus;
-                    return (
-                      <Pressable
-                        key={o.value}
-                        onPress={() => setPayStatus(o.value)}
-                        style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.bg }]}
-                      >
-                        <Text style={{ fontSize: 13, fontWeight: '700', color: active ? theme.brand : theme.text }}>{o.label}</Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              </ScrollView>
-            </Section>
-
-            <Section icon={<IconClock color={theme.brand} />} title="근무 시간" theme={theme}>
-              <View style={styles.row2}>
-                <Pressable onPress={() => setStartPickerVisible(true)} style={[styles.box, { backgroundColor: theme.bg, flex: 1 }]}>
-                  <Text numberOfLines={1} style={{ fontSize: 15, color: startTime ? theme.text : theme.textMuted, fontWeight: '600' }}>{startTime || '시작 시간'}</Text>
-                </Pressable>
-                <Pressable onPress={() => setEndPickerVisible(true)} style={[styles.box, { backgroundColor: theme.bg, flex: 1 }]}>
-                  <Text numberOfLines={1} style={{ fontSize: 15, color: endTime ? theme.text : theme.textMuted, fontWeight: '600' }}>{endTime || '종료 시간'}</Text>
-                </Pressable>
-              </View>
-              {startPickerVisible && (
-                <DateTimePicker
-                  value={startTime ? timeStringToDate(startTime) : new Date()}
-                  mode="time"
-                  is24Hour
-                  display="default"
-                  onChange={(event, selectedDate) => {
-                    setStartPickerVisible(false);
-                    if (event.type === 'set' && selectedDate) setStartTime(dateToTimeString(selectedDate));
-                  }}
-                />
+              {!isDayOff && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View style={styles.chipRow}>
+                    {PAY_STATUS_OPTIONS.map((o) => {
+                      const active = o.value === payStatus;
+                      return (
+                        <Pressable
+                          key={o.value}
+                          onPress={() => setPayStatus(o.value)}
+                          style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.bg }]}
+                        >
+                          <Text style={{ fontSize: 13, fontWeight: '700', color: active ? theme.brand : theme.text }}>{o.label}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </ScrollView>
               )}
-              {endPickerVisible && (
-                <DateTimePicker
-                  value={endTime ? timeStringToDate(endTime) : new Date()}
-                  mode="time"
-                  is24Hour
-                  display="default"
-                  onChange={(event, selectedDate) => {
-                    setEndPickerVisible(false);
-                    if (event.type === 'set' && selectedDate) setEndTime(dateToTimeString(selectedDate));
-                  }}
-                />
-              )}
-              <TextField variant="box" placeholder="휴게시간 (미지정 시 자동)" value={breakHours} onChangeText={setBreakHours} keyboardType="numeric" suffix="시간" />
             </Section>
 
-            <Section icon={<IconWallet color={theme.brand} />} title="급여" theme={theme}>
-              <View style={styles.row2}>
-                <TextField variant="box" placeholder="일급여 (미지정 시 자동)" value={dailyWage} onChangeText={setDailyWage} keyboardType="numeric" suffix="원" style={{ flex: 1 }} />
-                <TextField variant="box" placeholder="실수령 직접입력 (선택)" value={amountOverride} onChangeText={setAmountOverride} keyboardType="numeric" suffix="원" style={{ flex: 1 }} />
-              </View>
-
-              <View style={styles.switchRow}>
-                <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>원천징수(3.3%) 적용</Text>
-                <Switch checked={withholdingApplied} onCheckedChange={setWithholdingApplied} />
-              </View>
-
-              <View style={[styles.switchRow, { marginBottom: 0 }]}>
-                <View>
-                  <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>반액 지급</Text>
-                  <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 2 }}>사정으로 일당의 절반만 받는 경우</Text>
+            {!isDayOff && (
+              <Section icon={<IconClock color={theme.brand} />} title="근무 시간" theme={theme}>
+                <View style={styles.row2}>
+                  <Pressable onPress={() => setStartPickerVisible(true)} style={[styles.box, { backgroundColor: theme.bg, flex: 1 }]}>
+                    <Text numberOfLines={1} style={{ fontSize: 15, color: startTime ? theme.text : theme.textMuted, fontWeight: '600' }}>{startTime || '시작 시간'}</Text>
+                  </Pressable>
+                  <Pressable onPress={() => setEndPickerVisible(true)} style={[styles.box, { backgroundColor: theme.bg, flex: 1 }]}>
+                    <Text numberOfLines={1} style={{ fontSize: 15, color: endTime ? theme.text : theme.textMuted, fontWeight: '600' }}>{endTime || '종료 시간'}</Text>
+                  </Pressable>
                 </View>
-                <Switch checked={halfPay} onCheckedChange={setHalfPay} />
-              </View>
-            </Section>
+                {startPickerVisible && (
+                  <DateTimePicker
+                    value={startTime ? timeStringToDate(startTime) : new Date()}
+                    mode="time"
+                    is24Hour
+                    display="default"
+                    onChange={(event, selectedDate) => {
+                      setStartPickerVisible(false);
+                      if (event.type === 'set' && selectedDate) setStartTime(dateToTimeString(selectedDate));
+                    }}
+                  />
+                )}
+                {endPickerVisible && (
+                  <DateTimePicker
+                    value={endTime ? timeStringToDate(endTime) : new Date()}
+                    mode="time"
+                    is24Hour
+                    display="default"
+                    onChange={(event, selectedDate) => {
+                      setEndPickerVisible(false);
+                      if (event.type === 'set' && selectedDate) setEndTime(dateToTimeString(selectedDate));
+                    }}
+                  />
+                )}
+                <TextField variant="box" placeholder="휴게시간 (미지정 시 자동)" value={breakHours} onChangeText={setBreakHours} keyboardType="numeric" suffix="시간" />
+              </Section>
+            )}
+
+            {!isDayOff && (
+              <Section icon={<IconWallet color={theme.brand} />} title="급여" theme={theme}>
+                <View style={styles.row2}>
+                  <TextField variant="box" placeholder="일급여 (미지정 시 자동)" value={dailyWage} onChangeText={setDailyWage} keyboardType="numeric" suffix="원" style={{ flex: 1 }} />
+                  <TextField variant="box" placeholder="실수령 직접입력 (선택)" value={amountOverride} onChangeText={setAmountOverride} keyboardType="numeric" suffix="원" style={{ flex: 1 }} />
+                </View>
+
+                <View style={styles.switchRow}>
+                  <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>원천징수(3.3%) 적용</Text>
+                  <Switch checked={withholdingApplied} onCheckedChange={setWithholdingApplied} />
+                </View>
+
+                <View style={[styles.switchRow, { marginBottom: 0 }]}>
+                  <View>
+                    <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>반액 지급</Text>
+                    <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 2 }}>사정으로 일당의 절반만 받는 경우</Text>
+                  </View>
+                  <Switch checked={halfPay} onCheckedChange={setHalfPay} />
+                </View>
+              </Section>
+            )}
 
             <Section icon={<IconNotes color={theme.brand} />} title="추가 정보" theme={theme}>
-              {jobChoices.length > 0 && (
+              {!isDayOff && jobChoices.length > 0 && (
                 <View style={{ marginBottom: 12 }}>
                   <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>업무 (다중 선택)</Text>
                   <View style={styles.chipRow}>
@@ -404,35 +417,38 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
                 </View>
               )}
 
-              <TextField variant="box" placeholder="주소 (미지정 시 자동)" value={address} onChangeText={setAddress} style={{ marginBottom: 12 }} />
+              {!isDayOff && <TextField variant="box" placeholder="주소 (미지정 시 자동)" value={address} onChangeText={setAddress} style={{ marginBottom: 12 }} />}
 
-              <View style={{ marginBottom: 12 }}>
-                <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>사진 ({photos.length}/5)</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled>
-                  <View style={styles.photoRow}>
-                    {photos.map((p) => (
-                      <View key={p.filename} style={styles.photoThumbWrap}>
-                        <Pressable onPress={() => setPreviewPhoto(p)}>
-                          <Image source={{ uri: p.url }} style={styles.photoThumb} />
+              {!isDayOff && (
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>사진 ({photos.length}/5)</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled>
+                    <View style={styles.photoRow}>
+                      {photos.map((p) => (
+                        <View key={p.filename} style={styles.photoThumbWrap}>
+                          <Pressable onPress={() => setPreviewPhoto(p)}>
+                            <Image source={{ uri: p.url }} style={styles.photoThumb} />
+                          </Pressable>
+                          <Pressable style={styles.photoRemove} onPress={() => removePhoto(p.filename)} hitSlop={6}>
+                            <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>×</Text>
+                          </Pressable>
+                        </View>
+                      ))}
+                      {photos.length < 5 && (
+                        <Pressable style={[styles.photoAdd, { borderColor: theme.border }]} onPress={handlePickPhotos} disabled={uploadingPhoto}>
+                          {uploadingPhoto ? <ActivityIndicator size="small" color={theme.brand} /> : <Text style={{ color: theme.textMuted, fontSize: 20 }}>+</Text>}
                         </Pressable>
-                        <Pressable style={styles.photoRemove} onPress={() => removePhoto(p.filename)} hitSlop={6}>
-                          <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>×</Text>
-                        </Pressable>
-                      </View>
-                    ))}
-                    {photos.length < 5 && (
-                      <Pressable style={[styles.photoAdd, { borderColor: theme.border }]} onPress={handlePickPhotos} disabled={uploadingPhoto}>
-                        {uploadingPhoto ? <ActivityIndicator size="small" color={theme.brand} /> : <Text style={{ color: theme.textMuted, fontSize: 20 }}>+</Text>}
-                      </Pressable>
-                    )}
-                  </View>
-                </ScrollView>
-              </View>
+                      )}
+                    </View>
+                  </ScrollView>
+                </View>
+              )}
 
+              {isDayOff && <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>사유 (선택)</Text>}
               <TextInput
                 ref={memoRef}
                 style={[styles.memoInput, { color: theme.text, backgroundColor: theme.bg }]}
-                placeholder="메모 (선택)"
+                placeholder={isDayOff ? '예: 병원 진료, 개인 일정' : '메모 (선택)'}
                 placeholderTextColor={theme.textMuted}
                 multiline
                 numberOfLines={3}
@@ -497,6 +513,7 @@ const styles = StyleSheet.create({
   memoInput: { minHeight: 72, borderRadius: 10, paddingHorizontal: 14, paddingTop: 10, fontSize: 14, textAlignVertical: 'top' },
   deleteRow: { alignItems: 'center', paddingVertical: 12 },
   fieldLabel: { fontSize: 12, fontWeight: '700', marginBottom: 8 },
+  hint: { fontSize: 12.5 },
   photoRow: { flexDirection: 'row', gap: 10 },
   photoThumbWrap: { position: 'relative' },
   photoThumb: { width: 64, height: 64, borderRadius: 10 },

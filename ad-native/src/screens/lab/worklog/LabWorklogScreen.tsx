@@ -326,6 +326,16 @@ export default function LabWorklogScreen({ navigation, route }: Props) {
 
           {view === '캘린더' ? (
             <View style={styles.sectionPad}>
+              <View style={styles.legendRow}>
+                <View style={styles.legendItem}>
+                  <View style={[styles.dayDot, { backgroundColor: theme.brand, marginTop: 0 }]} />
+                  <Text style={{ color: theme.textMuted, fontSize: 11 }}>근무</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.dayDot, { backgroundColor: theme.textMuted, marginTop: 0 }]} />
+                  <Text style={{ color: theme.textMuted, fontSize: 11 }}>휴무</Text>
+                </View>
+              </View>
               <View style={[styles.calCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <View style={styles.weekRow}>
                   {WEEKDAYS.map((w, i) => (
@@ -339,6 +349,7 @@ export default function LabWorklogScreen({ navigation, route }: Props) {
                     if (day == null) return <View key={i} style={styles.cell} />;
                     const dateStr = toLocalDateString(new Date(ym.year, ym.month - 1, day));
                     const dayRecords = recordsByDate.get(dateStr) ?? [];
+                    const dayAllOff = dayRecords.length > 0 && dayRecords.every((r) => r.payStatus === 'DAYOFF');
                     const dayNet = dayRecords.reduce((sum, r) => sum + r.effectiveAmount, 0);
                     const selected = dateStr === calendarSelectedDate;
                     const isToday = dateStr === today;
@@ -357,7 +368,9 @@ export default function LabWorklogScreen({ navigation, route }: Props) {
                           <Text style={{ color: selected ? '#fff' : dateColor, fontSize: 13, fontWeight: isToday || selected ? '700' : '500' }}>{day}</Text>
                         </View>
                         <View style={styles.dayIndicator}>
-                          {dayRecords.length > 0 && <View style={[styles.dayDot, { backgroundColor: selected ? '#fff' : theme.brand }]} />}
+                          {dayRecords.length > 0 && (
+                            <View style={[styles.dayDot, { backgroundColor: selected ? '#fff' : dayAllOff ? theme.textMuted : theme.brand }]} />
+                          )}
                           {dayNet > 0 && (
                             <Text numberOfLines={1} style={{ color: selected ? '#fff' : theme.textMuted, fontSize: 8.5, marginTop: 1 }}>
                               {Math.round(dayNet / 10000)}만
@@ -442,6 +455,8 @@ const styles = StyleSheet.create({
   listCard: { borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
   dateBox: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   checkCircle: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center', marginRight: 4 },
+  legendRow: { flexDirection: 'row', gap: 14, marginBottom: 8 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   calCard: { borderRadius: 14, borderWidth: 1, padding: 12 },
   weekRow: { flexDirection: 'row', marginBottom: 4 },
   weekLabel: { flex: 1, textAlign: 'center', fontSize: 11, fontWeight: '600' },

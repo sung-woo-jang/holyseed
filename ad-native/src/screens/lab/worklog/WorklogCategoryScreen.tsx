@@ -17,6 +17,7 @@ import { timeStringToDate, dateToTimeString } from '../../../lib/date';
 
 interface EditState {
   name: string;
+  isDayOff: boolean;
   defaultDailyWage: string;
   defaultWithholdingApplied: boolean;
   overtimeThresholdHours: string;
@@ -30,6 +31,7 @@ interface EditState {
 function toEditState(c: WorklogCategoryOption): EditState {
   return {
     name: c.name,
+    isDayOff: c.isDayOff,
     defaultDailyWage: c.defaultDailyWage != null ? String(c.defaultDailyWage) : '',
     defaultWithholdingApplied: c.defaultWithholdingApplied,
     overtimeThresholdHours: String(c.overtimeThresholdHours),
@@ -93,6 +95,7 @@ export default function WorklogCategoryScreen() {
       await labWorklogApi.updateCategoryOption({
         id,
         name: editState.name.trim(),
+        isDayOff: editState.isDayOff,
         defaultDailyWage: editState.defaultDailyWage ? Number(editState.defaultDailyWage) : null,
         defaultWithholdingApplied: editState.defaultWithholdingApplied,
         overtimeThresholdHours: editState.overtimeThresholdHours ? Number(editState.overtimeThresholdHours) : undefined,
@@ -228,6 +231,15 @@ export default function WorklogCategoryScreen() {
             <View style={styles.editArea}>
               <TextField variant="box" placeholder="분류 이름" value={editState.name} onChangeText={(v) => setEditState({ ...editState, name: v })} style={{ marginBottom: 12 }} />
 
+              <View style={[styles.switchRow, { marginBottom: 12 }]}>
+                <View style={{ flex: 1, marginRight: 10 }}>
+                  <Text style={{ color: theme.text, fontSize: 13.5, fontWeight: '600' }}>이 분류는 휴무용이에요</Text>
+                  <Text style={{ color: theme.textMuted, fontSize: 11.5, marginTop: 2 }}>켜면 이 분류를 고를 때 근무 기록 대신 휴무로 등록돼요</Text>
+                </View>
+                <Switch checked={editState.isDayOff} onCheckedChange={(v) => setEditState({ ...editState, isDayOff: v })} />
+              </View>
+
+              {!editState.isDayOff && (
               <View style={[styles.section, { backgroundColor: theme.bg }]}>
                 <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>기본값</Text>
                 <TextField
@@ -318,6 +330,7 @@ export default function WorklogCategoryScreen() {
                   onChangeText={(v) => setEditState({ ...editState, defaultAddress: v })}
                 />
               </View>
+              )}
 
               <View style={[styles.section, { backgroundColor: theme.bg, borderWidth: 1, borderColor: theme.border, marginTop: 10 }]}>
                 <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>업무 목록</Text>

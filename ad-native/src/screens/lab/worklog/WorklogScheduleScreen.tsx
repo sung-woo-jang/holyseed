@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import TextField from '../../../components/ui/TextField';
 import Button from '../../../components/ui/Button';
+import Segmented from '../../../components/common/Segmented';
 import AppToast from '../../../components/common/AppToast';
 import { labWorklogApi } from '../../../api/lab-worklog';
 import { useTheme } from '../../../lib/theme';
@@ -24,7 +25,9 @@ export default function WorklogScheduleScreen({ navigation }: Props) {
     const d = new Date();
     return { year: d.getFullYear(), month: d.getMonth() + 1 };
   });
+  const [mode, setMode] = useState<'SCHEDULED' | 'DAYOFF'>('SCHEDULED');
   const [title, setTitle] = useState('');
+  const [memo, setMemo] = useState('');
   const [category, setCategory] = useState('');
   const [dailyWage, setDailyWage] = useState('');
   const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set());
@@ -33,7 +36,13 @@ export default function WorklogScheduleScreen({ navigation }: Props) {
   const [toast, setToast] = useState('');
 
   const categoriesQ = useQuery({ queryKey: ['lab-worklog-categories'], queryFn: labWorklogApi.categoryOptions });
-  const categories = [...(categoriesQ.data ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
+  const allCategories = [...(categoriesQ.data ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
+  const categories = allCategories.filter((c) => (mode === 'DAYOFF' ? c.isDayOff : !c.isDayOff));
+
+  function handleChangeMode(next: 'SCHEDULED' | 'DAYOFF') {
+    setMode(next);
+    setCategory('');
+  }
 
   const worklogQ = useQuery({ queryKey: ['lab-worklog', ym.year, ym.month], queryFn: () => labWorklogApi.search(ym.year, ym.month) });
   const existingDates = new Set((worklogQ.data?.records ?? []).map((r) => r.workDate));
@@ -56,7 +65,7 @@ export default function WorklogScheduleScreen({ navigation }: Props) {
     });
   }
 
-  const isValid = title.trim().length > 0 && !!category && selectedDates.size > 0;
+  const isValid = !!category && selectedDates.size > 0 && (mode === 'DAYOFF' || title.trim().length > 0);
 
   async function handleRegister() {
     if (!isValid) return;
@@ -66,16 +75,17 @@ export default function WorklogScheduleScreen({ navigation }: Props) {
       await Promise.all(
         [...selectedDates].map((workDate) =>
           labWorklogApi.create({
-            title: title.trim(),
+            title: mode === 'DAYOFF' ? memo.trim() || category : title.trim(),
             workDate,
             category,
-            payStatus: 'SCHEDULED',
-            dailyWage: dailyWage ? Number(dailyWage) : undefined,
+            payStatus: mode,
+            dailyWage: mode === 'SCHEDULED' && dailyWage ? Number(dailyWage) : undefined,
+            memo: mode === 'DAYOFF' ? memo.trim() || undefined : undefined,
           }),
         ),
       );
       await qc.invalidateQueries({ queryKey: ['lab-worklog', ym.year, ym.month] });
-      setToast(`${selectedDates.size}일을 근무예정으로 등록했어요`);
+      setToast(`${selectedDates.size}일을 ${mode === 'DAYOFF' ? '휴무' : '근무예정'}으로 등록했어요`);
       navigation.goBack();
     } catch (e) {
       setError(getErrorMessage(e, '등록에 실패했어요'));
@@ -94,13 +104,24 @@ export default function WorklogScheduleScreen({ navigation }: Props) {
     <SafeAreaView edges={['bottom']} style={[styles.root, { backgroundColor: theme.bg }]}>
       <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={{ color: theme.textMuted, fontSize: 12, marginBottom: 12 }}>
-          현장명·분류를 한 번 입력하고, 아래 달력에서 근무 예정인 날짜들을 체크해서 한번에 등록해요. 이미 기록이 있는 날짜는 선택할 수 없어요.
+        <Segmented
+          options={['근무예정', '휴무']}
+          value={mode === 'DAYOFF' ? '휴무' : '근무예정'}
+          onChange={(v) => handleChangeMode(v === '휴무' ? 'DAYOFF' : 'SCHEDULED')}
+          alignment="fixed"
+        />
+
+        <Text style={{ color: theme.textMuted, fontSize: 12, marginTop: 12, marginBottom: 12 }}>
+          {mode === 'DAYOFF'
+            ? '분류를 고르고, 아래 달력에서 쉬는 날짜들을 체크해서 한번에 등록해요. 이미 기록이 있는 날짜는 선택할 수 없어요.'
+            : '현장명·분류를 한 번 입력하고, 아래 달력에서 근무 예정인 날짜들을 체크해서 한번에 등록해요. 이미 기록이 있는 날짜는 선택할 수 없어요.'}
         </Text>
 
-        <TextField variant="line" placeholder="현장명 (예: 송도 / 학익)" value={title} onChangeText={setTitle} style={{ marginBottom: 12 }} />
+        {mode === 'SCHEDULED' && (
+          <TextField variant="line" placeholder="현장명 (예: 송도 / 학익)" value={title} onChangeText={setTitle} style={{ marginBottom: 12 }} />
+        )}
 
-        {categories.length > 0 && (
+        {categories.length > 0 ? (
           <View style={styles.chipRow}>
             {categories.map((c) => {
               const active = c.name === category;
@@ -115,17 +136,31 @@ export default function WorklogScheduleScreen({ navigation }: Props) {
               );
             })}
           </View>
+        ) : (
+          mode === 'DAYOFF' && (
+            <Text style={{ color: theme.textMuted, fontSize: 12, marginBottom: 16 }}>휴무용 분류가 없어요 — 분류 관리에서 먼저 만들어 주세요</Text>
+          )
         )}
 
-        <TextField
-          variant="box"
-          placeholder="일급여 (미지정 시 자동)"
-          value={dailyWage}
-          onChangeText={setDailyWage}
-          keyboardType="numeric"
-          suffix="원"
-          style={{ marginBottom: 16 }}
-        />
+        {mode === 'SCHEDULED' ? (
+          <TextField
+            variant="box"
+            placeholder="일급여 (미지정 시 자동)"
+            value={dailyWage}
+            onChangeText={setDailyWage}
+            keyboardType="numeric"
+            suffix="원"
+            style={{ marginBottom: 16 }}
+          />
+        ) : (
+          <TextField
+            variant="box"
+            placeholder="사유 (선택, 공통 적용)"
+            value={memo}
+            onChangeText={setMemo}
+            style={{ marginBottom: 16 }}
+          />
+        )}
 
         <View style={[styles.calCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <View style={styles.monthNav}>
@@ -180,7 +215,7 @@ export default function WorklogScheduleScreen({ navigation }: Props) {
 
         <View style={{ marginTop: 16 }}>
           <Button display="full" size="big" type="primary" disabled={!isValid} loading={saving} onPress={handleRegister}>
-            선택한 {selectedDates.size}일 근무예정으로 등록
+            선택한 {selectedDates.size}일 {mode === 'DAYOFF' ? '휴무' : '근무예정'}으로 등록
           </Button>
         </View>
       </ScrollView>

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -140,6 +140,29 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
   const jobChoices = (jobOptionsQ.data ?? []).filter((j) => j.category === category);
   const titleOptionsQ = useQuery({ queryKey: ['lab-worklog-title-options'], queryFn: labWorklogApi.titleOptions, staleTime: 60_000 });
   const titleSuggestions = (titleOptionsQ.data ?? []).filter((t) => t.category === category).slice(0, 12);
+
+  const [pickerYm, setPickerYm] = useState(() => {
+    const d = new Date();
+    return { year: d.getFullYear(), month: d.getMonth() + 1 };
+  });
+  const pickerRecordsQ = useQuery({
+    queryKey: ['lab-worklog', pickerYm.year, pickerYm.month],
+    queryFn: () => labWorklogApi.search(pickerYm.year, pickerYm.month),
+    staleTime: 60_000,
+  });
+  const markedDates = useMemo(() => {
+    const byDate = new Map<string, PayStatus[]>();
+    (pickerRecordsQ.data?.records ?? []).forEach((r) => {
+      const list = byDate.get(r.workDate) ?? [];
+      list.push(r.payStatus);
+      byDate.set(r.workDate, list);
+    });
+    const map: Record<string, 'work' | 'dayoff'> = {};
+    byDate.forEach((statuses, date) => {
+      map[date] = statuses.every((s) => s === 'DAYOFF') ? 'dayoff' : 'work';
+    });
+    return map;
+  }, [pickerRecordsQ.data]);
 
   useEffect(() => {
     if (record) {
@@ -474,7 +497,14 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
         </View>
       </KeyboardAvoidingView>
 
-      <DatePicker visible={datePickerVisible} value={workDate} onSelect={setWorkDate} onClose={() => setDatePickerVisible(false)} />
+      <DatePicker
+        visible={datePickerVisible}
+        value={workDate}
+        onSelect={setWorkDate}
+        onClose={() => setDatePickerVisible(false)}
+        markedDates={markedDates}
+        onMonthChange={(year, month) => setPickerYm({ year, month })}
+      />
 
       <ConfirmDialog
         visible={deleteConfirm}

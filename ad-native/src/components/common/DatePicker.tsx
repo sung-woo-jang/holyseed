@@ -12,12 +12,16 @@ interface DatePickerProps {
   onClose: () => void;
   /** 이후 날짜 선택 불가 (기본: 제한 없음) */
   maxDate?: string;
+  /** 날짜(YYYY-MM-DD)별 표시 점 — 'work'는 파란색, 'dayoff'는 회색 */
+  markedDates?: Record<string, 'work' | 'dayoff'>;
+  /** 캘린더에 표시 중인 연/월이 바뀔 때(열릴 때 포함) 호출 — 그 달 markedDates를 불러오는 용도 */
+  onMonthChange?: (year: number, month: number) => void;
 }
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 /** 앱 전용 캘린더 드로어 — 다른 선택 시트들과 여백·디자인을 동일하게 맞추기 위해 네이티브 다이얼로그 대신 자체 구현 */
-export default function DatePicker({ visible, value, onSelect, onClose, maxDate }: DatePickerProps) {
+export default function DatePicker({ visible, value, onSelect, onClose, maxDate, markedDates, onMonthChange }: DatePickerProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [viewYear, setViewYear] = useState(() => (value ? new Date(value) : new Date()).getFullYear());
@@ -29,6 +33,11 @@ export default function DatePicker({ visible, value, onSelect, onClose, maxDate 
     setViewYear(d.getFullYear());
     setViewMonth(d.getMonth());
   }, [visible, value]);
+
+  useEffect(() => {
+    if (visible) onMonthChange?.(viewYear, viewMonth + 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, viewYear, viewMonth]);
 
   if (!visible) return null;
 
@@ -82,6 +91,7 @@ export default function DatePicker({ visible, value, onSelect, onClose, maxDate 
               const selected = dateStr === value;
               const isToday = dateStr === today;
               const disabled = isDisabled(day);
+              const mark = markedDates?.[dateStr];
               return (
                 <Pressable
                   key={i}
@@ -104,7 +114,11 @@ export default function DatePicker({ visible, value, onSelect, onClose, maxDate 
                       {day}
                     </Text>
                   </View>
-                  {isToday && !selected && <View style={[styles.todayDot, { backgroundColor: theme.brand }]} />}
+                  {mark ? (
+                    <View style={[styles.todayDot, { backgroundColor: selected ? '#fff' : mark === 'dayoff' ? theme.textMuted : theme.brand }]} />
+                  ) : (
+                    isToday && !selected && <View style={[styles.todayDot, { backgroundColor: theme.brand }]} />
+                  )}
                 </Pressable>
               );
             })}

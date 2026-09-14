@@ -1,12 +1,11 @@
 /**
- * 무한매수법 V4.0 일반모드 (SOXL 40분할) — 소수점 금액기준 판단 로직.
- * LOC 에뮬레이션: 장마감 30분 전 현재가로 LOC 체결 조건을 시뮬레이션한다.
+ * 무한매수법 V4.0 일반모드 (SOXL 20분할, 온주 LOC) 판단 로직.
  *
  * 규칙 (방법론 원형):
- * - 별% = (20 - T)%, 별지점 = 평단 × (1 + 별%)
- * - 1회매수금 = 잔금 / (40 - T)
- * - 전반전 (0 < T < 20): P < 평단 → 전액 매수(T+1) / 평단 ≤ P < 별지점 → 절반(T+0.5) / P ≥ 별지점 → 매수 없음
- * - 후반전 (20 ≤ T < 40): P < 별지점 → 전액 매수(T+1)
+ * - 별% = (20 - (40/SPLITS)×T)%, 별지점 = 평단 × (1 + 별%)
+ * - 1회매수금 = 잔금 / (SPLITS - T)
+ * - 전반전 (0 < T < SPLITS/2): P < 평단 → 전액 매수(T+1) / 평단 ≤ P < 별지점 → 절반(T+0.5) / P ≥ 별지점 → 매수 없음
+ * - 후반전 (SPLITS/2 ≤ T < SPLITS): P < 별지점 → 전액 매수(T+1)
  * - 매도 (전/후반 공통): P ≥ 별지점 → 보유/4 쿼터매도(T×0.75) / P ≥ 평단×1.20 → 잔량 전량 매도
  * - T = 0: 사이클 시작, 1회매수금 전액 매수
  * - 매도·매수 동시 충족 시 매도 우선
@@ -49,9 +48,9 @@ export interface Indicators {
   oneBuyAmount: number // 1회매수금
 }
 
-const SOXL_STAR_BASE = 20 // 별% = (20 - T)%
-const FULL_SELL_PCT = 0.2 // SOXL 20% 지정가 대체
-const SPLITS = 40
+const SOXL_STAR_BASE = 20
+const FULL_SELL_PCT = 0.2
+const SPLITS = 20
 
 export function round2(n: number): number {
   return Math.round(n * 100) / 100
@@ -61,8 +60,12 @@ export function round6(n: number): number {
   return Math.round(n * 1e6) / 1e6
 }
 
+export function round4(n: number): number {
+  return Math.round(n * 1e4) / 1e4
+}
+
 export function computeIndicators(s: ImuState): Indicators {
-  const starPct = (SOXL_STAR_BASE - s.T) / 100
+  const starPct = (SOXL_STAR_BASE - (40 / SPLITS) * s.T) / 100
   return {
     starPct,
     starPrice: round2(s.avgPrice * (1 + starPct)),
@@ -71,15 +74,13 @@ export function computeIndicators(s: ImuState): Indicators {
   }
 }
 
-/** 장마감 30분 전 가격 P 기준 주문 결정 */
 export function decide(s: ImuState, price: number): Decision {
-  if (s.T > 39) {
-    return { action: 'NONE', reason: `T=${s.T} > 39: 리버스모드 대상 — 자동화 미지원, 수동 확인 필요` }
+  if (s.T > SPLITS - 1) {
+    return { action: 'NONE', reason: `T=${s.T} > ${SPLITS - 1}: 리버스모드 대상 — 자동화 미지원, 수동 확인 필요` }
   }
 
   const ind = computeIndicators(s)
 
-  // 사이클 시작
   if (s.T === 0 || s.quantity <= 0) {
     if (s.cash < ind.oneBuyAmount) {
       return { action: 'NONE', reason: `잔금 부족: $${s.cash} < 1회매수금 $${ind.oneBuyAmount}` }
@@ -87,7 +88,6 @@ export function decide(s: ImuState, price: number): Decision {
     return { action: 'BUY', amountUsd: ind.oneBuyAmount, kind: '사이클시작', tAfter: 1 }
   }
 
-  // 매도 우선
   if (price >= ind.fullSellPrice) {
     return { action: 'SELL', quantity: round6(s.quantity), kind: '전량매도', tAfter: 0 }
   }
@@ -96,16 +96,13 @@ export function decide(s: ImuState, price: number): Decision {
     return { action: 'SELL', quantity: q, kind: '쿼터매도', tAfter: round4(s.T * 0.75) }
   }
 
-  // 매수
-  const firstHalf = s.T < 20
+  const firstHalf = s.T < SPLITS / 2
   if (firstHalf) {
     if (price < s.avgPrice) {
       return buyOrSkip(s, ind.oneBuyAmount, '전액', s.T + 1)
     }
-    // 평단 ≤ P < 별지점
     return buyOrSkip(s, round2(ind.oneBuyAmount / 2), '절반', s.T + 0.5)
   }
-  // 후반전: P < 별지점 (별지점 이상은 위 매도 분기에서 걸러짐)
   return buyOrSkip(s, ind.oneBuyAmount, '전액', s.T + 1)
 }
 
@@ -119,37 +116,60 @@ function buyOrSkip(s: ImuState, amount: number, kind: '전액' | '절반', tAfte
   return { action: 'BUY', amountUsd: amount, kind, tAfter: round4(tAfter) }
 }
 
-function round4(n: number): number {
-  return Math.round(n * 1e4) / 1e4
+export interface BuyLocLeg {
+  price: number
+  quantity: number
+  halfStep: boolean
 }
 
-/** 체결 결과를 상태에 반영 */
-export function applyFill(
-  s: ImuState,
-  d: Decision,
-  fill: { quantity: number; price: number; amount: number }
-): ImuState {
+export function computeBuyLocLegs(s: ImuState): BuyLocLeg[] {
+  if (s.T > SPLITS - 1) return []
+  if (s.T === 0 || s.quantity <= 0) return []
+
+  const ind = computeIndicators(s)
+  const buyStarPrice = round2(ind.starPrice - 0.01)
+  const firstHalf = s.T < SPLITS / 2
+  const raw = firstHalf
+    ? [
+        { price: buyStarPrice, amount: round2(ind.oneBuyAmount / 2), halfStep: true },
+        { price: s.avgPrice, amount: round2(ind.oneBuyAmount / 2), halfStep: true },
+      ]
+    : [{ price: buyStarPrice, amount: ind.oneBuyAmount, halfStep: false }]
+
+  return raw.filter((r) => r.amount >= 1).map((r) => ({ price: r.price, quantity: Math.max(Math.floor(r.amount / r.price), 1), halfStep: r.halfStep }))
+}
+
+export interface SellLocLeg {
+  price: number
+  quantity: number
+  kind: '쿼터매도' | '전량매도'
+}
+
+export function computeSellLocLegs(s: ImuState): SellLocLeg[] {
+  if (s.T > SPLITS - 1) return []
+  if (s.quantity <= 0) return []
+
+  const ind = computeIndicators(s)
+  const wholeQty = Math.floor(s.quantity)
+  const quarterQty = Math.floor(s.quantity / 4)
+  const restQty = wholeQty - quarterQty
+
+  const legs: SellLocLeg[] = []
+  if (quarterQty > 0) legs.push({ price: ind.starPrice, quantity: quarterQty, kind: '쿼터매도' })
+  if (restQty > 0) legs.push({ price: ind.fullSellPrice, quantity: restQty, kind: '전량매도' })
+  return legs
+}
+
+export function applyFill(s: ImuState, d: Decision, fill: { quantity: number; price: number; amount: number }): ImuState {
   if (d.action === 'BUY') {
     const newQty = round6(s.quantity + fill.quantity)
     const newAvg = newQty > 0 ? round4((s.avgPrice * s.quantity + fill.price * fill.quantity) / newQty) : s.avgPrice
-    return {
-      ...s,
-      quantity: newQty,
-      avgPrice: newAvg,
-      cash: round2(s.cash - fill.amount),
-      T: d.tAfter,
-    }
+    return { ...s, quantity: newQty, avgPrice: newAvg, cash: round2(s.cash - fill.amount), T: d.tAfter }
   }
   if (d.action === 'SELL') {
     const newQty = round6(s.quantity - fill.quantity)
     const cycleDone = newQty <= 0.000001
-    return {
-      ...s,
-      quantity: cycleDone ? 0 : newQty,
-      cash: round2(s.cash + fill.amount),
-      T: cycleDone ? 0 : d.tAfter,
-      // 평단은 매도 시 변동 없음. 사이클 종료 시 다음 시작은 수동 확인 (복리 여부).
-    }
+    return { ...s, quantity: cycleDone ? 0 : newQty, cash: round2(s.cash + fill.amount), T: cycleDone ? 0 : d.tAfter }
   }
   return s
 }

@@ -1,7 +1,7 @@
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
 /**
- * 실계좌(토스증권, 라오어+VR 공유) 일별 총자산 스냅샷 — 자산일기(ad-front) 수동 입력 참고용.
+ * 실계좌(토스증권, 라오어+VR 공유) 일별 총자산 스냅샷 — 자산일기 수동 입력 참고용.
  * 매일 06:00 KST 크론 + 수동 트리거(POST /account-snapshot/run)로 그날 값을 upsert.
  */
 @Entity('account_snapshots', { schema: 'laofus' })

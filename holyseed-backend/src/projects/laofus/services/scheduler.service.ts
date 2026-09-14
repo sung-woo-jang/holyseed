@@ -4,21 +4,22 @@ import { CronJob } from 'cron';
 import { LaofusEngineService } from './engine.service';
 
 /**
- * 무매 엔진 스케줄러 — 미국 정규장 마감 전 실행 창에 맞춰 판단·주문.
- * 매매 크론은 env로 조정 가능 (운용값은 KST 03:25/04:25 = EDT/EST 마감 95분 전 이중 등록 —
- * 토스 앱 소수점 주문가능시간 22:30~04:00(EDT)/23:30~05:00(EST) 대비 여유 확보):
- * - LAOFUS_RUN_CRON_1 (기본 '30 4 * * 2-6')
- * - LAOFUS_RUN_CRON_2 (기본 '30 5 * * 2-6')
- * 창 검증 폭은 LAOFUS_WINDOW_MIN/MAX (engine.service 참조) — 크론을 앞당기면 함께 조정.
+ * 무매 엔진 스케줄러.
  *
- * 회수 크론(개장 10분 후, 22:40/23:40)은 고정 — 소수점 주문 개장 배치 체결 회수용.
+ * 20분할 온주 LOC 전환(2026-09) 이후 매수·매도 둘 다 engine_state만으로 계산되는 스탠딩 LOC라
+ * 현재가 관찰이 필요 없다 — 그래서 하루 한 번 `engine.run()`을 부르는 크론(LAOFUS_LEGS_CRON,
+ * 기본 KST 09:00, 월~금) 하나면 충분하다. 개장 시각(EDT/EST)과도 무관해서 이중 등록도 필요 없음.
+ * 오늘이 휴장일이거나 이미 오늘 접수했으면(lastBuyDecisionUsDate/lastSellDecisionUsDate) 자동 스킵.
  *
- * 장중 쿼터매도/전량매도 즉시 감시(LAOFUS_SELL_MONITOR_CRON, 기본 5분 주기) — 정규장 시간에만
- * 동작하며, EOD 판단과 lastDecisionUsDate를 공유해 하루 1회로 제한(engine.service.monitorSell 참조).
- * LAOFUS_SELL_MONITOR=false 로 이 감시만 독립적으로 끌 수 있음(전체는 LAOFUS_SCHEDULER=false).
- * LAOFUS_SELL_MONITOR_LIVE — 신규 기능이라 EOD(LAOFUS_LIVE)와 별도로 dry-run 검증 기간을 둘 수 있게
- * 분리된 실주문 스위치(미설정 시 LAOFUS_LIVE를 그대로 따름). 'false'로 두면 EOD는 라이브인 채로
- * 이 감시만 로그만 남기고(주문 미실행) 지켜볼 수 있다.
+ * 요일 범위는 반드시 월~금(1-5)이어야 한다 — 토스 market-calendar API의 today.date는 KST 날짜
+ * 그대로가 그날의 미국 정규장 세션을 가리키므로(마켓 캘린더 응답으로 직접 확인, 2026-09-14),
+ * 화~토(2-6)로 잡으면 월요일 정규장이 통째로 누락된다(2026-09-14 실제 발생 버그).
+ *
+ * (예전엔 매도가 현재가 판단이 필요해서 장중 5분 감시 + 마감 전 EOD 이중 크론이 있었는데,
+ * 방법론 원문대로 매도도 "보유량 1/4+3/4 스탠딩 LOC"로 걸 수 있다는 걸 확인하고 통째로 걷어냄
+ * — 겹치는 두 매도 leg를 더하면 정확히 100%라 오버셀 없이 매수와 완전히 대칭 구조가 됨.)
+ *
+ * 회수 크론(개장 10분 후, 22:40/23:40)은 고정 — LOC 주문 개장 배치 체결 회수용.
  *
  * env:
  * - LAOFUS_SCHEDULER=false 로 비활성 (기본 활성) — 로컬 dev와 서버 동시 가동 시 중복 방지
@@ -42,18 +43,6 @@ export class LaofusSchedulerService implements OnModuleInit {
     return process.env.LAOFUS_LIVE === 'true';
   }
 
-  private get sellMonitorEnabled(): boolean {
-    return process.env.LAOFUS_SELL_MONITOR !== 'false';
-  }
-
-  /** 미설정 시 LAOFUS_LIVE를 따름 — EOD는 라이브를 유지한 채 이 기능만 별도로 dry-run 검증 가능 */
-  private get sellMonitorLive(): boolean {
-    const override = process.env.LAOFUS_SELL_MONITOR_LIVE;
-    if (override === 'true') return true;
-    if (override === 'false') return false;
-    return this.live;
-  }
-
   /** cron 표현식 'm h * * d'에서 'HH:MM' 슬롯 라벨 추출 */
   private slotOf(cron: string): string {
     const [m, h] = cron.trim().split(/\s+/);
@@ -62,31 +51,14 @@ export class LaofusSchedulerService implements OnModuleInit {
   }
 
   onModuleInit(): void {
-    const specs = [process.env.LAOFUS_RUN_CRON_1 ?? '30 4 * * 2-6', process.env.LAOFUS_RUN_CRON_2 ?? '30 5 * * 2-6'];
-    specs.forEach((spec, i) => {
-      const name = `laofus-run-${i + 1}`;
-      const slot = this.slotOf(spec);
-      const job = new CronJob(spec, () => void this.tick(slot), null, false, 'Asia/Seoul');
-      this.registry.addCronJob(name, job);
-      job.start();
-      this.runJobs.push({ slot, name });
-      this.logger.log(`매매 크론 등록: ${name} '${spec}' (KST ${slot})`);
-    });
-
-    if (this.sellMonitorEnabled) {
-      const spec = process.env.LAOFUS_SELL_MONITOR_CRON ?? '*/5 * * * *';
-      const job = new CronJob(spec, () => void this.sellMonitorTick(), null, false, 'Asia/Seoul');
-      this.registry.addCronJob('laofus-sell-monitor', job);
-      job.start();
-      this.logger.log(`장중 매도 감시 크론 등록: 'laofus-sell-monitor' '${spec}'`);
-    } else {
-      this.logger.log('장중 매도 감시 — LAOFUS_SELL_MONITOR=false, 등록 스킵');
-    }
-  }
-
-  private async sellMonitorTick(): Promise<void> {
-    if (!this.enabled) return;
-    await this.engine.monitorSell({ live: this.sellMonitorLive });
+    const spec = process.env.LAOFUS_LEGS_CRON ?? process.env.LAOFUS_BUY_CRON_1 ?? '0 9 * * 1-5';
+    const name = 'laofus-legs-1';
+    const slot = this.slotOf(spec);
+    const job = new CronJob(spec, () => void this.tick(slot), null, false, 'Asia/Seoul');
+    this.registry.addCronJob(name, job);
+    job.start();
+    this.runJobs.push({ slot, name });
+    this.logger.log(`매수/매도 LOC 크론 등록: ${name} '${spec}' (KST ${slot})`);
   }
 
   /** 등록된 매매 크론의 다음 발화 시각 (ISO, 오름차순) — 대시보드 카운트다운용 */
@@ -99,8 +71,6 @@ export class LaofusSchedulerService implements OnModuleInit {
       .sort((a, b) => a.at.localeCompare(b.at));
   }
 
-  // 개장 직후 체결 회수 — 소수점 금액주문은 다음 세션 개장 배치로 체결되므로
-  // 개장(EDT 22:30 / EST 23:30 KST) 10분 뒤 체결분을 DB에 반영한다.
   @Cron('40 22 * * 1-5', { name: 'laofus-reconcile-edt', timeZone: 'Asia/Seoul' })
   async reconcileEdt(): Promise<void> {
     await this.reconcileTick('22:40');
@@ -133,7 +103,6 @@ export class LaofusSchedulerService implements OnModuleInit {
     await this.engine.run({ live: this.live, force: false, injectedPrice: null });
   }
 
-  // 실계좌 총자산 일별 스냅샷 — 화~토 06:00 KST(EDT/EST 마감 모두 확정된 시점). 주문이 아니라 조회이므로 LAOFUS_LIVE와 무관하게 기록
   @Cron('0 6 * * 2-6', { name: 'laofus-wealth-snapshot', timeZone: 'Asia/Seoul' })
   async wealthSnapshotTick(): Promise<void> {
     if (!this.enabled) {

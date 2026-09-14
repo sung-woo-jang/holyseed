@@ -1,0 +1,35 @@
+name: Deploy Dts
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'dts/**'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-dts
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Sync live repo to origin/master
+        run: |
+          git -C /Users/jangseong-u/project/holyseed fetch origin master
+          git -C /Users/jangseong-u/project/holyseed reset --hard origin/master
+
+      - name: Install dependencies & build
+        working-directory: /Users/jangseong-u/project/holyseed/dts
+        run: |
+          npm ci
+          npm run build
+
+      - name: Publish to /var/www/dts-front
+        working-directory: /Users/jangseong-u/project/holyseed/dts
+        run: rsync -a --delete dist/ /var/www/dts-front/
+
+      - name: Verify
+        run: curl -sf -o /dev/null -w "%{http_code}\n" https://dts.holyseed.p-e.kr

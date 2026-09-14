@@ -9,9 +9,6 @@
   },
   "scripts": {
     "dev:back": "yarn workspace @holyseed/backend run start:dev",
-    "dev:ad": "yarn --cwd ad-front dev",
-    "build:ad": "yarn --cwd ad-front build",
-    "typecheck:ad": "yarn --cwd ad-front typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\" --ignore-path .prettierignore",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\" --ignore-path .prettierignore",
     "clean": "rm -rf node_modules **/node_modules",

@@ -27,9 +27,17 @@ export class LaofusEngineState {
   @Column({ name: 'cycle_done', default: false })
   cycleDone: boolean;
 
-  /** 마지막으로 매수/매도 판단을 실행/확정한 미국 거래일 (YYYY-MM-DD) — EOD와 장중 매도 감시(monitorSell) 간 당일 중복 실행 방지용 */
+  /** @deprecated 20분할 온주 LOC 전환 이후 미사용 — lastBuyDecisionUsDate/lastSellDecisionUsDate로 분리됨. 과거 데이터 보존용으로 컬럼만 유지 */
   @Column({ name: 'last_decision_us_date', type: 'varchar', length: 10, nullable: true })
   lastDecisionUsDate: string | null;
+
+  /** 마지막으로 매수 LOC를 접수한 미국 거래일 (YYYY-MM-DD) — 당일 중복 접수 방지용 */
+  @Column({ name: 'last_buy_decision_us_date', type: 'varchar', length: 10, nullable: true })
+  lastBuyDecisionUsDate: string | null;
+
+  /** 마지막으로 매도 LOC를 접수한 미국 거래일 (YYYY-MM-DD) — 당일 중복 접수 방지용 */
+  @Column({ name: 'last_sell_decision_us_date', type: 'varchar', length: 10, nullable: true })
+  lastSellDecisionUsDate: string | null;
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
   updatedAt: Date;

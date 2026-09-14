@@ -280,4 +280,28 @@ export class TossClientService {
       withAccount: true,
     });
   }
+
+  /** 정수 수량 LOC(종가 지정가) 매수 — orderType=LIMIT + timeInForce=CLS, 미국 주식 전용. 마감 시점 종가가 지정가 이하면 체결. */
+  async buyLoc(symbol: string, quantity: string, limitPrice: string, clientOrderId: string): Promise<TossOrder> {
+    return this.request('POST', '/api/v1/orders', {
+      body: { symbol, side: 'BUY', orderType: 'LIMIT', timeInForce: 'CLS', quantity, price: limitPrice, clientOrderId },
+      withAccount: true,
+    });
+  }
+
+  /** 정수 수량 LOC(종가 지정가) 매도 — buyLoc과 대칭, side만 SELL. 마감 시점 종가가 지정가 이상이면 체결. */
+  async sellLoc(symbol: string, quantity: string, limitPrice: string, clientOrderId: string): Promise<TossOrder> {
+    return this.request('POST', '/api/v1/orders', {
+      body: { symbol, side: 'SELL', orderType: 'LIMIT', timeInForce: 'CLS', quantity, price: limitPrice, clientOrderId },
+      withAccount: true,
+    });
+  }
+
+  /** 미체결 주문 취소 */
+  async cancelOrder(orderId: string): Promise<{ orderId: string }> {
+    return this.request('POST', `/api/v1/orders/${orderId}/cancel`, {
+      body: {},
+      withAccount: true,
+    });
+  }
 }

@@ -3,8 +3,18 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { TossClientService, TossOrder } from '@shared/toss/toss-client.service';
-import { applyFill, computeIndicators, decide, Decision, ImuState } from '../core/engine';
-import { activeRegularSession, checkWindow, UsMarketCalendar } from '../core/marketTime';
+import {
+  applyFill,
+  computeBuyLocLegs,
+  computeIndicators,
+  computeSellLocLegs,
+  decide,
+  round2,
+  round4,
+  Decision,
+  ImuState,
+} from '../core/engine';
+import { UsMarketCalendar } from '../core/marketTime';
 import { LaofusEngineState } from '../entities/engine-state.entity';
 import { LaofusCycle } from '../entities/cycle.entity';
 import { LaofusTrade } from '../entities/trade.entity';
@@ -51,7 +61,6 @@ export class LaofusEngineService {
     @InjectRepository(LaofusAccountSnapshot) private readonly snapshotRepo: Repository<LaofusAccountSnapshot>,
   ) {}
 
-  /** 스케줄러 등 엔진 외부에서 발생한 이벤트(예: 비활성 스킵)를 동일한 laofus.events 원장에 기록 */
   async logSchedulerEvent(level: 'info' | 'warn' | 'error', message: string): Promise<void> {
     await this.event(level, message);
   }
@@ -65,7 +74,6 @@ export class LaofusEngineService {
     }
   }
 
-  /** 체결 폴링 — 타임아웃이면 null (토스 금액주문은 보통 다음 세션 개장 배치 체결이라 당일 미체결이 정상) */
   private async waitForFill(orderId: string, timeoutMs = 45_000): Promise<TossOrder | null> {
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
@@ -79,12 +87,8 @@ export class LaofusEngineService {
     return null;
   }
 
-  /**
-   * 체결 결과를 DB에 반영 — trade 기록 + engine_state 갱신 + (전량매도 시) 사이클 마감.
-   * 즉시 체결·개장 회수 두 경로가 공유. pendingId가 있으면 같은 트랜잭션에서 APPLIED 처리.
-   */
   private async recordFill(
-    d: FillDecision,
+    decisionIn: FillDecision,
     filled: TossOrder,
     runId: string | null,
     pendingId: number | null,
@@ -99,6 +103,15 @@ export class LaofusEngineService {
       cash: Number(row.cash),
       principal: Number(row.principal),
     };
+
+    let tAfter = decisionIn.tAfter;
+    if (decisionIn.action === 'BUY' && (decisionIn.kind === '전액' || decisionIn.kind === '절반')) {
+      tAfter = round4(s.T + (decisionIn.kind === '절반' ? 0.5 : 1));
+    } else if (decisionIn.action === 'SELL' && decisionIn.kind === '쿼터매도') {
+      tAfter = round4(s.T * 0.75);
+    }
+    const d: FillDecision = tAfter === decisionIn.tAfter ? decisionIn : { ...decisionIn, tAfter };
+
     const fq = Number(filled.execution.filledQuantity);
     const fp = Number(filled.execution.averageFilledPrice);
     const fa = Number(filled.execution.filledAmount);
@@ -180,7 +193,6 @@ export class LaofusEngineService {
     return summary;
   }
 
-  /** pending 주문에서 판단 컨텍스트 재구성 */
   private toDecision(p: LaofusPendingOrder): FillDecision {
     return p.side === 'BUY'
       ? {
@@ -197,10 +209,6 @@ export class LaofusEngineService {
         };
   }
 
-  /**
-   * 미회수 주문 처리 — 체결됐으면 DB 반영, 취소/거부면 FAILED.
-   * @returns 여전히 대기 중인 주문 수
-   */
   private async reconcile(runId: string | null, log: (m: string) => void): Promise<number> {
     const pendings = await this.pendingRepo.find({ where: { status: 'PENDING' }, order: { id: 'ASC' } });
     let remaining = 0;
@@ -213,7 +221,6 @@ export class LaofusEngineService {
           log(`회수 반영: ${summary}`);
         } else if (['CANCELED', 'REJECTED'].includes(order.status)) {
           if (partialQty > 0) {
-            // 부분 체결 후 취소 — 체결분은 반영해야 계좌-DB 정합 유지
             const summary = await this.recordFill(this.toDecision(p), order, runId, p.id);
             await this.event('warn', `주문 ${order.status}(부분 체결 반영): ${p.orderId} — ${summary}`, runId);
           } else {
@@ -232,7 +239,6 @@ export class LaofusEngineService {
     return remaining;
   }
 
-  /** 개장 직후 크론용 — 회수만 수행 (판단·주문 없음) */
   async reconcileOnly(): Promise<string[]> {
     if (this.running) return ['이미 실행 중 — 동시 실행 불가'];
     this.running = true;
@@ -262,7 +268,6 @@ export class LaofusEngineService {
     }
   }
 
-  /** 실행 로그를 반환 (수동 실행 시 스트림 대신 결과 문자열) */
   async run(opts: RunOptions): Promise<string[]> {
     if (this.running) return ['이미 실행 중 — 동시 실행 불가'];
     this.running = true;
@@ -275,46 +280,15 @@ export class LaofusEngineService {
     try {
       const header = `=== 엔진 실행 (${opts.live ? 'LIVE' : 'dry-run'}${opts.force ? ', force' : ''}) ===`;
       lines.push(header);
-      await this.event('info', header, runId); // 실행 시작 마커 — 런 그룹 시작점 + SSE 즉시 푸시
+      await this.event('info', header, runId);
 
-      // 미회수 주문 먼저 처리 (개장 배치 체결분 DB 반영 — 정합성 가드보다 앞서야 함)
       const remainingPending = await this.reconcile(runId, log);
 
-      // 상태 로드
       const row = await this.stateRepo.findOne({ where: { symbol: SYMBOL } });
       if (!row) {
-        await this.event(
-          'error',
-          'engine_state 행 없음 — 시딩 필요 (yarn workspace @holyseed/backend laofus:seed)',
-          runId,
-        );
+        await this.event('error', 'engine_state 행 없음 — 시딩 필요 (yarn workspace @holyseed/backend laofus:seed)', runId);
         lines.push('오류: engine_state 없음');
         return lines;
-      }
-
-      // 시간창 검증 — 창 폭은 env로 조정 가능 (매매 크론 이동 시 함께 변경)
-      if (!opts.force) {
-        const cal = (await this.toss.getUsMarketCalendar()) as UsMarketCalendar;
-        const win = checkWindow(cal, new Date(), {
-          minBefore: Number(process.env.LAOFUS_WINDOW_MIN ?? 20),
-          maxBefore: Number(process.env.LAOFUS_WINDOW_MAX ?? 35),
-        });
-        if (!win.ok) {
-          await this.event('info', `스킵: ${win.reason}${opts.live ? ' (LIVE)' : ''}`, runId);
-          lines.push(`스킵: ${win.reason}`);
-          return lines;
-        }
-        log(`시간창 OK: ${win.reason} (미국 거래일 ${win.usDate})`);
-
-        // 오늘 이미 처리됨 — 장중 감시(monitorSell)가 먼저 쿼터매도/전량매도를 확정한 경우 EOD 중복 실행 방지
-        if (row.lastDecisionUsDate === win.usDate) {
-          const message = `스킵: 오늘(${win.usDate}) 장중 감시에서 이미 처리됨`;
-          await this.event('info', message, runId);
-          lines.push(message);
-          return lines;
-        }
-        await this.stateRepo.update({ symbol: SYMBOL }, { lastDecisionUsDate: win.usDate });
-        row.lastDecisionUsDate = win.usDate;
       }
 
       if (row.cycleDone) {
@@ -330,99 +304,131 @@ export class LaofusEngineService {
         cash: Number(row.cash),
         principal: Number(row.principal),
       };
-
-      // 시세 + 정합성
-      const price =
-        opts.injectedPrice !== null && !opts.live
-          ? opts.injectedPrice
-          : Number((await this.toss.getPrice(SYMBOL)).lastPrice);
       const ind = computeIndicators(s);
       log(
         `상태: T=${s.T}, 보유=${s.quantity}, 평단=$${s.avgPrice}, 잔금=$${s.cash} | ` +
-          `별지점=$${ind.starPrice}, 1회매수금=$${ind.oneBuyAmount}, 전량매도가=$${ind.fullSellPrice} | 현재가=$${price}`,
+          `별지점=$${ind.starPrice}, 1회매수금=$${ind.oneBuyAmount}, 전량매도가=$${ind.fullSellPrice}`,
       );
+
+      if (s.T === 0 || s.quantity <= 0) {
+        return await this.runCycleStart(s, opts, runId, log, lines, remainingPending);
+      }
 
       const holding = await this.toss.getHolding(SYMBOL);
       const actualQty = holding ? Number(holding.quantity) : 0;
       if (Math.abs(actualQty - s.quantity) > 0.0001) {
-        await this.event(
-          'error',
-          `계좌 보유수량(${actualQty})과 DB 상태(${s.quantity}) 불일치 — 주문 중단, 수동 확인 필요`,
-          runId,
-        );
+        await this.event('error', `계좌 보유수량(${actualQty})과 DB 상태(${s.quantity}) 불일치 — 주문 중단, 수동 확인 필요`, runId);
         lines.push('오류: 보유수량 불일치');
         return lines;
       }
 
-      // 판단
-      const d: Decision = decide(s, price);
-      if (d.action === 'NONE') {
-        await this.event('info', `판단: 주문 없음 — ${d.reason} (현재가 $${price})`, runId);
-        lines.push(`판단: 주문 없음 — ${d.reason}`);
-        return lines;
-      }
-      const desc =
-        d.action === 'BUY'
-          ? `매수(${d.kind}) $${d.amountUsd} → T ${s.T} → ${d.tAfter}`
-          : `매도(${d.kind}) ${d.quantity}주 → T ${s.T} → ${d.tAfter}`;
-      log(`판단: ${desc}`);
+      const cal = (await this.toss.getUsMarketCalendar()) as UsMarketCalendar;
+      const buyUsDate = cal.today.regularMarket ? cal.today.date : null;
 
       if (!opts.live) {
-        await this.event('info', `[dry] 판단: ${desc} (현재가 $${price}) — 주문 미실행`, runId);
+        for (const leg of computeBuyLocLegs(s)) {
+          log(`[dry] LOC 매수 예정: ${leg.quantity}주 @ $${leg.price} (${leg.halfStep ? '절반' : '전액'} 단위)`);
+        }
+        for (const leg of computeSellLocLegs(s)) {
+          log(`[dry] LOC 매도 예정: ${leg.quantity}주 @ $${leg.price} (${leg.kind})`);
+        }
         lines.push('dry-run — 주문 미실행');
         return lines;
       }
 
-      // 실주문 — 미회수 주문이 남아 있으면 신규 주문 금지 (중복 매수 방지)
-      if (remainingPending > 0) {
-        await this.event('warn', `체결 대기 주문 ${remainingPending}건 미회수 — 신규 주문 스킵 (판단: ${desc})`, runId);
-        lines.push('신규 주문 스킵 — 미회수 주문 존재');
-        return lines;
-      }
-      if (d.action === 'BUY') {
-        const bp = Number(await this.toss.getBuyingPower('USD'));
-        if (bp < d.amountUsd) {
-          await this.event('error', `계좌 매수가능금액 $${bp} < 주문금액 $${d.amountUsd} — 주문 중단`, runId);
-          lines.push('오류: 매수가능금액 부족');
-          return lines;
+      // ── 매수
+      if (!opts.force && !buyUsDate) {
+        log('매수 스킵: 오늘은 미국 정규장 휴장일');
+      } else if (!opts.force && row.lastBuyDecisionUsDate === buyUsDate) {
+        log(`매수 스킵: 오늘(${buyUsDate}) 이미 LOC 매수를 접수함`);
+      } else {
+        const legs = computeBuyLocLegs(s);
+        if (legs.length === 0) {
+          log('매수 판단: 오늘 걸 LOC 없음 (리버스모드 대상이거나 1주도 안 됨)');
+        } else if (remainingPending > 0) {
+          await this.event('warn', `체결 대기 주문 ${remainingPending}건 미회수 — 매수 LOC 스킵`, runId);
+          lines.push('매수 스킵 — 미회수 주문 존재');
+        } else {
+          const totalAmount = round2(legs.reduce((a, leg) => a + leg.quantity * leg.price, 0));
+          const bp = Number(await this.toss.getBuyingPower('USD'));
+          if (bp < totalAmount) {
+            await this.event('error', `계좌 매수가능금액 $${bp} < 매수 LOC 합계 $${totalAmount} — 매수 스킵`, runId);
+            lines.push('매수 스킵 — 매수가능금액 부족');
+          } else {
+            const usDate = buyUsDate ?? kstDate();
+            const cycleRow = await this.cycleRepo.findOne({ where: { symbol: SYMBOL, cycleNo: s.cycle } });
+            let legIdx = 0;
+            for (const leg of legs) {
+              legIdx += 1;
+              const kind = leg.halfStep ? '절반' : '전액';
+              const clientOrderId = `imu-${usDate.replaceAll('-', '')}-b${legIdx}`;
+              const placed = await this.toss.buyLoc(SYMBOL, String(leg.quantity), String(leg.price), clientOrderId);
+              log(`LOC 매수 접수: ${leg.quantity}주 @ $${leg.price} (${kind}) — ${placed.orderId}`);
+              await this.pendingRepo.save({
+                orderId: placed.orderId,
+                clientOrderId,
+                symbol: SYMBOL,
+                side: 'BUY',
+                kind,
+                tBefore: String(s.T),
+                tAfter: String(round4(s.T + (leg.halfStep ? 0.5 : 1))),
+                requestAmount: String(round2(leg.quantity * leg.price)),
+                requestQuantity: null,
+                cycleId: cycleRow?.id ?? 0,
+                status: 'PENDING',
+              });
+            }
+            await this.stateRepo.update({ symbol: SYMBOL }, { lastBuyDecisionUsDate: usDate });
+            await this.event('info', `LOC 매수 ${legs.length}건 접수 — 마감 시점 자동 판정, 다음날 개장 후 회수`, runId);
+            lines.push(`LOC 매수 ${legs.length}건 접수`);
+          }
         }
       }
-      const clientOrderId = `imu-${kstDate().replaceAll('-', '')}-${d.action === 'BUY' ? 'b' : 's'}`;
-      const placed =
-        d.action === 'BUY'
-          ? await this.toss.buyByAmount(SYMBOL, String(d.amountUsd), clientOrderId)
-          : await this.toss.sellByQuantity(SYMBOL, String(d.quantity), clientOrderId);
-      log(`주문 접수: ${placed.orderId}`);
 
-      // 주문 원장 기록 — 미체결이어도 다음 실행/개장 크론이 회수
-      const cycleRow = await this.cycleRepo.findOne({ where: { symbol: SYMBOL, cycleNo: s.cycle } });
-      const pending = await this.pendingRepo.save({
-        orderId: placed.orderId,
-        clientOrderId,
-        symbol: SYMBOL,
-        side: d.action,
-        kind: d.kind,
-        tBefore: String(s.T),
-        tAfter: String(d.tAfter),
-        requestAmount: d.action === 'BUY' ? String(d.amountUsd) : null,
-        requestQuantity: d.action === 'SELL' ? String(d.quantity) : null,
-        cycleId: cycleRow?.id ?? 0,
-        status: 'PENDING',
-      });
-
-      const filled = await this.waitForFill(placed.orderId);
-      if (filled) {
-        const summary = await this.recordFill(d, filled, runId, pending.id);
-        lines.push(summary);
-        return lines;
+      // ── 매도
+      if (!opts.force && !buyUsDate) {
+        log('매도 스킵: 오늘은 미국 정규장 휴장일');
+      } else if (!opts.force && row.lastSellDecisionUsDate === buyUsDate) {
+        log(`매도 스킵: 오늘(${buyUsDate}) 이미 LOC 매도를 접수함`);
+      } else {
+        const sellLegs = computeSellLocLegs(s);
+        if (sellLegs.length === 0) {
+          log('매도 판단: 오늘 걸 LOC 없음 (리버스모드 대상이거나 보유량 없음)');
+        } else if (remainingPending > 0) {
+          await this.event('warn', `체결 대기 주문 ${remainingPending}건 미회수 — 매도 LOC 스킵`, runId);
+          lines.push('매도 스킵 — 미회수 주문 존재');
+        } else {
+          const usDate = buyUsDate ?? kstDate();
+          const cycleRow = await this.cycleRepo.findOne({ where: { symbol: SYMBOL, cycleNo: s.cycle } });
+          let legIdx = 0;
+          for (const leg of sellLegs) {
+            legIdx += 1;
+            const clientOrderId = `imu-${usDate.replaceAll('-', '')}-s${legIdx}`;
+            const isFinalSell = leg.kind === '전량매도';
+            const placed = isFinalSell
+              ? await this.toss.sellByLimit(SYMBOL, String(leg.quantity), String(leg.price), clientOrderId)
+              : await this.toss.sellLoc(SYMBOL, String(leg.quantity), String(leg.price), clientOrderId);
+            log(`${isFinalSell ? '지정가' : 'LOC'} 매도 접수: ${leg.quantity}주 @ $${leg.price} (${leg.kind}) — ${placed.orderId}`);
+            await this.pendingRepo.save({
+              orderId: placed.orderId,
+              clientOrderId,
+              symbol: SYMBOL,
+              side: 'SELL',
+              kind: leg.kind,
+              tBefore: String(s.T),
+              tAfter: String(leg.kind === '쿼터매도' ? round4(s.T * 0.75) : 0),
+              requestAmount: null,
+              requestQuantity: String(leg.quantity),
+              cycleId: cycleRow?.id ?? 0,
+              status: 'PENDING',
+            });
+          }
+          await this.stateRepo.update({ symbol: SYMBOL }, { lastSellDecisionUsDate: usDate });
+          await this.event('info', `LOC 매도 ${sellLegs.length}건 접수 — 마감 시점 자동 판정, 다음날 개장 후 회수`, runId);
+          lines.push(`LOC 매도 ${sellLegs.length}건 접수`);
+        }
       }
-      // 토스 소수점 금액주문은 다음 세션 개장 배치 체결 — 당일 미체결이 정상 동작
-      await this.event(
-        'info',
-        `주문 접수 완료(개장 체결 대기): ${desc} — 다음 세션 개장 후 자동 회수 (주문 ${placed.orderId.slice(0, 12)}…)`,
-        runId,
-      );
-      lines.push('개장 체결 대기 — 회수 예약됨');
+
       return lines;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -434,104 +440,81 @@ export class LaofusEngineService {
     }
   }
 
-  /**
-   * 장중 쿼터매도/전량매도 즉시 감시 — 정규장 시간에만, 매도(SELL) 판단일 때만 동작.
-   * 매수/사이클시작 판단은 절대 실행하지 않음(EOD 크론 전담).
-   * lastDecisionUsDate를 EOD와 공유해 하루 1회만 매도가 실행되도록 보장(핵심 안전장치).
-   */
-  async monitorSell(opts: { live: boolean }): Promise<void> {
-    if (this.running) return;
-    this.running = true;
-    const runId = randomUUID();
-    try {
-      // 미회수 주문 먼저 처리 — 직전 틱에서 낸 매도 주문이 아직 PENDING이면 여기서 회수
-      const remainingPending = await this.reconcile(runId, () => {});
-
-      const row = await this.stateRepo.findOne({ where: { symbol: SYMBOL } });
-      if (!row || row.cycleDone) return;
-
-      const cal = (await this.toss.getUsMarketCalendar()) as UsMarketCalendar;
-      const session = activeRegularSession(cal);
-      if (!session.active || !session.usDate) return;
-
-      // 오늘 이미 처리됨(장중 감시 자체의 중복 실행 포함, EOD가 먼저 처리한 경우도 포함) — 하루 1회 제한
-      if (row.lastDecisionUsDate === session.usDate) return;
-
-      const s: ImuState = {
-        cycle: row.cycleNo,
-        T: Number(row.t),
-        quantity: Number(row.quantity),
-        avgPrice: Number(row.avgPrice),
-        cash: Number(row.cash),
-        principal: Number(row.principal),
-      };
-      const price = Number((await this.toss.getPrice(SYMBOL)).lastPrice);
-      const d: Decision = decide(s, price);
-      if (d.action !== 'SELL') return;
-
-      const holding = await this.toss.getHolding(SYMBOL);
-      const actualQty = holding ? Number(holding.quantity) : 0;
-      if (Math.abs(actualQty - s.quantity) > 0.0001) {
-        await this.event(
-          'error',
-          `[장중감시] 계좌 보유수량(${actualQty})과 DB 상태(${s.quantity}) 불일치 — 주문 중단, 수동 확인 필요`,
-          runId,
-        );
-        return;
-      }
-
-      if (remainingPending > 0) {
-        await this.event('warn', `[장중감시] 체결 대기 주문 ${remainingPending}건 미회수 — 신규 주문 스킵`, runId);
-        return;
-      }
-
-      const desc = `매도(${d.kind}) ${d.quantity}주 → T ${s.T} → ${d.tAfter}`;
-      if (!opts.live) {
-        await this.event('info', `[장중감시][dry] 판단: ${desc} (현재가 $${price}) — 주문 미실행`, runId);
-        return;
-      }
-
-      // 여기부터 오늘의 매도를 확정 (실거래만) — EOD 크론과 lastDecisionUsDate 공유로 하루 1회 제한
-      await this.stateRepo.update({ symbol: SYMBOL }, { lastDecisionUsDate: session.usDate });
-
-      const clientOrderId = `imu-${kstDate().replaceAll('-', '')}-s-mon`;
-      const placed = await this.toss.sellByQuantity(SYMBOL, String(d.quantity), clientOrderId);
-      await this.event('info', `[장중감시] 주문 접수: ${desc} (현재가 $${price}) — ${placed.orderId}`, runId);
-
-      const cycleRow = await this.cycleRepo.findOne({ where: { symbol: SYMBOL, cycleNo: s.cycle } });
-      const pending = await this.pendingRepo.save({
-        orderId: placed.orderId,
-        clientOrderId,
-        symbol: SYMBOL,
-        side: 'SELL',
-        kind: d.kind,
-        tBefore: String(s.T),
-        tAfter: String(d.tAfter),
-        requestAmount: null,
-        requestQuantity: String(d.quantity),
-        cycleId: cycleRow?.id ?? 0,
-        status: 'PENDING',
-      });
-
-      const filled = await this.waitForFill(placed.orderId);
-      if (filled) {
-        await this.recordFill(d, filled, runId, pending.id);
-      } else {
-        await this.event(
-          'info',
-          `[장중감시] 주문 접수 완료(체결 대기) — 다음 틱/회수 크론이 회수 (주문 ${placed.orderId.slice(0, 12)}…)`,
-          runId,
-        );
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      await this.event('error', `[장중감시] 오류: ${msg}`, runId);
-    } finally {
-      this.running = false;
+  /** 사이클 시작(T=0) 전용 — 현재가 즉시판단 + MARKET 주문 (레거시 경로, 온주 LOC 전환 대상 아님) */
+  private async runCycleStart(
+    s: ImuState,
+    opts: RunOptions,
+    runId: string | null,
+    log: (m: string) => void,
+    lines: string[],
+    remainingPending: number,
+  ): Promise<string[]> {
+    const price =
+      opts.injectedPrice !== null && !opts.live ? opts.injectedPrice : Number((await this.toss.getPrice(SYMBOL)).lastPrice);
+    const d: Decision = decide(s, price);
+    if (d.action === 'NONE') {
+      await this.event('info', `판단: 주문 없음 — ${d.reason} (현재가 $${price})`, runId);
+      lines.push(`판단: 주문 없음 — ${d.reason}`);
+      return lines;
     }
+    const desc = d.action === 'BUY' ? `매수(${d.kind}) $${d.amountUsd} → T ${s.T} → ${d.tAfter}` : `매도 → T ${s.T} → ${d.tAfter}`;
+    log(`판단: ${desc}`);
+
+    if (!opts.live) {
+      await this.event('info', `[dry] 판단: ${desc} (현재가 $${price}) — 주문 미실행`, runId);
+      lines.push('dry-run — 주문 미실행');
+      return lines;
+    }
+    if (remainingPending > 0) {
+      await this.event('warn', `체결 대기 주문 ${remainingPending}건 미회수 — 신규 주문 스킵 (판단: ${desc})`, runId);
+      lines.push('신규 주문 스킵 — 미회수 주문 존재');
+      return lines;
+    }
+    if (d.action === 'BUY') {
+      const bp = Number(await this.toss.getBuyingPower('USD'));
+      if (bp < d.amountUsd) {
+        await this.event('error', `계좌 매수가능금액 $${bp} < 주문금액 $${d.amountUsd} — 주문 중단`, runId);
+        lines.push('오류: 매수가능금액 부족');
+        return lines;
+      }
+    }
+    const clientOrderId = `imu-${kstDate().replaceAll('-', '')}-${d.action === 'BUY' ? 'b' : 's'}`;
+    const placed =
+      d.action === 'BUY'
+        ? await this.toss.buyByAmount(SYMBOL, String(d.amountUsd), clientOrderId)
+        : await this.toss.sellByQuantity(SYMBOL, String((d as Extract<Decision, { action: 'SELL' }>).quantity), clientOrderId);
+    log(`주문 접수: ${placed.orderId}`);
+
+    const cycleRow = await this.cycleRepo.findOne({ where: { symbol: SYMBOL, cycleNo: s.cycle } });
+    const pending = await this.pendingRepo.save({
+      orderId: placed.orderId,
+      clientOrderId,
+      symbol: SYMBOL,
+      side: d.action,
+      kind: d.kind,
+      tBefore: String(s.T),
+      tAfter: String(d.tAfter),
+      requestAmount: d.action === 'BUY' ? String(d.amountUsd) : null,
+      requestQuantity: d.action === 'SELL' ? String((d as Extract<Decision, { action: 'SELL' }>).quantity) : null,
+      cycleId: cycleRow?.id ?? 0,
+      status: 'PENDING',
+    });
+
+    const filled = await this.waitForFill(placed.orderId);
+    if (filled) {
+      const summary = await this.recordFill(d, filled, runId, pending.id);
+      lines.push(summary);
+      return lines;
+    }
+    await this.event(
+      'info',
+      `주문 접수 완료(개장 체결 대기): ${desc} — 다음 세션 개장 후 자동 회수 (주문 ${placed.orderId.slice(0, 12)}…)`,
+      runId,
+    );
+    lines.push('개장 체결 대기 — 회수 예약됨');
+    return lines;
   }
 
-  /** 오늘(KST) 실계좌 총자산 스냅샷을 계산해 upsert — 크론 + 수동 트리거(POST /account-snapshot/run) 공용 */
   async captureAccountSnapshot(): Promise<LaofusAccountSnapshot> {
     const [holdings, bpUsd, bpKrw, fx] = await Promise.all([
       this.toss.getHoldingsAll(),

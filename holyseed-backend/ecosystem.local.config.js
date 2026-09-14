@@ -31,22 +31,14 @@ module.exports = {
         DB_DATABASE: 'holyseed',
         LAOFUS_LIVE: 'true',
         LAOFUS_SCHEDULER: 'true',
-        // 매매 시각: 마감 95분 전 (2026-07-21 토스 앱 확인 — 소수점 주문가능시간이
-        // 22:30~04:00 KST(EDT)/23:30~05:00 KST(EST)로, 마감 65분 전(구 설정)은 그 마감
-        // 불과 5분 전이라 타이트해 30분 더 앞당김)
-        LAOFUS_RUN_CRON_1: '25 3 * * 2-6', // EDT: 마감 05:00 KST → 03:25
-        LAOFUS_RUN_CRON_2: '25 4 * * 2-6', // EST: 마감 06:00 KST → 04:25
-        LAOFUS_WINDOW_MIN: '90',
-        LAOFUS_WINDOW_MAX: '105',
-        // 장중 쿼터매도/전량매도 즉시 감시 — 신규 기능이라 며칠간 dry-run으로 로그만 관찰 후
-        // 문제 없으면 LAOFUS_SELL_MONITOR_LIVE를 'true'로 바꿀 것 (EOD 라이브에는 영향 없음)
-        LAOFUS_SELL_MONITOR: 'true',
-        LAOFUS_SELL_MONITOR_LIVE: 'false',
-        // 기본 '*/5 * * * *'(매 5분, :00/:05/.../:25/.../:40/.../:55)는 EOD run(:25)·회수(:40)
-        // 크론과 분 단위로 겹쳐 this.running 락을 공유하는 run()/reconcileOnly()가 조용히(이벤트도
-        // 안 남기고) 스킵되는 사고가 실제 발생함(2026-08-18, 전날 마감 쿼터매도가 두 번 다 증발).
-        // :25/:40을 피하도록 2분 오프셋 — 감시 주기(5분)는 그대로 유지.
-        LAOFUS_SELL_MONITOR_CRON: '2-59/5 * * * *',
+        // 20분할 온주 LOC 전환(2026-09) — 매수·매도 둘 다 engine_state만으로 계산되는 스탠딩 LOC라
+        // 현재가 관찰이 필요 없음. 개장 시각(EDT/EST)과 무관하게 KST 하루 1개 크론이면 충분 — 오늘
+        // 휴장일이거나 이미 접수했으면 자동 스킵. 요일은 반드시 월~금(1-5) — 토스 market-calendar의
+        // today.date는 KST 날짜 그대로가 그날 미국 정규장을 가리켜서, 화~토(2-6)로 잡으면 월요일
+        // 정규장이 통째로 누락된다(2026-09-14 실제 발생 버그, 직접 API 조회로 확인 후 수정).
+        LAOFUS_LEGS_CRON: '0 9 * * 1-5', // KST 09:00, 월~금
+        // (예전의 장중 5분 감시 + 마감 전 EOD 이중 크론은 매도가 현재가 판단이 필요했을 때 얘기라
+        // 이제 전부 걷어냄 — LAOFUS_SELL_MONITOR*/LAOFUS_RUN_CRON*/LAOFUS_WINDOW* 전부 미사용)
         // VR(TQQQ 밸류 리밸런싱) — laofus와 같은 토스 계좌/API 앱을 쓰므로 토큰 경합을 피하려고
         // 같은 프로세스(이 laofus-backend 앱)에서 함께 돈다. 절대 별도 pm2 앱으로 분리하지 말 것.
         VR_LIVE: 'true',

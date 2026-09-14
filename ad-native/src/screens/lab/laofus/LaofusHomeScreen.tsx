@@ -1,12 +1,13 @@
-import { useMemo, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Loader from '../../../components/ui/Loader';
 import { laofusRestApi, type EventDto } from '../../../api/laofus';
-import { computeIndicators, decide, applyFill, type ImuState, type Decision } from '../../../lib/laofus-core';
+import { computeIndicators, computeBuyLocLegs, computeSellLocLegs, type ImuState } from '../../../lib/laofus-core';
 import { useTheme } from '../../../lib/theme';
 import { useKeyboardScrollRegistration, KeyboardScrollProvider } from '../../../lib/keyboard-scroll';
+import { getLaofusDismissedErrorId, setLaofusDismissedErrorId } from '../../../lib/lab-prefs';
 import type { LaofusStackParamList } from '../../../navigation/LaofusStack';
 
 type Props = NativeStackScreenProps<LaofusStackParamList, 'LaofusHome'>;
@@ -31,49 +32,49 @@ function Tile({ label, value, sub, color, theme }: { label: string; value: strin
   );
 }
 
-function describeDecision(d: Decision, s: ImuState, price: number): { text: string; after: string | null; color: 'buy' | 'sell' | 'none' } {
-  if (d.action === 'BUY') {
-    const q = d.amountUsd / price;
-    const nx = applyFill(s, d, { quantity: q, price, amount: d.amountUsd });
-    return {
-      text: `매수(${d.kind}) ${usd(d.amountUsd)}`,
-      after: `T ${s.T} → ${d.tAfter} · 예상 평단 ${usd(nx.avgPrice)} · 잔금 ${usd(nx.cash)}`,
-      color: 'buy',
-    };
+/** 온주 LOC 스탠딩 주문은 engine_state만으로 계산되고 현재가와 무관 — 매수/매도 legs를 그대로 나열해서 보여준다 */
+function LegsCard({ s, theme }: { s: ImuState; theme: ReturnType<typeof useTheme> }) {
+  const buyLegs = computeBuyLocLegs(s);
+  const sellLegs = computeSellLocLegs(s);
+  if (buyLegs.length === 0 && sellLegs.length === 0) {
+    return <Text style={{ color: theme.textMuted, fontSize: 13 }}>오늘 걸릴 주문 없음 (리버스모드 대상이거나 사이클 시작 대기)</Text>;
   }
-  if (d.action === 'SELL') {
-    const nx = applyFill(s, d, { quantity: d.quantity, price, amount: d.quantity * price });
-    return {
-      text: `매도(${d.kind}) ${d.quantity.toFixed(6)}주 ≈ ${usd(d.quantity * price)}`,
-      after: `T ${s.T} → ${nx.T} · 잔금 ${usd(nx.cash)}${nx.quantity === 0 ? ' · 사이클 종료' : ''}`,
-      color: 'sell',
-    };
-  }
-  return { text: `주문 없음 — ${d.reason}`, after: null, color: 'none' };
-}
-
-function DecisionCard({ title, s, price, theme }: { title: string; s: ImuState; price: number; theme: ReturnType<typeof useTheme> }) {
-  const d = decide(s, price);
-  const { text, after, color } = describeDecision(d, s, price);
-  const c = color === 'sell' ? theme.danger : color === 'buy' ? theme.brand : theme.textMuted;
   return (
-    <View style={[styles.decisionCard, { backgroundColor: theme.bg, borderColor: theme.border }]}>
-      <Text style={{ color: theme.textMuted, fontSize: 12 }}>{title}</Text>
-      <Text style={{ color: c, fontSize: 14, fontWeight: '700', marginTop: 2 }}>{text}</Text>
-      {after && <Text style={{ color: theme.textMuted, fontSize: 12, marginTop: 2 }}>{after}</Text>}
+    <View style={{ gap: 8 }}>
+      {buyLegs.map((leg, i) => (
+        <View key={`b${i}`} style={styles.legRow}>
+          <Text style={{ color: theme.brand, fontSize: 12, fontWeight: '800', width: 34 }}>매수</Text>
+          <Text style={{ color: theme.text, fontSize: 13, fontWeight: '600', flex: 1 }}>
+            {leg.quantity}주 @ {usd(leg.price)}
+          </Text>
+          <Text style={{ color: theme.textMuted, fontSize: 11.5 }}>{leg.halfStep ? '절반' : '전액'}</Text>
+        </View>
+      ))}
+      {sellLegs.map((leg, i) => (
+        <View key={`s${i}`} style={styles.legRow}>
+          <Text style={{ color: theme.danger, fontSize: 12, fontWeight: '800', width: 34 }}>매도</Text>
+          <Text style={{ color: theme.text, fontSize: 13, fontWeight: '600', flex: 1 }}>
+            {leg.quantity}주 @ {usd(leg.price)}
+          </Text>
+          <Text style={{ color: theme.textMuted, fontSize: 11.5 }}>{leg.kind}</Text>
+        </View>
+      ))}
     </View>
   );
 }
 
 export default function LaofusHomeScreen({ navigation }: Props) {
   const theme = useTheme();
-  const [simInput, setSimInput] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const simInputRef = useRef<TextInput>(null);
   const { scrollRef, scrollToInput, onScroll, keyboardHeight } = useKeyboardScrollRegistration();
 
   const statusQ = useQuery({ queryKey: ['laofus-status'], queryFn: laofusRestApi.status, refetchInterval: 30_000 });
   const priceQ = useQuery({ queryKey: ['laofus-price'], queryFn: laofusRestApi.price, refetchInterval: 60_000 });
+
+  const [dismissedErrorId, setDismissedErrorId] = useState<number | null>(null);
+  useEffect(() => {
+    getLaofusDismissedErrorId().then(setDismissedErrorId);
+  }, []);
 
   async function onRefresh() {
     setRefreshing(true);
@@ -97,9 +98,16 @@ export default function LaofusHomeScreen({ navigation }: Props) {
     if (!status) return null;
     const err = status.events.find((e) => e.level === 'error');
     if (!err) return null;
+    if (dismissedErrorId !== null && err.id <= dismissedErrorId) return null;
     const newerInfo = status.events.find((e) => e.level === 'info' && e.id > err.id);
     return newerInfo ? null : err;
-  }, [status]);
+  }, [status, dismissedErrorId]);
+
+  function dismissError() {
+    if (!latestError) return;
+    setDismissedErrorId(latestError.id);
+    setLaofusDismissedErrorId(latestError.id);
+  }
 
   if (statusQ.isLoading) {
     return (
@@ -111,7 +119,6 @@ export default function LaofusHomeScreen({ navigation }: Props) {
 
   const ind = s ? computeIndicators(s) : null;
   const pnl = s && price ? (price.price - s.avgPrice) * s.quantity : null;
-  const simPrice = simInput !== '' && !Number.isNaN(Number(simInput)) ? Number(simInput) : null;
 
   const engine = status?.engine;
   const live = engine?.mode === 'live';
@@ -139,7 +146,12 @@ export default function LaofusHomeScreen({ navigation }: Props) {
 
       {latestError && (
         <View style={[styles.errorBanner, { borderColor: theme.danger, backgroundColor: theme.danger + '15' }]}>
-          <Text style={{ color: theme.danger, fontWeight: '700', fontSize: 13 }}>⚠ 엔진 오류</Text>
+          <View style={styles.errorHeaderRow}>
+            <Text style={{ color: theme.danger, fontWeight: '700', fontSize: 13 }}>⚠ 엔진 오류</Text>
+            <Pressable onPress={dismissError} hitSlop={8}>
+              <Text style={{ color: theme.textMuted, fontSize: 15, fontWeight: '700' }}>✕</Text>
+            </Pressable>
+          </View>
           <Text style={{ color: theme.text, fontSize: 12.5, marginTop: 2 }}>
             {kst(latestError.ts)} — {latestError.message}
           </Text>
@@ -166,7 +178,7 @@ export default function LaofusHomeScreen({ navigation }: Props) {
       {s && ind && (
         <>
           <View style={styles.tileGrid}>
-            <Tile theme={theme} label={`T값 (${s.cycle}차 사이클)`} value={String(s.T)} sub={status?.state?.cycleDone ? '사이클 종료' : s.T < 20 ? '전반전' : '후반전'} />
+            <Tile theme={theme} label={`T값 (${s.cycle}차 사이클)`} value={String(s.T)} sub={status?.state?.cycleDone ? '사이클 종료' : s.T < 10 ? '전반전' : '후반전'} />
             <Tile theme={theme} label="보유수량" value={s.quantity.toFixed(6)} />
             <Tile theme={theme} label="평단가" value={usd(s.avgPrice)} />
             <Tile
@@ -177,27 +189,15 @@ export default function LaofusHomeScreen({ navigation }: Props) {
               color={pnl !== null ? (pnl >= 0 ? theme.brand : theme.danger) : undefined}
             />
             <Tile theme={theme} label="별지점" value={usd(ind.starPrice)} sub={`별 ${(ind.starPct * 100).toFixed(2)}%`} />
-            <Tile theme={theme} label="1회매수금" value={usd(ind.oneBuyAmount)} sub={`잔금 ${usd(s.cash)}`} />
             <Tile theme={theme} label="전량매도가" value={usd(ind.fullSellPrice)} sub="평단 +20%" />
           </View>
 
           <View style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>오늘의 판단 미리보기</Text>
-            {price && <DecisionCard theme={theme} title={`지금 마감이면 (현재가 ${usd(price.price)})`} s={s} price={price.price} />}
-            <View style={{ marginTop: 10 }}>
-              <Text style={{ color: theme.textMuted, fontSize: 12, marginBottom: 6 }}>가상 가격으로 확인</Text>
-              <TextInput
-                ref={simInputRef}
-                style={[styles.simInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.bg }]}
-                placeholder={price ? String(price.price) : '가격 입력'}
-                placeholderTextColor={theme.textMuted}
-                keyboardType="numeric"
-                value={simInput}
-                onChangeText={setSimInput}
-                onFocus={() => scrollToInput(simInputRef.current)}
-              />
-              {simPrice !== null && simPrice > 0 && <DecisionCard theme={theme} title={`종가가 ${usd(simPrice)} 이라면`} s={s} price={simPrice} />}
-            </View>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>오늘 걸릴 주문</Text>
+            <Text style={{ color: theme.textMuted, fontSize: 11.5, marginBottom: 10 }}>
+              engine_state로 미리 계산되는 온주 LOC — 현재가와 무관, 장마감 종가로 자동 판정
+            </Text>
+            <LegsCard s={s} theme={theme} />
           </View>
         </>
       )}
@@ -231,6 +231,7 @@ const styles = StyleSheet.create({
   navRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   navChip: { flex: 1, borderWidth: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
   errorBanner: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12 },
+  errorHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   engineBar: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12 },
   engineRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dot: { width: 8, height: 8, borderRadius: 4 },
@@ -240,7 +241,6 @@ const styles = StyleSheet.create({
   sectionCard: { borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 12 },
   sectionTitle: { fontSize: 14, fontWeight: '700' },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4 },
-  decisionCard: { borderWidth: 1, borderRadius: 10, padding: 10, marginTop: 8 },
-  simInput: { height: 44, borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, fontSize: 14 },
+  legRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   eventRow: { flexDirection: 'row', gap: 10, paddingVertical: 6, borderTopWidth: 1, alignItems: 'center' },
 });

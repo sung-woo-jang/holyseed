@@ -6,6 +6,7 @@ const KEY_WORKLOG_SORT = 'lab_worklogSortPref';
 const KEY_VR_FILLS_SORT = 'lab_vrFillsSortPref';
 const KEY_LAOFUS_WEALTH_SORT = 'lab_laofusWealthSortPref';
 const KEY_LAOFUS_LAST_COPY = 'lab_laofusWealthLastCopyDate';
+const KEY_LAOFUS_DISMISSED_ERROR_ID = 'lab_laofusDismissedErrorId';
 const isWeb = Platform.OS === 'web';
 
 async function readRaw(key: string): Promise<string | null> {
@@ -74,4 +75,13 @@ export async function getLaofusLastCopyDate(): Promise<string | null> {
 
 export async function setLaofusLastCopyDate(date: string): Promise<void> {
   return setPref(KEY_LAOFUS_LAST_COPY, date);
+}
+
+/** 엔진 오류 카드 닫기 — 사용자가 닫은 마지막 에러 이벤트 id를 저장, 그 이하 id는 다시 안 띄움 */
+export async function getLaofusDismissedErrorId(): Promise<number | null> {
+  return getPref<number>(KEY_LAOFUS_DISMISSED_ERROR_ID);
+}
+
+export async function setLaofusDismissedErrorId(id: number): Promise<void> {
+  return setPref(KEY_LAOFUS_DISMISSED_ERROR_ID, id);
 }

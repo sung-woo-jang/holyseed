@@ -471,6 +471,14 @@ export default function BookScreen({ navigation, route }: Props) {
           </View>
         </View>
 
+        {!isViewer && (
+          <View style={styles.sectionPad}>
+            <Pressable style={[styles.actionBtn, { backgroundColor: theme.brand }]} onPress={openAddForDay}>
+              <Text style={styles.actionBtnText}>＋ 새 항목 등록</Text>
+            </Pressable>
+          </View>
+        )}
+
         <View style={styles.sectionPad}>
           <Segmented options={['캘린더', '리스트']} value={viewMode === 'calendar' ? '캘린더' : '리스트'} onChange={(v) => setViewMode(v === '캘린더' ? 'calendar' : 'list')} small />
         </View>
@@ -502,13 +510,18 @@ export default function BookScreen({ navigation, route }: Props) {
         ) : (
           <>
             <View style={styles.sectionPad}>
-              <Segmented
-                options={['전체', '수입', '지출']}
-                value={typeFilter === 'all' ? '전체' : typeFilter === 'INCOME' ? '수입' : '지출'}
-                onChange={(v) => handleTypeFilter(v === '전체' ? 'all' : v === '수입' ? 'INCOME' : 'EXPENSE')}
-                small
-              />
-              <View style={[styles.chipRow, { marginTop: 8 }]}>
+              <View style={styles.chipRow}>
+                <Pressable onPress={() => setFilterSheetOpen(true)} style={[styles.filterIconBtn, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                  <Text style={{ fontSize: 15, color: theme.textMuted }}>☰</Text>
+                </Pressable>
+                {typeFilter !== 'all' && (
+                  <Pressable onPress={() => handleTypeFilter('all')} style={[styles.tag, { backgroundColor: theme.brandSoft }]}>
+                    <Text style={[styles.tagText, { color: theme.brand }]}>{typeFilter === 'INCOME' ? '수입' : '지출'}</Text>
+                    <View style={[styles.tagX, { backgroundColor: theme.brand + '22' }]}>
+                      <Text style={{ color: theme.brand, fontSize: 10, fontWeight: '800' }}>✕</Text>
+                    </View>
+                  </Pressable>
+                )}
                 {typeFilter !== 'INCOME' &&
                   [...costFilter].map((c) => (
                     <Pressable key={c} onPress={() => toggleCostFilter(c)} style={[styles.tag, { backgroundColor: theme.brandSoft }]}>
@@ -530,9 +543,6 @@ export default function BookScreen({ navigation, route }: Props) {
                     </Pressable>
                   );
                 })}
-                <Pressable onPress={() => setFilterSheetOpen(true)} style={[styles.addFilterBtn, { borderColor: theme.border }]}>
-                  <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '700' }}>+ 필터</Text>
-                </Pressable>
               </View>
             </View>
 
@@ -563,7 +573,7 @@ export default function BookScreen({ navigation, route }: Props) {
 
             <View style={styles.sectionPad}>
               {monthTx.length === 0 ? (
-                <EmptyState compact iconCode={TE.ledger} title="이 달 거래가 없어요" desc={isViewer ? undefined : 'FAB로 추가해보세요'} />
+                <EmptyState compact iconCode={TE.ledger} title="이 달 거래가 없어요" desc={isViewer ? undefined : '위 버튼으로 추가해보세요'} />
               ) : groupedTx.length === 0 ? (
                 <View style={{ alignItems: 'center' }}>
                   <EmptyState compact iconCode={TE.ledger} title="조건에 맞는 거래가 없어요" />
@@ -639,12 +649,6 @@ export default function BookScreen({ navigation, route }: Props) {
         </View>
       </ScrollView>
 
-      {!isViewer && (
-        <Pressable style={[styles.fab, { backgroundColor: theme.brand }]} onPress={openAddForDay}>
-          {Icon.plus('#fff')}
-        </Pressable>
-      )}
-
       <ActionSheet
         visible={addPicker}
         title={`${selectedLabel || '오늘'} 등록`}
@@ -668,6 +672,23 @@ export default function BookScreen({ navigation, route }: Props) {
       <MissedRecurringSheet visible={missedVisible} onClose={() => setMissedVisible(false)} onApplied={(count) => setToast(`누락된 정기거래 ${count}건을 반영했어요`)} />
 
       <PickerOverlay visible={filterSheetOpen} title="필터" onClose={() => setFilterSheetOpen(false)}>
+        <View style={styles.filterSection}>
+          <Text style={[styles.filterSectionLabel, { color: theme.textMuted }]}>유형</Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {(['all', 'INCOME', 'EXPENSE'] as const).map((v) => {
+              const active = typeFilter === v;
+              return (
+                <Pressable
+                  key={v}
+                  onPress={() => handleTypeFilter(v)}
+                  style={[styles.costToggle, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.card }]}
+                >
+                  <Text style={{ color: active ? theme.brand : theme.textMuted, fontWeight: '700', fontSize: 13 }}>{v === 'all' ? '전체' : v === 'INCOME' ? '수입' : '지출'}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
         {typeFilter !== 'INCOME' && (
           <View style={styles.filterSection}>
             <Text style={[styles.filterSectionLabel, { color: theme.textMuted }]}>고정비 · 변동비</Text>
@@ -711,14 +732,8 @@ export default function BookScreen({ navigation, route }: Props) {
             </View>
           </View>
         )}
-        {(costFilter.size > 0 || catFilter.size > 0) && (
-          <Pressable
-            onPress={() => {
-              setCostFilter(new Set());
-              setCatFilter(new Set());
-            }}
-            style={{ alignSelf: 'center', marginTop: 4, marginBottom: 14 }}
-          >
+        {(typeFilter !== 'all' || costFilter.size > 0 || catFilter.size > 0) && (
+          <Pressable onPress={resetFilters} style={{ alignSelf: 'center', marginTop: 4, marginBottom: 14 }}>
             <Text style={{ color: theme.danger, fontSize: 12.5, fontWeight: '700' }}>필터 초기화</Text>
           </Pressable>
         )}
@@ -785,13 +800,14 @@ const styles = StyleSheet.create({
   recHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 14, borderWidth: 1, padding: 14 },
   recSectionTitle: { fontSize: 12, fontWeight: '700', marginTop: 12, marginBottom: 8, color: '#8B95A1' },
   recAddBtn: { borderWidth: 1.4, borderRadius: 12, alignItems: 'center', paddingVertical: 12, marginTop: 12 },
-  fab: { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', elevation: 4 },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 12 },
+  actionBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   chipRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
   chipDot: { width: 6, height: 6, borderRadius: 3 },
   tag: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 12, paddingRight: 6, paddingVertical: 6, borderRadius: 999 },
   tagText: { fontSize: 11.5, fontWeight: '700' },
   tagX: { width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  addFilterBtn: { borderWidth: 1.4, borderStyle: 'dashed', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  filterIconBtn: { width: 34, height: 34, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   filterSection: { paddingHorizontal: 20, paddingBottom: 18 },
   filterSectionLabel: { fontSize: 11.5, fontWeight: '800', marginBottom: 10 },
   costToggle: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 10, borderWidth: 1.5 },

@@ -54,6 +54,7 @@ export default function LabWorklogScreen({ navigation, route }: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [summaryCollapsed, setSummaryCollapsed] = useState(false);
 
   useEffect(() => {
     getWorklogSortPref().then((pref) => {
@@ -236,7 +237,7 @@ export default function LabWorklogScreen({ navigation, route }: Props) {
       </View>
 
       <View style={styles.toolRow}>
-        <Segmented options={['목록', '캘린더']} value={view} onChange={(v) => setView(v as '목록' | '캘린더')} small />
+        <Segmented options={['목록', '캘린더']} value={view} onChange={(v) => setView(v as '목록' | '캘린더')} small alignment="fluid" />
         <Pressable style={[styles.toolChip, { borderColor: theme.brand }]} onPress={() => navigation.navigate('WorklogSettlement')}>
           <Text style={{ color: theme.brand, fontSize: 12, fontWeight: '700' }}>수령 처리</Text>
         </Pressable>
@@ -291,36 +292,44 @@ export default function LabWorklogScreen({ navigation, route }: Props) {
         >
           {summary && (
             <View style={[styles.summaryCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <View style={styles.summaryRow}>
-                <View style={styles.summaryItem}>
-                  <Text style={{ color: theme.textMuted, fontSize: 12 }}>근무일수</Text>
-                  <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{displayWorkDays}일</Text>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Text style={{ color: theme.textMuted, fontSize: 12 }}>품(대가리)</Text>
-                  <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{displayLaborUnits}품</Text>
-                </View>
-              </View>
-              <View style={styles.summaryRow}>
-                <View style={styles.summaryItem}>
-                  <Text style={{ color: theme.textMuted, fontSize: 12 }}>실수령 합계</Text>
-                  <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{krw(displayTotalNet)}</Text>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Text style={{ color: theme.textMuted, fontSize: 12 }}>세전 수령액</Text>
-                  <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{krw(displayTotalGross)}</Text>
-                </View>
-              </View>
-              <View style={styles.summaryRow}>
-                <View style={styles.summaryItem}>
-                  <Text style={{ color: theme.textMuted, fontSize: 12 }}>수령완료</Text>
-                  <Text style={{ color: theme.brand, fontSize: 13, fontWeight: '700' }}>{krw(displayReceivedNet)}</Text>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Text style={{ color: theme.textMuted, fontSize: 12 }}>미수령</Text>
-                  <Text style={{ color: theme.danger, fontSize: 13, fontWeight: '700' }}>{krw(displayPendingNet)}</Text>
-                </View>
-              </View>
+              <Pressable style={styles.summaryHeader} onPress={() => setSummaryCollapsed((v) => !v)} hitSlop={6}>
+                <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '700' }}>요약</Text>
+                <Text style={{ color: theme.textMuted, fontSize: 12 }}>{summaryCollapsed ? '펼치기 ▾' : '접기 ▴'}</Text>
+              </Pressable>
+              {!summaryCollapsed && (
+                <>
+                  <View style={styles.summaryRow}>
+                    <View style={styles.summaryItem}>
+                      <Text style={{ color: theme.textMuted, fontSize: 12 }}>근무일수</Text>
+                      <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{displayWorkDays}일</Text>
+                    </View>
+                    <View style={styles.summaryItem}>
+                      <Text style={{ color: theme.textMuted, fontSize: 12 }}>품(대가리)</Text>
+                      <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{displayLaborUnits}품</Text>
+                    </View>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <View style={styles.summaryItem}>
+                      <Text style={{ color: theme.textMuted, fontSize: 12 }}>실수령 합계</Text>
+                      <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{krw(displayTotalNet)}</Text>
+                    </View>
+                    <View style={styles.summaryItem}>
+                      <Text style={{ color: theme.textMuted, fontSize: 12 }}>세전 수령액</Text>
+                      <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{krw(displayTotalGross)}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <View style={styles.summaryItem}>
+                      <Text style={{ color: theme.textMuted, fontSize: 12 }}>수령완료</Text>
+                      <Text style={{ color: theme.brand, fontSize: 13, fontWeight: '700' }}>{krw(displayReceivedNet)}</Text>
+                    </View>
+                    <View style={styles.summaryItem}>
+                      <Text style={{ color: theme.textMuted, fontSize: 12 }}>미수령</Text>
+                      <Text style={{ color: theme.danger, fontSize: 13, fontWeight: '700' }}>{krw(displayPendingNet)}</Text>
+                    </View>
+                  </View>
+                </>
+              )}
             </View>
           )}
 
@@ -449,6 +458,7 @@ const styles = StyleSheet.create({
   chipRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 16, paddingBottom: 4 },
   chip: { height: 34, alignSelf: 'center', paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, justifyContent: 'center' },
   summaryCard: { marginHorizontal: 20, marginTop: 8, borderRadius: 16, borderWidth: 1, padding: 16, gap: 10 },
+  summaryHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   summaryRow: { flexDirection: 'row' },
   summaryItem: { flex: 1, gap: 4 },
   sectionPad: { paddingHorizontal: 20, paddingTop: 16 },

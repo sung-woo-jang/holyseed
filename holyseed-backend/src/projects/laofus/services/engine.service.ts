@@ -286,7 +286,11 @@ export class LaofusEngineService {
 
       const row = await this.stateRepo.findOne({ where: { symbol: SYMBOL } });
       if (!row) {
-        await this.event('error', 'engine_state 행 없음 — 시딩 필요 (yarn workspace @holyseed/backend laofus:seed)', runId);
+        await this.event(
+          'error',
+          'engine_state 행 없음 — 시딩 필요 (yarn workspace @holyseed/backend laofus:seed)',
+          runId,
+        );
         lines.push('오류: engine_state 없음');
         return lines;
       }
@@ -317,7 +321,11 @@ export class LaofusEngineService {
       const holding = await this.toss.getHolding(SYMBOL);
       const actualQty = holding ? Number(holding.quantity) : 0;
       if (Math.abs(actualQty - s.quantity) > 0.0001) {
-        await this.event('error', `계좌 보유수량(${actualQty})과 DB 상태(${s.quantity}) 불일치 — 주문 중단, 수동 확인 필요`, runId);
+        await this.event(
+          'error',
+          `계좌 보유수량(${actualQty})과 DB 상태(${s.quantity}) 불일치 — 주문 중단, 수동 확인 필요`,
+          runId,
+        );
         lines.push('오류: 보유수량 불일치');
         return lines;
       }
@@ -379,7 +387,11 @@ export class LaofusEngineService {
               });
             }
             await this.stateRepo.update({ symbol: SYMBOL }, { lastBuyDecisionUsDate: usDate });
-            await this.event('info', `LOC 매수 ${legs.length}건 접수 — 마감 시점 자동 판정, 다음날 개장 후 회수`, runId);
+            await this.event(
+              'info',
+              `LOC 매수 ${legs.length}건 접수 — 마감 시점 자동 판정, 다음날 개장 후 회수`,
+              runId,
+            );
             lines.push(`LOC 매수 ${legs.length}건 접수`);
           }
         }
@@ -408,7 +420,9 @@ export class LaofusEngineService {
             const placed = isFinalSell
               ? await this.toss.sellByLimit(SYMBOL, String(leg.quantity), String(leg.price), clientOrderId)
               : await this.toss.sellLoc(SYMBOL, String(leg.quantity), String(leg.price), clientOrderId);
-            log(`${isFinalSell ? '지정가' : 'LOC'} 매도 접수: ${leg.quantity}주 @ $${leg.price} (${leg.kind}) — ${placed.orderId}`);
+            log(
+              `${isFinalSell ? '지정가' : 'LOC'} 매도 접수: ${leg.quantity}주 @ $${leg.price} (${leg.kind}) — ${placed.orderId}`,
+            );
             await this.pendingRepo.save({
               orderId: placed.orderId,
               clientOrderId,
@@ -424,7 +438,11 @@ export class LaofusEngineService {
             });
           }
           await this.stateRepo.update({ symbol: SYMBOL }, { lastSellDecisionUsDate: usDate });
-          await this.event('info', `LOC 매도 ${sellLegs.length}건 접수 — 마감 시점 자동 판정, 다음날 개장 후 회수`, runId);
+          await this.event(
+            'info',
+            `LOC 매도 ${sellLegs.length}건 접수 — 마감 시점 자동 판정, 다음날 개장 후 회수`,
+            runId,
+          );
           lines.push(`LOC 매도 ${sellLegs.length}건 접수`);
         }
       }
@@ -450,14 +468,17 @@ export class LaofusEngineService {
     remainingPending: number,
   ): Promise<string[]> {
     const price =
-      opts.injectedPrice !== null && !opts.live ? opts.injectedPrice : Number((await this.toss.getPrice(SYMBOL)).lastPrice);
+      opts.injectedPrice !== null && !opts.live
+        ? opts.injectedPrice
+        : Number((await this.toss.getPrice(SYMBOL)).lastPrice);
     const d: Decision = decide(s, price);
     if (d.action === 'NONE') {
       await this.event('info', `판단: 주문 없음 — ${d.reason} (현재가 $${price})`, runId);
       lines.push(`판단: 주문 없음 — ${d.reason}`);
       return lines;
     }
-    const desc = d.action === 'BUY' ? `매수(${d.kind}) $${d.amountUsd} → T ${s.T} → ${d.tAfter}` : `매도 → T ${s.T} → ${d.tAfter}`;
+    const desc =
+      d.action === 'BUY' ? `매수(${d.kind}) $${d.amountUsd} → T ${s.T} → ${d.tAfter}` : `매도 → T ${s.T} → ${d.tAfter}`;
     log(`판단: ${desc}`);
 
     if (!opts.live) {
@@ -482,7 +503,11 @@ export class LaofusEngineService {
     const placed =
       d.action === 'BUY'
         ? await this.toss.buyByAmount(SYMBOL, String(d.amountUsd), clientOrderId)
-        : await this.toss.sellByQuantity(SYMBOL, String((d as Extract<Decision, { action: 'SELL' }>).quantity), clientOrderId);
+        : await this.toss.sellByQuantity(
+            SYMBOL,
+            String((d as Extract<Decision, { action: 'SELL' }>).quantity),
+            clientOrderId,
+          );
     log(`주문 접수: ${placed.orderId}`);
 
     const cycleRow = await this.cycleRepo.findOne({ where: { symbol: SYMBOL, cycleNo: s.cycle } });

@@ -6,8 +6,9 @@ export type AuthStackParamList = {
 };
 
 export type AssetsStackParamList = {
-  AssetsList: undefined;
+  AssetsList: { savedMode?: 'create' | 'edit'; savedAt?: number } | undefined;
   AssetDetail: { id: string };
+  AssetAdd: { mode: 'add' } | { mode: 'edit'; assetId: string };
 };
 
 /** 거래 상세/거래장부/카테고리별 거래내역 등 여러 스택에서 공통으로 여는 화면이라 returnTo로 저장 완료 후 돌아갈 화면을 지정 */

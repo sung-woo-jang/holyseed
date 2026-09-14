@@ -23,6 +23,7 @@ export default function Segmented({ options, value, onChange, small = false, ali
             style={[
               styles.item,
               { paddingVertical: small ? 5 : 8, paddingHorizontal: small ? 10 : 14 },
+              alignment === 'fixed' && { flex: 1 },
               active && { backgroundColor: theme.card },
             ]}
           >

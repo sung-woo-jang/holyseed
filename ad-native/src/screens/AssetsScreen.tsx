@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -10,7 +10,6 @@ import JointAvatar from '../components/common/JointAvatar';
 import AppToast from '../components/common/AppToast';
 import AssetCategoryIcon from '../components/common/AssetCategoryIcon';
 import DonutChart from '../components/charts/DonutChart';
-import AddAssetSheet from '../components/sheets/AddAssetSheet';
 import SnapshotSheet from '../components/sheets/SnapshotSheet';
 import Border from '../components/ui/Border';
 import ListRow from '../components/ui/ListRow';
@@ -26,21 +25,26 @@ import type { AssetsStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<AssetsStackParamList, 'AssetsList'>;
 
-export default function AssetsScreen({ navigation }: Props) {
+export default function AssetsScreen({ navigation, route }: Props) {
   const theme = useTheme();
   const data = useHouseholdData();
   const { user, currentHousehold } = useAuthStore();
   const myId = user ? Number(user.id) : null;
   const isViewer = currentHousehold?.role === 'VIEWER';
   const [snapshotOpen, setSnapshotOpen] = useState(false);
-  const [addAssetOpen, setAddAssetOpen] = useState(false);
   const [actionAsset, setActionAsset] = useState<HouseholdAsset | null>(null);
-  const [editAsset, setEditAsset] = useState<HouseholdAsset | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<HouseholdAsset | null>(null);
   const [toast, setToast] = useState('');
   const [ownerFilter, setOwnerFilter] = useState<'all' | 'joint' | number>('all');
   const [refreshing, setRefreshing] = useState(false);
   const deleteAsset = useDeleteAsset();
+
+  useEffect(() => {
+    if (!route.params?.savedMode) return;
+    setToast(route.params.savedMode === 'edit' ? '자산을 수정했어요' : '자산을 추가했어요');
+    navigation.setParams({ savedMode: undefined, savedAt: undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route.params?.savedAt]);
 
   async function onRefresh() {
     setRefreshing(true);
@@ -58,8 +62,7 @@ export default function AssetsScreen({ navigation }: Props) {
     if (value === 'snapshot') {
       setSnapshotOpen(true);
     } else if (value === 'edit') {
-      setEditAsset(a);
-      setAddAssetOpen(true);
+      navigation.navigate('AssetAdd', { mode: 'edit', assetId: a.id });
     } else if (value === 'delete') {
       setDeleteTarget(a);
     }
@@ -217,19 +220,27 @@ export default function AssetsScreen({ navigation }: Props) {
           </ScrollView>
         )}
 
-        {!isViewer && data.assets.length > 0 && (
+        {!isViewer && (
           <View style={styles.actionRow}>
             <Pressable
               style={[styles.actionBtn, { backgroundColor: theme.brand }]}
-              onPress={() => setSnapshotOpen(true)}
+              onPress={() => navigation.navigate('AssetAdd', { mode: 'add' })}
             >
-              <TossEmoji code={TE.camera} size={18} />
-              <Text style={styles.actionBtnPrimary}>일괄 스냅샷</Text>
+              <Text style={styles.actionBtnPrimary}>＋ 자산 추가</Text>
             </Pressable>
+            {data.assets.length > 0 && (
+              <Pressable
+                style={[styles.actionBtn, { backgroundColor: theme.brand }]}
+                onPress={() => setSnapshotOpen(true)}
+              >
+                <TossEmoji code={TE.camera} size={18} />
+                <Text style={styles.actionBtnPrimary}>일괄 스냅샷</Text>
+              </Pressable>
+            )}
           </View>
         )}
 
-        {data.assets.length === 0 && <EmptyState iconCode={TE.piggy} title="아직 등록된 자산이 없어요" desc="아래 + 버튼으로 첫 자산을 추가해보세요" />}
+        {data.assets.length === 0 && <EmptyState iconCode={TE.piggy} title="아직 등록된 자산이 없어요" desc="위 버튼으로 첫 자산을 추가해보세요" />}
         {data.assets.length > 0 && filteredAssets.length === 0 && <EmptyState compact iconCode={TE.piggy} title="이 소유자의 자산이 없어요" />}
 
         {(Object.entries(grouped) as [AssetCategory, HouseholdAsset[]][]).map(([cat, items]) => {
@@ -292,22 +303,7 @@ export default function AssetsScreen({ navigation }: Props) {
         })}
       </ScrollView>
 
-      {!isViewer && (
-        <Pressable style={[styles.fab, { backgroundColor: theme.brand }]} onPress={() => setAddAssetOpen(true)}>
-          <Text style={styles.fabText}>+</Text>
-        </Pressable>
-      )}
-
       <SnapshotSheet visible={snapshotOpen} onClose={() => setSnapshotOpen(false)} onSaved={() => setToast('스냅샷을 저장했어요')} />
-      <AddAssetSheet
-        visible={addAssetOpen}
-        editAsset={editAsset}
-        onClose={() => {
-          setAddAssetOpen(false);
-          setEditAsset(null);
-        }}
-        onSaved={(mode) => setToast(mode === 'edit' ? '자산을 수정했어요' : '자산을 추가했어요')}
-      />
 
       <ActionSheet
         visible={!!actionAsset}
@@ -377,6 +373,4 @@ const styles = StyleSheet.create({
   assetRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   assetValue: { fontSize: 14, fontWeight: '700' },
   kebabIcon: { fontSize: 20, fontWeight: '700', paddingHorizontal: 6 },
-  fab: { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', elevation: 4 },
-  fabText: { fontSize: 28, color: '#fff' },
 });

@@ -125,7 +125,7 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
           valueColor={sellTrades.length > 0 ? (sellPL >= 0 ? theme.brand : theme.danger) : undefined}
         />
         <Tile theme={theme} label="총 회수" value={usd(sells)} />
-        <Tile theme={theme} label="현재 T" value={String(T)} sub={`남은 회차 ${40 - T}`} />
+        <Tile theme={theme} label="현재 T" value={String(T)} sub={`남은 회차 ${20 - T}`} />
         <Tile theme={theme} label="거래 횟수" value={`${real.length}차`} sub={`${days}일간`} />
       </View>
 

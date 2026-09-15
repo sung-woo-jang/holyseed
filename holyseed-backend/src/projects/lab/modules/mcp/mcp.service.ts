@@ -514,6 +514,23 @@ export class LabMcpService {
     );
 
     registerTool(
+      'worklog_bulk_update_withholding',
+      {
+        title: '근무일지 원천징수 일괄 변경 (분류 단위)',
+        description:
+          '특정 분류에 속한 기존 근무 기록 전체의 원천징수(3.3%) 적용 여부를 한 번에 바꿉니다. worklog_category_update는 그 분류로 "앞으로" 새로 만들 기록의 기본값만 바꾸고 기존 기록엔 소급 반영이 안 되는데, 이 도구는 이미 등록된 기록들 자체를 직접 고칩니다. 실행 전 대상 분류와 몇 건이 바뀌는지 사용자에게 확인하세요.',
+        inputSchema: {
+          category: z.string().describe('분류명 (worklog_options로 확인)'),
+          withholdingApplied: z.boolean().describe('원천징수(3.3%) 적용 여부'),
+        },
+      },
+      ({ category, withholdingApplied }) =>
+        this.call(async (api) =>
+          this.unwrap(await api.post('/worklog/bulk-update-withholding', { category, withholdingApplied })),
+        ),
+    );
+
+    registerTool(
       'worklog_delete',
       {
         title: '근무 기록 삭제',

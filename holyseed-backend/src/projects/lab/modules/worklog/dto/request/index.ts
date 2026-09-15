@@ -9,3 +9,4 @@ export * from './update-category-option.dto';
 export * from './reorder-category-options.dto';
 export * from './update-title-option.dto';
 export * from './save-sort-pref.dto';
+export * from './bulk-update-withholding.dto';

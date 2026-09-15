@@ -27,6 +27,7 @@ import {
   ReorderCategoryOptionsDto,
   SaveSortPrefDto,
   UpdateTitleOptionDto,
+  BulkUpdateWithholdingDto,
 } from './dto/request';
 
 const ok = (message: string, data: unknown) => ({
@@ -129,6 +130,13 @@ export class WorklogController {
   async deleteCategoryOption(@Param('id', ParseIntPipe) id: number) {
     await this.worklogService.deleteCategoryOption(id);
     return ok('분류가 삭제되었습니다.', null);
+  }
+
+  @Post('bulk-update-withholding')
+  @ApiOperation({ summary: '특정 분류에 속한 기존 근무 기록 전체의 원천징수 적용 여부 일괄 변경' })
+  async bulkUpdateWithholding(@Body() dto: BulkUpdateWithholdingDto) {
+    const { affected } = await this.worklogService.bulkUpdateWithholding(dto.category, dto.withholdingApplied);
+    return ok(`${affected}건의 원천징수 적용 여부가 변경되었습니다.`, { affected });
   }
 
   @Post('title-options/:id/update')

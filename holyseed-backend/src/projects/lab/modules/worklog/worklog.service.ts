@@ -355,4 +355,14 @@ export class WorklogService {
     await Promise.all(ids.map((id, index) => this.categoryOptionRepo.update({ id }, { sortOrder: index })));
     return this.getCategoryOptions();
   }
+
+  /**
+   * 특정 분류에 속한 기존 근무 기록 전체의 원천징수 적용 여부를 일괄 변경한다.
+   * 분류 기본값(updateCategoryOption)은 앞으로 새로 만들 기록에만 반영되고 기존 기록엔
+   * 소급 반영이 안 되므로, 이미 등록된 기록들을 한 번에 고칠 때는 이 메서드를 쓴다.
+   */
+  async bulkUpdateWithholding(category: string, withholdingApplied: boolean): Promise<{ affected: number }> {
+    const result = await this.worklogRepo.update({ category }, { withholdingApplied });
+    return { affected: result.affected ?? 0 };
+  }
 }

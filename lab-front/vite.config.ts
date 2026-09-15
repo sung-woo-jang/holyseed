@@ -44,6 +44,10 @@ export default defineConfig({
   server: {
     port: 4000,
     host: true,
+    // Vite 기본 CORS 미들웨어가 프록시보다 먼저 OPTIONS 프리플라이트를 가로채 Access-Control-Allow-Origin
+    // 없이 응답해버려서, ad.holyseed.p-e.kr(웹 ad-native)에서 lab.holyseed.p-e.kr로 보내는 요청이 브라우저
+    // CORS에 막히던 문제 — 끄고 백엔드(:8000)가 직접 내려주는 CORS 헤더를 그대로 통과시킨다
+    cors: false,
     proxy: {
       // laofus/VR 둘 다 실주문 전용 프로세스(8001)로 — holyseed-backend(8000)는 LIVE=false 조회 전용이라
       // 여기로 보내면 대시보드에 스케줄/모드가 잘못 표시됨 (2026-07-24 확인된 문제)
@@ -65,6 +69,7 @@ export default defineConfig({
     // 5000은 macOS AirPlay(AirTunes)가 점유 — 구 laofus 대시보드 포트 4800 승계
     port: 4800,
     allowedHosts: ['lab.holyseed.p-e.kr'],
+    cors: false,
     proxy: {
       '/api/laofus': {
         target: 'http://localhost:8001',

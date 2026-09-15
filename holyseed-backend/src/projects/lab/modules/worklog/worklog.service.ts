@@ -243,7 +243,7 @@ export class WorklogService {
     const rows = await this.worklogRepo.find({ select: ['title', 'category', 'workDate'], order: { workDate: 'DESC' } });
     const map = new Map<string, { name: string; category: string; count: number; lastUsedAt: Date }>();
     for (const r of rows) {
-      const key = `${r.title} ${r.category}`;
+      const key = `${r.title} ${r.category}`;
       const cur = map.get(key);
       if (cur) cur.count += 1;
       else map.set(key, { name: r.title, category: r.category, count: 1, lastUsedAt: new Date(r.workDate) });

@@ -141,12 +141,11 @@ export function computeBuyLocLegs(s: ImuState): BuyLocLeg[] {
       ]
     : [{ price: buyStarPrice, amount: ind.oneBuyAmount, halfStep: false }];
 
-  // 온주 매수는 "정수 구매"가 원칙 — 분할 배정 금액(전략에 배정된 가상 예산)이 1주 값보다 작아도
-  // 최소 1주는 산다. s.cash는 이 사이클에 배정된 가상 잔금일 뿐 계좌 전체 매수가능금액이 아니라서
-  // 여기서 이걸 기준으로 leg를 미리 걸러내면 실제로는 충분히 살 수 있는 주문까지 스킵해버린다.
-  return raw
-    .filter((r) => r.amount >= 1)
-    .map((r) => ({ price: r.price, quantity: Math.max(Math.floor(r.amount / r.price), 1), halfStep: r.halfStep }));
+  // 온주 매수는 "정수 구매"가 원칙 — 분할 배정 금액(전략에 배정된 가상 예산)이 1주 값보다 작거나
+  // 심지어 음수여도(급락으로 최소 1주 매수를 계속 강행하면서 가상 잔금이 마이너스로 몰릴 수 있음)
+  // leg 자체를 걸러내지 않는다. s.cash는 이 사이클에 배정된 가상 잔금일 뿐 계좌 전체 매수가능금액이
+  // 아니라서, 여기서 이걸 기준으로 leg를 미리 걸러내면 실제로는 충분히 살 수 있는 주문까지 스킵해버린다.
+  return raw.map((r) => ({ price: r.price, quantity: Math.max(Math.floor(r.amount / r.price), 1), halfStep: r.halfStep }));
 }
 
 /**

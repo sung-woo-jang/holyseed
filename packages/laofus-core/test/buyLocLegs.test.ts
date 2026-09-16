@@ -49,7 +49,18 @@ test('전략 배정 잔금(s.cash)이 1주 값보다 훨씬 작아도 최소 1�
   ])
 })
 
-test('배정 금액이 $1 미만이면 leg 자체를 만들지 않는다', () => {
+test('배정 금액이 $1 미만이어도 leg를 걸러내지 않고 최소 1주씩 만든다', () => {
   const s: ImuState = { cycle: 1, T: 5, quantity: 10, avgPrice: 211.44, cash: 1, principal: 2000 }
-  assert.deepEqual(computeBuyLocLegs(s), [])
+  assert.deepEqual(computeBuyLocLegs(s), [
+    { price: 232.57, quantity: 1, halfStep: true },
+    { price: 211.44, quantity: 1, halfStep: true },
+  ])
+})
+
+test('가상 잔금(s.cash)이 마이너스라 배정 금액이 음수여도 leg를 걸러내지 않고 최소 1주씩 만든다', () => {
+  const s: ImuState = { cycle: 1, T: 5, quantity: 10, avgPrice: 211.44, cash: -57.42, principal: 2000 }
+  assert.deepEqual(computeBuyLocLegs(s), [
+    { price: 232.57, quantity: 1, halfStep: true },
+    { price: 211.44, quantity: 1, halfStep: true },
+  ])
 })

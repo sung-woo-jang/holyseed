@@ -17,6 +17,11 @@ export interface MissedOccurrence {
   toAssetId: number | null;
 }
 
+/** KST 기준 YYYY-MM-DD — toISOString()은 UTC라 KST 오전 9시 이전엔 하루 전 날짜가 됨 */
+function kstDate(d: Date = new Date()): string {
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' }).format(d);
+}
+
 @Injectable()
 export class RecurringTransactionsService {
   constructor(
@@ -59,10 +64,10 @@ export class RecurringTransactionsService {
   }
 
   async runDailyAll(): Promise<void> {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    const todayDay = today.getDate();
-    const todayMonth = today.getMonth() + 1;
+    const todayStr = kstDate();
+    const [, todayMonthStr, todayDayStr] = todayStr.split('-');
+    const todayDay = Number(todayDayStr);
+    const todayMonth = Number(todayMonthStr);
 
     const actives = await this.recurringRepo.find({ where: { active: true } });
 
@@ -89,7 +94,7 @@ export class RecurringTransactionsService {
   }
 
   async findMissed(householdId: number, fromDate?: string): Promise<MissedOccurrence[]> {
-    const today = new Date().toISOString().split('T')[0];
+    const today = kstDate();
     const actives = await this.recurringRepo.find({ where: { householdId, active: true } });
     if (actives.length === 0) return [];
 
@@ -135,7 +140,7 @@ export class RecurringTransactionsService {
   async applyMissed(householdId: number, items: { recurringId: number; date: string }[]): Promise<number> {
     const missed = await this.findMissed(householdId);
     const missedByKey = new Map(missed.map((m) => [`${m.recurringId}:${m.date}`, m]));
-    const today = new Date().toISOString().split('T')[0];
+    const today = kstDate();
 
     let created = 0;
     const seen = new Set<string>();
@@ -199,7 +204,7 @@ export class RecurringTransactionsService {
   }
 
   private async generateTransaction(r: RecurringTransaction): Promise<Transaction> {
-    const today = new Date().toISOString().split('T')[0];
+    const today = kstDate();
     const tx = this.txRepo.create({
       householdId: r.householdId,
       date: today,

@@ -9,6 +9,10 @@ export enum TransactionType {
 
 @Entity('transactions', { schema: 'ad' })
 @Index(['householdId', 'date'])
+// 정기거래 cron이 같은 날짜에 같은 정기거래를 두 번 만들지 못하게 막는 마지막 방어선
+// (2026-09-16 cluster 중복 발화로 실제 3중복 발생 — 코드 가드가 뚫려도 DB에서 막음).
+// 수동 입력 거래는 recurringTemplateId가 NULL이라 where절로 제외(NULL끼리는 유니크 검사 대상 아님이지만 명시).
+@Index(['recurringTemplateId', 'date'], { unique: true, where: '"recurring_template_id" IS NOT NULL' })
 export class Transaction extends BaseEntity {
   @Column({ name: 'household_id' })
   householdId: number;

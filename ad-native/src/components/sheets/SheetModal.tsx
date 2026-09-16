@@ -15,6 +15,8 @@ interface SheetModalProps {
   children: ReactNode;
   /** 시트 위에 겹쳐 그리는 오버레이(날짜 피커 등) */
   overlay?: ReactNode;
+  /** 헤더/손잡이와 본문 사이 위쪽 여백(기본 14) — 목록만 있는 짧은 시트에서 0으로 줄일 때 사용 */
+  bodyPaddingTop?: number;
 }
 
 /**
@@ -53,7 +55,7 @@ const DISMISS_DISTANCE = 120;
 const DISMISS_VELOCITY = 0.8; // PanResponder의 vy는 px/ms 단위
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export default function SheetModal({ visible, onClose, header, headerRight, cta, children, overlay }: SheetModalProps) {
+export default function SheetModal({ visible, onClose, header, headerRight, cta, children, overlay, bodyPaddingTop }: SheetModalProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const dragY = useRef(new Animated.Value(0)).current;
@@ -132,7 +134,11 @@ export default function SheetModal({ visible, onClose, header, headerRight, cta,
               </View>
               <ScrollView
                 ref={scrollRef}
-                contentContainerStyle={[styles.body, { paddingBottom: (cta ? 0 : 24 + insets.bottom) + keyboardHeight }]}
+                contentContainerStyle={[
+                  styles.body,
+                  { paddingBottom: (cta ? 0 : 24 + insets.bottom) + keyboardHeight },
+                  bodyPaddingTop !== undefined && { paddingTop: bodyPaddingTop },
+                ]}
                 keyboardShouldPersistTaps="handled"
                 overScrollMode="always"
                 onScroll={(e) => {

@@ -19,13 +19,15 @@ interface ActionSheetProps {
   onClose: () => void;
   /** 헤더와 목록 사이 위쪽 여백(기본 14) — 짧은 목록에서 0으로 줄일 때 사용 */
   bodyPaddingTop?: number;
+  /** 목록 좌우 여백(기본 20) — 행을 화면 끝까지 붙이고 싶을 때 0으로 줄일 때 사용 */
+  bodyPaddingHorizontal?: number;
 }
 
 /** 행 액션 메뉴 — SheetModal + ListRow 목록 */
-export default function ActionSheet({ visible, title, items, onSelect, onClose, bodyPaddingTop }: ActionSheetProps) {
+export default function ActionSheet({ visible, title, items, onSelect, onClose, bodyPaddingTop, bodyPaddingHorizontal }: ActionSheetProps) {
   const theme = useTheme();
   return (
-    <SheetModal visible={visible} onClose={onClose} header={title} bodyPaddingTop={bodyPaddingTop}>
+    <SheetModal visible={visible} onClose={onClose} header={title} bodyPaddingTop={bodyPaddingTop} bodyPaddingHorizontal={bodyPaddingHorizontal}>
       <View>
         {items.map((item) => (
           <ListRow

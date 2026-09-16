@@ -17,6 +17,8 @@ interface SheetModalProps {
   overlay?: ReactNode;
   /** 헤더/손잡이와 본문 사이 위쪽 여백(기본 14) — 목록만 있는 짧은 시트에서 0으로 줄일 때 사용 */
   bodyPaddingTop?: number;
+  /** 본문 좌우 여백(기본 20) — 행을 화면 끝까지 붙이고 싶을 때 0으로 줄일 때 사용 */
+  bodyPaddingHorizontal?: number;
 }
 
 /**
@@ -55,7 +57,7 @@ const DISMISS_DISTANCE = 120;
 const DISMISS_VELOCITY = 0.8; // PanResponder의 vy는 px/ms 단위
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export default function SheetModal({ visible, onClose, header, headerRight, cta, children, overlay, bodyPaddingTop }: SheetModalProps) {
+export default function SheetModal({ visible, onClose, header, headerRight, cta, children, overlay, bodyPaddingTop, bodyPaddingHorizontal }: SheetModalProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const dragY = useRef(new Animated.Value(0)).current;
@@ -138,6 +140,7 @@ export default function SheetModal({ visible, onClose, header, headerRight, cta,
                   styles.body,
                   { paddingBottom: (cta ? 0 : 24 + insets.bottom) + keyboardHeight },
                   bodyPaddingTop !== undefined && { paddingTop: bodyPaddingTop },
+                  bodyPaddingHorizontal !== undefined && { paddingHorizontal: bodyPaddingHorizontal },
                 ]}
                 keyboardShouldPersistTaps="handled"
                 overScrollMode="always"

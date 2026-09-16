@@ -12,7 +12,7 @@ import { useTheme } from '../lib/theme';
 import { useAuthStore } from '../stores/auth.store';
 import { krw } from '../lib/format';
 import { TE } from '../lib/toss-emoji';
-import { getCategoryDef, resolveCategoryVisual, resolveRootCategoryId } from '../lib/category-meta';
+import { resolveCategoryVisual, resolveRootCategoryId } from '../lib/category-meta';
 import type { CostType } from '../types/api';
 import TossEmoji from '../components/common/TossEmoji';
 import CategoryIcon from '../components/common/CategoryIcon';
@@ -130,6 +130,12 @@ export default function BookScreen({ navigation, route }: Props) {
     const rootId = resolveRootCategoryId(t.categoryId, data.categories);
     const rootCat = rootId != null ? data.categories.find((c) => c.id === rootId) : undefined;
     return rootCat?.name ?? t.category;
+  }
+
+  /** 이름만 있는 집계 데이터(catFilter/catBreakdown/monthCats)용 — 실제 카테고리를 찾아 진짜 icon/color를 쓰고, 없을 때만 이름 기반 폴백 */
+  function catVisual(name: string): { icon: string; color: string } {
+    const found = data.categories.find((c) => c.name === name && !c.parentId);
+    return resolveCategoryVisual(found?.id ?? null, name, data.categories);
   }
 
   const monthCats = useMemo(
@@ -540,7 +546,7 @@ export default function BookScreen({ navigation, route }: Props) {
                     </Pressable>
                   ))}
                 {[...catFilter].map((cat) => {
-                  const def = getCategoryDef(cat);
+                  const def = catVisual(cat);
                   return (
                     <Pressable key={cat} onPress={() => toggleCatFilter(cat)} style={[styles.tag, { backgroundColor: theme.brandSoft }]}>
                       <View style={[styles.chipDot, { backgroundColor: def.color }]} />
@@ -561,7 +567,7 @@ export default function BookScreen({ navigation, route }: Props) {
                     {catBreakdownDrilled && catFilter.size === 1 ? `${[...catFilter][0]} 세부 지출` : '카테고리별 지출'}
                   </Text>
                   {catBreakdown.map(([cat, amt], i) => {
-                    const def = getCategoryDef(cat);
+                    const def = catVisual(cat);
                     const max = catBreakdown[0]![1];
                     return (
                       <View key={cat} style={[styles.catBarRow, i === catBreakdown.length - 1 && { marginBottom: 0 }]}>
@@ -723,12 +729,12 @@ export default function BookScreen({ navigation, route }: Props) {
             <Text style={[styles.filterSectionLabel, { color: theme.textMuted }]}>카테고리 (복수 선택)</Text>
             <View style={styles.filterGrid}>
               {monthCats.map((cat) => {
-                const def = getCategoryDef(cat);
+                const def = catVisual(cat);
                 const active = catFilter.has(cat);
                 return (
                   <Pressable key={cat} onPress={() => toggleCatFilter(cat)} style={styles.filterCell}>
                     <View style={[styles.filterCellIcon, { backgroundColor: def.color + '22' }, active && { borderWidth: 2, borderColor: theme.brand }]}>
-                      <CategoryIcon icon={def.iconCode} size={22} />
+                      <CategoryIcon icon={def.icon} size={22} />
                       {active && (
                         <View style={[styles.filterCheck, { backgroundColor: theme.brand, borderColor: theme.card }]}>{Icon.check('#fff', 8)}</View>
                       )}

@@ -17,10 +17,11 @@ interface ActionSheetProps {
   items: ActionItem[];
   onSelect: (value: string) => void;
   onClose: () => void;
+  verticalPadding?: 'none' | 'small' | 'medium' | 'large' | number;
 }
 
 /** 행 액션 메뉴 — SheetModal + ListRow 목록 */
-export default function ActionSheet({ visible, title, items, onSelect, onClose }: ActionSheetProps) {
+export default function ActionSheet({ visible, title, items, onSelect, onClose, verticalPadding = 'medium' }: ActionSheetProps) {
   const theme = useTheme();
   return (
     <SheetModal visible={visible} onClose={onClose} header={title}>
@@ -31,7 +32,7 @@ export default function ActionSheet({ visible, title, items, onSelect, onClose }
             left={<TossEmoji code={item.iconCode} size={22} />}
             contents={<Text style={{ fontSize: 15, fontWeight: '600', color: item.danger ? theme.danger : theme.text }}>{item.label}</Text>}
             onPress={() => onSelect(item.value)}
-            verticalPadding="medium"
+            verticalPadding={verticalPadding}
           />
         ))}
       </View>

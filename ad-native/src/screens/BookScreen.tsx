@@ -666,6 +666,7 @@ export default function BookScreen({ navigation, route }: Props) {
         ]}
         onSelect={handleAddPick}
         onClose={() => setAddPicker(false)}
+        verticalPadding="none"
       />
 
       <AddRecurringSheet

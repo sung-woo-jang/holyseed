@@ -353,10 +353,13 @@ export class LaofusEngineService {
         const legs = computeBuyLocLegs(s);
         if (legs.length === 0) {
           log('매수 판단: 오늘 걸 LOC 없음 (리버스모드 대상이거나 1주도 안 됨)');
-        } else if (remainingPending > 0) {
-          await this.event('warn', `체결 대기 주문 ${remainingPending}건 미회수 — 매수 LOC 스킵`, runId);
-          lines.push('매수 스킵 — 미회수 주문 존재');
         } else {
+          // 매도 leg가 아직 미회수 상태여도 평단가/별지점가 매수 leg는 무조건 접수한다 —
+          // 매수는 매도 체결 여부와 무관하게 매일 정해진 대로 나가야 하는 게 원칙이라, 미회수
+          // 매도 주문 때문에 매수까지 통째로 밀리면 안 된다는 방침(2026-09-16).
+          if (remainingPending > 0) {
+            await this.event('info', `체결 대기 주문 ${remainingPending}건 있지만 매수는 그대로 진행`, runId);
+          }
           const totalAmount = round2(legs.reduce((a, leg) => a + leg.quantity * leg.price, 0));
           const bp = Number(await this.toss.getBuyingPower('USD'));
           if (bp < totalAmount) {

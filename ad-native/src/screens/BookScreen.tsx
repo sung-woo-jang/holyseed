@@ -214,7 +214,9 @@ export default function BookScreen({ navigation, route }: Props) {
     }
     for (const r of recurring) {
       const d = recDateForMonth(r);
-      if (recurringActiveOn(r, d)) {
+      // 이미 실제 거래로 반영된 정기 항목은 미리보기 점을 또 찍지 않는다 (중복 표시 방지)
+      const alreadyApplied = monthTx.some((t) => t.date === d && t.recurringTemplateId === r.id);
+      if (recurringActiveOn(r, d) && !alreadyApplied) {
         out.push({ id: `r${r.id}`, date: d, colorLabel: theme.textMuted, settled: true });
       }
     }
@@ -232,7 +234,13 @@ export default function BookScreen({ navigation, route }: Props) {
         items.push({ kind: 'tx', id: t.id, title: t.title, amount: t.amount, type: t.type === 'INCOME' ? 'INCOME' : 'EXPENSE', category: t.category, categoryId: t.categoryId, sub: from ? from.name : undefined });
       });
     recurring
-      .filter((r) => recDateForMonth(r) === selectedDate && recurringActiveOn(r, selectedDate))
+      .filter(
+        (r) =>
+          recDateForMonth(r) === selectedDate &&
+          recurringActiveOn(r, selectedDate) &&
+          // 이미 실제 거래로 반영된 정기 항목은 미리보기 행을 또 넣지 않는다 (중복 표시 방지)
+          !monthTx.some((t) => t.date === selectedDate && t.recurringTemplateId === r.id),
+      )
       .forEach((r) => {
         items.push({ kind: 'rec', id: r.id, title: r.title, amount: r.amount, type: r.type === 'INCOME' ? 'INCOME' : 'EXPENSE', rec: r });
       });

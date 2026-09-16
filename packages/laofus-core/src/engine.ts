@@ -136,7 +136,10 @@ export function computeBuyLocLegs(s: ImuState): BuyLocLeg[] {
       ]
     : [{ price: buyStarPrice, amount: ind.oneBuyAmount, halfStep: false }]
 
-  return raw.filter((r) => r.amount >= 1).map((r) => ({ price: r.price, quantity: Math.max(Math.floor(r.amount / r.price), 1), halfStep: r.halfStep }))
+  // amount(가상 잔금 기준 배정액)가 0 이하여도(급락으로 최소 1주 매수를 계속 강행하면서 가상
+  // 잔금이 마이너스로 몰릴 수 있음) leg 자체를 걸러내지 않는다 — 정수 매수 원칙상 항상 최소 1주는
+  // 시도하고, 실제 매수 가능 여부는 engine.service.ts의 실계좌 buying power 체크가 담당한다.
+  return raw.map((r) => ({ price: r.price, quantity: Math.max(Math.floor(r.amount / r.price), 1), halfStep: r.halfStep }))
 }
 
 export interface SellLocLeg {

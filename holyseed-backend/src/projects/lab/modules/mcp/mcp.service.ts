@@ -480,6 +480,7 @@ export class LabMcpService {
             .optional()
             .describe('수령여부 (기본 EXPECTED=예상(미수령), SCHEDULED=근무예정)'),
           amountOverride: z.number().optional().describe('실수령액이 계산과 다를 때 수동 금액 (원)'),
+          payMultiplier: z.number().optional().describe('공수 배율 (기본 1) — 0.5=반대가리(반액 지급), 1.5·2=연장근무 추가 공수'),
           address: z.string().optional().describe('주소'),
           memo: z.string().optional().describe('특이사항'),
         },
@@ -506,6 +507,7 @@ export class LabMcpService {
           jobs: z.array(z.string()).optional(),
           payStatus: z.enum(['RECEIVED', 'EXPECTED', 'UNPAID', 'DAYOFF', 'SCHEDULED']).optional().describe('SCHEDULED=근무예정'),
           amountOverride: z.number().nullable().optional().describe('null이면 오버라이드 해제'),
+          payMultiplier: z.number().optional().describe('공수 배율 — 0.5=반대가리(반액 지급), 1.5·2=연장근무 추가 공수'),
           address: z.string().optional(),
           memo: z.string().optional(),
         },

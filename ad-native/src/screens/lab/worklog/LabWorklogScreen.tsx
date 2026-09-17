@@ -114,7 +114,7 @@ export default function LabWorklogScreen({ navigation, route }: Props) {
   });
   const summaryWorkRecords = filteredRecords.filter((r) => r.payStatus !== 'DAYOFF');
   const displayWorkDays = summaryWorkRecords.length;
-  const displayLaborUnits = summaryWorkRecords.reduce((sum, r) => sum + (r.halfPay ? 0.5 : 1), 0);
+  const displayLaborUnits = summaryWorkRecords.reduce((sum, r) => sum + r.payMultiplier, 0);
   const displayTotalNet = summaryWorkRecords.reduce((sum, r) => sum + r.netAmount, 0);
   const displayTotalGross = summaryWorkRecords.reduce((sum, r) => sum + r.effectiveAmount, 0);
   const displayReceivedNet = summaryWorkRecords.filter((r) => r.payStatus === 'RECEIVED').reduce((sum, r) => sum + r.netAmount, 0);
@@ -195,7 +195,7 @@ export default function LabWorklogScreen({ navigation, route }: Props) {
               <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{r.title}</Text>
               <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 2 }}>
                 {r.category} · {PAY_STATUS_LABEL[r.payStatus]}
-                {r.halfPay ? ' · 반액' : ''}
+                {r.payMultiplier !== 1 ? ` · ${r.payMultiplier}공수` : ''}
               </Text>
             </View>
           }

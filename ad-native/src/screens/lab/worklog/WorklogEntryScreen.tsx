@@ -19,6 +19,8 @@ import type { WorklogStackParamList } from '../../../navigation/WorklogStack';
 
 type Props = NativeStackScreenProps<WorklogStackParamList, 'WorklogEntry'>;
 
+const PAY_MULTIPLIER_OPTIONS = [0.5, 1, 1.5, 2];
+
 const PAY_STATUS_OPTIONS: { value: PayStatus; label: string }[] = [
   { value: 'SCHEDULED', label: '근무예정' },
   { value: 'RECEIVED', label: '수령완료' },
@@ -95,7 +97,7 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
   const [dailyWage, setDailyWage] = useState('');
   const [amountOverride, setAmountOverride] = useState('');
   const [withholdingApplied, setWithholdingApplied] = useState(false);
-  const [halfPay, setHalfPay] = useState(false);
+  const [payMultiplier, setPayMultiplier] = useState(1);
   const [address, setAddress] = useState('');
   const [jobs, setJobs] = useState<string[]>([]);
   const [photos, setPhotos] = useState<WorklogPhoto[]>([]);
@@ -176,7 +178,7 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
       setDailyWage(record.dailyWage ? String(record.dailyWage) : '');
       setAmountOverride(record.amountOverride != null ? String(record.amountOverride) : '');
       setWithholdingApplied(record.withholdingApplied);
-      setHalfPay(record.halfPay);
+      setPayMultiplier(record.payMultiplier);
       setAddress(record.address ?? '');
       setJobs(record.jobs ?? []);
       setPhotos(record.photos ?? []);
@@ -193,7 +195,7 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
       setDailyWage(initialCategory?.defaultDailyWage != null ? String(initialCategory.defaultDailyWage) : '');
       setAmountOverride('');
       setWithholdingApplied(initialCategory?.defaultWithholdingApplied ?? false);
-      setHalfPay(false);
+      setPayMultiplier(1);
       setAddress(initialCategory?.defaultAddress ?? '');
       setJobs([]);
       setPhotos([]);
@@ -259,7 +261,7 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
         dailyWage: dailyWage ? Number(dailyWage) : undefined,
         amountOverride: amountOverride ? Number(amountOverride) : null,
         withholdingApplied,
-        halfPay,
+        payMultiplier,
         address: address || undefined,
         photos,
         memo: memo || undefined,
@@ -409,12 +411,23 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
                   <Switch checked={withholdingApplied} onCheckedChange={setWithholdingApplied} />
                 </View>
 
-                <View style={[styles.switchRow, { marginBottom: 0 }]}>
-                  <View>
-                    <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>반액 지급</Text>
-                    <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 2 }}>사정으로 일당의 절반만 받는 경우</Text>
+                <View style={{ marginBottom: 4 }}>
+                  <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600', marginBottom: 2 }}>공수 배율</Text>
+                  <Text style={{ color: theme.textMuted, fontSize: 11, marginBottom: 8 }}>0.5=반대가리(반액 지급), 1.5·2=연장근무 추가 공수</Text>
+                  <View style={styles.chipRow}>
+                    {PAY_MULTIPLIER_OPTIONS.map((v) => {
+                      const active = payMultiplier === v;
+                      return (
+                        <Pressable
+                          key={v}
+                          onPress={() => setPayMultiplier(v)}
+                          style={[styles.chip, { borderColor: active ? theme.brand : theme.border, backgroundColor: active ? theme.brandSoft : theme.bg }]}
+                        >
+                          <Text style={{ color: active ? theme.brand : theme.textMuted, fontSize: 13, fontWeight: '700' }}>{v}</Text>
+                        </Pressable>
+                      );
+                    })}
                   </View>
-                  <Switch checked={halfPay} onCheckedChange={setHalfPay} />
                 </View>
               </Section>
             )}

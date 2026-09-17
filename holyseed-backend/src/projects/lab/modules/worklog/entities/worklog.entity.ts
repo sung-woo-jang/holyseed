@@ -95,9 +95,12 @@ export class Worklog extends BaseEntity {
   @Column({ name: 'withholding_applied', type: 'boolean', default: true })
   withholdingApplied: boolean;
 
-  @ApiProperty({ description: '사정으로 일당의 절반만 지급받는 경우 true — 계산 금액(amount)은 그대로 두고 실수령(effectiveAmount)만 절반 처리', example: false })
-  @Column({ name: 'half_pay', type: 'boolean', default: false })
-  halfPay: boolean;
+  @ApiProperty({
+    description: '공수 배율 — 계산 금액(amount)은 그대로 두고 실수령(effectiveAmount)에만 곱함. 0.5=반대가리(반액 지급), 1.5·2=연장근무 추가 공수',
+    example: 1,
+  })
+  @Column({ name: 'pay_multiplier', type: 'decimal', precision: 4, scale: 2, default: 1, transformer: numeric })
+  payMultiplier: number;
 
   @ApiProperty({ description: '초과근무 임계시간 (등록 시점 분류 설정 스냅샷)', example: 8 })
   @Column({

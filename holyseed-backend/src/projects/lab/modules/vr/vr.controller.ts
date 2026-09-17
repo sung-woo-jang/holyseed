@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { VrService } from './vr.service';
 import { VrEngineService } from './services/vr-engine.service';
 import { VrStatusService } from './services/vr-status.service';
+import { VrPerformanceService } from './services/vr-performance.service';
 import { CreateFillDto, CreateCycleDto, RolloverCycleDto, UpdateSettingsDto, VrRunRequestDto } from './dto/request';
 
 const ok = (message: string, data: unknown) => ({
@@ -20,6 +21,7 @@ export class VrController {
     private readonly vrService: VrService,
     private readonly engine: VrEngineService,
     private readonly status: VrStatusService,
+    private readonly performance: VrPerformanceService,
   ) {}
 
   @Get('state')
@@ -111,6 +113,18 @@ export class VrController {
   @ApiOperation({ summary: '사이클 히스토리 전체' })
   async getCycles() {
     return ok('조회 성공', await this.vrService.findAllCycles());
+  }
+
+  @Get('wealth-history')
+  @ApiOperation({ summary: 'TQQQ 평가금·누적 투자원금 일별 추이 (계좌 스냅샷·체결 이력에서 파생)' })
+  async getWealthHistory() {
+    return ok('조회 성공', await this.performance.getWealthHistory());
+  }
+
+  @Get('spy-comparison')
+  @ApiOperation({ summary: 'TQQQ 평가금 vs SPY 정규화 수익률(%) 비교 (첫 공통일=0%)' })
+  async getSpyComparison() {
+    return ok('조회 성공', await this.performance.getSpyComparison());
   }
 
   @Post('fills')

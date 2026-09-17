@@ -41,6 +41,18 @@ export interface VrFill {
   note: string | null
 }
 
+export interface VrWealthHistoryPoint {
+  date: string
+  tqqqValue: number
+  cumulativePrincipal: number
+}
+
+export interface VrSpyComparisonPoint {
+  date: string
+  tqqqPct: number
+  spyPct: number
+}
+
 export interface VrState {
   settings: VrSettings
   cycle: VrCycle | null

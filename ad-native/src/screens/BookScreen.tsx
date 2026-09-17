@@ -192,6 +192,17 @@ export default function BookScreen({ navigation, route }: Props) {
   const monthIncome = monthTx.filter((t) => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
   const monthExpense = monthTx.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
 
+  const hasActiveFilter = typeFilter !== 'all' || catFilter.size > 0 || costFilter.size > 0;
+  const filteredIncome = filteredTx.filter((t) => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
+  const filteredExpense = filteredTx.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
+  const activeFilterLabel = [
+    typeFilter !== 'all' ? (typeFilter === 'INCOME' ? '수입' : '지출') : null,
+    ...[...costFilter].map((c) => (c === 'FIXED' ? '고정비' : '변동비')),
+    ...[...catFilter],
+  ]
+    .filter((v): v is string => Boolean(v))
+    .join(', ');
+
   const catBreakdownDrilled = catFilter.size > 0;
   const catBreakdown = useMemo(() => {
     const sums = new Map<string, number>();
@@ -473,16 +484,41 @@ export default function BookScreen({ navigation, route }: Props) {
         </View>
 
         <View style={styles.sectionPad}>
-          <View style={[styles.summary, { backgroundColor: theme.brandSoft }]}>
-            <View>
-              <Text style={{ color: theme.textMuted, fontSize: 12 }}>수입</Text>
-              <Text style={{ color: theme.brand, fontSize: 16, fontWeight: '800' }}>+{krw(monthIncome)}</Text>
+          {hasActiveFilter ? (
+            <View style={[styles.summary, styles.summaryFiltered, { backgroundColor: theme.brandSoft, borderColor: theme.brand }]}>
+              <View style={styles.summaryFilteredTop}>
+                <Text style={{ color: theme.brand, fontSize: 11, fontWeight: '800' }}>필터 결과 · {filteredTx.length}건</Text>
+                <Pressable onPress={resetFilters} hitSlop={8}>
+                  <Text style={{ color: theme.textMuted, fontSize: 11.5, fontWeight: '700' }}>전체보기 ✕</Text>
+                </Pressable>
+              </View>
+              <View style={styles.summaryFilteredAmounts}>
+                {typeFilter !== 'EXPENSE' && (
+                  <Text style={{ color: theme.brand, fontSize: 18, fontWeight: '800' }}>+{krw(filteredIncome)}</Text>
+                )}
+                {typeFilter !== 'EXPENSE' && typeFilter !== 'INCOME' && <Text style={{ color: theme.textMuted, fontSize: 13 }}>·</Text>}
+                {typeFilter !== 'INCOME' && (
+                  <Text style={{ color: theme.danger, fontSize: 18, fontWeight: '800' }}>-{krw(filteredExpense)}</Text>
+                )}
+              </View>
+              {activeFilterLabel !== '' && (
+                <Text style={{ color: theme.textMuted, fontSize: 12, marginTop: 2 }} numberOfLines={1}>
+                  {activeFilterLabel}
+                </Text>
+              )}
             </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ color: theme.textMuted, fontSize: 12 }}>지출</Text>
-              <Text style={{ color: theme.danger, fontSize: 16, fontWeight: '800' }}>-{krw(monthExpense)}</Text>
+          ) : (
+            <View style={[styles.summary, { backgroundColor: theme.brandSoft }]}>
+              <View>
+                <Text style={{ color: theme.textMuted, fontSize: 12 }}>수입</Text>
+                <Text style={{ color: theme.brand, fontSize: 16, fontWeight: '800' }}>+{krw(monthIncome)}</Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={{ color: theme.textMuted, fontSize: 12 }}>지출</Text>
+                <Text style={{ color: theme.danger, fontSize: 16, fontWeight: '800' }}>-{krw(monthExpense)}</Text>
+              </View>
             </View>
-          </View>
+          )}
         </View>
 
         {!isViewer && (
@@ -803,6 +839,9 @@ const styles = StyleSheet.create({
   monthLabel: { fontSize: 15, fontWeight: '700', minWidth: 90, textAlign: 'center' },
   sectionPad: { paddingHorizontal: 20, paddingTop: 16 },
   summary: { flexDirection: 'row', justifyContent: 'space-between', borderRadius: 14, padding: 16 },
+  summaryFiltered: { flexDirection: 'column', borderWidth: 1.5, paddingVertical: 14 },
+  summaryFilteredTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  summaryFilteredAmounts: { flexDirection: 'row', alignItems: 'baseline', gap: 7 },
   calCard: { marginHorizontal: 20, marginTop: 16, borderRadius: 16, borderWidth: 1 },
   dayHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   dayTitle: { fontSize: 14, fontWeight: '700' },

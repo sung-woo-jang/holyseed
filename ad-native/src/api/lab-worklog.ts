@@ -25,7 +25,7 @@ export interface WorklogRecord {
   memo: string | null;
   photos: WorklogPhoto[];
   withholdingApplied: boolean;
-  halfPay: boolean;
+  payMultiplier: number;
   effectiveAmount: number;
   netAmount: number;
 }
@@ -80,7 +80,7 @@ export interface WorklogInput {
   dailyWage?: number;
   amountOverride?: number | null;
   withholdingApplied?: boolean;
-  halfPay?: boolean;
+  payMultiplier?: number;
   address?: string;
   memo?: string;
   photos?: WorklogPhoto[];

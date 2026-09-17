@@ -9,6 +9,7 @@ import {
   IsOptional,
   IsString,
   Matches,
+  Max,
   MaxLength,
   Min,
   ValidateNested,
@@ -78,10 +79,12 @@ export class CreateWorklogDto {
   @IsBoolean()
   withholdingApplied?: boolean;
 
-  @ApiPropertyOptional({ description: '사정으로 일당의 절반만 지급받는 경우 true', default: false })
+  @ApiPropertyOptional({ description: '공수 배율 — 0.5=반대가리(반액 지급), 1.5·2=연장근무 추가 공수', default: 1, example: 1 })
   @IsOptional()
-  @IsBoolean()
-  halfPay?: boolean;
+  @IsNumber()
+  @Min(0)
+  @Max(5)
+  payMultiplier?: number;
 
   @ApiPropertyOptional({ description: '주소' })
   @IsOptional()

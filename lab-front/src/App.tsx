@@ -15,7 +15,6 @@ import WealthPage from '@/pages/quant/WealthPage'
 import VrFillsPage from '@/pages/vr/VrFillsPage'
 import VrLadderPage from '@/pages/vr/VrLadderPage'
 import VrOverviewPage from '@/pages/vr/VrOverviewPage'
-import VrTestPage from '@/pages/vr/VrTestPage'
 import VrSystemPage from '@/pages/vr/VrSystemPage'
 import VrTrendPage from '@/pages/vr/VrTrendPage'
 import WorklogPage from '@/pages/worklog/WorklogPage'
@@ -42,7 +41,6 @@ export default function App() {
           <Route path="/vr/ladder" element={<VrLadderPage />} />
           <Route path="/vr/fills" element={<VrFillsPage />} />
           <Route path="/vr/system" element={<VrSystemPage />} />
-          <Route path="/vr/test" element={<VrTestPage />} />
 
           <Route path="/backtest/shannon" element={<ShannonDemonBacktestPage />} />
 

@@ -8,6 +8,12 @@ interface DataPoint {
   value: number;
 }
 
+interface ExtraSeries {
+  data: DataPoint[];
+  color: string;
+  label?: string;
+}
+
 interface LineChartProps {
   data: DataPoint[];
   width?: number;
@@ -19,12 +25,14 @@ interface LineChartProps {
   formatValue?: (v: number) => string;
   /**
    * 두번째 계열을 같은 좌표축에 겹쳐 그림(점선, area 없음) — 두 값을 비교해서 봐야 할 때
-   * (예: 평가금 vs 투자원금, 전략 수익률 vs 벤치마크). data와 같은 길이·같은 순서여야 함.
+   * (예: 평가금 vs 투자원금). data와 같은 길이·같은 순서여야 함. 3개 이상 겹칠 땐 extraSeries 사용.
    */
   series2?: DataPoint[];
   color2?: string;
-  /** [계열1 이름, 계열2 이름] — 지정하면 차트 아래 범례를 그림 */
-  legendLabels?: [string, string];
+  /** [계열1 이름, 계열2 이름(생략 가능)] — 지정하면 차트 아래 범례를 그림 */
+  legendLabels?: [string, string?];
+  /** series2로도 부족한 경우(3개 이상 비교) — 각각 점선으로 겹쳐 그리고 범례에 label을 붙임 */
+  extraSeries?: ExtraSeries[];
 }
 
 export default function LineChart({
@@ -38,16 +46,22 @@ export default function LineChart({
   series2,
   color2 = '#8B95A1',
   legendLabels,
+  extraSeries,
 }: LineChartProps) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const gradId = useRef(`lc-${Math.random().toString(36).slice(2, 7)}`).current;
 
   if (!data || data.length === 0) return null;
 
+  const extras: ExtraSeries[] = [
+    ...(series2 && series2.length > 1 ? [{ data: series2, color: color2, label: legendLabels?.[1] }] : []),
+    ...(extraSeries ?? []),
+  ].filter((e) => e.data.length > 1);
+
   const padding = { top: 18, right: 44, bottom: 24, left: 8 };
   const w = width - padding.left - padding.right;
   const h = height - padding.top - padding.bottom;
-  const values = data.map((d) => d.value).concat(series2 ? series2.map((d) => d.value) : []);
+  const values = data.map((d) => d.value).concat(extras.flatMap((e) => e.data.map((d) => d.value)));
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min || 1;
@@ -60,10 +74,9 @@ export default function LineChart({
     }));
 
   const points = toPoints(data);
-  const points2 = series2 && series2.length > 1 ? toPoints(series2) : null;
+  const extraPoints = extras.map((e) => ({ ...e, points: toPoints(e.data) }));
 
   const pathD = points.map((p, i) => (i === 0 ? `M${p.x},${p.y}` : `L${p.x},${p.y}`)).join(' ');
-  const path2D = points2 ? points2.map((p, i) => (i === 0 ? `M${p.x},${p.y}` : `L${p.x},${p.y}`)).join(' ') : null;
   const lastPt = points[points.length - 1];
   const firstPt = points[0];
   const areaD = lastPt && firstPt ? `${pathD} L${lastPt.x},${padding.top + h} L${firstPt.x},${padding.top + h} Z` : pathD;
@@ -80,7 +93,7 @@ export default function LineChart({
   const xLabelIdxs = [0, Math.floor(data.length / 4), Math.floor(data.length / 2), Math.floor((data.length * 3) / 4), data.length - 1];
 
   const hp = hoverIdx != null ? points[hoverIdx] : null;
-  const hp2 = points2 && hoverIdx != null ? points2[hoverIdx] : null;
+  const hoverExtras = hoverIdx != null ? extraPoints.map((e) => ({ color: e.color, pt: e.points[hoverIdx] })).filter((e) => e.pt) : [];
 
   function pickIndex(locationX: number) {
     const rel = (locationX - padding.left) / w;
@@ -92,6 +105,16 @@ export default function LineChart({
     if (!interactive) return;
     pickIndex(e.nativeEvent.locationX);
   }
+
+  const tooltipRows = 1 + hoverExtras.length;
+  const tooltipH = 20 + tooltipRows * 13;
+  const tooltipX = hp ? Math.max(8, Math.min(width - 110, hp.x - 50)) : 0;
+  const tooltipY = hp ? Math.max(2, hp.y - tooltipH - 6) : 0;
+
+  const legendItems = [
+    ...(legendLabels?.[0] ? [{ color, label: legendLabels[0] }] : []),
+    ...extras.filter((e) => e.label).map((e) => ({ color: e.color, label: e.label as string })),
+  ];
 
   return (
     <View
@@ -120,7 +143,10 @@ export default function LineChart({
         ))}
 
         <Path d={areaD} fill={`url(#${gradId})`} />
-        {path2D && <Path d={path2D} fill="none" stroke={color2} strokeWidth={2} strokeDasharray="5,4" strokeLinecap="round" strokeLinejoin="round" />}
+        {extraPoints.map((e, i) => {
+          const dPath = e.points.map((p, j) => (j === 0 ? `M${p.x},${p.y}` : `L${p.x},${p.y}`)).join(' ');
+          return <Path key={i} d={dPath} fill="none" stroke={e.color} strokeWidth={2} strokeDasharray="5,4" strokeLinecap="round" strokeLinejoin="round" />;
+        })}
         <Path d={pathD} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
 
         {points.map((p, i) =>
@@ -128,10 +154,10 @@ export default function LineChart({
             <Circle key={i} cx={p.x} cy={p.y} r={4} fill={color} stroke={dark ? '#191F28' : '#fff'} strokeWidth={2} />
           ) : null,
         )}
-        {points2 &&
-          points2.map((p, i) =>
-            i === points2.length - 1 ? <Circle key={`s2-${i}`} cx={p.x} cy={p.y} r={3.5} fill={color2} stroke={dark ? '#191F28' : '#fff'} strokeWidth={2} /> : null,
-          )}
+        {extraPoints.map((e, i) => {
+          const p = e.points[e.points.length - 1];
+          return p ? <Circle key={`ex-${i}`} cx={p.x} cy={p.y} r={3.5} fill={e.color} stroke={dark ? '#191F28' : '#fff'} strokeWidth={2} /> : null;
+        })}
 
         {xLabelIdxs.map((idx, k) => {
           const d = data[idx]?.date ?? '';
@@ -147,60 +173,32 @@ export default function LineChart({
           <>
             <Line x1={hp.x} x2={hp.x} y1={padding.top} y2={padding.top + h} stroke={color} strokeWidth={1} strokeDasharray="3,3" opacity={0.5} />
             <Circle cx={hp.x} cy={hp.y} r={6} fill={color} stroke={dark ? '#191F28' : '#fff'} strokeWidth={2.5} />
-            {hp2 && <Circle cx={hp2.x} cy={hp2.y} r={5} fill={color2} stroke={dark ? '#191F28' : '#fff'} strokeWidth={2} />}
-            <Rect
-              x={Math.max(8, Math.min(width - 110, hp.x - 50))}
-              y={Math.max(2, hp.y - (hp2 ? 52 : 38))}
-              width={100}
-              height={hp2 ? 46 : 32}
-              rx={6}
-              fill={dark ? '#0F1115' : '#191F28'}
-              opacity={0.95}
-            />
-            <SvgText
-              x={Math.max(8, Math.min(width - 110, hp.x - 50)) + 50}
-              y={Math.max(2, hp.y - (hp2 ? 52 : 38)) + 13}
-              textAnchor="middle"
-              fontSize={9.5}
-              fill="rgba(255,255,255,0.6)"
-            >
+            {hoverExtras.map((e, i) => (
+              <Circle key={i} cx={e.pt!.x} cy={e.pt!.y} r={5} fill={e.color} stroke={dark ? '#191F28' : '#fff'} strokeWidth={2} />
+            ))}
+            <Rect x={tooltipX} y={tooltipY} width={100} height={tooltipH} rx={6} fill={dark ? '#0F1115' : '#191F28'} opacity={0.95} />
+            <SvgText x={tooltipX + 50} y={tooltipY + 13} textAnchor="middle" fontSize={9.5} fill="rgba(255,255,255,0.6)">
               {hp.date}
             </SvgText>
-            <SvgText
-              x={Math.max(8, Math.min(width - 110, hp.x - 50)) + 50}
-              y={Math.max(2, hp.y - (hp2 ? 52 : 38)) + 26}
-              textAnchor="middle"
-              fontSize={11}
-              fontWeight="700"
-              fill={color}
-            >
+            <SvgText x={tooltipX + 50} y={tooltipY + 26} textAnchor="middle" fontSize={11} fontWeight="700" fill={color}>
               {formatValue(hp.value)}
             </SvgText>
-            {hp2 && (
-              <SvgText
-                x={Math.max(8, Math.min(width - 110, hp.x - 50)) + 50}
-                y={Math.max(2, hp.y - 52) + 39}
-                textAnchor="middle"
-                fontSize={11}
-                fontWeight="700"
-                fill={color2}
-              >
-                {formatValue(hp2.value)}
+            {hoverExtras.map((e, i) => (
+              <SvgText key={i} x={tooltipX + 50} y={tooltipY + 39 + i * 13} textAnchor="middle" fontSize={11} fontWeight="700" fill={e.color}>
+                {formatValue(e.pt!.value)}
               </SvgText>
-            )}
+            ))}
           </>
         )}
       </Svg>
-      {legendLabels && (
-        <View style={{ flexDirection: 'row', gap: 14, marginTop: 6, paddingLeft: padding.left }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-            <View style={{ width: 10, height: 2.5, borderRadius: 2, backgroundColor: color }} />
-            <Text style={{ fontSize: 10.5, color: labelColor }}>{legendLabels[0]}</Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-            <View style={{ width: 10, height: 2.5, borderRadius: 2, backgroundColor: color2 }} />
-            <Text style={{ fontSize: 10.5, color: labelColor }}>{legendLabels[1]}</Text>
-          </View>
+      {legendItems.length > 0 && (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginTop: 6, paddingLeft: padding.left }}>
+          {legendItems.map((item, i) => (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <View style={{ width: 10, height: 2.5, borderRadius: 2, backgroundColor: item.color }} />
+              <Text style={{ fontSize: 10.5, color: labelColor }}>{item.label}</Text>
+            </View>
+          ))}
         </View>
       )}
     </View>

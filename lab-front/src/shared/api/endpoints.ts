@@ -24,8 +24,6 @@ export const VR_API = {
   SETTINGS_UPDATE: '/vr/settings/update',
   EVENTS: '/vr/events',
   CANDLES: '/vr/candles',
-  WEALTH_HISTORY: '/vr/wealth-history',
-  SPY_COMPARISON: '/vr/spy-comparison',
 } as const
 
 // ===== 백테스트 API =====

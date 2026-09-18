@@ -34,8 +34,10 @@ interface AddRecurringSheetProps {
 }
 
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 type RecType = 'EXPENSE' | 'INCOME';
+type RecFreq = 'MONTHLY' | 'WEEKLY';
 
 export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }: AddRecurringSheetProps) {
   const theme = useTheme();
@@ -45,12 +47,15 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
   const [amount, setAmount] = useState('');
   const [name, setName] = useState('');
   const [category, setCategory] = useState<{ id: number; name: string } | null>(null);
+  const [frequency, setFrequency] = useState<RecFreq>('MONTHLY');
   const [dayOfMonth, setDayOfMonth] = useState(25);
+  const [dayOfWeek, setDayOfWeek] = useState(1);
   const [hasEnd, setHasEnd] = useState(false);
   const [endMonths, setEndMonths] = useState(12);
   const [catPicker, setCatPicker] = useState(false);
   const [expandedCatId, setExpandedCatId] = useState<number | null>(null);
   const [dayPicker, setDayPicker] = useState(false);
+  const [weekdayPicker, setWeekdayPicker] = useState(false);
   const [endPicker, setEndPicker] = useState(false);
   const [error, setError] = useState('');
   const createRecurring = useCreateRecurring();
@@ -63,13 +68,16 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
     setName(editRec.title);
     const c = data.categories.find((x) => x.name === editRec.category);
     setCategory(c ? { id: c.id, name: c.name } : { id: 0, name: editRec.category });
-    setDayOfMonth(editRec.dayOfMonth);
+    setFrequency(editRec.frequency === 'WEEKLY' ? 'WEEKLY' : 'MONTHLY');
+    setDayOfMonth(editRec.dayOfMonth ?? 25);
+    setDayOfWeek(editRec.dayOfWeek ?? 1);
     setHasEnd(!!editRec.endDate);
     setError('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, editRec]);
 
   const isIncome = type === 'INCOME';
+  const isWeekly = frequency === 'WEEKLY';
   const localCategories = Object.entries(CATEGORY_DEFS)
     .filter(([, def]) => def.type === type)
     .map(([n]) => n);
@@ -79,11 +87,18 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
   const isValid = name.length > 0 && amtNum > 0;
 
   const today = new Date();
-  const nextDate = new Date(today.getFullYear(), today.getMonth() + (today.getDate() >= dayOfMonth ? 1 : 0), dayOfMonth);
+  const nextDate = isWeekly
+    ? (() => {
+        const d = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        d.setDate(d.getDate() + ((dayOfWeek - d.getDay() + 7) % 7));
+        return d;
+      })()
+    : new Date(today.getFullYear(), today.getMonth() + (today.getDate() >= dayOfMonth ? 1 : 0), dayOfMonth);
   const nextDateStr = `${nextDate.getFullYear()}년 ${nextDate.getMonth() + 1}월 ${nextDate.getDate()}일`;
 
   function computeEndDate(): string {
-    const d = new Date(today.getFullYear(), today.getMonth() + endMonths, dayOfMonth);
+    const baseDay = isWeekly ? today.getDate() : dayOfMonth;
+    const d = new Date(today.getFullYear(), today.getMonth() + endMonths, baseDay);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
   const endDateLabel = `${endMonths}개월 후 (~${computeEndDate().slice(0, 7)})`;
@@ -93,7 +108,9 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
     setAmount('');
     setName('');
     setCategory(null);
+    setFrequency('MONTHLY');
     setDayOfMonth(25);
+    setDayOfWeek(1);
     setHasEnd(false);
     setEndMonths(12);
     setError('');
@@ -102,11 +119,20 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
   async function handleSave() {
     setError('');
     const todayStr = todayLocal();
+    const scheduleFields = isWeekly ? { dayOfWeek } : { dayOfMonth };
     try {
       if (isEdit && editRec) {
         await updateRecurring.mutateAsync({
           id: Number(editRec.id),
-          dto: { title: name, type, amount: amtNum, dayOfMonth, ...(category && category.id > 0 ? { categoryId: category.id } : {}), ...(hasEnd ? { endDate: computeEndDate() } : {}) },
+          dto: {
+            title: name,
+            type,
+            amount: amtNum,
+            frequency,
+            ...scheduleFields,
+            ...(category && category.id > 0 ? { categoryId: category.id } : {}),
+            ...(hasEnd ? { endDate: computeEndDate() } : {}),
+          },
         });
         onClose();
         onSaved?.('edit');
@@ -117,8 +143,8 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
         type,
         amount: amtNum,
         ...(category && category.id > 0 ? { categoryId: category.id } : {}),
-        frequency: 'MONTHLY',
-        dayOfMonth,
+        frequency,
+        ...scheduleFields,
         startDate: todayStr,
         ...(hasEnd ? { endDate: computeEndDate() } : {}),
       });
@@ -231,6 +257,23 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
             </View>
           </PickerOverlay>
 
+          <PickerOverlay visible={weekdayPicker} title="요일 선택" onClose={() => setWeekdayPicker(false)}>
+            <View style={styles.dayGrid}>
+              {WEEKDAYS.map((label, idx) => (
+                <Pressable
+                  key={idx}
+                  style={[styles.dayCell, { backgroundColor: dayOfWeek === idx ? theme.brand : theme.bg, borderColor: theme.border }]}
+                  onPress={() => {
+                    setDayOfWeek(idx);
+                    setWeekdayPicker(false);
+                  }}
+                >
+                  <Text style={{ color: dayOfWeek === idx ? '#fff' : theme.text, fontSize: 13, fontWeight: '600' }}>{label}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </PickerOverlay>
+
           <PickerOverlay visible={endPicker} title="종료 시점" onClose={() => setEndPicker(false)}>
             {[3, 6, 12, 24, 36].map((mo) => (
               <ListRow
@@ -260,9 +303,21 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
         />
       </View>
 
+      <View style={styles.segWrap}>
+        <Segmented options={['매월', '매주']} value={isWeekly ? '매주' : '매월'} onChange={(v) => setFrequency(v === '매주' ? 'WEEKLY' : 'MONTHLY')} />
+      </View>
+
       <View style={[styles.infoBox, { backgroundColor: theme.brandSoft }]}>
         <TossEmoji code={TE.repeat} size={20} />
-        <Text style={[styles.infoText, { color: theme.brand }]}>{isIncome ? '매월 같은 날 자동으로 들어오는 수입을 등록해요' : '매월 같은 날 자동으로 나가는 지출을 등록해요'}</Text>
+        <Text style={[styles.infoText, { color: theme.brand }]}>
+          {isWeekly
+            ? isIncome
+              ? '매주 같은 요일에 자동으로 들어오는 수입을 등록해요'
+              : '매주 같은 요일에 자동으로 나가는 지출을 등록해요'
+            : isIncome
+              ? '매월 같은 날 자동으로 들어오는 수입을 등록해요'
+              : '매월 같은 날 자동으로 나가는 지출을 등록해요'}
+        </Text>
       </View>
 
       <View style={styles.amountWrap}>
@@ -273,7 +328,11 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
 
       <View style={[styles.fieldsCard, { borderColor: theme.border }]}>
         <FormRow label="카테고리" value={category?.name || ''} onPress={() => setCatPicker(true)} />
-        <FormRow label="결제일" value={`매월 ${dayOfMonth}일`} onPress={() => setDayPicker(true)} />
+        {isWeekly ? (
+          <FormRow label="요일" value={`매주 ${WEEKDAYS[dayOfWeek]}요일`} onPress={() => setWeekdayPicker(true)} />
+        ) : (
+          <FormRow label="결제일" value={`매월 ${dayOfMonth}일`} onPress={() => setDayPicker(true)} />
+        )}
       </View>
 
       <ListRow contents={<Text style={{ color: theme.text, fontSize: 15, fontWeight: '600' }}>종료일 설정</Text>} right={<Switch checked={hasEnd} onCheckedChange={setHasEnd} />} verticalPadding="small" />

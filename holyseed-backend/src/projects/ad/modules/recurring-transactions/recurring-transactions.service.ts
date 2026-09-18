@@ -181,6 +181,13 @@ export class RecurringTransactionsService {
     const upper = r.endDate && r.endDate < today ? r.endDate : today;
     if (lower > upper) return [];
 
+    if (r.frequency === RecurringFrequency.WEEKLY) {
+      return this.computeWeeklyDueDates(r, lower, upper);
+    }
+
+    const dayOfMonth = r.dayOfMonth;
+    if (dayOfMonth == null) return [];
+
     const pad = (n: number) => String(n).padStart(2, '0');
     const [uy, um] = upper.split('-').map(Number);
     let [y, m] = lower.split('-').map(Number);
@@ -190,8 +197,8 @@ export class RecurringTransactionsService {
       const isDue = r.frequency === RecurringFrequency.MONTHLY ? true : r.monthOfYear === m;
       // 해당 월에 없는 일자(예: 2월 31일)는 기존 cron과 동일하게 스킵
       const daysInMonth = new Date(y, m, 0).getDate();
-      if (isDue && r.dayOfMonth <= daysInMonth) {
-        const date = `${y}-${pad(m)}-${pad(r.dayOfMonth)}`;
+      if (isDue && dayOfMonth <= daysInMonth) {
+        const date = `${y}-${pad(m)}-${pad(dayOfMonth)}`;
         if (date >= lower && date <= upper) dates.push(date);
       }
       if (m === 12) {
@@ -200,6 +207,25 @@ export class RecurringTransactionsService {
       } else {
         m += 1;
       }
+    }
+    return dates;
+  }
+
+  /** 매주 특정 요일(0=일~6=토) 반복 — 등록 기간을 하루씩 순회하며 일치하는 날짜만 수집 */
+  private computeWeeklyDueDates(r: RecurringTransaction, lower: string, upper: string): string[] {
+    if (r.dayOfWeek == null) return [];
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const [ly, lm, ld] = lower.split('-').map(Number);
+    const [uy, um, ud] = upper.split('-').map(Number);
+    const cur = new Date(ly, lm - 1, ld);
+    const end = new Date(uy, um - 1, ud);
+
+    const dates: string[] = [];
+    while (cur <= end) {
+      if (cur.getDay() === r.dayOfWeek) {
+        dates.push(`${cur.getFullYear()}-${pad(cur.getMonth() + 1)}-${pad(cur.getDate())}`);
+      }
+      cur.setDate(cur.getDate() + 1);
     }
     return dates;
   }

@@ -43,11 +43,12 @@ export class CreateRecurringDto {
   @IsEnum(RecurringFrequency)
   frequency: RecurringFrequency;
 
-  @ApiProperty({ description: '실행 일 (1~31)', example: 25 })
+  @ApiPropertyOptional({ description: '실행 일 (MONTHLY/YEARLY 시 필요, 1~31)', example: 25 })
+  @IsOptional()
   @IsNumber()
   @Min(1)
   @Max(31)
-  dayOfMonth: number;
+  dayOfMonth?: number;
 
   @ApiPropertyOptional({ description: '실행 월 (YEARLY 시 필요, 1~12)', example: 1 })
   @IsOptional()
@@ -55,6 +56,13 @@ export class CreateRecurringDto {
   @Min(1)
   @Max(12)
   monthOfYear?: number;
+
+  @ApiPropertyOptional({ description: '실행 요일 (WEEKLY 시 필요, 0=일~6=토)', example: 1 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(6)
+  dayOfWeek?: number;
 
   @ApiProperty({ description: '시작 날짜 (YYYY-MM-DD)', example: '2024-01-01' })
   @IsDateString()

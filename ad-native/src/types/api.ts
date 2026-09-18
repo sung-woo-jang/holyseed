@@ -3,7 +3,7 @@ export type AssetCategory = 'CASH' | 'INVESTMENT' | 'CRYPTO' | 'REAL_ESTATE' | '
 export type TxType = 'INCOME' | 'EXPENSE';
 export type CategoryType = 'INCOME' | 'EXPENSE';
 export type CostType = 'FIXED' | 'VARIABLE';
-export type RecurringFrequency = 'MONTHLY' | 'YEARLY';
+export type RecurringFrequency = 'MONTHLY' | 'YEARLY' | 'WEEKLY';
 
 export interface Asset {
   id: number;
@@ -74,8 +74,9 @@ export interface RecurringTransaction {
   fromAssetId: number | null;
   toAssetId: number | null;
   frequency: RecurringFrequency;
-  dayOfMonth: number;
+  dayOfMonth: number | null;
   monthOfYear: number | null;
+  dayOfWeek: number | null;
   startDate: string;
   endDate: string | null;
   active: boolean;

@@ -30,6 +30,7 @@ function todayMonth(): string {
   return todayLocal().slice(0, 7);
 }
 const pad = (n: number) => String(n).padStart(2, '0');
+const WEEKDAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
 type DayItem = { kind: 'tx'; id: string; title: string; amount: number; type: 'INCOME' | 'EXPENSE'; category: string; categoryId: number | null; sub?: string };
 
@@ -367,7 +368,8 @@ export default function BookScreen({ navigation, route }: Props) {
             <View>
               <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{r.title}</Text>
               <Text style={{ color: theme.textMuted, fontSize: 11 }}>
-                매월 {r.dayOfMonth}일{r.endDate ? ` · ~${r.endDate.slice(0, 7)}` : ''}
+                {r.frequency === 'WEEKLY' ? `매주 ${WEEKDAY_NAMES[r.dayOfWeek ?? 0]}요일` : `매월 ${r.dayOfMonth}일`}
+                {r.endDate ? ` · ~${r.endDate.slice(0, 7)}` : ''}
               </Text>
             </View>
           }

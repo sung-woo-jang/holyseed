@@ -116,8 +116,9 @@ export const recurringApi = {
       fromAssetId?: number;
       toAssetId?: number;
       frequency: RecurringFrequency;
-      dayOfMonth: number;
+      dayOfMonth?: number;
       monthOfYear?: number;
+      dayOfWeek?: number;
       startDate: string;
       endDate?: string;
     },

@@ -170,8 +170,9 @@ export function useCreateRecurring() {
       categoryId?: number;
       fromAssetId?: number;
       toAssetId?: number;
-      frequency: 'MONTHLY' | 'YEARLY';
-      dayOfMonth: number;
+      frequency: 'MONTHLY' | 'YEARLY' | 'WEEKLY';
+      dayOfMonth?: number;
+      dayOfWeek?: number;
       startDate: string;
       endDate?: string;
     }) => recurringApi.create(hid!, dto),
@@ -187,7 +188,19 @@ export function useUpdateRecurring() {
   return useMutation({
     mutationFn: ({ id, dto }: {
       id: number;
-      dto: Partial<{ title: string; type: 'INCOME' | 'EXPENSE'; amount: number; categoryId: number; fromAssetId: number; toAssetId: number; dayOfMonth: number; startDate: string; endDate: string }>;
+      dto: Partial<{
+        title: string;
+        type: 'INCOME' | 'EXPENSE';
+        amount: number;
+        categoryId: number;
+        fromAssetId: number;
+        toAssetId: number;
+        frequency: 'MONTHLY' | 'YEARLY' | 'WEEKLY';
+        dayOfMonth: number;
+        dayOfWeek: number;
+        startDate: string;
+        endDate: string;
+      }>;
     }) => recurringApi.update(id, dto as any),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.recurring(hid!) });

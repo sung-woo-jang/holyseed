@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi, assetsApi, txApi, recurringApi, householdsApi, categoriesApi } from '../api';
 import { useAuthStore } from '../stores/auth.store';
-import type { AssetCategory, Category, CostType, MemberRole } from '../types/api';
+import type { AssetCategory, Category, CostType, MemberRole, RecurringFrequency } from '../types/api';
 import { ASSET_CATEGORY_META } from '../lib/category-meta';
 import { qk } from './keys';
 import { toLocalDateString } from '../lib/date';
@@ -44,7 +44,9 @@ export interface HouseholdRecurring {
   amount: number;
   category: string;
   categoryId: number | null;
-  dayOfMonth: number;
+  frequency: RecurringFrequency;
+  dayOfMonth: number | null;
+  dayOfWeek: number | null;
   from: string;
   active: boolean;
   nextDate: string;
@@ -123,6 +125,15 @@ function computeNextDate(dayOfMonth: number): string {
   const today = new Date();
   const candidate = new Date(today.getFullYear(), today.getMonth(), dayOfMonth);
   if (candidate <= today) candidate.setMonth(candidate.getMonth() + 1);
+  return toLocalDateString(candidate);
+}
+
+/** 오늘 이후(오늘 포함) 가장 가까운 해당 요일(0=일~6=토) */
+function computeNextWeekday(dayOfWeek: number): string {
+  const today = new Date();
+  const candidate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const diff = (dayOfWeek - candidate.getDay() + 7) % 7;
+  candidate.setDate(candidate.getDate() + diff);
   return toLocalDateString(candidate);
 }
 
@@ -272,10 +283,12 @@ export function useHouseholdData(): HouseholdData {
     amount: Number(r.amount) || 0,
     category: categoryById.get(r.categoryId)?.name ?? '기타',
     categoryId: r.categoryId ?? null,
-    dayOfMonth: r.dayOfMonth,
+    frequency: (r.frequency ?? 'MONTHLY') as RecurringFrequency,
+    dayOfMonth: r.dayOfMonth ?? null,
+    dayOfWeek: r.dayOfWeek ?? null,
     from: r.fromAssetId != null ? String(r.fromAssetId) : '',
     active: r.active,
-    nextDate: r.active ? computeNextDate(r.dayOfMonth) : '—',
+    nextDate: r.active ? (r.frequency === 'WEEKLY' ? computeNextWeekday(r.dayOfWeek) : computeNextDate(r.dayOfMonth)) : '—',
     type: (r.type === 'INCOME' ? 'INCOME' : 'EXPENSE') as 'INCOME' | 'EXPENSE',
     startDate: r.startDate ?? undefined,
     endDate: r.endDate ?? undefined,

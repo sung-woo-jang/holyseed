@@ -5,6 +5,7 @@ import { TransactionType } from '../../transactions/entities/transaction.entity'
 export enum RecurringFrequency {
   MONTHLY = 'MONTHLY',
   YEARLY = 'YEARLY',
+  WEEKLY = 'WEEKLY',
 }
 
 @Entity('recurring_transactions', { schema: 'ad' })
@@ -36,11 +37,15 @@ export class RecurringTransaction extends BaseEntity {
   @Column({ type: 'enum', enum: RecurringFrequency, default: RecurringFrequency.MONTHLY })
   frequency: RecurringFrequency;
 
-  @Column({ name: 'day_of_month' })
-  dayOfMonth: number;
+  @Column({ name: 'day_of_month', nullable: true })
+  dayOfMonth: number | null;
 
   @Column({ name: 'month_of_year', nullable: true })
   monthOfYear: number;
+
+  /** WEEKLY 전용 — 0=일 ~ 6=토 (JS Date.getDay() 컨벤션) */
+  @Column({ name: 'day_of_week', nullable: true })
+  dayOfWeek: number | null;
 
   @Column({ name: 'start_date', type: 'date' })
   startDate: string;

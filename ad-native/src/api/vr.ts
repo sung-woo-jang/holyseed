@@ -91,15 +91,6 @@ export interface VrWealthHistoryPoint {
   cumulativePrincipal: number;
 }
 
-export const VR_BENCHMARK_SYMBOLS = ['VOO', 'QQQM', 'QLD'] as const;
-export type VrBenchmarkSymbol = (typeof VR_BENCHMARK_SYMBOLS)[number];
-
-export interface VrBenchmarkComparisonPoint {
-  date: string;
-  tqqqPct: number;
-  benchmarks: Record<VrBenchmarkSymbol, number>;
-}
-
 export const vrApi = {
   state: () => labApi.get<VrState>('/vr/state').then((r) => r.data),
   price: () => labApi.get<{ price: number; ts: string }>('/vr/price').then((r) => r.data),
@@ -110,7 +101,6 @@ export const vrApi = {
   fills: () => labApi.get<VrFill[]>('/vr/fills').then((r) => r.data),
   cycles: () => labApi.get<VrCycle[]>('/vr/cycles').then((r) => r.data),
   wealthHistory: () => labApi.get<VrWealthHistoryPoint[]>('/vr/wealth-history').then((r) => r.data),
-  benchmarkComparison: () => labApi.get<VrBenchmarkComparisonPoint[]>('/vr/benchmark-comparison').then((r) => r.data),
   createFill: (dto: { fillDate: string; kind: VrFillKind; price: number; quantity: number; note?: string }) =>
     labApi.post<VrFill>('/vr/fills', dto).then((r) => r.data),
   deleteFill: (id: number) => labApi.post(`/vr/fills/${id}/delete`).then((r) => r.data),

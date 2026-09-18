@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { TossClientService } from '@shared/toss/toss-client.service';
 import { LaofusAccountSnapshot } from '@/projects/laofus/entities/account-snapshot.entity';
 import { VrFill, VrFillKind } from '../entities/vr-fill.entity';
-import { SpyPrice } from '../entities/spy-price.entity';
+import { BenchmarkPrice } from '../entities/benchmark-price.entity';
 
 export interface WealthHistoryPoint {
   date: string;
@@ -12,16 +12,17 @@ export interface WealthHistoryPoint {
   cumulativePrincipal: number;
 }
 
-export interface SpyComparisonPoint {
+export interface BenchmarkComparisonPoint {
   date: string;
   tqqqPct: number;
-  spyPct: number;
+  benchmarks: Record<string, number>;
 }
 
 const SYMBOL = 'TQQQ';
-const BENCHMARK = 'SPY';
+/** VOO(S&P500) · QQQM(나스닥100) · QLD(나스닥100 2배) — TQQQ(3배)와 레버리지 단계별로 비교 */
+export const BENCHMARK_SYMBOLS = ['VOO', 'QQQM', 'QLD'] as const;
 
-/** VR 누적 성과(평가금/투자원금 추이, SPY 베타 비교) 조립 — 별도 신규 데이터 수집 없이 기존 스냅샷/체결에서 파생. */
+/** VR 누적 성과(평가금/투자원금 추이, 벤치마크 비교) 조립 — 별도 신규 데이터 수집 없이 기존 스냅샷/체결에서 파생. */
 @Injectable()
 export class VrPerformanceService {
   private readonly logger = new Logger('VrPerformance');
@@ -30,17 +31,25 @@ export class VrPerformanceService {
     private readonly toss: TossClientService,
     @InjectRepository(LaofusAccountSnapshot) private readonly snapshotRepo: Repository<LaofusAccountSnapshot>,
     @InjectRepository(VrFill) private readonly fillRepo: Repository<VrFill>,
-    @InjectRepository(SpyPrice) private readonly spyRepo: Repository<SpyPrice>,
+    @InjectRepository(BenchmarkPrice) private readonly benchmarkRepo: Repository<BenchmarkPrice>,
   ) {}
 
-  /** 매일 06:10 KST — SPY 최근 30거래일 종가를 upsert(자체 치유형: 놓친 날도 다음 실행에서 채워짐). */
-  async syncSpyPrices(): Promise<number> {
-    const { candles } = await this.toss.getCandles(BENCHMARK, '1d', 30);
-    const rows = candles.map((c) => ({ date: c.timestamp.slice(0, 10), closePrice: Number(c.closePrice) }));
-    if (rows.length === 0) return 0;
-    await this.spyRepo.upsert(rows, ['date']);
-    this.logger.log(`SPY 가격 동기화: ${rows.length}건 (최신 ${rows[rows.length - 1].date})`);
-    return rows.length;
+  /** 매일 06:10 KST — 벤치마크 종목들의 최근 30거래일 종가를 upsert(자체 치유형: 놓친 날도 다음 실행에서 채워짐). */
+  async syncBenchmarkPrices(): Promise<number> {
+    let total = 0;
+    for (const symbol of BENCHMARK_SYMBOLS) {
+      try {
+        const { candles } = await this.toss.getCandles(symbol, '1d', 30);
+        const rows = candles.map((c) => ({ symbol, date: c.timestamp.slice(0, 10), closePrice: Number(c.closePrice) }));
+        if (rows.length === 0) continue;
+        await this.benchmarkRepo.upsert(rows, ['symbol', 'date']);
+        total += rows.length;
+        this.logger.log(`${symbol} 가격 동기화: ${rows.length}건 (최신 ${rows[rows.length - 1].date})`);
+      } catch (e) {
+        this.logger.error(`${symbol} 가격 동기화 실패: ${e instanceof Error ? e.message : e}`);
+      }
+    }
+    return total;
   }
 
   /** laofus.account_snapshots(전체 계좌, 종목별 holdings_json 포함)에서 TQQQ 몫만 뽑아 일별 평가금 계열을 만든다. */
@@ -86,28 +95,46 @@ export class VrPerformanceService {
   }
 
   /**
-   * TQQQ 평가금 vs SPY, 둘 다 데이터가 겹치는 첫 날짜를 0%로 정규화해 비교.
+   * TQQQ 평가금 vs VOO·QQQM·QLD, 전부 데이터가 겹치는 첫 날짜를 0%로 정규화해 비교.
    * ⚠️ Pool(현금)은 하루 단위로 기록되지 않아 포함하지 않음 — 순수 "보유 주식 평가금" 변화율 비교다
    * (VR 전략 전체 수익률과는 다름 — 그건 Pool까지 포함한 '계좌총액' 기준이라 이 수치보다 방어적으로 나옴).
    */
-  async getSpyComparison(): Promise<SpyComparisonPoint[]> {
-    const [tqqqSeries, spyPrices] = await Promise.all([
+  async getBenchmarkComparison(): Promise<BenchmarkComparisonPoint[]> {
+    const [tqqqSeries, benchmarkRows] = await Promise.all([
       this.getTqqqValueSeries(),
-      this.spyRepo.find({ order: { date: 'ASC' } }),
+      this.benchmarkRepo.find({ order: { date: 'ASC' } }),
     ]);
-    const spyByDate = new Map(spyPrices.map((p) => [p.date, p.closePrice]));
+
+    const bySymbolDate = new Map<string, Map<string, number>>();
+    for (const symbol of BENCHMARK_SYMBOLS) bySymbolDate.set(symbol, new Map());
+    for (const row of benchmarkRows) {
+      bySymbolDate.get(row.symbol)?.set(row.date, row.closePrice);
+    }
 
     const merged = tqqqSeries
-      .map((t) => ({ date: t.date, tqqq: t.value, spy: spyByDate.get(t.date) ?? null }))
-      .filter((r): r is { date: string; tqqq: number; spy: number } => r.spy !== null);
+      .map((t) => {
+        const prices: Record<string, number> = {};
+        for (const symbol of BENCHMARK_SYMBOLS) {
+          const p = bySymbolDate.get(symbol)?.get(t.date);
+          if (p == null) return null;
+          prices[symbol] = p;
+        }
+        return { date: t.date, tqqq: t.value, prices };
+      })
+      .filter((r): r is { date: string; tqqq: number; prices: Record<string, number> } => r !== null);
     if (merged.length === 0) return [];
 
-    const baseTqqq = merged[0].tqqq;
-    const baseSpy = merged[0].spy;
-    return merged.map((r) => ({
-      date: r.date,
-      tqqqPct: Math.round(((r.tqqq / baseTqqq - 1) * 100) * 100) / 100,
-      spyPct: Math.round(((r.spy / baseSpy - 1) * 100) * 100) / 100,
-    }));
+    const base = merged[0];
+    return merged.map((r) => {
+      const benchmarks: Record<string, number> = {};
+      for (const symbol of BENCHMARK_SYMBOLS) {
+        benchmarks[symbol] = Math.round((r.prices[symbol] / base.prices[symbol] - 1) * 100 * 100) / 100;
+      }
+      return {
+        date: r.date,
+        tqqqPct: Math.round((r.tqqq / base.tqqq - 1) * 100 * 100) / 100,
+        benchmarks,
+      };
+    });
   }
 }

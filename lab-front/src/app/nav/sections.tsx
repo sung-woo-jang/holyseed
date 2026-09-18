@@ -60,7 +60,6 @@ export const SECTIONS: LabSection[] = [
           { path: '/vr/ladder', label: '예약표' },
           { path: '/vr/fills', label: '체결·사이클' },
           { path: '/vr/system', label: '시스템' },
-          { path: '/vr/test', label: '테스트' },
         ],
       },
       {

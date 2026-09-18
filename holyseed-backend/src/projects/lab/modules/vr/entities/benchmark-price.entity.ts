@@ -3,10 +3,14 @@ import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '@common/entities/base.entity';
 import { numeric } from '../../../common/numeric.transformer';
 
-/** SPY(S&P500 ETF) 일별 종가 — VR 누적 수익률을 베타(시장) 대비로 비교하기 위한 벤치마크 데이터. */
-@Entity('spy_prices', { schema: 'lab' })
-@Unique(['date'])
-export class SpyPrice extends BaseEntity {
+/** VOO/QQQM/QLD 등 비교 벤치마크 일별 종가 — VR(TQQQ) 누적 수익률과 비교하기 위한 데이터. */
+@Entity('benchmark_prices', { schema: 'lab' })
+@Unique(['symbol', 'date'])
+export class BenchmarkPrice extends BaseEntity {
+  @ApiProperty({ description: '종목', example: 'VOO' })
+  @Column({ length: 12 })
+  symbol: string;
+
   @ApiProperty({ description: '거래일', example: '2026-06-22' })
   @Column({ length: 10 })
   date: string;

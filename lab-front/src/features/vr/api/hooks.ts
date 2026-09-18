@@ -14,8 +14,6 @@ import type {
   VrSettings,
   VrState,
   VrStatusDto,
-  VrWealthHistoryPoint,
-  VrSpyComparisonPoint,
 } from './types'
 
 const KEYS = {
@@ -26,8 +24,6 @@ const KEYS = {
   fills: ['vr', 'fills'],
   cycles: ['vr', 'cycles'],
   candles: (range: VrCandleRange) => ['vr', 'candles', range],
-  wealthHistory: ['vr', 'wealth-history'],
-  spyComparison: ['vr', 'spy-comparison'],
 }
 
 const invalidateAll = (qc: ReturnType<typeof useQueryClient>) => {
@@ -87,22 +83,6 @@ export function useVrCandles(range: VrCandleRange) {
   return useStandardQuery<VrCandlesData>({
     queryKey: KEYS.candles(range),
     queryFn: async () => (await axiosInstance.get<VrCandlesData>(VR_API.CANDLES, { params: { range } })).data,
-  })
-}
-
-/** TQQQ 평가금·누적 투자원금 일별 추이 (계좌 스냅샷·체결 이력에서 파생, 별도 폴링 불필요) */
-export function useVrWealthHistory() {
-  return useStandardQuery<VrWealthHistoryPoint[]>({
-    queryKey: KEYS.wealthHistory,
-    queryFn: async () => (await axiosInstance.get<VrWealthHistoryPoint[]>(VR_API.WEALTH_HISTORY)).data,
-  })
-}
-
-/** TQQQ 평가금 vs SPY 정규화 수익률(%) 비교 */
-export function useVrSpyComparison() {
-  return useStandardQuery<VrSpyComparisonPoint[]>({
-    queryKey: KEYS.spyComparison,
-    queryFn: async () => (await axiosInstance.get<VrSpyComparisonPoint[]>(VR_API.SPY_COMPARISON)).data,
   })
 }
 

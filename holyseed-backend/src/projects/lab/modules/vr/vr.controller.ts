@@ -121,10 +121,10 @@ export class VrController {
     return ok('조회 성공', await this.performance.getWealthHistory());
   }
 
-  @Get('spy-comparison')
-  @ApiOperation({ summary: 'TQQQ 평가금 vs SPY 정규화 수익률(%) 비교 (첫 공통일=0%)' })
-  async getSpyComparison() {
-    return ok('조회 성공', await this.performance.getSpyComparison());
+  @Get('benchmark-comparison')
+  @ApiOperation({ summary: 'TQQQ 평가금 vs VOO·QQQM·QLD 정규화 수익률(%) 비교 (첫 공통일=0%)' })
+  async getBenchmarkComparison() {
+    return ok('조회 성공', await this.performance.getBenchmarkComparison());
   }
 
   @Post('fills')

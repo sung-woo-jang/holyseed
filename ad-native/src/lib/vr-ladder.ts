@@ -1,3 +1,13 @@
+/**
+ * packages/vr-core/src/ladder.ts 로컬 미러 — ad-native(Expo/Metro)는 모노레포 패키지를 직접
+ * import할 수 없어(laofus-core.ts와 동일한 이유) 순수함수를 그대로 복제해둔다.
+ *
+ * 계단식 예약 매수/매도표 (참고/시뮬레이션 용도).
+ * 1주씩 순차 체결 가정, 매 단계 트리거가 재계산.
+ * 매수 트리거가 = 최소밴드 ÷ (매수 직전 보유수량)
+ * 매도 트리거가 = 최대밴드 ÷ (매도 직전 보유수량)
+ */
+
 export interface LadderRow {
   qtyAfter: number;
   triggerPrice: number;

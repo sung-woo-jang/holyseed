@@ -124,17 +124,17 @@ export default function VrTestScreen() {
               />
               <Tile theme={theme} label="데이터 축적" value={`${wealth.length}일치`} />
             </View>
-            <ChartCard title="TQQQ 평가금 추이" theme={theme}>
-              <LineChart data={wealth.map((w) => ({ date: w.date, value: w.tqqqValue }))} width={chartWidth} height={140} color={theme.brand} dark={theme.dark} formatValue={usd} />
-            </ChartCard>
-            <ChartCard title="누적 투자원금 추이" theme={theme}>
+            <ChartCard title="TQQQ 평가금 vs 누적 투자원금" theme={theme}>
               <LineChart
-                data={wealth.map((w) => ({ date: w.date, value: w.cumulativePrincipal }))}
+                data={wealth.map((w) => ({ date: w.date, value: w.tqqqValue }))}
+                series2={wealth.map((w) => ({ date: w.date, value: w.cumulativePrincipal }))}
                 width={chartWidth}
-                height={140}
-                color={theme.textMuted}
+                height={150}
+                color={theme.brand}
+                color2={theme.textMuted}
                 dark={theme.dark}
                 formatValue={usd}
+                legendLabels={['TQQQ 평가금', '누적 투자원금']}
               />
             </ChartCard>
           </>
@@ -152,11 +152,18 @@ export default function VrTestScreen() {
               <Tile theme={theme} label="TQQQ 평가금 수익률" value={pct(lastSpy.tqqqPct)} positive={lastSpy.tqqqPct >= 0} />
               <Tile theme={theme} label="SPY 수익률" value={pct(lastSpy.spyPct)} positive={lastSpy.spyPct >= 0} />
             </View>
-            <ChartCard title="TQQQ 평가금 수익률 (%)" theme={theme}>
-              <LineChart data={spy.map((s) => ({ date: s.date, value: s.tqqqPct }))} width={chartWidth} height={140} color={theme.brand} dark={theme.dark} formatValue={pct} />
-            </ChartCard>
-            <ChartCard title="SPY 수익률 (%)" theme={theme}>
-              <LineChart data={spy.map((s) => ({ date: s.date, value: s.spyPct }))} width={chartWidth} height={140} color={theme.textMuted} dark={theme.dark} formatValue={pct} />
+            <ChartCard title="TQQQ 평가금 vs SPY 수익률 (%)" theme={theme}>
+              <LineChart
+                data={spy.map((s) => ({ date: s.date, value: s.tqqqPct }))}
+                series2={spy.map((s) => ({ date: s.date, value: s.spyPct }))}
+                width={chartWidth}
+                height={150}
+                color={theme.brand}
+                color2={theme.textMuted}
+                dark={theme.dark}
+                formatValue={pct}
+                legendLabels={['TQQQ 평가금', 'SPY']}
+              />
             </ChartCard>
           </>
         )}

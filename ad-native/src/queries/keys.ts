@@ -7,8 +7,6 @@ export const qk = {
   transactionsRecent: (householdId: number) => ['transactions', householdId, 'recent'] as const,
   transaction: (id: number) => ['transaction', id] as const,
   recurring: (householdId: number) => ['recurring', householdId] as const,
-  recurringMissed: (householdId: number, fromDate?: string) =>
-    fromDate ? (['recurring-missed', householdId, fromDate] as const) : (['recurring-missed', householdId] as const),
   categories: (householdId: number) => ['categories', householdId] as const,
   iconLibrary: (householdId: number) => ['icon-library', householdId] as const,
   dashboard: (householdId: number) => ['dashboard', householdId] as const,

@@ -19,7 +19,14 @@ import { LaofusEngineService } from './engine.service';
  * 방법론 원문대로 매도도 "보유량 1/4+3/4 스탠딩 LOC"로 걸 수 있다는 걸 확인하고 통째로 걷어냄
  * — 겹치는 두 매도 leg를 더하면 정확히 100%라 오버셀 없이 매수와 완전히 대칭 구조가 됨.)
  *
- * 회수 크론(개장 10분 후, 22:40/23:40)은 고정 — LOC 주문 개장 배치 체결 회수용.
+ * 회수 크론은 두 타이밍에 고정 등록:
+ * - 마감 5·10분 후(05:05/05:10 EDT, 06:05/06:10 EST) — 체결이 마감 직후 바로 반영되는 경우 대비
+ * - 개장 10분 후(22:40/23:40) — "LOC 주문 개장 배치 체결" 회수용(토스가 마감 시점 대신 다음
+ *   개장 배치에서 체결을 확정하는 경우 대비 안전망)
+ * 마감 시각(05:00/06:00 KST)은 "그 전날 저녁에 개장한" 세션의 결과라 요일이 하루 밀림 —
+ * 월요일 개장(월요일 KST 저녁)의 마감은 화요일 KST 새벽이므로 화~토(2-6)로 등록해야
+ * 월~금 5세션의 마감을 전부 커버한다(개장 크론의 월~금(1-5)과는 다른 범위, 착각 주의 —
+ * `laofus-wealth-snapshot`도 같은 이유로 2-6 사용).
  *
  * env:
  * - LAOFUS_SCHEDULER=false 로 비활성 (기본 활성) — 로컬 dev와 서버 동시 가동 시 중복 방지
@@ -69,6 +76,26 @@ export class LaofusSchedulerService implements OnModuleInit {
         at: this.registry.getCronJob(name).nextDate().toJSDate().toISOString(),
       }))
       .sort((a, b) => a.at.localeCompare(b.at));
+  }
+
+  @Cron('5 5 * * 2-6', { name: 'laofus-reconcile-close-edt-1', timeZone: 'Asia/Seoul' })
+  async reconcileCloseEdt1(): Promise<void> {
+    await this.reconcileTick('05:05');
+  }
+
+  @Cron('10 5 * * 2-6', { name: 'laofus-reconcile-close-edt-2', timeZone: 'Asia/Seoul' })
+  async reconcileCloseEdt2(): Promise<void> {
+    await this.reconcileTick('05:10');
+  }
+
+  @Cron('5 6 * * 2-6', { name: 'laofus-reconcile-close-est-1', timeZone: 'Asia/Seoul' })
+  async reconcileCloseEst1(): Promise<void> {
+    await this.reconcileTick('06:05');
+  }
+
+  @Cron('10 6 * * 2-6', { name: 'laofus-reconcile-close-est-2', timeZone: 'Asia/Seoul' })
+  async reconcileCloseEst2(): Promise<void> {
+    await this.reconcileTick('06:10');
   }
 
   @Cron('40 22 * * 1-5', { name: 'laofus-reconcile-edt', timeZone: 'Asia/Seoul' })

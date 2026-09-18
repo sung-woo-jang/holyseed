@@ -63,16 +63,36 @@ export class VrPerformanceService {
       .filter((r) => r.value > 0);
   }
 
-  /** INITIAL_BUY·DEPOSIT 체결 합 = 실제로 이 계좌에 투입한 누적 원금(별도 설정값 없이 체결 이력에서 그대로 산출). */
-  private async getCumulativePrincipalSeries(): Promise<{ date: string; cumulative: number }[]> {
+  /** 날짜별 Pool 잔액 asOf 조회 — 그 날짜 이하 중 가장 최근 체결의 poolAfter(모든 체결 종류 포함). */
+  private async getPoolAsOfLookup(): Promise<(date: string) => number | null> {
+    const fills = await this.fillRepo.find({ order: { fillDate: 'ASC', id: 'ASC' } });
+    const series = fills.map((f) => ({ date: f.fillDate, pool: f.poolAfter }));
+    return (date) => {
+      let result: number | null = null;
+      for (const p of series) {
+        if (p.date > date) break;
+        result = p.pool;
+      }
+      return result;
+    };
+  }
+
+  /** INITIAL_BUY·DEPOSIT 체결 원본(날짜·금액) — 실제 입금 스케줄. 벤치마크 DCA 시뮬레이션에도 그대로 재사용. */
+  private async getContributions(): Promise<{ date: string; amount: number }[]> {
     const fills = await this.fillRepo.find({
       where: [{ kind: VrFillKind.INITIAL_BUY }, { kind: VrFillKind.DEPOSIT }],
       order: { fillDate: 'ASC', id: 'ASC' },
     });
+    return fills.map((f) => ({ date: f.fillDate, amount: f.amount }));
+  }
+
+  /** INITIAL_BUY·DEPOSIT 체결 합 = 실제로 이 계좌에 투입한 누적 원금(별도 설정값 없이 체결 이력에서 그대로 산출). */
+  private async getCumulativePrincipalSeries(): Promise<{ date: string; cumulative: number }[]> {
+    const contributions = await this.getContributions();
     let running = 0;
-    return fills.map((f) => {
-      running += f.amount;
-      return { date: f.fillDate, cumulative: Math.round(running * 100) / 100 };
+    return contributions.map((c) => {
+      running += c.amount;
+      return { date: c.date, cumulative: Math.round(running * 100) / 100 };
     });
   }
 
@@ -94,47 +114,90 @@ export class VrPerformanceService {
     });
   }
 
+  /** 심볼별 종가를 "그 날짜 이하 중 가장 최근"으로 찾아준다(주말·휴장일에도 값이 비지 않도록). */
+  private buildAsOfLookup(rows: BenchmarkPrice[]): (symbol: string, date: string) => number | null {
+    const bySymbol = new Map<string, { date: string; price: number }[]>();
+    for (const symbol of BENCHMARK_SYMBOLS) bySymbol.set(symbol, []);
+    for (const row of rows) bySymbol.get(row.symbol)?.push({ date: row.date, price: row.closePrice });
+    return (symbol, date) => {
+      const series = bySymbol.get(symbol) ?? [];
+      let result: number | null = null;
+      for (const p of series) {
+        if (p.date > date) break;
+        result = p.price;
+      }
+      return result;
+    };
+  }
+
   /**
-   * TQQQ 평가금 vs VOO·QQQM·QLD, 전부 데이터가 겹치는 첫 날짜를 0%로 정규화해 비교.
-   * ⚠️ Pool(현금)은 하루 단위로 기록되지 않아 포함하지 않음 — 순수 "보유 주식 평가금" 변화율 비교다
-   * (VR 전략 전체 수익률과는 다름 — 그건 Pool까지 포함한 '계좌총액' 기준이라 이 수치보다 방어적으로 나옴).
+   * TQQQ(보유분 평가금 + Pool = 계좌총액) vs VOO·QQQM·QLD를 "투입 원금 대비 수익률(%)"로 비교.
+   * TQQQ는 사이클마다 적립금이 들어오며 평가금이 늘어나므로, 단순 가격 정규화(첫날=0%)로 비교하면
+   * 새로 들어온 원금이 수익처럼 보이는 착시가 생김 — 그래서 두 쪽 다 "그 시점까지 투입된 원금 대비
+   * 지금 값이 얼마나 불었는가"로 맞춘다. 벤치마크 쪽은 TQQQ와 완전히 같은 입금 스케줄(초기매수+
+   * 적립금 날짜·금액)로 그날 종가에 그대로 매수했다고 가정한 DCA 시뮬레이션.
+   * TQQQ 쪽은 Pool(아직 주식으로 안 바뀐 현금)도 투자자 자산이므로 포함 — 안 그러면 매수 대기 중인
+   * Pool이 많은 시기에 "돈을 잃은 것"처럼 왜곡되어 100% 즉시매수하는 벤치마크와 불공정 비교가 됨.
    */
   async getBenchmarkComparison(): Promise<BenchmarkComparisonPoint[]> {
-    const [tqqqSeries, benchmarkRows] = await Promise.all([
+    const [tqqqSeries, benchmarkRows, contributions, poolAsOf] = await Promise.all([
       this.getTqqqValueSeries(),
       this.benchmarkRepo.find({ order: { date: 'ASC' } }),
+      this.getContributions(),
+      this.getPoolAsOfLookup(),
     ]);
+    const asOf = this.buildAsOfLookup(benchmarkRows);
 
-    const bySymbolDate = new Map<string, Map<string, number>>();
-    for (const symbol of BENCHMARK_SYMBOLS) bySymbolDate.set(symbol, new Map());
-    for (const row of benchmarkRows) {
-      bySymbolDate.get(row.symbol)?.set(row.date, row.closePrice);
+    // 비교 시작일 = TQQQ 스냅샷과 세 벤치마크 가격이 전부 존재하는 첫 날짜
+    const startPoint = tqqqSeries.find((t) => BENCHMARK_SYMBOLS.every((s) => asOf(s, t.date) !== null));
+    if (!startPoint) return [];
+    const startDate = startPoint.date;
+
+    // 시작일까지 투입된 원금을 그날 일시불로 넣었다고 가정 — 그 이후 입금분만 실제 날짜에 순차 반영
+    const basePrincipal = Math.round(contributions.filter((c) => c.date <= startDate).reduce((s, c) => s + c.amount, 0) * 100) / 100;
+    if (basePrincipal <= 0) return [];
+
+    const shares: Record<string, number> = {};
+    for (const symbol of BENCHMARK_SYMBOLS) shares[symbol] = basePrincipal / (asOf(symbol, startDate) as number);
+
+    const points: BenchmarkComparisonPoint[] = [];
+    let contributed = basePrincipal;
+    let cursor = startDate;
+
+    for (const t of tqqqSeries) {
+      if (t.date < startDate) continue;
+
+      for (const c of contributions) {
+        if (c.date > cursor && c.date <= t.date) {
+          contributed = Math.round((contributed + c.amount) * 100) / 100;
+          for (const symbol of BENCHMARK_SYMBOLS) {
+            const p = asOf(symbol, c.date);
+            if (p) shares[symbol] += c.amount / p;
+          }
+        }
+      }
+      cursor = t.date;
+
+      const benchmarks: Record<string, number> = {};
+      let missingPrice = false;
+      for (const symbol of BENCHMARK_SYMBOLS) {
+        const p = asOf(symbol, t.date);
+        if (p == null) {
+          missingPrice = true;
+          break;
+        }
+        benchmarks[symbol] = Math.round(((shares[symbol] * p - contributed) / contributed) * 100 * 100) / 100;
+      }
+      if (missingPrice) continue;
+
+      const accountValue = t.value + (poolAsOf(t.date) ?? 0);
+      points.push({
+        date: t.date,
+        tqqqPct: Math.round(((accountValue - contributed) / contributed) * 100 * 100) / 100,
+        benchmarks,
+      });
     }
 
-    const merged = tqqqSeries
-      .map((t) => {
-        const prices: Record<string, number> = {};
-        for (const symbol of BENCHMARK_SYMBOLS) {
-          const p = bySymbolDate.get(symbol)?.get(t.date);
-          if (p == null) return null;
-          prices[symbol] = p;
-        }
-        return { date: t.date, tqqq: t.value, prices };
-      })
-      .filter((r): r is { date: string; tqqq: number; prices: Record<string, number> } => r !== null);
-    if (merged.length === 0) return [];
-
-    const base = merged[0];
-    return merged.map((r) => {
-      const benchmarks: Record<string, number> = {};
-      for (const symbol of BENCHMARK_SYMBOLS) {
-        benchmarks[symbol] = Math.round((r.prices[symbol] / base.prices[symbol] - 1) * 100 * 100) / 100;
-      }
-      return {
-        date: r.date,
-        tqqqPct: Math.round((r.tqqq / base.tqqq - 1) * 100 * 100) / 100,
-        benchmarks,
-      };
-    });
+    return points;
   }
 }

@@ -5,7 +5,6 @@ import Loader from '../../../components/ui/Loader';
 import EmptyState from '../../../components/common/EmptyState';
 import LineChart from '../../../components/charts/LineChart';
 import { vrApi, VR_BENCHMARK_SYMBOLS } from '../../../api/vr';
-import { buildBuyLadder, buildSellLadder } from '../../../lib/vr-ladder';
 import { useTheme } from '../../../lib/theme';
 import { TE } from '../../../lib/toss-emoji';
 
@@ -16,7 +15,6 @@ function pct(v: number): string {
   return `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`;
 }
 
-const LADDER_STEPS = 8;
 const BENCHMARK_COLORS: Record<(typeof VR_BENCHMARK_SYMBOLS)[number], string> = {
   VOO: '#3182F6',
   QQQM: '#F5A623',
@@ -48,59 +46,9 @@ function ChartCard({ title, theme, children }: { title: string; theme: ReturnTyp
   );
 }
 
-interface PlanRow {
-  qty: number;
-  trigger: number | null;
-  pool: number;
-  isCurrent: boolean;
-}
-
-function PlanTable({
-  title,
-  bandLabel,
-  rows,
-  kind,
-  theme,
-  highlightBg,
-}: {
-  title: string;
-  bandLabel: string;
-  rows: PlanRow[];
-  kind: 'buy' | 'sell';
-  theme: ReturnType<typeof useTheme>;
-  highlightBg: string;
-}) {
-  const accent = kind === 'buy' ? theme.danger : theme.brand;
-  return (
-    <View style={[styles.planCol, { backgroundColor: theme.card, borderColor: theme.border }]}>
-      <Text style={[styles.planTitle, { color: theme.text }]}>{title}</Text>
-      <Text style={[styles.planLim, { color: theme.textMuted }]}>{bandLabel}</Text>
-      <View style={[styles.ladderHeaderRow, { borderColor: theme.border }]}>
-        <Text style={[styles.ladderCell, styles.ladderCellLeft, styles.ladderHeaderText, { color: theme.textMuted }]}>잔여</Text>
-        <Text style={[styles.ladderCell, styles.ladderHeaderText, { color: theme.textMuted }]}>{kind === 'buy' ? '매수점' : '매도점'}</Text>
-        <Text style={[styles.ladderCell, styles.ladderHeaderText, { color: theme.textMuted }]}>Pool</Text>
-      </View>
-      {rows.map((r, i) => (
-        <View key={i} style={[styles.ladderRow, { borderColor: theme.border }, r.isCurrent && { backgroundColor: highlightBg }]}>
-          <Text style={[styles.ladderCell, styles.ladderCellLeft, { color: r.isCurrent ? theme.text : theme.textMuted, fontWeight: r.isCurrent ? '800' : '400' }]}>
-            {r.qty}
-            {r.isCurrent ? '(현재)' : ''}
-          </Text>
-          <Text style={[styles.ladderCell, { color: r.isCurrent ? theme.text : accent, fontWeight: r.isCurrent ? '800' : '700' }]}>
-            {r.trigger != null ? r.trigger.toFixed(2) : '—'}
-          </Text>
-          <Text style={[styles.ladderCell, { color: r.isCurrent ? theme.text : theme.text, fontWeight: r.isCurrent ? '800' : '400' }]}>
-            {r.pool.toFixed(2)}
-          </Text>
-        </View>
-      ))}
-    </View>
-  );
-}
-
 /**
- * 실험용 — 매수/매도 계획(사다리) + 베타(VOO/QQQM/QLD) 비교 + 누적 정리를 참고 이미지 3장
- * 레이아웃 그대로 한 화면에. 검증 끝나면 정식 탭으로 옮기거나 여기서 폐기.
+ * 실험용 — 베타(VOO/QQQM/QLD) 비교 + 누적 정리를 참고 이미지 레이아웃 그대로 한 화면에.
+ * 검증 끝나면 정식 탭으로 옮기거나 여기서 폐기.
  */
 export default function VrTestScreen() {
   const theme = useTheme();
@@ -129,19 +77,6 @@ export default function VrTestScreen() {
   const benchmark = benchmarkQ.data ?? [];
   const lastWealth = wealth[wealth.length - 1] ?? null;
   const lastBenchmark = benchmark[benchmark.length - 1] ?? null;
-  const highlightBg = theme.dark ? '#4a3c00' : '#FFF3B0';
-
-  const buyLadder = buildBuyLadder({ quantity: state.quantity, minBand: state.minBand, pool: state.pool, usablePool: state.usablePool, steps: LADDER_STEPS });
-  const sellLadder = buildSellLadder({ quantity: state.quantity, maxBand: state.maxBand, pool: state.pool, steps: LADDER_STEPS });
-
-  const buyRows: PlanRow[] = [
-    { qty: state.quantity, trigger: null, pool: state.pool, isCurrent: true },
-    ...buyLadder.map((r) => ({ qty: r.qtyAfter, trigger: r.triggerPrice, pool: r.poolAfter, isCurrent: false })),
-  ];
-  const sellRows: PlanRow[] = [
-    { qty: state.quantity, trigger: null, pool: state.pool, isCurrent: true },
-    ...sellLadder.map((r) => ({ qty: r.qtyAfter, trigger: r.triggerPrice, pool: r.poolAfter, isCurrent: false })),
-  ];
 
   const accountTotal = lastWealth ? lastWealth.tqqqValue + state.pool : null;
   const profitAmount = accountTotal != null && lastWealth ? accountTotal - lastWealth.cumulativePrincipal : null;
@@ -150,14 +85,7 @@ export default function VrTestScreen() {
 
   return (
     <ScrollView style={[styles.root, { backgroundColor: theme.bg }]} contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
-      <Section title={`매수/매도 계획 · ${LADDER_STEPS}개씩`} sub="트리거가 = 밴드 ÷ 그 시점 보유수량 · 매수한도 75%(Pool 기준)" theme={theme}>
-        <View style={styles.plans}>
-          <PlanTable title="매수계획" bandLabel={`최소밴드 ${usd(state.minBand)}`} rows={buyRows} kind="buy" theme={theme} highlightBg={highlightBg} />
-          <PlanTable title="매도계획" bandLabel={`최대밴드 ${usd(state.maxBand)}`} rows={sellRows} kind="sell" theme={theme} highlightBg={highlightBg} />
-        </View>
-      </Section>
-
-      <Section title="베타(VOO) 수익과 비교" sub="첫 공통일 = 0% 정규화 · 보유 주식 평가금 기준(Pool 미포함)" theme={theme}>
+      <Section title="베타(VOO) 수익과 비교" sub="같은 날짜·같은 금액으로 적립했다고 가정 · 계좌총액(TQQQ+Pool) 기준 투입 원금 대비 수익률" theme={theme}>
         {benchmark.length < 2 ? (
           <Text style={{ color: theme.textMuted, fontSize: 12.5 }}>
             벤치마크 가격은 매일 06:10 KST 자동 수집돼요 — 스냅샷과 겹치는 날짜가 이틀 이상 쌓이면 그래프가 나타나요
@@ -195,8 +123,8 @@ export default function VrTestScreen() {
               </View>
             )}
             <Text style={{ color: theme.textMuted, fontSize: 11, lineHeight: 16, marginTop: 8 }}>
-              보유주식 평가금 기준({lastBenchmark?.date}). Pool을 포함한 계좌총액 기준 수익률은 아래 "누적 정리" 참고 — 서로 다른 지표라 숫자가
-              다릅니다.
+              TQQQ 실제 초기매수·적립금과 똑같은 날짜·금액을 VOO/QQQM/QLD에도 넣었다고 가정한 시뮬레이션({lastBenchmark?.date} 기준).
+              TQQQ 쪽은 아직 안 쓴 Pool도 내 돈이므로 포함해서 계산해 아래 "누적 정리"의 수익률과 거의 같아집니다.
             </Text>
           </>
         )}
@@ -260,16 +188,6 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   chartCard: { borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 12 },
   chartTitle: { fontSize: 13, fontWeight: '700', marginBottom: 8 },
-
-  plans: { flexDirection: 'row', gap: 8 },
-  planCol: { flex: 1, borderWidth: 1, borderRadius: 12, padding: 10 },
-  planTitle: { fontSize: 12, fontWeight: '800', textAlign: 'center', marginBottom: 2 },
-  planLim: { fontSize: 9.5, textAlign: 'center', marginBottom: 8 },
-  ladderHeaderRow: { flexDirection: 'row', borderBottomWidth: 1, paddingBottom: 3 },
-  ladderRow: { flexDirection: 'row', borderBottomWidth: 1, paddingVertical: 3.5 },
-  ladderCell: { flex: 1, textAlign: 'right', fontSize: 10 },
-  ladderCellLeft: { textAlign: 'left' },
-  ladderHeaderText: { fontSize: 9, fontWeight: '700' },
 
   pillGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
   pill: { flexBasis: '47%', flexGrow: 1, borderWidth: 1, borderRadius: 10, padding: 8, alignItems: 'center' },

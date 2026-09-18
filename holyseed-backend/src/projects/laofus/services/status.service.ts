@@ -2,13 +2,30 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
 import { TossClientService, TossOrder } from '@shared/toss/toss-client.service';
+import { VrFill, VrFillKind } from '@/projects/lab/modules/vr/entities/vr-fill.entity';
 import { LaofusEngineService } from './engine.service';
 import { LaofusSchedulerService } from './scheduler.service';
 import { LaofusEngineState } from '../entities/engine-state.entity';
 import { LaofusCycle } from '../entities/cycle.entity';
+import { LaofusTrade } from '../entities/trade.entity';
 import { LaofusEvent } from '../entities/event.entity';
 import { LaofusPendingOrder } from '../entities/pending-order.entity';
 import { LaofusAccountSnapshot } from '../entities/account-snapshot.entity';
+
+export interface AssetTrendPoint {
+  date: string;
+  fx: number;
+  tqqqQty: number;
+  tqqqValueUsd: number;
+  tqqqPrincipalUsd: number;
+  soxlQty: number;
+  soxlValueUsd: number;
+  soxlPrincipalUsd: number;
+  stockUsd: number;
+  principalUsd: number;
+  stockKrw: number;
+  principalKrw: number;
+}
 
 export interface LaofusLastRun {
   runId: string;
@@ -37,6 +54,8 @@ export class LaofusStatusService {
     @InjectRepository(LaofusEvent) private readonly eventRepo: Repository<LaofusEvent>,
     @InjectRepository(LaofusPendingOrder) private readonly pendingRepo: Repository<LaofusPendingOrder>,
     @InjectRepository(LaofusAccountSnapshot) private readonly snapshotRepo: Repository<LaofusAccountSnapshot>,
+    @InjectRepository(LaofusTrade) private readonly tradeRepo: Repository<LaofusTrade>,
+    @InjectRepository(VrFill) private readonly vrFillRepo: Repository<VrFill>,
   ) {}
 
   async getCalendar(): Promise<unknown> {
@@ -80,6 +99,72 @@ export class LaofusStatusService {
 
   async getAccountSnapshots(): Promise<LaofusAccountSnapshot[]> {
     return this.snapshotRepo.find({ order: { date: 'ASC' } });
+  }
+
+  /**
+   * 라오어(SOXL)+VR(TQQQ) 공유 계좌의 일별 결합 자산 추이 — account_snapshots를 그대로 가공,
+   * 새 토스 호출·새 크론 없음. TQQQ 원금은 VR 입금 이력(VrFill) 누계, SOXL 원금은 그 날짜까지의
+   * 최근 체결 평단가(LaofusTrade.avgAfter) × 그날 보유수량으로 근사(매입원가).
+   */
+  async getAssetTrend(): Promise<AssetTrendPoint[]> {
+    const [snapshots, contributions, trades] = await Promise.all([
+      this.snapshotRepo.find({ order: { date: 'ASC' } }),
+      this.vrFillRepo.find({
+        where: [{ kind: VrFillKind.INITIAL_BUY }, { kind: VrFillKind.DEPOSIT }],
+        order: { fillDate: 'ASC', id: 'ASC' },
+      }),
+      this.tradeRepo.find({ order: { date: 'ASC', seq: 'ASC' } }),
+    ]);
+
+    let runningPrincipal = 0;
+    const tqqqPrincipalSeries = contributions.map((c) => {
+      runningPrincipal = Math.round((runningPrincipal + c.amount) * 100) / 100;
+      return { date: c.fillDate, cumulative: runningPrincipal };
+    });
+    const soxlAvgSeries = trades.map((t) => ({ date: t.date, avgAfter: Number(t.avgAfter) }));
+
+    const tqqqPrincipalAsOf = (date: string): number => {
+      let result = 0;
+      for (const p of tqqqPrincipalSeries) {
+        if (p.date > date) break;
+        result = p.cumulative;
+      }
+      return result;
+    };
+    const soxlAvgPriceAsOf = (date: string): number => {
+      let result = 0;
+      for (const p of soxlAvgSeries) {
+        if (p.date > date) break;
+        result = p.avgAfter;
+      }
+      return result;
+    };
+
+    return snapshots.map((s) => {
+      const tqqq = s.holdingsJson?.find((h) => h.symbol === 'TQQQ');
+      const soxl = s.holdingsJson?.find((h) => h.symbol === 'SOXL');
+      const tqqqValueUsd = Math.round((tqqq?.marketValueUsd ?? 0) * 100) / 100;
+      const soxlValueUsd = Math.round((soxl?.marketValueUsd ?? 0) * 100) / 100;
+      const tqqqPrincipalUsd = tqqqPrincipalAsOf(s.date);
+      const soxlPrincipalUsd = Math.round((soxl?.quantity ?? 0) * soxlAvgPriceAsOf(s.date) * 100) / 100;
+      const stockUsd = Math.round((tqqqValueUsd + soxlValueUsd) * 100) / 100;
+      const principalUsd = Math.round((tqqqPrincipalUsd + soxlPrincipalUsd) * 100) / 100;
+      const fx = Number(s.fxRate);
+      return {
+        date: s.date,
+        fx,
+        tqqqQty: tqqq?.quantity ?? 0,
+        tqqqValueUsd,
+        tqqqPrincipalUsd,
+        soxlQty: soxl?.quantity ?? 0,
+        soxlValueUsd,
+        soxlPrincipalUsd,
+        stockUsd,
+        principalUsd,
+        stockKrw: Math.round(stockUsd * fx),
+        principalKrw: Math.round(principalUsd * fx),
+      };
+    });
   }
 
   async getOrders(): Promise<unknown> {

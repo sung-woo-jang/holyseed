@@ -56,6 +56,12 @@ export class LaofusController {
     return ok(await this.status.getAccountSnapshots());
   }
 
+  @Get('asset-trend')
+  @ApiOperation({ summary: '라오어(SOXL)+VR(TQQQ) 결합 일별 평가금·원금 추이 (날짜 오름차순)' })
+  async getAssetTrend() {
+    return ok(await this.status.getAssetTrend());
+  }
+
   @Post('account-snapshot/run')
   @ApiOperation({ summary: '오늘자 실계좌 스냅샷 즉시 기록/재기록 (조회만 — 주문 없음, 인증 불필요)' })
   async runAccountSnapshot() {

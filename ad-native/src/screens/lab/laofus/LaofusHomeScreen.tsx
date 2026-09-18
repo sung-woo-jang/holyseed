@@ -142,6 +142,9 @@ export default function LaofusHomeScreen({ navigation }: Props) {
         <Pressable style={[styles.navChip, { borderColor: theme.border }]} onPress={() => navigation.navigate('LaofusWealth')}>
           <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>실계좌 자산</Text>
         </Pressable>
+        <Pressable style={[styles.navChip, { borderColor: theme.border }]} onPress={() => navigation.navigate('LaofusAssetTrend')}>
+          <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>자산 추이</Text>
+        </Pressable>
       </View>
 
       {latestError && (

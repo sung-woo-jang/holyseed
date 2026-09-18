@@ -114,6 +114,21 @@ export interface AccountSnapshotDto {
   createdAt: string;
 }
 
+export interface AssetTrendPoint {
+  date: string;
+  fx: number;
+  tqqqQty: number;
+  tqqqValueUsd: number;
+  tqqqPrincipalUsd: number;
+  soxlQty: number;
+  soxlValueUsd: number;
+  soxlPrincipalUsd: number;
+  stockUsd: number;
+  principalUsd: number;
+  stockKrw: number;
+  principalKrw: number;
+}
+
 export const laofusRestApi = {
   status: () => laofusApi.get<StatusDto>('/status').then((r) => r.data),
   price: () => laofusApi.get<{ price: number; ts: string }>('/price').then((r) => r.data),
@@ -122,4 +137,5 @@ export const laofusRestApi = {
   account: () => laofusApi.get<AccountDto>('/account').then((r) => r.data),
   accountSnapshots: () => laofusApi.get<AccountSnapshotDto[]>('/account-snapshots').then((r) => r.data),
   recordAccountSnapshot: () => laofusApi.post('/account-snapshot/run').then((r) => r.data),
+  assetTrend: () => laofusApi.get<AssetTrendPoint[]>('/asset-trend').then((r) => r.data),
 };

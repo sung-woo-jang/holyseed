@@ -4,6 +4,7 @@ import LaofusSystemScreen from '../screens/lab/laofus/LaofusSystemScreen';
 import LaofusCyclesScreen from '../screens/lab/laofus/LaofusCyclesScreen';
 import LaofusCycleDetailScreen from '../screens/lab/laofus/LaofusCycleDetailScreen';
 import LaofusWealthScreen from '../screens/lab/laofus/LaofusWealthScreen';
+import LaofusAssetTrendScreen from '../screens/lab/laofus/LaofusAssetTrendScreen';
 
 export type LaofusStackParamList = {
   LaofusHome: undefined;
@@ -11,6 +12,7 @@ export type LaofusStackParamList = {
   LaofusCycles: undefined;
   LaofusCycleDetail: { cycleNo: number };
   LaofusWealth: undefined;
+  LaofusAssetTrend: undefined;
 };
 
 const Stack = createNativeStackNavigator<LaofusStackParamList>();
@@ -23,6 +25,7 @@ export default function LaofusStack() {
       <Stack.Screen name="LaofusCycles" component={LaofusCyclesScreen} options={{ title: '사이클 기록' }} />
       <Stack.Screen name="LaofusCycleDetail" component={LaofusCycleDetailScreen} options={{ title: '사이클 상세' }} />
       <Stack.Screen name="LaofusWealth" component={LaofusWealthScreen} options={{ title: '실계좌 자산' }} />
+      <Stack.Screen name="LaofusAssetTrend" component={LaofusAssetTrendScreen} options={{ title: '자산 추이' }} />
     </Stack.Navigator>
   );
 }

@@ -11,6 +11,7 @@ import { LaofusTrade } from './entities/trade.entity';
 import { LaofusEvent } from './entities/event.entity';
 import { LaofusPendingOrder } from './entities/pending-order.entity';
 import { LaofusAccountSnapshot } from './entities/account-snapshot.entity';
+import { VrFill } from '@/projects/lab/modules/vr/entities/vr-fill.entity';
 
 /**
  * SOXL 소수점 무한매수법 자동매매 (/api/laofus/*)
@@ -27,6 +28,7 @@ import { LaofusAccountSnapshot } from './entities/account-snapshot.entity';
       LaofusEvent,
       LaofusPendingOrder,
       LaofusAccountSnapshot,
+      VrFill,
     ]),
     TossModule,
   ],

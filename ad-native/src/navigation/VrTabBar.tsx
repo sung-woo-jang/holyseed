@@ -10,6 +10,7 @@ const VR_TABS: { name: keyof VrStackParamList; label: string }[] = [
   { name: 'VrLadder', label: '매수/매도표' },
   { name: 'VrTrend', label: '추이' },
   { name: 'VrSystem', label: '시스템' },
+  { name: 'VrTest', label: '테스트' },
 ];
 
 /** VR 스택 전용 상단 가로스크롤 탭바 — 기본 네이티브 헤더(뒤로가기) 대신 항상 5개 섹션을 오갈 수 있게 함 */

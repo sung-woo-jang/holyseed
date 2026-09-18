@@ -12,7 +12,6 @@ import type {
   McpToken,
   Member,
   MemberRole,
-  MissedOccurrence,
   RecurringFrequency,
   RecurringTransaction,
   Transaction,
@@ -129,12 +128,6 @@ export const recurringApi = {
 
   toggle: (id: number) => api.post(`/recurring/${id}/toggle`).then((r) => r.data),
   delete: (id: number) => api.post(`/recurring/${id}/delete`).then((r) => r.data),
-
-  missed: (householdId: number, fromDate?: string) =>
-    api.post<MissedOccurrence[]>(`/households/${householdId}/recurring/missed`, fromDate ? { fromDate } : {}).then((r) => r.data),
-
-  applyMissed: (householdId: number, items: { recurringId: number; date: string }[]) =>
-    api.post<{ created: number }>(`/households/${householdId}/recurring/apply-missed`, { items }).then((r) => r.data),
 };
 
 // ─── Categories ───────────────────────────────────────────────────────────────

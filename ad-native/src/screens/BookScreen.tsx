@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { BookStackParamList } from '../navigation/types';
 import Border from '../components/ui/Border';
@@ -14,16 +13,12 @@ import { krw } from '../lib/format';
 import { TE } from '../lib/toss-emoji';
 import { resolveCategoryVisual, resolveRootCategoryId } from '../lib/category-meta';
 import type { CostType } from '../types/api';
-import TossEmoji from '../components/common/TossEmoji';
 import CategoryIcon from '../components/common/CategoryIcon';
 import { Icon } from '../components/common/Icon';
 import WorkCalendar, { type CalLog } from '../components/WorkCalendar';
 import Segmented from '../components/common/Segmented';
 import AddRecurringSheet from '../components/sheets/AddRecurringSheet';
-import MissedRecurringSheet from '../components/sheets/MissedRecurringSheet';
 import PickerOverlay from '../components/sheets/PickerOverlay';
-import { recurringApi } from '../api';
-import { qk } from '../queries/keys';
 import EmptyState from '../components/common/EmptyState';
 import ActionSheet from '../components/common/ActionSheet';
 import ConfirmDialog from '../components/common/ConfirmDialog';
@@ -36,16 +31,7 @@ function todayMonth(): string {
 }
 const pad = (n: number) => String(n).padStart(2, '0');
 
-function recurringActiveOn(r: HouseholdRecurring, dateStr: string): boolean {
-  if (!r.active) return false;
-  if (r.startDate && dateStr < r.startDate) return false;
-  if (r.endDate && dateStr > r.endDate) return false;
-  return true;
-}
-
-type DayItem =
-  | { kind: 'tx'; id: string; title: string; amount: number; type: 'INCOME' | 'EXPENSE'; category: string; categoryId: number | null; sub?: string }
-  | { kind: 'rec'; id: string; title: string; amount: number; type: 'INCOME' | 'EXPENSE'; rec: HouseholdRecurring };
+type DayItem = { kind: 'tx'; id: string; title: string; amount: number; type: 'INCOME' | 'EXPENSE'; category: string; categoryId: number | null; sub?: string };
 
 type Props = NativeStackScreenProps<BookStackParamList, 'BookHome'>;
 
@@ -54,7 +40,6 @@ export default function BookScreen({ navigation, route }: Props) {
   const data = useHouseholdData();
   const currentHousehold = useAuthStore((s) => s.currentHousehold);
   const isViewer = currentHousehold?.role === 'VIEWER';
-  const hid = currentHousehold?.id;
 
   const [month, setMonth] = useState(todayMonth());
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
@@ -72,16 +57,8 @@ export default function BookScreen({ navigation, route }: Props) {
   const [actionRec, setActionRec] = useState<HouseholdRecurring | null>(null);
   const [deleteRec, setDeleteRec] = useState<HouseholdRecurring | null>(null);
   const [addPicker, setAddPicker] = useState(false);
-  const [missedVisible, setMissedVisible] = useState(false);
   const [toast, setToast] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-
-  const missedQ = useQuery({
-    queryKey: qk.recurringMissed(hid!),
-    queryFn: () => recurringApi.missed(hid!),
-    enabled: !!hid,
-  });
-  const missed = missedQ.data ?? [];
 
   const toggleRecurring = useToggleRecurring();
   const deleteRecurring = useDeleteRecurring();
@@ -98,7 +75,7 @@ export default function BookScreen({ navigation, route }: Props) {
   async function onRefresh() {
     setRefreshing(true);
     try {
-      await Promise.all([data.refetch(), missedQ.refetch()]);
+      await data.refetch();
     } finally {
       setRefreshing(false);
     }
@@ -172,10 +149,6 @@ export default function BookScreen({ navigation, route }: Props) {
 
   const recurring = data.recurring;
   const [y, m] = month.split('-').map(Number);
-  const lastDay = new Date(y!, m!, 0).getDate();
-  function recDateForMonth(r: HouseholdRecurring): string {
-    return `${month}-${pad(Math.min(r.dayOfMonth, lastDay))}`;
-  }
 
   function shiftMonth(delta: number) {
     const yy = y ?? new Date().getFullYear();
@@ -224,46 +197,20 @@ export default function BookScreen({ navigation, route }: Props) {
     return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
   }, [filteredTx]);
 
-  const calLogs: CalLog[] = useMemo(() => {
-    const out: CalLog[] = [];
-    for (const t of monthTx) {
-      out.push({ id: `t${t.id}`, date: t.date, colorLabel: resolveCategoryVisual(t.categoryId, t.category, data.categories).color, settled: true });
-    }
-    for (const r of recurring) {
-      const d = recDateForMonth(r);
-      // 이미 실제 거래로 반영된 정기 항목은 미리보기 점을 또 찍지 않는다 (중복 표시 방지)
-      const alreadyApplied = monthTx.some((t) => t.date === d && t.recurringTemplateId === r.id);
-      if (recurringActiveOn(r, d) && !alreadyApplied) {
-        out.push({ id: `r${r.id}`, date: d, colorLabel: theme.textMuted, settled: true });
-      }
-    }
-    return out;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monthTx, recurring, month, theme, data.categories]);
+  const calLogs: CalLog[] = useMemo(
+    () => monthTx.map((t) => ({ id: `t${t.id}`, date: t.date, colorLabel: resolveCategoryVisual(t.categoryId, t.category, data.categories).color, settled: true })),
+    [monthTx, data.categories],
+  );
 
   const dayItems: DayItem[] = useMemo(() => {
     if (!selectedDate) return [];
-    const items: DayItem[] = [];
-    monthTx
+    return monthTx
       .filter((t) => t.date === selectedDate)
-      .forEach((t) => {
+      .map((t) => {
         const from = data.assets.find((a) => a.id === t.from);
-        items.push({ kind: 'tx', id: t.id, title: t.title, amount: t.amount, type: t.type === 'INCOME' ? 'INCOME' : 'EXPENSE', category: t.category, categoryId: t.categoryId, sub: from ? from.name : undefined });
+        return { kind: 'tx' as const, id: t.id, title: t.title, amount: t.amount, type: t.type === 'INCOME' ? ('INCOME' as const) : ('EXPENSE' as const), category: t.category, categoryId: t.categoryId, sub: from ? from.name : undefined };
       });
-    recurring
-      .filter(
-        (r) =>
-          recDateForMonth(r) === selectedDate &&
-          recurringActiveOn(r, selectedDate) &&
-          // 이미 실제 거래로 반영된 정기 항목은 미리보기 행을 또 넣지 않는다 (중복 표시 방지)
-          !monthTx.some((t) => t.date === selectedDate && t.recurringTemplateId === r.id),
-      )
-      .forEach((r) => {
-        items.push({ kind: 'rec', id: r.id, title: r.title, amount: r.amount, type: r.type === 'INCOME' ? 'INCOME' : 'EXPENSE', rec: r });
-      });
-    return items;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, monthTx, recurring, data.assets]);
+  }, [selectedDate, monthTx, data.assets]);
 
   const incomeRec = recurring.filter((r) => r.type === 'INCOME');
   const expenseRec = recurring.filter((r) => r.type !== 'INCOME');
@@ -362,13 +309,10 @@ export default function BookScreen({ navigation, route }: Props) {
 
   function renderDayItem(item: DayItem, i: number, total: number) {
     const isInc = item.type === 'INCOME';
-    const visual =
-      item.kind === 'tx'
-        ? resolveCategoryVisual(item.categoryId, item.category, data.categories)
-        : resolveCategoryVisual(item.rec.categoryId, item.rec.category, data.categories);
-    const canEditTx = item.kind === 'tx' && !isViewer;
+    const visual = resolveCategoryVisual(item.categoryId, item.category, data.categories);
+    const canEditTx = !isViewer;
     return (
-      <View key={`${item.kind}-${item.id}`}>
+      <View key={item.id}>
         <ListRow
           left={
             <View style={[styles.itemIcon, { backgroundColor: theme.bg }]}>
@@ -377,15 +321,8 @@ export default function BookScreen({ navigation, route }: Props) {
           }
           contents={
             <View>
-              <View style={styles.itemTitleRow}>
-                <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{item.title}</Text>
-                {item.kind === 'rec' && (
-                  <View style={[styles.tagChip, { backgroundColor: theme.brandSoft }]}>
-                    <Text style={{ color: theme.brand, fontSize: 10, fontWeight: '700' }}>정기</Text>
-                  </View>
-                )}
-              </View>
-              {item.kind === 'tx' && item.sub ? <Text style={{ color: theme.textMuted, fontSize: 11 }}>{item.sub}</Text> : null}
+              <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{item.title}</Text>
+              {item.sub ? <Text style={{ color: theme.textMuted, fontSize: 11 }}>{item.sub}</Text> : null}
             </View>
           }
           right={
@@ -407,7 +344,7 @@ export default function BookScreen({ navigation, route }: Props) {
               )}
             </View>
           }
-          onPress={item.kind === 'tx' ? () => navigation.navigate('TransactionDetail', { id: item.id }) : item.kind === 'rec' ? () => setActionRec(item.rec) : undefined}
+          onPress={() => navigation.navigate('TransactionDetail', { id: item.id })}
           verticalPadding="small"
         />
         {i < total - 1 && <Border type="full" />}
@@ -652,13 +589,6 @@ export default function BookScreen({ navigation, route }: Props) {
         )}
 
         <View style={styles.sectionPad}>
-          {!isViewer && missed.length > 0 && (
-            <Pressable style={[styles.missedBanner, { backgroundColor: theme.danger + '14' }]} onPress={() => setMissedVisible(true)}>
-              <TossEmoji code={TE.lightning} size={18} />
-              <Text style={{ color: theme.danger, fontSize: 12.5, fontWeight: '700', flex: 1 }}>미반영 정기거래 {missed.length}건이 있어요</Text>
-              <Text style={{ color: theme.danger, fontSize: 12, fontWeight: '700' }}>확인하기</Text>
-            </Pressable>
-          )}
           <Pressable style={[styles.recHeader, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={() => setRecOpen((v) => !v)}>
             <View>
               <Text style={{ color: theme.text, fontSize: 14, fontWeight: '700' }}>정기 항목 관리</Text>
@@ -721,7 +651,6 @@ export default function BookScreen({ navigation, route }: Props) {
         }}
         onSaved={(mode) => setToast(mode === 'edit' ? '정기 항목을 수정했어요' : '정기 항목을 저장했어요')}
       />
-      <MissedRecurringSheet visible={missedVisible} onClose={() => setMissedVisible(false)} onApplied={(count) => setToast(`누락된 정기거래 ${count}건을 반영했어요`)} />
 
       <PickerOverlay visible={filterSheetOpen} title="필터" onClose={() => setFilterSheetOpen(false)}>
         <View style={styles.filterSection}>
@@ -847,11 +776,8 @@ const styles = StyleSheet.create({
   dayTitle: { fontSize: 14, fontWeight: '700' },
   dayCard: { borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
   itemIcon: { width: 32, height: 32, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  itemTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  tagChip: { paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 },
   recRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   toggleChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  missedBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, padding: 12, marginBottom: 12 },
   recHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 14, borderWidth: 1, padding: 14 },
   recSectionTitle: { fontSize: 12, fontWeight: '700', marginTop: 12, marginBottom: 8, color: '#8B95A1' },
   recAddBtn: { borderWidth: 1.4, borderRadius: 12, alignItems: 'center', paddingVertical: 12, marginTop: 12 },

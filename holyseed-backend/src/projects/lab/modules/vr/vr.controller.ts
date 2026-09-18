@@ -121,12 +121,6 @@ export class VrController {
     return ok('조회 성공', await this.performance.getWealthHistory());
   }
 
-  @Get('benchmark-comparison')
-  @ApiOperation({ summary: 'TQQQ 평가금 vs VOO·QQQM·QLD 정규화 수익률(%) 비교 (첫 공통일=0%)' })
-  async getBenchmarkComparison() {
-    return ok('조회 성공', await this.performance.getBenchmarkComparison());
-  }
-
   @Post('fills')
   @ApiOperation({ summary: '체결 등록 (Pool/보유/평단 자동 계산)' })
   async createFill(@Body() dto: CreateFillDto) {

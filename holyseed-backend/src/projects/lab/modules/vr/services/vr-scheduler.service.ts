@@ -2,7 +2,6 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { VrEngineService } from './vr-engine.service';
-import { VrPerformanceService } from './vr-performance.service';
 
 /**
  * VR(TQQQ 밸류 리밸런싱) 스케줄러 — laofus와 달리 "마감 임박 1회 실행"이 아니라
@@ -21,7 +20,6 @@ export class VrSchedulerService implements OnModuleInit {
   constructor(
     private readonly engine: VrEngineService,
     private readonly registry: SchedulerRegistry,
-    private readonly performance: VrPerformanceService,
   ) {}
 
   private get enabled(): boolean {
@@ -38,23 +36,6 @@ export class VrSchedulerService implements OnModuleInit {
     this.registry.addCronJob('vr-run', job);
     job.start();
     this.logger.log(`VR 크론 등록: 'vr-run' '${spec}' (KST)`);
-
-    // 매일 06:10 KST(자산 스냅샷 06:00 직후) — VOO/QQQM/QLD 벤치마크 종가 동기화. 최근 30거래일을
-    // 매번 다시 받아 upsert하는 자체 치유형이라 하루 놓쳐도 다음 실행에서 자동으로 채워짐.
-    const benchmarkSpec = '10 6 * * 2-6';
-    const benchmarkJob = new CronJob(benchmarkSpec, () => void this.benchmarkTick(), null, false, 'Asia/Seoul');
-    this.registry.addCronJob('vr-benchmark-sync', benchmarkJob);
-    benchmarkJob.start();
-    this.logger.log(`벤치마크 동기화 크론 등록: 'vr-benchmark-sync' '${benchmarkSpec}' (KST)`);
-  }
-
-  private async benchmarkTick(): Promise<void> {
-    try {
-      const count = await this.performance.syncBenchmarkPrices();
-      this.logger.log(`벤치마크 가격 동기화 완료: ${count}건`);
-    } catch (e) {
-      this.logger.error(`벤치마크 가격 동기화 실패: ${e instanceof Error ? e.message : e}`);
-    }
   }
 
   /** 다음 발화 시각 (ISO) — 대시보드 카운트다운용 */

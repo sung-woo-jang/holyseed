@@ -28,7 +28,7 @@ function EmptyNote({ children }: { children: ReactNode }) {
   return <p className="rounded-lg border border-dashed bg-muted/40 p-6 text-center text-xs text-muted-foreground">{children}</p>
 }
 
-export default function VrPerformancePage() {
+export default function VrTestPage() {
   const { data: cyclesRes } = useVrCycles()
   const { data: wealthRes } = useVrWealthHistory()
   const { data: spyRes } = useVrSpyComparison()
@@ -43,7 +43,7 @@ export default function VrPerformancePage() {
 
   return (
     <div className="p-6">
-      <PageHeader title="누적 성과" description="사이클을 이어붙인 장기 추이 · 평가금 vs 투자원금 · SPY 대비 수익률" />
+      <PageHeader title="테스트" description="누적 성과 실험 페이지 — 사이클을 이어붙인 장기 추이 · 평가금 vs 투자원금 · SPY 대비 수익률" />
 
       {/* 사이클 누적 V/밴드 */}
       <section className="mt-6">

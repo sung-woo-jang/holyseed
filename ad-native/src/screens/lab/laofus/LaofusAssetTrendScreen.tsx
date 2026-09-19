@@ -240,12 +240,7 @@ function DetailView({
         </View>
       </View>
 
-      <View style={[styles.sectionLabel, { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16 }]}>
-        <Text style={{ fontSize: 11, fontWeight: '800', color: theme.textMuted }}>예수금</Text>
-        <View style={[styles.newBadge, { backgroundColor: '#C8930A' }]}>
-          <Text style={{ fontSize: 9, fontWeight: '800', color: '#fff' }}>NEW</Text>
-        </View>
-      </View>
+      <Text style={[styles.sectionLabel, { color: theme.textMuted, marginTop: 16 }]}>예수금</Text>
       <View style={[styles.cashCard, { borderColor: '#C8930A', backgroundColor: theme.dark ? '#332708' : '#FFF7E6' }]}>
         <View style={styles.cashRow}>
           <View style={[styles.badge, { backgroundColor: '#C8930A' }]}>
@@ -449,7 +444,6 @@ const styles = StyleSheet.create({
   badge: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
 
   calBtn: { width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  newBadge: { paddingHorizontal: 6, paddingVertical: 1.5, borderRadius: 5 },
   cashCard: { borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 12, padding: 12, marginTop: 8 },
   cashRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 14, paddingTop: 14, borderTopWidth: 1.5 },

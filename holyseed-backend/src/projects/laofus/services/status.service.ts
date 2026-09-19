@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
 import { TossClientService, TossOrder } from '@shared/toss/toss-client.service';
-import { VrFill, VrFillKind } from '@/projects/lab/modules/vr/entities/vr-fill.entity';
+import { VrFill } from '@/projects/lab/modules/vr/entities/vr-fill.entity';
 import { LaofusEngineService } from './engine.service';
 import { LaofusSchedulerService } from './scheduler.service';
 import { LaofusEngineState } from '../entities/engine-state.entity';
@@ -145,31 +145,26 @@ export class LaofusStatusService {
 
   /**
    * 라오어(SOXL)+VR(TQQQ) 공유 계좌의 일별 결합 자산 추이 — account_snapshots를 그대로 가공,
-   * 새 토스 호출·새 크론 없음. TQQQ 원금은 VR 입금 이력(VrFill) 누계, SOXL 원금은 그 날짜까지의
-   * 최근 체결 평단가(LaofusTrade.avgAfter) × 그날 보유수량으로 근사(매입원가).
+   * 새 토스 호출·새 크론 없음. TQQQ/SOXL 둘 다 원금은 "그 날짜까지의 최근 체결 평단가 ×
+   * 그날 보유수량"(매입원가)으로 동일하게 계산 — TQQQ를 VR 총입금액(Pool 포함)으로 계산하면
+   * 아직 주식으로 안 바뀐 Pool 현금까지 원금에 잡혀 손실률이 부풀려짐(2026-09 실제 발견된
+   * 계산 버그, -36%로 잘못 표시되던 걸 매입원가 기준으로 바로잡음).
    */
   async getAssetTrend(): Promise<AssetTrendPoint[]> {
-    const [snapshots, contributions, trades] = await Promise.all([
+    const [snapshots, fills, trades] = await Promise.all([
       this.snapshotRepo.find({ order: { date: 'ASC' } }),
-      this.vrFillRepo.find({
-        where: [{ kind: VrFillKind.INITIAL_BUY }, { kind: VrFillKind.DEPOSIT }],
-        order: { fillDate: 'ASC', id: 'ASC' },
-      }),
+      this.vrFillRepo.find({ order: { fillDate: 'ASC', id: 'ASC' } }),
       this.tradeRepo.find({ order: { date: 'ASC', seq: 'ASC' } }),
     ]);
 
-    let runningPrincipal = 0;
-    const tqqqPrincipalSeries = contributions.map((c) => {
-      runningPrincipal = Math.round((runningPrincipal + c.amount) * 100) / 100;
-      return { date: c.fillDate, cumulative: runningPrincipal };
-    });
+    const tqqqAvgSeries = fills.map((f) => ({ date: f.fillDate, avgAfter: f.avgPriceAfter }));
     const soxlAvgSeries = trades.map((t) => ({ date: t.date, avgAfter: Number(t.avgAfter) }));
 
-    const tqqqPrincipalAsOf = (date: string): number => {
+    const tqqqAvgPriceAsOf = (date: string): number => {
       let result = 0;
-      for (const p of tqqqPrincipalSeries) {
+      for (const p of tqqqAvgSeries) {
         if (p.date > date) break;
-        result = p.cumulative;
+        result = p.avgAfter;
       }
       return result;
     };
@@ -187,7 +182,7 @@ export class LaofusStatusService {
       const soxl = s.holdingsJson?.find((h) => h.symbol === 'SOXL');
       const tqqqValueUsd = Math.round((tqqq?.marketValueUsd ?? 0) * 100) / 100;
       const soxlValueUsd = Math.round((soxl?.marketValueUsd ?? 0) * 100) / 100;
-      const tqqqPrincipalUsd = tqqqPrincipalAsOf(s.date);
+      const tqqqPrincipalUsd = Math.round((tqqq?.quantity ?? 0) * tqqqAvgPriceAsOf(s.date) * 100) / 100;
       const soxlPrincipalUsd = Math.round((soxl?.quantity ?? 0) * soxlAvgPriceAsOf(s.date) * 100) / 100;
       const stockUsd = Math.round((tqqqValueUsd + soxlValueUsd) * 100) / 100;
       const principalUsd = Math.round((tqqqPrincipalUsd + soxlPrincipalUsd) * 100) / 100;

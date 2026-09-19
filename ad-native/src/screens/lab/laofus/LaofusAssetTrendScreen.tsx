@@ -4,9 +4,22 @@ import { useQuery } from '@tanstack/react-query';
 import Loader from '../../../components/ui/Loader';
 import EmptyState from '../../../components/common/EmptyState';
 import LineChart from '../../../components/charts/LineChart';
+import DatePicker from '../../../components/common/DatePicker';
 import { laofusRestApi, type AssetTrendPoint } from '../../../api/laofus';
 import { useTheme } from '../../../lib/theme';
 import { TE } from '../../../lib/toss-emoji';
+
+/** 정확히 일치하는 날짜가 없으면(공휴일 등 스냅샷 누락) 그 이하 중 가장 가까운 날짜로 스냅 */
+function findClosestIndex(series: AssetTrendPoint[], dateStr: string): number {
+  const exact = series.findIndex((s) => s.date === dateStr);
+  if (exact >= 0) return exact;
+  let idx = 0;
+  for (let i = 0; i < series.length; i++) {
+    if (series[i].date <= dateStr) idx = i;
+    else break;
+  }
+  return idx;
+}
 
 type Ccy = 'krw' | 'usd';
 type Tab = 'detail' | 'trend' | 'daily';
@@ -140,6 +153,7 @@ function DetailView({
   setCcy: (c: Ccy) => void;
   theme: ReturnType<typeof useTheme>;
 }) {
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const r = series[dayIdx];
   const isUsd = ccy === 'usd';
   const stock = isUsd ? r.stockUsd : r.stockKrw;
@@ -148,6 +162,8 @@ function DetailView({
   const tqqqPrin = isUsd ? r.tqqqPrincipalUsd : Math.round(r.tqqqPrincipalUsd * r.fx);
   const soxlVal = isUsd ? r.soxlValueUsd : Math.round(r.soxlValueUsd * r.fx);
   const soxlPrin = isUsd ? r.soxlPrincipalUsd : Math.round(r.soxlPrincipalUsd * r.fx);
+  const cashUsdKrw = Math.round(r.cashUsd * r.fx);
+  const total = isUsd ? r.totalValueUsd : r.totalValueKrw;
   const profit = stock - principal;
   const profitPct = principal > 0 ? (profit / principal) * 100 : 0;
   const tqqqPct = tqqqPrin > 0 ? ((tqqqVal - tqqqPrin) / tqqqPrin) * 100 : 0;
@@ -164,7 +180,18 @@ function DetailView({
         <Pressable disabled={dayIdx === series.length - 1} onPress={() => setDayIdx(dayIdx + 1)}>
           <Text style={{ fontSize: 13, color: dayIdx === series.length - 1 ? theme.border : theme.textMuted }}>▶</Text>
         </Pressable>
+        <Pressable onPress={() => setCalendarOpen(true)} style={[styles.calBtn, { backgroundColor: theme.brandSoft }]}>
+          <Text style={{ fontSize: 13 }}>📅</Text>
+        </Pressable>
       </View>
+
+      <DatePicker
+        visible={calendarOpen}
+        value={r.date}
+        maxDate={series[series.length - 1].date}
+        onSelect={(date) => setDayIdx(findClosestIndex(series, date))}
+        onClose={() => setCalendarOpen(false)}
+      />
 
       <CcyToggle ccy={ccy} onChange={setCcy} theme={theme} />
 
@@ -211,6 +238,39 @@ function DetailView({
           <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text }}>{fmt(soxlVal, ccy)}</Text>
           <Text style={{ fontSize: 11.5, fontWeight: '700', color: soxlPct >= 0 ? theme.brand : theme.danger }}>{pctStr(soxlPct)}</Text>
         </View>
+      </View>
+
+      <View style={[styles.sectionLabel, { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16 }]}>
+        <Text style={{ fontSize: 11, fontWeight: '800', color: theme.textMuted }}>예수금</Text>
+        <View style={[styles.newBadge, { backgroundColor: '#C8930A' }]}>
+          <Text style={{ fontSize: 9, fontWeight: '800', color: '#fff' }}>NEW</Text>
+        </View>
+      </View>
+      <View style={[styles.cashCard, { borderColor: '#C8930A', backgroundColor: theme.dark ? '#332708' : '#FFF7E6' }]}>
+        <View style={styles.cashRow}>
+          <View style={[styles.badge, { backgroundColor: '#C8930A' }]}>
+            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '800' }}>$</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text }}>USD 예수금</Text>
+            <Text style={{ fontSize: 10.5, color: theme.textMuted }}>환율 {r.fx.toLocaleString('en-US', { minimumFractionDigits: 2 })}원 적용</Text>
+          </View>
+          <Text style={{ fontSize: 13.5, fontWeight: '700', color: theme.text }}>{isUsd ? usdFmt(r.cashUsd) : krw(cashUsdKrw)}</Text>
+        </View>
+        <View style={[styles.cashRow, { borderTopWidth: 1, borderColor: theme.border, marginTop: 8, paddingTop: 8 }]}>
+          <View style={[styles.badge, { backgroundColor: '#C8930A' }]}>
+            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '800' }}>₩</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text }}>KRW 예수금</Text>
+          </View>
+          <Text style={{ fontSize: 13.5, fontWeight: '700', color: theme.text }}>{krw(r.cashKrw)}</Text>
+        </View>
+      </View>
+
+      <View style={[styles.totalRow, { borderColor: theme.border }]}>
+        <Text style={{ fontSize: 13, fontWeight: '800', color: theme.text }}>계좌총액</Text>
+        <Text style={{ fontSize: 17, fontWeight: '800', color: theme.brand }}>{fmt(total, ccy)}</Text>
       </View>
 
       <View style={styles.fxRow}>
@@ -387,6 +447,12 @@ const styles = StyleSheet.create({
 
   holdRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1 },
   badge: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+
+  calBtn: { width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  newBadge: { paddingHorizontal: 6, paddingVertical: 1.5, borderRadius: 5 },
+  cashCard: { borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 12, padding: 12, marginTop: 8 },
+  cashRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 14, paddingTop: 14, borderTopWidth: 1.5 },
 
   fxRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 14, marginTop: 6 },
   disclaimer: { borderRadius: 10, padding: 12, marginTop: 8 },

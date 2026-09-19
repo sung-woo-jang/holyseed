@@ -127,6 +127,10 @@ export interface AssetTrendPoint {
   principalUsd: number;
   stockKrw: number;
   principalKrw: number;
+  cashUsd: number;
+  cashKrw: number;
+  totalValueUsd: number;
+  totalValueKrw: number;
 }
 
 export const laofusRestApi = {

@@ -25,6 +25,10 @@ export interface AssetTrendPoint {
   principalUsd: number;
   stockKrw: number;
   principalKrw: number;
+  cashUsd: number;
+  cashKrw: number;
+  totalValueUsd: number;
+  totalValueKrw: number;
 }
 
 /**
@@ -201,6 +205,10 @@ export class LaofusStatusService {
         principalUsd,
         stockKrw: Math.round(stockUsd * fx),
         principalKrw: Math.round(principalUsd * fx),
+        cashUsd: Number(s.cashUsd),
+        cashKrw: Number(s.cashKrw),
+        totalValueUsd: Number(s.totalValueUsd),
+        totalValueKrw: Number(s.totalValueKrw),
       };
     });
   }

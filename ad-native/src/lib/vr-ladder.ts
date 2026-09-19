@@ -18,23 +18,29 @@ export interface LadderRow {
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 export function buildBuyLadder(params: { quantity: number; minBand: number; pool: number; usablePool: number; steps?: number }): LadderRow[] {
-  const { quantity, minBand, pool, usablePool, steps = 15 } = params;
+  const { quantity, minBand, pool, usablePool, steps } = params;
+  // steps를 안 넘기면 매수한도(usablePool)를 넘어서는 첫 단계까지 자동으로 늘어남(그 지점까지가
+  // "지금 사이클에서 최대로 살 수 있는 범위") — steps를 명시하면 기존처럼 고정 길이로 동작.
+  const autoStop = steps === undefined;
+  const maxSteps = steps ?? 500; // 무한루프 방지용 상한(정상 범위에선 절대 안 닿음)
   const rows: LadderRow[] = [];
   let poolLeft = pool;
   let used = 0;
 
-  for (let i = 1; i <= steps; i++) {
+  for (let i = 1; i <= maxSteps; i++) {
     const prevQty = quantity + i - 1;
     if (prevQty <= 0) break;
     const trigger = round2(minBand / prevQty);
     poolLeft = round2(poolLeft - trigger);
     used = round2(used + trigger);
+    const exceedsLimit = used > usablePool;
     rows.push({
       qtyAfter: prevQty + 1,
       triggerPrice: trigger,
       poolAfter: poolLeft,
-      exceedsLimit: used > usablePool,
+      exceedsLimit,
     });
+    if (autoStop && exceedsLimit) break;
   }
   return rows;
 }

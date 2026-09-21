@@ -194,10 +194,11 @@ export class VrEngineService {
           `최소밴드=$${state.minBand}, 최대밴드=$${state.maxBand} | 현재가=$${price}`,
       );
 
-      const decision = decide({ quantity: state.quantity, vValue: state.vValue, pool: state.pool }, price, {
-        bandPct: settings.bandPct,
-        poolLimitPct: settings.poolLimitPct,
-      });
+      const decision = decide(
+        { quantity: state.quantity, vValue: state.vValue, pool: state.pool, cyclePoolStart: state.cycle.poolStart },
+        price,
+        { bandPct: settings.bandPct, poolLimitPct: settings.poolLimitPct },
+      );
 
       if (decision.action === 'NONE') {
         await this.event('info', `판단: 주문 없음 — ${decision.reason} (현재가 $${price})`, runId);

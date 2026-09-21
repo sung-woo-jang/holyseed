@@ -66,7 +66,9 @@ export class VrService {
       vValue: v,
       minBand,
       maxBand,
-      usablePool: round2(pool * (settings.poolLimitPct / 100)),
+      usablePool: currentCycle
+        ? round2(pool - (currentCycle.poolStart * (100 - settings.poolLimitPct)) / 100)
+        : round2(pool * (settings.poolLimitPct / 100)),
       v2Preview: currentCycle ? computeV2(v, pool, settings.gFactor, settings.depositAmount) : null,
       ...(await this.getPrincipalSummary()),
     };

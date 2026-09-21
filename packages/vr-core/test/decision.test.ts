@@ -6,7 +6,7 @@ const settings = { bandPct: 15, poolLimitPct: 75 }
 
 test('평가금이 최소밴드 미만 — 매수, 밴드 경계 근처까지 최소 정수 수량', () => {
   // V=2432.71 -> minBand=2067.80, maxBand=2797.62 (round2)
-  const d = decide({ quantity: 20, vValue: 2432.71, pool: 3810.93 }, 90, settings)
+  const d = decide({ quantity: 20, vValue: 2432.71, pool: 3810.93, cyclePoolStart: 3810.93 }, 90, settings)
   assert.equal(d.action, 'BUY')
   if (d.action === 'BUY') {
     // 20주*90=1800 < 2067.80 -> ceil(2067.80/90)=23, qty=3
@@ -16,20 +16,20 @@ test('평가금이 최소밴드 미만 — 매수, 밴드 경계 근처까지 �
 })
 
 test('평가금이 최대밴드 초과 — 매도, 밴드 경계 근처까지 최소 정수 수량', () => {
-  const d = decide({ quantity: 30, vValue: 2432.71, pool: 3810.93 }, 100, settings)
+  const d = decide({ quantity: 30, vValue: 2432.71, pool: 3810.93, cyclePoolStart: 3810.93 }, 100, settings)
   // 30*100=3000 > 2797.62 -> floor(2797.62/100)=27, qty=3
   assert.equal(d.action, 'SELL')
   if (d.action === 'SELL') assert.equal(d.quantity, 3)
 })
 
 test('밴드 이내 — 홀딩', () => {
-  const d = decide({ quantity: 26, vValue: 2432.71, pool: 3810.93 }, 90, settings)
+  const d = decide({ quantity: 26, vValue: 2432.71, pool: 3810.93, cyclePoolStart: 3810.93 }, 90, settings)
   assert.equal(d.action, 'NONE')
 })
 
-test('Pool 75% 한도 초과 시 최대 수량으로 클램프', () => {
-  // pool=100 -> usablePool=75, price=10 -> maxQtyByPool=7
-  const d = decide({ quantity: 0, vValue: 1000, pool: 100 }, 10, settings)
+test('Pool 75% 한도 초과 시 최대 수량으로 클램프 (사이클 시작 시점 = 기존 공식과 동일)', () => {
+  // pool=cyclePoolStart=100 -> reserveFloor=25, usablePool=75, price=10 -> maxQtyByPool=7
+  const d = decide({ quantity: 0, vValue: 1000, pool: 100, cyclePoolStart: 100 }, 10, settings)
   assert.equal(d.action, 'BUY')
   if (d.action === 'BUY') {
     assert.equal(d.quantity, 7)
@@ -38,6 +38,16 @@ test('Pool 75% 한도 초과 시 최대 수량으로 클램프', () => {
 })
 
 test('Pool 한도 부족으로 1주도 못 사면 스킵', () => {
-  const d = decide({ quantity: 0, vValue: 1000, pool: 1 }, 10, settings)
+  const d = decide({ quantity: 0, vValue: 1000, pool: 1, cyclePoolStart: 1 }, 10, settings)
   assert.equal(d.action, 'NONE')
+})
+
+test('사이클 중간 — 이미 쓴 만큼 반영해 한도가 더 타이트해짐', () => {
+  // cyclePoolStart=1000, pool=300(이미 700 씀) -> reserveFloor=250, usablePool=50, price=10 -> qty=5
+  const d = decide({ quantity: 0, vValue: 1000, pool: 300, cyclePoolStart: 1000 }, 10, settings)
+  assert.equal(d.action, 'BUY')
+  if (d.action === 'BUY') {
+    assert.equal(d.quantity, 5)
+    assert.equal(d.clamped, true)
+  }
 })

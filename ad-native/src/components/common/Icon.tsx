@@ -110,4 +110,12 @@ export const Icon = {
       />
     </Svg>
   ),
+  sliders: (color = '#8B95A1', size = 18) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" pointerEvents="none">
+      <Path d="M4 6h16M4 12h16M4 18h16" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+      <Circle cx={9} cy={6} r={2.2} fill={color} />
+      <Circle cx={16} cy={12} r={2.2} fill={color} />
+      <Circle cx={11} cy={18} r={2.2} fill={color} />
+    </Svg>
+  ),
 };

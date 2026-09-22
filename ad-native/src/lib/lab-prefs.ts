@@ -3,6 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import type { SortPref } from '../api/lab-worklog';
 
 const KEY_WORKLOG_SORT = 'lab_worklogSortPref';
+const KEY_WORKLOG_SUMMARY_HIDDEN_FIELDS = 'lab_worklogSummaryHiddenFields';
 const KEY_VR_FILLS_SORT = 'lab_vrFillsSortPref';
 const KEY_LAOFUS_WEALTH_SORT = 'lab_laofusWealthSortPref';
 const KEY_LAOFUS_LAST_COPY = 'lab_laofusWealthLastCopyDate';
@@ -46,6 +47,14 @@ export async function getWorklogSortPref(): Promise<SortPref | null> {
 
 export async function setWorklogSortPref(pref: SortPref): Promise<void> {
   return setPref(KEY_WORKLOG_SORT, pref);
+}
+
+export async function getWorklogSummaryHiddenFields(): Promise<string[] | null> {
+  return getPref<string[]>(KEY_WORKLOG_SUMMARY_HIDDEN_FIELDS);
+}
+
+export async function setWorklogSummaryHiddenFields(fields: string[]): Promise<void> {
+  return setPref(KEY_WORKLOG_SUMMARY_HIDDEN_FIELDS, fields);
 }
 
 export async function getVrFillsSortDir(): Promise<'asc' | 'desc' | null> {

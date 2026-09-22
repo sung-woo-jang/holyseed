@@ -11,8 +11,9 @@ import AppToast from '../../../components/common/AppToast';
 import ConfirmDialog from '../../../components/common/ConfirmDialog';
 import Segmented from '../../../components/common/Segmented';
 import { Icon } from '../../../components/common/Icon';
+import SheetModal from '../../../components/sheets/SheetModal';
 import { labWorklogApi, type WorklogRecord } from '../../../api/lab-worklog';
-import { getWorklogSortPref, setWorklogSortPref } from '../../../lib/lab-prefs';
+import { getWorklogSortPref, setWorklogSortPref, getWorklogSummaryHiddenFields, setWorklogSummaryHiddenFields } from '../../../lib/lab-prefs';
 import { useTheme } from '../../../lib/theme';
 import { krw } from '../../../lib/format';
 import { toLocalDateString, todayLocal } from '../../../lib/date';
@@ -31,6 +32,17 @@ const PAY_STATUS_LABEL: Record<WorklogRecord['payStatus'], string> = {
 };
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
+const SUMMARY_FIELD_IDS = ['workDays', 'laborUnits', 'totalNet', 'totalGross', 'received', 'pending'] as const;
+type SummaryFieldId = (typeof SUMMARY_FIELD_IDS)[number];
+const SUMMARY_FIELD_LABEL: Record<SummaryFieldId, string> = {
+  workDays: '근무일수',
+  laborUnits: '품(대가리)',
+  totalNet: '실수령 합계',
+  totalGross: '세전 수령액',
+  received: '수령완료',
+  pending: '미수령',
+};
 
 function sortByDate(records: WorklogRecord[], dir: 'asc' | 'desc'): WorklogRecord[] {
   const sorted = [...records].sort((a, b) => (a.workDate < b.workDate ? -1 : a.workDate > b.workDate ? 1 : 0));
@@ -55,12 +67,29 @@ export default function LabWorklogScreen({ navigation, route }: Props) {
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [summaryCollapsed, setSummaryCollapsed] = useState(false);
+  const [summarySettingsOpen, setSummarySettingsOpen] = useState(false);
+  const [hiddenSummaryFields, setHiddenSummaryFields] = useState<Set<SummaryFieldId>>(new Set());
 
   useEffect(() => {
     getWorklogSortPref().then((pref) => {
       if (pref) setSortDir(pref.dir);
     });
+    getWorklogSummaryHiddenFields().then((fields) => {
+      if (fields) setHiddenSummaryFields(new Set(fields as SummaryFieldId[]));
+    });
   }, []);
+
+  function toggleSummaryField(id: SummaryFieldId) {
+    setHiddenSummaryFields((prev) => {
+      const isHidden = prev.has(id);
+      if (!isHidden && prev.size === SUMMARY_FIELD_IDS.length - 1) return prev; // 최소 1개는 표시
+      const next = new Set(prev);
+      if (isHidden) next.delete(id);
+      else next.add(id);
+      setWorklogSummaryHiddenFields(Array.from(next));
+      return next;
+    });
+  }
 
   useEffect(() => {
     if (!route.params?.savedMode) return;
@@ -121,6 +150,15 @@ export default function LabWorklogScreen({ navigation, route }: Props) {
   const displayPendingNet = summaryWorkRecords
     .filter((r) => r.payStatus === 'EXPECTED' || r.payStatus === 'UNPAID')
     .reduce((sum, r) => sum + r.netAmount, 0);
+  const summaryFieldValues: Record<SummaryFieldId, { value: string; tone?: 'brand' | 'danger' }> = {
+    workDays: { value: `${displayWorkDays}일` },
+    laborUnits: { value: `${displayLaborUnits}품` },
+    totalNet: { value: krw(displayTotalNet) },
+    totalGross: { value: krw(displayTotalGross) },
+    received: { value: krw(displayReceivedNet), tone: 'brand' },
+    pending: { value: krw(displayPendingNet), tone: 'danger' },
+  };
+  const visibleSummaryFields = SUMMARY_FIELD_IDS.filter((id) => !hiddenSummaryFields.has(id));
   const sortedRecords = sortByDate(filteredRecords, sortDir);
   const recordsByDate = new Map<string, WorklogRecord[]>();
   filteredRecords.forEach((r) => {
@@ -293,45 +331,60 @@ export default function LabWorklogScreen({ navigation, route }: Props) {
           {summary && (
             <View style={[styles.summaryCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <Pressable style={styles.summaryHeader} onPress={() => setSummaryCollapsed((v) => !v)} hitSlop={6}>
-                <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '700' }}>요약</Text>
+                <View style={styles.summaryHeaderLeft}>
+                  <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '700' }}>요약</Text>
+                  <Pressable
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      setSummarySettingsOpen(true);
+                    }}
+                    hitSlop={8}
+                    style={styles.gearBtn}
+                  >
+                    {Icon.sliders(theme.textMuted, 15)}
+                  </Pressable>
+                </View>
                 <Text style={{ color: theme.textMuted, fontSize: 12 }}>{summaryCollapsed ? '펼치기 ▾' : '접기 ▴'}</Text>
               </Pressable>
               {!summaryCollapsed && (
-                <>
-                  <View style={styles.summaryRow}>
-                    <View style={styles.summaryItem}>
-                      <Text style={{ color: theme.textMuted, fontSize: 12 }}>근무일수</Text>
-                      <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{displayWorkDays}일</Text>
-                    </View>
-                    <View style={styles.summaryItem}>
-                      <Text style={{ color: theme.textMuted, fontSize: 12 }}>품(대가리)</Text>
-                      <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{displayLaborUnits}품</Text>
-                    </View>
-                  </View>
-                  <View style={styles.summaryRow}>
-                    <View style={styles.summaryItem}>
-                      <Text style={{ color: theme.textMuted, fontSize: 12 }}>실수령 합계</Text>
-                      <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{krw(displayTotalNet)}</Text>
-                    </View>
-                    <View style={styles.summaryItem}>
-                      <Text style={{ color: theme.textMuted, fontSize: 12 }}>세전 수령액</Text>
-                      <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{krw(displayTotalGross)}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.summaryRow}>
-                    <View style={styles.summaryItem}>
-                      <Text style={{ color: theme.textMuted, fontSize: 12 }}>수령완료</Text>
-                      <Text style={{ color: theme.brand, fontSize: 13, fontWeight: '700' }}>{krw(displayReceivedNet)}</Text>
-                    </View>
-                    <View style={styles.summaryItem}>
-                      <Text style={{ color: theme.textMuted, fontSize: 12 }}>미수령</Text>
-                      <Text style={{ color: theme.danger, fontSize: 13, fontWeight: '700' }}>{krw(displayPendingNet)}</Text>
-                    </View>
-                  </View>
-                </>
+                <View style={styles.summaryGrid}>
+                  {visibleSummaryFields.map((id) => {
+                    const f = summaryFieldValues[id];
+                    return (
+                      <View key={id} style={styles.summaryItem}>
+                        <Text style={{ color: theme.textMuted, fontSize: 12 }}>{SUMMARY_FIELD_LABEL[id]}</Text>
+                        <Text
+                          style={{
+                            color: f.tone === 'brand' ? theme.brand : f.tone === 'danger' ? theme.danger : theme.text,
+                            fontSize: f.tone ? 13 : 15,
+                            fontWeight: f.tone ? '700' : '800',
+                          }}
+                        >
+                          {f.value}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
               )}
             </View>
           )}
+
+          <SheetModal visible={summarySettingsOpen} onClose={() => setSummarySettingsOpen(false)} header="요약 표시 설정" bodyPaddingHorizontal={0}>
+            <Text style={{ color: theme.textMuted, fontSize: 12.5, paddingHorizontal: 20, marginBottom: 4 }}>요약 카드에 보여줄 항목을 선택하세요</Text>
+            {SUMMARY_FIELD_IDS.map((id) => {
+              const on = !hiddenSummaryFields.has(id);
+              return (
+                <ListRow
+                  key={id}
+                  contents={<Text style={{ color: theme.text, fontSize: 14.5, fontWeight: '600' }}>{SUMMARY_FIELD_LABEL[id]}</Text>}
+                  right={<Text style={{ color: on ? theme.brand : theme.textMuted, fontSize: 13, fontWeight: '700' }}>{on ? '표시' : '숨김'}</Text>}
+                  onPress={() => toggleSummaryField(id)}
+                  verticalPadding="small"
+                />
+              );
+            })}
+          </SheetModal>
 
           {view === '캘린더' ? (
             <View style={styles.sectionPad}>
@@ -459,8 +512,10 @@ const styles = StyleSheet.create({
   chip: { height: 34, alignSelf: 'center', paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, justifyContent: 'center' },
   summaryCard: { marginHorizontal: 20, marginTop: 8, borderRadius: 16, borderWidth: 1, padding: 16, gap: 10 },
   summaryHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  summaryRow: { flexDirection: 'row' },
-  summaryItem: { flex: 1, gap: 4 },
+  summaryHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  gearBtn: { padding: 2 },
+  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 12 },
+  summaryItem: { width: '50%', gap: 4 },
   sectionPad: { paddingHorizontal: 20, paddingTop: 16 },
   listCard: { borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
   dateBox: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },

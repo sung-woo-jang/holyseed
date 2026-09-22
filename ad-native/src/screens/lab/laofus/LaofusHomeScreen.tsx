@@ -182,6 +182,8 @@ export default function LaofusHomeScreen({ navigation }: Props) {
         <>
           <View style={styles.tileGrid}>
             <Tile theme={theme} label={`T값 (${s.cycle}차 사이클)`} value={String(s.T)} sub={status?.state?.cycleDone ? '사이클 종료' : s.T < 10 ? '전반전' : '후반전'} />
+            <Tile theme={theme} label="투자원금" value={usd(s.principal, 0)} />
+            <Tile theme={theme} label="남은잔금" value={usd(s.cash)} color={theme.brand} sub={`원금의 ${((s.cash / s.principal) * 100).toFixed(1)}%`} />
             <Tile theme={theme} label="보유수량" value={s.quantity.toFixed(6)} />
             <Tile theme={theme} label="평단가" value={usd(s.avgPrice)} />
             <Tile

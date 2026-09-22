@@ -84,7 +84,7 @@ export default function CycleDetailPage() {
         )}
         <Tile label="총 투입" value={usd(buys)} sub={`원금 ${usd(principal, 0)}의 ${((buys / principal) * 100).toFixed(0)}%`} />
         <Tile label="총 회수" value={usd(sells)} />
-        <Tile label="현재 T" value={String(T)} sub={`남은 회차 ${40 - T}`} />
+        <Tile label="현재 T" value={String(T)} sub={`남은 회차 ${20 - T}`} />
         <Tile label="거래 횟수" value={`${real.length}차`} sub={`${days}일간`} />
       </div>
 

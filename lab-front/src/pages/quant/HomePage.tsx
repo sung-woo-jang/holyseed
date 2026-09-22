@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { applyFill, computeIndicators, decide } from '@holyseed/laofus-core'
+import { applyFill, computeIndicators, decide, SPLITS } from '@holyseed/laofus-core'
 import type { ImuState } from '@holyseed/laofus-core'
 import { EngineStatusBar, ErrorBanner, Tile } from '@/features/quant/ui/ui'
 import { kst, n, usd } from '@/features/quant/lib/types'
@@ -9,7 +9,7 @@ import { usePrice, useStatus } from '@/features/quant/lib/useStatus'
 /** 판단 구간 밴드 — 가격축에 매수/매도 구간 + 현재가/시뮬 마커 */
 function DecisionBand({ s, price, simPrice }: { s: ImuState; price: number | null; simPrice: number }) {
   const ind = computeIndicators(s)
-  const firstHalf = s.T < 10
+  const firstHalf = s.T < SPLITS / 2
   const lo = Math.min(s.avgPrice * 0.75, (price ?? s.avgPrice) * 0.9)
   const hi = ind.fullSellPrice * 1.08
   const x = (v: number) => ((v - lo) / (hi - lo)) * 100
@@ -198,9 +198,9 @@ export default function HomePage() {
             }}
           >
             <Tile
-              label={`T값 (${s.cycle}차 사이클)`}
+              label={`T값 (${s.cycle}차 사이클 · ${SPLITS}분할)`}
               value={String(s.T)}
-              sub={status.state.cycleDone ? '사이클 종료 — 수동 확인' : s.T < 10 ? '전반전' : '후반전'}
+              sub={status.state.cycleDone ? '사이클 종료 — 수동 확인' : s.T < SPLITS / 2 ? '전반전' : '후반전'}
             />
             <Tile label="투자원금" value={usd(s.principal, 0)} />
             <Tile

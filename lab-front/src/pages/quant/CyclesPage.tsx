@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { SPLITS } from '@holyseed/laofus-core'
 import { n, usd, kstDateOnly } from '@/features/quant/lib/types'
 import { useStatus } from '@/features/quant/lib/useStatus'
 
@@ -81,7 +82,7 @@ export default function CyclesPage() {
                   </span>
                   {!c.endDate && (
                     <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                      T={T} · 남은 회차 {20 - T}
+                      T={T} · {SPLITS}분할 · 남은 회차 {SPLITS - T}
                     </span>
                   )}
                   {c.profit !== null && (

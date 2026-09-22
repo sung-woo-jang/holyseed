@@ -43,7 +43,7 @@ export interface Indicators {
 
 const SOXL_STAR_BASE = 20;
 const FULL_SELL_PCT = 0.2;
-const SPLITS = 20;
+export const SPLITS = 20;
 
 export function round2(n: number): number {
   return Math.round(n * 100) / 100;

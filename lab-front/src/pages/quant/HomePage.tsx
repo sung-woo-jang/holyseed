@@ -202,6 +202,13 @@ export default function HomePage() {
               value={String(s.T)}
               sub={status.state.cycleDone ? '사이클 종료 — 수동 확인' : s.T < 20 ? '전반전' : '후반전'}
             />
+            <Tile label="투자원금" value={usd(s.principal, 0)} />
+            <Tile
+              label="남은잔금"
+              value={usd(s.cash)}
+              valueColor="var(--series-1)"
+              sub={`원금의 ${((s.cash / s.principal) * 100).toFixed(1)}%`}
+            />
             <Tile label="보유수량" value={s.quantity.toFixed(6)} />
             <Tile label="평단가" value={usd(s.avgPrice)} />
             <Tile

@@ -6,6 +6,7 @@ import Loader from '../../../components/ui/Loader';
 import EmptyState from '../../../components/common/EmptyState';
 import CycleTradeChart from './CycleTradeChart';
 import { laofusRestApi } from '../../../api/laofus';
+import { SPLITS } from '../../../lib/laofus-core';
 import { useTheme } from '../../../lib/theme';
 import { TE } from '../../../lib/toss-emoji';
 import type { LaofusStackParamList } from '../../../navigation/LaofusStack';
@@ -134,7 +135,7 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
           valueColor={sellTrades.length > 0 ? (sellPL >= 0 ? theme.brand : theme.danger) : undefined}
         />
         <Tile theme={theme} label="총 회수" value={usd(sells)} />
-        <Tile theme={theme} label="현재 T" value={String(T)} sub={`남은 회차 ${20 - T}`} />
+        <Tile theme={theme} label="현재 T" value={String(T)} sub={`${SPLITS}분할 · 남은 회차 ${SPLITS - T}`} />
         <Tile theme={theme} label="거래 횟수" value={`${real.length}차`} sub={`${days}일간`} />
       </View>
 

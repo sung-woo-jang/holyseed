@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Loader from '../../../components/ui/Loader';
 import EmptyState from '../../../components/common/EmptyState';
 import { laofusRestApi } from '../../../api/laofus';
+import { SPLITS } from '../../../lib/laofus-core';
 import { useTheme } from '../../../lib/theme';
 import { TE } from '../../../lib/toss-emoji';
 import type { LaofusStackParamList } from '../../../navigation/LaofusStack';
@@ -97,7 +98,7 @@ export default function LaofusCyclesScreen({ navigation }: Props) {
               </Text>
               {!c.endDate && (
                 <Text style={{ color: theme.textMuted, fontSize: 12, marginTop: 2 }}>
-                  T={T} · 남은 회차 {20 - T}
+                  T={T} · {SPLITS}분할 · 남은 회차 {SPLITS - T}
                 </Text>
               )}
               <Text style={{ color: theme.textMuted, fontSize: 11.5, marginTop: 6 }}>{real.length}차 거래 →</Text>

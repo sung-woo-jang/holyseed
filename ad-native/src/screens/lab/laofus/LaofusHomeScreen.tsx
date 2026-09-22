@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Loader from '../../../components/ui/Loader';
 import { laofusRestApi, type EventDto } from '../../../api/laofus';
-import { computeIndicators, computeBuyLocLegs, computeSellLocLegs, type ImuState } from '../../../lib/laofus-core';
+import { computeIndicators, computeBuyLocLegs, computeSellLocLegs, SPLITS, type ImuState } from '../../../lib/laofus-core';
 import { useTheme } from '../../../lib/theme';
 import { useKeyboardScrollRegistration, KeyboardScrollProvider } from '../../../lib/keyboard-scroll';
 import { getLaofusDismissedErrorId, setLaofusDismissedErrorId } from '../../../lib/lab-prefs';
@@ -181,7 +181,7 @@ export default function LaofusHomeScreen({ navigation }: Props) {
       {s && ind && (
         <>
           <View style={styles.tileGrid}>
-            <Tile theme={theme} label={`T값 (${s.cycle}차 사이클)`} value={String(s.T)} sub={status?.state?.cycleDone ? '사이클 종료' : s.T < 10 ? '전반전' : '후반전'} />
+            <Tile theme={theme} label={`T값 (${s.cycle}차 · ${SPLITS}분할)`} value={String(s.T)} sub={status?.state?.cycleDone ? '사이클 종료' : s.T < SPLITS / 2 ? '전반전' : '후반전'} />
             <Tile theme={theme} label="투자원금" value={usd(s.principal, 0)} />
             <Tile theme={theme} label="남은잔금" value={usd(s.cash)} color={theme.brand} sub={`원금의 ${((s.cash / s.principal) * 100).toFixed(1)}%`} />
             <Tile theme={theme} label="보유수량" value={s.quantity.toFixed(6)} />

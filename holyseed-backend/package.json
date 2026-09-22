@@ -40,6 +40,7 @@
     "ad:seed:nova": "ts-node -r tsconfig-paths/register src/projects/ad/scripts/seed/seed-nova.ts",
     "ad:mcp-token:seed": "ts-node -r tsconfig-paths/register src/projects/ad/scripts/seed/seed-mcp-token.ts",
     "laofus:seed": "ts-node -r tsconfig-paths/register src/projects/laofus/scripts/seed.ts",
+    "laofus:new-cycle": "ts-node -r tsconfig-paths/register src/projects/laofus/scripts/start-new-cycle.ts",
     "lab:worklog:seed": "ts-node -r tsconfig-paths/register src/projects/lab/scripts/seed-worklog-notion.ts",
     "lab:expense:seed": "ts-node -r tsconfig-paths/register src/projects/lab/scripts/seed-expense-notion.ts",
     "lab:vr:seed": "ts-node -r tsconfig-paths/register src/projects/lab/scripts/seed-vr.ts"

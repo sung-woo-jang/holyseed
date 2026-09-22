@@ -5,6 +5,7 @@ import { DataSource, Repository } from 'typeorm';
 import { TossClientService, TossOrder } from '@shared/toss/toss-client.service';
 import {
   applyFill,
+  capLegPriceForDeviation,
   computeBuyLocLegs,
   computeIndicators,
   computeSellLocLegs,
@@ -360,7 +361,27 @@ export class LaofusEngineService {
           if (remainingPending > 0) {
             await this.event('info', `체결 대기 주문 ${remainingPending}건 있지만 매수는 그대로 진행`, runId);
           }
-          const totalAmount = round2(legs.reduce((a, leg) => a + leg.quantity * leg.price, 0));
+          // 가격 괴리로 인한 주문 거부(REJECTED) 대응(2026-09-15 실제 발생) — 현재가 대비
+          // leg 가격이 너무 멀면 기준가 근처로 눌러서 접수. 실제 체결가는 recordFill()이
+          // 토스 응답의 averageFilledPrice를 쓰므로 이 보정은 원가/평단 계산에 영향 없음.
+          const refPrice = await this.toss
+            .getPrice(SYMBOL)
+            .then((p) => Number(p.lastPrice))
+            .catch(() => null);
+          const orderLegs = legs.map((leg) => {
+            const cap = refPrice !== null ? capLegPriceForDeviation(leg.price, refPrice) : { price: leg.price, capped: false };
+            return { ...leg, orderPrice: cap.price, capped: cap.capped };
+          });
+          for (const leg of orderLegs) {
+            if (leg.capped) {
+              await this.event(
+                'warn',
+                `가격 괴리 보정(<큰수 매수>): ${leg.halfStep ? '절반' : '전액'} leg $${leg.price} → $${leg.orderPrice} (기준가 $${refPrice})`,
+                runId,
+              );
+            }
+          }
+          const totalAmount = round2(orderLegs.reduce((a, leg) => a + leg.quantity * leg.orderPrice, 0));
           const bp = Number(await this.toss.getBuyingPower('USD'));
           if (bp < totalAmount) {
             await this.event('error', `계좌 매수가능금액 $${bp} < 매수 LOC 합계 $${totalAmount} — 매수 스킵`, runId);
@@ -369,12 +390,12 @@ export class LaofusEngineService {
             const usDate = buyUsDate ?? kstDate();
             const cycleRow = await this.cycleRepo.findOne({ where: { symbol: SYMBOL, cycleNo: s.cycle } });
             let legIdx = 0;
-            for (const leg of legs) {
+            for (const leg of orderLegs) {
               legIdx += 1;
               const kind = leg.halfStep ? '절반' : '전액';
               const clientOrderId = `imu-${usDate.replaceAll('-', '')}-b${legIdx}`;
-              const placed = await this.toss.buyLoc(SYMBOL, String(leg.quantity), String(leg.price), clientOrderId);
-              log(`LOC 매수 접수: ${leg.quantity}주 @ $${leg.price} (${kind}) — ${placed.orderId}`);
+              const placed = await this.toss.buyLoc(SYMBOL, String(leg.quantity), String(leg.orderPrice), clientOrderId);
+              log(`LOC 매수 접수: ${leg.quantity}주 @ $${leg.orderPrice}${leg.capped ? ` (원래 $${leg.price})` : ''} (${kind}) — ${placed.orderId}`);
               await this.pendingRepo.save({
                 orderId: placed.orderId,
                 clientOrderId,
@@ -383,7 +404,7 @@ export class LaofusEngineService {
                 kind,
                 tBefore: String(s.T),
                 tAfter: String(round4(s.T + (leg.halfStep ? 0.5 : 1))),
-                requestAmount: String(round2(leg.quantity * leg.price)),
+                requestAmount: String(round2(leg.quantity * leg.orderPrice)),
                 requestQuantity: null,
                 cycleId: cycleRow?.id ?? 0,
                 status: 'PENDING',

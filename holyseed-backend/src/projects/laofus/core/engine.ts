@@ -181,3 +181,28 @@ export function applyFill(
   }
   return s;
 }
+
+/**
+ * LOC 매수 leg 가격이 기준가(현재가)에서 너무 멀면 증권사가 "전일 종가와 괴리가 크다"며
+ * 주문 자체를 거부한다 — <큰수 매수> 문서(원래 키움 기준)와 동일한 현상이 토스에서도 실제
+ * 발생함(2026-09-15, 사이클 초반 평단 고정 상태로 며칠 급락하자 평단 leg가 매일 REJECTED).
+ * 문서 원칙대로 leg 가격을 기준가 근처로 눌러서 반드시 체결되게 하되, 수량은 그대로 둔다
+ * (매수 의도·수량은 안 바뀌고 가격만 보정). 정확한 토스 임계값은 확인된 바 없어 문서 권장
+ * 범위(10~20%) 중 여유 있게 20%로 시작 — 실제 REJECTED 로그가 더 보이면(임계값이 이보다
+ * 낮다는 뜻) 더 줄이고, 정상적인 변동에도 자주 클램프되면(너무 타이트하다는 뜻) 늘릴 것.
+ * TODO: 이 값은 추정치 — 실거래 로그(REJECTED 발생 여부·클램프 발동 빈도) 몇 사이클 지켜보고
+ * 조정 필요.
+ */
+const MAX_PRICE_DEVIATION_PCT = 20;
+
+export function capLegPriceForDeviation(
+  legPrice: number,
+  refPrice: number,
+  maxDeviationPct: number = MAX_PRICE_DEVIATION_PCT,
+): { price: number; capped: boolean } {
+  const upper = round2(refPrice * (1 + maxDeviationPct / 100));
+  const lower = round2(refPrice * (1 - maxDeviationPct / 100));
+  if (legPrice > upper) return { price: upper, capped: true };
+  if (legPrice < lower) return { price: lower, capped: true };
+  return { price: legPrice, capped: false };
+}

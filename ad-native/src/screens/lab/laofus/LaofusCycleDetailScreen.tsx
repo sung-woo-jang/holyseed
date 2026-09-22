@@ -107,9 +107,18 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
   }
   const plColor = plAmount == null ? undefined : plAmount >= 0 ? theme.brand : theme.danger;
 
+  // 진행 중인(endDate 없는) 사이클만 "지금 남은 잔금"이 의미가 있음 — 종료된 사이클은
+  // 그 cash가 이미 다음 사이클 원금으로 넘어가 있어서 여기 표시할 잔금이 없음
+  const remainingCash = !isDone && statusQ.data?.state ? n(statusQ.data.state.cash) : null;
+  const principal = n(c.principal);
+
   return (
     <ScrollView style={[styles.root, { backgroundColor: theme.bg }]} contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
       <View style={styles.tileGrid}>
+        <Tile theme={theme} label="투자원금" value={usd(principal, 0)} />
+        {remainingCash !== null && (
+          <Tile theme={theme} label="남은잔금" value={usd(remainingCash)} valueColor={theme.brand} sub={`원금의 ${((remainingCash / principal) * 100).toFixed(1)}%`} />
+        )}
         <Tile
           theme={theme}
           label={plLabel}

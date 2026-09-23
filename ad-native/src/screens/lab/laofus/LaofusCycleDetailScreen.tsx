@@ -182,6 +182,16 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
 
   return (
     <ScrollView style={[styles.root, { backgroundColor: theme.bg }]} contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+      <View style={styles.headRow}>
+        <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{c.cycleNo}차 사이클</Text>
+        <View style={[styles.principalBadge, { borderColor: theme.border }]}>
+          <Text style={{ color: theme.textMuted, fontSize: 11, fontWeight: '700' }}>원금 {usd(principal, 0)}</Text>
+        </View>
+        <Text style={{ color: theme.textMuted, fontSize: 12 }}>
+          {kstDate(c.startDate)} ~ {c.endDate ? kstDate(c.endDate) : '진행 중'} ({days}일째)
+        </Text>
+      </View>
+
       {Platform.OS === 'web' && (
         <Pressable
           onPress={handleExportCsv}
@@ -191,7 +201,6 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
         </Pressable>
       )}
       <View style={styles.tileGrid}>
-        <Tile theme={theme} label="투자원금" value={usd(principal, 0)} />
         {remainingCash !== null && (
           <Tile theme={theme} label="남은잔금" value={usd(remainingCash)} valueColor={theme.brand} sub={`원금의 ${((remainingCash / principal) * 100).toFixed(1)}%`} />
         )}
@@ -249,6 +258,8 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   exportBtn: { alignSelf: 'flex-end', paddingVertical: 7, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, marginBottom: 10 },
+  headRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
+  principalBadge: { borderWidth: 1, borderRadius: 999, paddingVertical: 2, paddingHorizontal: 9 },
   tileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   tile: { width: '48%', borderWidth: 1, borderRadius: 12, padding: 12 },
   chartCard: { borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 12 },

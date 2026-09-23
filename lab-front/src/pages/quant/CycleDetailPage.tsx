@@ -55,6 +55,18 @@ export default function CycleDetailPage() {
           ← 사이클 목록
         </Link>
         <h1 style={{ fontSize: 18 }}>{c.cycleNo}차 사이클</h1>
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: 'var(--text-secondary)',
+            border: '1px solid var(--border)',
+            borderRadius: 999,
+            padding: '2px 9px',
+          }}
+        >
+          원금 {usd(principal, 0)}
+        </span>
         <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
           {kstDateOnly(c.startDate)} ~ {c.endDate ? kstDateOnly(c.endDate) : '진행 중'} ({days}일째)
         </span>
@@ -74,7 +86,6 @@ export default function CycleDetailPage() {
           marginBottom: 14,
         }}
       >
-        <Tile label="투자원금" value={usd(principal, 0)} />
         {remainingCash !== null && (
           <Tile
             label="남은잔금"

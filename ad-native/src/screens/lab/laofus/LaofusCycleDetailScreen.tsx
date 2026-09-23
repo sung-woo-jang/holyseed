@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Dimensions, ScrollView, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import { Dimensions, Platform, Pressable, ScrollView, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Loader from '../../../components/ui/Loader';
 import EmptyState from '../../../components/common/EmptyState';
 import CycleTradeChart from './CycleTradeChart';
-import { laofusRestApi } from '../../../api/laofus';
+import { laofusRestApi, type CycleDto } from '../../../api/laofus';
 import { SPLITS } from '../../../lib/laofus-core';
 import { useTheme } from '../../../lib/theme';
 import { TE } from '../../../lib/toss-emoji';
@@ -24,6 +24,66 @@ function usd(v: number, d = 2): string {
 }
 function kstDate(iso: string): string {
   return new Date(iso).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric' });
+}
+
+/** 쉼표/줄바꿈/따옴표가 섞여 있을 수 있는 필드(메모 등)만 감싸고, 내부 "는 ""로 이스케이프 */
+function csvCell(v: string | number | null | undefined): string {
+  const s = v === null || v === undefined ? '' : String(v);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function csvRow(cells: (string | number | null | undefined)[]): string {
+  return cells.map(csvCell).join(',');
+}
+
+/** 사이클 전체 정보(요약 + 체결 내역 전체)를 엑셀에서 바로 열 수 있는 CSV 문자열로 정리 */
+function buildCycleCsv(c: CycleDto, currentT: number, currentQty: number, currentAvg: number): string {
+  const lines: string[] = [];
+  lines.push(csvRow(['항목', '값']));
+  lines.push(csvRow(['사이클', `${c.cycleNo}차`]));
+  lines.push(csvRow(['시작일', c.startDate]));
+  lines.push(csvRow(['종료일', c.endDate ?? '진행 중']));
+  lines.push(csvRow(['원금', n(c.principal)]));
+  lines.push(csvRow(['순이익', c.profit !== null ? n(c.profit) : '']));
+  lines.push(csvRow(['순이익률(%)', c.profitPct !== null ? n(c.profitPct) * 100 : '']));
+  lines.push(csvRow(['현재 T', currentT]));
+  lines.push(csvRow(['보유수량', currentQty]));
+  lines.push(csvRow(['평단', currentAvg]));
+  lines.push('');
+  lines.push(csvRow(['순번', '날짜', '구분', '매수매도', '체결가', '수량', '금액', 'T전', 'T후', '체결후평단', '체결후보유', '체결후잔금', '메모']));
+  for (const t of [...c.trades].sort((a, b) => a.seq - b.seq)) {
+    lines.push(
+      csvRow([
+        t.seq,
+        t.date,
+        t.kind,
+        t.side,
+        n(t.price),
+        n(t.quantity),
+        n(t.amount),
+        n(t.tBefore),
+        n(t.tAfter),
+        n(t.avgAfter),
+        n(t.qtyAfter),
+        n(t.cashAfter),
+        t.note ?? '',
+      ]),
+    );
+  }
+  return lines.join('\r\n');
+}
+
+/** 웹 전용 — Blob + 숨긴 <a download>로 파일 저장. 네이티브에서는 호출하지 않음(Platform.OS==='web' 가드 밖에서 안 씀) */
+function downloadCsv(filename: string, csv: string) {
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function Tile({
@@ -113,8 +173,23 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
   const remainingCash = !isDone && statusQ.data?.state ? n(statusQ.data.state.cash) : null;
   const principal = n(c.principal);
 
+  function handleExportCsv() {
+    if (!c) return;
+    const csv = buildCycleCsv(c, T, qtyNow, avgNow);
+    const filename = `라오어_${c.cycleNo}차사이클_${c.startDate}~${c.endDate ?? '진행중'}.csv`;
+    downloadCsv(filename, csv);
+  }
+
   return (
     <ScrollView style={[styles.root, { backgroundColor: theme.bg }]} contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+      {Platform.OS === 'web' && (
+        <Pressable
+          onPress={handleExportCsv}
+          style={[styles.exportBtn, { borderColor: theme.border, backgroundColor: theme.card }]}
+        >
+          <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>CSV로 내보내기</Text>
+        </Pressable>
+      )}
       <View style={styles.tileGrid}>
         <Tile theme={theme} label="투자원금" value={usd(principal, 0)} />
         {remainingCash !== null && (
@@ -173,6 +248,7 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  exportBtn: { alignSelf: 'flex-end', paddingVertical: 7, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, marginBottom: 10 },
   tileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   tile: { width: '48%', borderWidth: 1, borderRadius: 12, padding: 12 },
   chartCard: { borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 12 },

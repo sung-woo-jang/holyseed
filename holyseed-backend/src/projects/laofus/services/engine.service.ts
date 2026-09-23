@@ -9,7 +9,6 @@ import {
   computeBuyLocLegs,
   computeIndicators,
   computeSellLocLegs,
-  decide,
   round2,
   round4,
   Decision,
@@ -75,17 +74,13 @@ export class LaofusEngineService {
     }
   }
 
-  private async waitForFill(orderId: string, timeoutMs = 45_000): Promise<TossOrder | null> {
-    const start = Date.now();
-    while (Date.now() - start < timeoutMs) {
-      const order = await this.toss.getOrder(orderId);
-      if (order.status === 'FILLED') return order;
-      if (['CANCELED', 'REJECTED'].includes(order.status)) {
-        throw new Error(`주문 ${order.status}: ${orderId}`);
-      }
-      await new Promise((r) => setTimeout(r, 3000));
-    }
-    return null;
+  /** 가장 최근 완결된(오늘 제외) 일봉의 종가 — 사이클시작 큰수매수의 기준가로 사용 */
+  private async getPreviousClose(): Promise<number> {
+    const today = kstDate();
+    const { candles } = await this.toss.getCandles(SYMBOL, '1d', 5);
+    const prev = candles.find((c) => c.timestamp.slice(0, 10) !== today);
+    if (!prev) throw new Error('전일 종가를 찾을 수 없습니다(캔들 데이터 부족)');
+    return Number(prev.closePrice);
   }
 
   private async recordFill(
@@ -315,10 +310,6 @@ export class LaofusEngineService {
           `별지점=$${ind.starPrice}, 1회매수금=$${ind.oneBuyAmount}, 전량매도가=$${ind.fullSellPrice}`,
       );
 
-      if (s.T === 0 || s.quantity <= 0) {
-        return await this.runCycleStart(s, opts, runId, log, lines, remainingPending);
-      }
-
       const holding = await this.toss.getHolding(SYMBOL);
       const actualQty = holding ? Number(holding.quantity) : 0;
       if (Math.abs(actualQty - s.quantity) > 0.0001) {
@@ -333,6 +324,10 @@ export class LaofusEngineService {
 
       const cal = (await this.toss.getUsMarketCalendar()) as UsMarketCalendar;
       const buyUsDate = cal.today.regularMarket ? cal.today.date : null;
+
+      if (s.T === 0 || s.quantity <= 0) {
+        return await this.runCycleStart(s, opts, runId, log, lines, remainingPending, buyUsDate, row);
+      }
 
       if (!opts.live) {
         for (const leg of computeBuyLocLegs(s)) {
@@ -482,7 +477,17 @@ export class LaofusEngineService {
     }
   }
 
-  /** 사이클 시작(T=0) 전용 — 현재가 즉시판단 + MARKET 주문 (레거시 경로, 온주 LOC 전환 대상 아님) */
+  /**
+   * 사이클 시작(T=0) 또는 보유수량 0 전용 — <큰수 매수> 문서 3줄정리 1번("새사이클 시작은
+   * 전날종가+10%에서 LOC 매수로 시작한다")을 그대로 구현. 전일 종가(getPreviousClose()) × 1.10에
+   * 온주(정수) 수량으로 LOC 매수를 건다 — 즉시 체결되는 시장가가 아니라, 그날 종가가 이 가격
+   * 이하일 때만 체결되는 LOC. 나머지 매수(별지점/평단)와 동일하게 pending 등록 후 reconcile()이
+   * 나중에 회수한다.
+   * (예전엔 즉시 시장가(MARKET) + 소수점 수량으로 처리하던 레거시 경로였는데, 문서와 안 맞아
+   * 2026-09-23 실주문 실수로 발견·정정함 — 반드시 LOC + 온주로만 매수할 것. 처음엔 장중 현재가를
+   * 기준가로 썼다가, 그날 가격이 더 흘러내릴수록 마감 판정 때 거부당할 위험이 있어 전일 종가
+   * 고정값으로 다시 수정함 — 같은 날 실제로 발견·정정.)
+   */
   private async runCycleStart(
     s: ImuState,
     opts: RunOptions,
@@ -490,23 +495,35 @@ export class LaofusEngineService {
     log: (m: string) => void,
     lines: string[],
     remainingPending: number,
+    buyUsDate: string | null,
+    row: LaofusEngineState,
   ): Promise<string[]> {
-    const price =
-      opts.injectedPrice !== null && !opts.live
-        ? opts.injectedPrice
-        : Number((await this.toss.getPrice(SYMBOL)).lastPrice);
-    const d: Decision = decide(s, price);
-    if (d.action === 'NONE') {
-      await this.event('info', `판단: 주문 없음 — ${d.reason} (현재가 $${price})`, runId);
-      lines.push(`판단: 주문 없음 — ${d.reason}`);
+    if (!opts.force && !buyUsDate) {
+      log('사이클시작 매수 스킵: 오늘은 미국 정규장 휴장일');
+      lines.push('사이클시작 매수 스킵 — 휴장일');
       return lines;
     }
-    const desc =
-      d.action === 'BUY' ? `매수(${d.kind}) $${d.amountUsd} → T ${s.T} → ${d.tAfter}` : `매도 → T ${s.T} → ${d.tAfter}`;
-    log(`판단: ${desc}`);
+    if (!opts.force && row.lastBuyDecisionUsDate === buyUsDate) {
+      log(`사이클시작 매수 스킵: 오늘(${buyUsDate}) 이미 LOC 매수를 접수함`);
+      lines.push('사이클시작 매수 스킵 — 오늘 이미 접수');
+      return lines;
+    }
+
+    // 문서 원칙("전날종가+10%")대로 전일 종가를 기준가로 쓴다 — 장중 현재가를 쓰면 그날 가격이
+    // 더 흘러내릴수록 우리 주문가(제출 시점 가격 기준 고정)와 실제 마감가의 괴리가 계속 벌어져
+    // 마감 판정 때 거부당할 위험이 커진다(2026-09-23 실제 발견). 전일 종가는 하루 동안 안 바뀌는
+    // 고정값이라, 토스가 실제로 비교하는 기준("전일 종가와의 괴리")과 항상 같은 기준점을 쓰게 된다.
+    const refPrice =
+      opts.injectedPrice !== null && !opts.live ? opts.injectedPrice : await this.getPreviousClose();
+    const buyPrice = round2(refPrice * 1.1);
+    const oneBuyAmount = computeIndicators({ ...s, T: 0 }).oneBuyAmount;
+    const quantity = Math.max(1, Math.floor(oneBuyAmount / buyPrice));
+    const totalAmount = round2(quantity * buyPrice);
+    const desc = `매수(사이클시작) 큰수(+10%) ${quantity}주 @ $${buyPrice} = $${totalAmount}`;
+    log(`판단: ${desc} (기준가 $${refPrice})`);
 
     if (!opts.live) {
-      await this.event('info', `[dry] 판단: ${desc} (현재가 $${price}) — 주문 미실행`, runId);
+      await this.event('info', `[dry] 판단: ${desc} — LOC 주문 미실행`, runId);
       lines.push('dry-run — 주문 미실행');
       return lines;
     }
@@ -515,52 +532,37 @@ export class LaofusEngineService {
       lines.push('신규 주문 스킵 — 미회수 주문 존재');
       return lines;
     }
-    if (d.action === 'BUY') {
-      const bp = Number(await this.toss.getBuyingPower('USD'));
-      if (bp < d.amountUsd) {
-        await this.event('error', `계좌 매수가능금액 $${bp} < 주문금액 $${d.amountUsd} — 주문 중단`, runId);
-        lines.push('오류: 매수가능금액 부족');
-        return lines;
-      }
+    const bp = Number(await this.toss.getBuyingPower('USD'));
+    if (bp < totalAmount) {
+      await this.event('error', `계좌 매수가능금액 $${bp} < 주문금액 $${totalAmount} — 주문 중단`, runId);
+      lines.push('오류: 매수가능금액 부족');
+      return lines;
     }
-    const clientOrderId = `imu-${kstDate().replaceAll('-', '')}-${d.action === 'BUY' ? 'b' : 's'}`;
-    const placed =
-      d.action === 'BUY'
-        ? await this.toss.buyByAmount(SYMBOL, String(d.amountUsd), clientOrderId)
-        : await this.toss.sellByQuantity(
-            SYMBOL,
-            String((d as Extract<Decision, { action: 'SELL' }>).quantity),
-            clientOrderId,
-          );
-    log(`주문 접수: ${placed.orderId}`);
+
+    const usDate = buyUsDate ?? kstDate();
+    // 취소 후 같은 날 재주문 시 토스가 동일 clientOrderId 재사용을 거부하므로(idempotency-key-conflict,
+    // 2026-09-23 실제 발생) 날짜 뒤에 짧은 무작위 suffix를 붙여 매 시도마다 고유하게 만든다.
+    const clientOrderId = `imu-${usDate.replaceAll('-', '')}-cyc-${randomUUID().slice(0, 6)}`;
+    const placed = await this.toss.buyLoc(SYMBOL, String(quantity), String(buyPrice), clientOrderId);
+    log(`LOC 매수 접수: ${quantity}주 @ $${buyPrice} (사이클시작 큰수매수) — ${placed.orderId}`);
 
     const cycleRow = await this.cycleRepo.findOne({ where: { symbol: SYMBOL, cycleNo: s.cycle } });
-    const pending = await this.pendingRepo.save({
+    await this.pendingRepo.save({
       orderId: placed.orderId,
       clientOrderId,
       symbol: SYMBOL,
-      side: d.action,
-      kind: d.kind,
+      side: 'BUY',
+      kind: '사이클시작',
       tBefore: String(s.T),
-      tAfter: String(d.tAfter),
-      requestAmount: d.action === 'BUY' ? String(d.amountUsd) : null,
-      requestQuantity: d.action === 'SELL' ? String((d as Extract<Decision, { action: 'SELL' }>).quantity) : null,
+      tAfter: '1',
+      requestAmount: String(totalAmount),
+      requestQuantity: null,
       cycleId: cycleRow?.id ?? 0,
       status: 'PENDING',
     });
-
-    const filled = await this.waitForFill(placed.orderId);
-    if (filled) {
-      const summary = await this.recordFill(d, filled, runId, pending.id);
-      lines.push(summary);
-      return lines;
-    }
-    await this.event(
-      'info',
-      `주문 접수 완료(개장 체결 대기): ${desc} — 다음 세션 개장 후 자동 회수 (주문 ${placed.orderId.slice(0, 12)}…)`,
-      runId,
-    );
-    lines.push('개장 체결 대기 — 회수 예약됨');
+    await this.stateRepo.update({ symbol: SYMBOL }, { lastBuyDecisionUsDate: usDate });
+    await this.event('info', `LOC 매수 접수 — 마감 시점 자동 판정, 다음날 개장 후 회수 (${desc})`, runId);
+    lines.push('LOC 매수 접수(사이클시작)');
     return lines;
   }
 

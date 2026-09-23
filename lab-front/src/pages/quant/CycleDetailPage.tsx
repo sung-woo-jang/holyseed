@@ -43,10 +43,6 @@ export default function CycleDetailPage() {
   const T = last ? n(last.tAfter) : 0
   const chartWidth = Math.max(chartsAreaWidth, real.length * CHART_POINT_WIDTH)
   const principal = n(c.principal)
-  // 진행 중인(endDate 없는) 사이클만 "지금 남은 잔금"이 의미가 있음 — 종료된 사이클은
-  // 그 cash가 이미 다음 사이클 원금으로 넘어가 있어서 여기 표시할 잔금이 없음
-  const isOpenCycle = c.endDate === null
-  const remainingCash = isOpenCycle && status.state ? n(status.state.cash) : null
 
   return (
     <main className="wrap">
@@ -86,14 +82,6 @@ export default function CycleDetailPage() {
           marginBottom: 14,
         }}
       >
-        {remainingCash !== null && (
-          <Tile
-            label="남은잔금"
-            value={usd(remainingCash)}
-            valueColor="var(--series-1)"
-            sub={`원금의 ${((remainingCash / principal) * 100).toFixed(1)}%`}
-          />
-        )}
         <Tile label="총 투입" value={usd(buys)} sub={`원금 ${usd(principal, 0)}의 ${((buys / principal) * 100).toFixed(0)}%`} />
         <Tile label="총 회수" value={usd(sells)} />
         <Tile label="현재 T" value={String(T)} sub={`${SPLITS}분할 · 남은 회차 ${SPLITS - T}`} />

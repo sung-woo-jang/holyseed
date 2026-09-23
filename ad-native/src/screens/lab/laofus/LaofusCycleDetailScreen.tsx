@@ -138,6 +138,7 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
 
   const sortedTrades = [...c.trades].reverse();
   const real = c.trades.filter((t) => t.kind !== '이월');
+  const buys = real.filter((t) => t.side === 'BUY').reduce((a, t) => a + n(t.amount), 0);
   const sellTrades = real.filter((t) => t.side === 'SELL');
   const sells = sellTrades.reduce((a, t) => a + n(t.amount), 0);
   // 매도는 평단을 안 바꾸므로 avgAfter가 곧 그 매도분의 원가 — 판매금액이 아니라 실현손익(판매금액-원가)을 보여준다
@@ -168,9 +169,6 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
   }
   const plColor = plAmount == null ? undefined : plAmount >= 0 ? theme.brand : theme.danger;
 
-  // 진행 중인(endDate 없는) 사이클만 "지금 남은 잔금"이 의미가 있음 — 종료된 사이클은
-  // 그 cash가 이미 다음 사이클 원금으로 넘어가 있어서 여기 표시할 잔금이 없음
-  const remainingCash = !isDone && statusQ.data?.state ? n(statusQ.data.state.cash) : null;
   const principal = n(c.principal);
 
   function handleExportCsv() {
@@ -201,9 +199,7 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
         </Pressable>
       )}
       <View style={styles.tileGrid}>
-        {remainingCash !== null && (
-          <Tile theme={theme} label="남은잔금" value={usd(remainingCash)} valueColor={theme.brand} sub={`원금의 ${((remainingCash / principal) * 100).toFixed(1)}%`} />
-        )}
+        <Tile theme={theme} label="총 투입" value={usd(buys)} sub={`원금 ${usd(principal, 0)}의 ${((buys / principal) * 100).toFixed(0)}%`} />
         <Tile
           theme={theme}
           label={plLabel}

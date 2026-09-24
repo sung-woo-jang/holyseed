@@ -42,7 +42,8 @@ const HERO_VIDEO_SRC = '/KakaoTalk_Video_2026-09-01-19-17-08.mp4'
 const VENUE_MAP_IMAGE = '/venue-map.jpg'
 const VENUE_PARKING_IMAGE = '/venue-parking.png'
 
-// 배경음악 — 브라우저 자동재생 정책상 강제 자동재생 대신 방문자가 직접 켜는 토글 버튼으로 제공
+// 배경음악 — 넷플릭스 인트로 영상이 끝나는 시점(스킵 포함)에 자동재생 시도.
+// 브라우저 정책상 차단될 수 있어 실패해도 무시하고, 우측 하단 토글 버튼으로 수동 제어 가능하게 유지
 const BGM_SRC = '/bgm.mp3'
 
 function InvitationContent() {
@@ -297,7 +298,11 @@ function InvitationContent() {
 
   return (
     <>
-      {showIntro && <NetflixIntro onComplete={(skipped) => { setWasSkipped(skipped); setShowIntro(false) }} />}
+      {showIntro && <NetflixIntro onComplete={(skipped) => {
+        setWasSkipped(skipped)
+        setShowIntro(false)
+        bgmRef.current?.play().then(() => setBgmPlaying(true)).catch(() => {})
+      }} />}
       <NaverMapScript />
       <audio ref={bgmRef} src={BGM_SRC} loop preload="auto" />
       <button

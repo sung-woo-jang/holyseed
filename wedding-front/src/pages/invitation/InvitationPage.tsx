@@ -120,6 +120,21 @@ function InvitationContent() {
     return () => clearInterval(timer)
   }, [heroSlideCount])
 
+  // 인트로 자연 종료 시점의 자동재생은 사용자 제스처가 없어 브라우저 정책에 막히는 경우가 많음 —
+  // 인트로가 끝난 뒤 방문자의 첫 터치/클릭/키 입력에 슬쩍 얹어 재생을 시도하는 안전망
+  useEffect(() => {
+    if (showIntro || bgmPlaying) return
+    const tryPlay = () => {
+      bgmRef.current?.play().then(() => setBgmPlaying(true)).catch(() => {})
+    }
+    window.addEventListener('pointerdown', tryPlay, { once: true })
+    window.addEventListener('keydown', tryPlay, { once: true })
+    return () => {
+      window.removeEventListener('pointerdown', tryPlay)
+      window.removeEventListener('keydown', tryPlay)
+    }
+  }, [showIntro, bgmPlaying])
+
   useEffect(() => {
     if (!couple?.id) return
     api.post('/content-rows/search', { coupleId: couple.id, includeHidden: false })

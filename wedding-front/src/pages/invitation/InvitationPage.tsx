@@ -128,8 +128,10 @@ function InvitationContent() {
       bgmRef.current?.play().then(() => setBgmPlaying(true)).catch(() => {})
     }
     // capture 단계로 등록 — 캐러셀/라이트박스 등 하위 요소가 stopPropagation()을 호출해도
-    // 버블링 전에 무조건 먼저 감지되도록 함
-    const opts = { once: true, capture: true } as const
+    // 버블링 전에 무조건 먼저 감지되도록 함. once는 쓰지 않음 — 첫 시도가 재생 준비 미완료 등으로
+    // 실패해도 리스너가 살아있어 다음 제스처에서 재시도되고, 성공하면 bgmPlaying이 true가 되어
+    // 이 effect의 의존성이 바뀌면서 자연히 정리(cleanup)됨
+    const opts = { capture: true } as const
     window.addEventListener('pointerdown', tryPlay, opts)
     window.addEventListener('touchstart', tryPlay, opts)
     window.addEventListener('keydown', tryPlay, opts)

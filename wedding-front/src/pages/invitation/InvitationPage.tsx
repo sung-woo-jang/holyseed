@@ -127,11 +127,16 @@ function InvitationContent() {
     const tryPlay = () => {
       bgmRef.current?.play().then(() => setBgmPlaying(true)).catch(() => {})
     }
-    window.addEventListener('pointerdown', tryPlay, { once: true })
-    window.addEventListener('keydown', tryPlay, { once: true })
+    // capture 단계로 등록 — 캐러셀/라이트박스 등 하위 요소가 stopPropagation()을 호출해도
+    // 버블링 전에 무조건 먼저 감지되도록 함
+    const opts = { once: true, capture: true } as const
+    window.addEventListener('pointerdown', tryPlay, opts)
+    window.addEventListener('touchstart', tryPlay, opts)
+    window.addEventListener('keydown', tryPlay, opts)
     return () => {
-      window.removeEventListener('pointerdown', tryPlay)
-      window.removeEventListener('keydown', tryPlay)
+      window.removeEventListener('pointerdown', tryPlay, true)
+      window.removeEventListener('touchstart', tryPlay, true)
+      window.removeEventListener('keydown', tryPlay, true)
     }
   }, [showIntro, bgmPlaying])
 

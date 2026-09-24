@@ -42,6 +42,9 @@ const HERO_VIDEO_SRC = '/KakaoTalk_Video_2026-09-01-19-17-08.mp4'
 const VENUE_MAP_IMAGE = '/venue-map.jpg'
 const VENUE_PARKING_IMAGE = '/venue-parking.png'
 
+// 배경음악 — 브라우저 자동재생 정책상 강제 자동재생 대신 방문자가 직접 켜는 토글 버튼으로 제공
+const BGM_SRC = '/bgm.mp3'
+
 function InvitationContent() {
   const { couple, isLoading, error } = useCouple()
   const toast = useToast()
@@ -56,6 +59,8 @@ function InvitationContent() {
   const [dynamicContentRows, setDynamicContentRows] = useState<any[]>([])
   const [heroIndex, setHeroIndex] = useState(0)
   const [openAccordion, setOpenAccordion] = useState<'groom' | 'bride' | null>(null)
+  const [bgmPlaying, setBgmPlaying] = useState(false)
+  const bgmRef = useRef<HTMLAudioElement | null>(null)
   const swiperRef = useRef<SwiperType | null>(null)
   const lightboxOverlayRef = useRef<HTMLDivElement | null>(null)
   const zoomScaleRef = useRef(1)
@@ -159,6 +164,18 @@ function InvitationContent() {
     navigator.clipboard.writeText(`${bank} ${account}`)
       .then(() => toast.success('계좌번호가 복사되었습니다.'))
       .catch(() => toast.error('계좌번호 복사에 실패했습니다.'))
+  }
+
+  const toggleBgm = () => {
+    const el = bgmRef.current
+    if (!el) return
+    if (bgmPlaying) {
+      el.pause()
+      setBgmPlaying(false)
+    } else {
+      el.play().catch(() => {})
+      setBgmPlaying(true)
+    }
   }
 
   const openLightbox = (index: number) => { setLightboxIndex(index); setCurrentSlideIndex(index) }
@@ -282,6 +299,19 @@ function InvitationContent() {
     <>
       {showIntro && <NetflixIntro onComplete={(skipped) => { setWasSkipped(skipped); setShowIntro(false) }} />}
       <NaverMapScript />
+      <audio ref={bgmRef} src={BGM_SRC} loop preload="auto" />
+      <button
+        type="button"
+        className={cn(styles.bgmButton, { [styles.bgmButtonPlaying]: bgmPlaying })}
+        onClick={toggleBgm}
+        aria-label={bgmPlaying ? '배경음악 끄기' : '배경음악 켜기'}
+      >
+        <svg className={styles.bgmIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 18V5l12-2v13" />
+          <circle cx="6" cy="18" r="3" />
+          <circle cx="18" cy="16" r="3" />
+        </svg>
+      </button>
 
       <div className={cn(styles.container, { [styles.zoomInFromIntro]: !showIntro && !wasSkipped, [styles.fadeInNormal]: !showIntro && wasSkipped })}>
         <NetflixNav groomName={couple.groomName} brideName={couple.brideName} />

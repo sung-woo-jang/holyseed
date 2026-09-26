@@ -15,6 +15,10 @@ type Props = NativeStackScreenProps<LaofusMoreStackParamList, 'SpacexOverview'>;
 function usd(v: number, d = 2): string {
   return `$${v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d })}`;
 }
+/** 반올림이 아니라 절삭 — 기록 리스트(SpacexEntriesScreen)와 같은 표시 방식으로 맞춤 */
+function usdTrunc(v: number): string {
+  return usd(Math.trunc(v * 100) / 100);
+}
 function kstDate(iso: string): string {
   return new Date(iso).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric' });
 }
@@ -85,7 +89,7 @@ export default function SpacexOverviewScreen({ navigation }: Props) {
       </Text>
 
       <View style={styles.tileGrid}>
-        <Tile theme={theme} label="총 매수원금" value={usd(s.totalPrincipal)} sub="누적 입금 기준" />
+        <Tile theme={theme} label="총 매수원금" value={usdTrunc(s.totalPrincipal)} sub="누적 입금 기준" />
         <Tile theme={theme} label="매수 일수" value={`${s.daysCount}일`} />
         <Tile theme={theme} label="평단" value={s.avgPrice !== null ? usd(s.avgPrice, 4) : '—'} sub={s.avgPrice !== null ? '가격 기록된 날 기준' : undefined} />
         <Tile

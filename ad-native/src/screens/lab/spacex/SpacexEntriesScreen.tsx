@@ -9,6 +9,10 @@ import { TE } from '../../../lib/toss-emoji';
 function usd(v: number, d = 2): string {
   return `$${v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d })}`;
 }
+/** 반올림이 아니라 절삭 — 토스 앱이 체결금액을 보여주는 방식과 맞춤(예: $1.999938 → $1.99) */
+function usdTrunc(v: number): string {
+  return usd(Math.trunc(v * 100) / 100);
+}
 function kstDate(iso: string): string {
   return new Date(iso).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric' });
 }
@@ -61,7 +65,7 @@ export default function SpacexEntriesScreen() {
                 </View>
                 <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700' }}>
                   {e.amount >= 0 ? '' : '-'}
-                  {usd(Math.abs(e.amount))}
+                  {usdTrunc(Math.abs(e.amount))}
                 </Text>
               </View>
               {e.note && <Text style={{ color: theme.textMuted, fontSize: 11.5, marginTop: 3 }}>{e.note}</Text>}

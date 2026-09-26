@@ -9,8 +9,8 @@ export class SpacexEntry extends BaseEntity {
   @Column({ type: 'date' })
   date: string;
 
-  @ApiProperty({ description: '원금 증감액 ($) — 평소 매수는 양수, 리밸런싱 출금이면 음수일 수 있음', example: 2.0 })
-  @Column({ type: 'decimal', precision: 12, scale: 2, transformer: numeric })
+  @ApiProperty({ description: '원금 증감액 ($) — 평소 매수는 양수, 리밸런싱 출금이면 음수일 수 있음', example: 1.999965 })
+  @Column({ type: 'decimal', precision: 14, scale: 6, transformer: numeric })
   amount: number;
 
   @ApiPropertyOptional({ description: '체결가 ($) — 평단/수익률 계산 근거, 모르면 비움', example: 208.4 })

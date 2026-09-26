@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TossEmoji from '../components/common/TossEmoji';
 import LaofusStack from './LaofusStack';
 import VrStack from './VrStack';
-import AppMoreScreen from '../screens/AppMoreScreen';
+import LaofusMoreStack from './LaofusMoreStack';
 import { useTheme } from '../lib/theme';
 import { TE } from '../lib/toss-emoji';
 
@@ -48,9 +48,11 @@ export default function LaofusRootTabNavigator() {
         component={VrStack}
         options={{ tabBarLabel: 'VR', tabBarIcon: ({ size }) => <TossEmoji code={TE.chartBar} size={size} /> }}
       />
-      <Tab.Screen name="More" options={{ tabBarLabel: '더보기', tabBarIcon: ({ size }) => <TossEmoji code={TE.gear} size={size} /> }}>
-        {() => <AppMoreScreen appName="라오어" />}
-      </Tab.Screen>
+      <Tab.Screen
+        name="More"
+        component={LaofusMoreStack}
+        options={{ tabBarLabel: '더보기', tabBarIcon: ({ size }) => <TossEmoji code={TE.gear} size={size} /> }}
+      />
     </Tab.Navigator>
   );
 }

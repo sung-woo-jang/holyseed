@@ -30,11 +30,31 @@ export default function VrTrendPage() {
   const cycles = cyclesRes?.data ?? []
   const fills = fillsRes?.data ?? []
 
-  const [selectedCycle, setSelectedCycle] = useState<number | null>(null)
+  const [selected, setSelected] = useState<number | 'all'>('all')
 
+  const isAll = selected === 'all'
   const latestCycleNo = cycles.reduce((max, c) => Math.max(max, c.cycleNo), 0)
-  const activeCycleNo = selectedCycle ?? latestCycleNo
+  const activeCycleNo = isAll ? latestCycleNo : selected
   const cycle = cycles.find((c) => c.cycleNo === activeCycleNo)
+
+  // 전체 보기: 입금(DEPOSIT)은 평단이 안 바뀌는 점(첫 입금은 평단 0)이라 빼고 매수/매도 체결만 이어 붙인다
+  const allFills = useMemo(
+    () =>
+      fills
+        .filter((f) => f.kind !== 'DEPOSIT')
+        .slice()
+        .sort((a, b) => (a.fillDate < b.fillDate ? -1 : a.fillDate > b.fillDate ? 1 : a.id - b.id)),
+    [fills],
+  )
+  const bands = useMemo(() => {
+    const groups: { cycleNo: number; from: number; to: number }[] = []
+    allFills.forEach((f, i) => {
+      const last = groups[groups.length - 1]
+      if (last && last.cycleNo === f.cycleNo) last.to = i
+      else groups.push({ cycleNo: f.cycleNo, from: i, to: i })
+    })
+    return groups.map((g) => ({ from: g.from, to: g.to, label: String(g.cycleNo) }))
+  }, [allFills])
 
   const cycleFills = useMemo(
     () =>
@@ -44,6 +64,10 @@ export default function VrTrendPage() {
         .sort((a, b) => (a.fillDate < b.fillDate ? -1 : a.fillDate > b.fillDate ? 1 : a.id - b.id)),
     [fills, activeCycleNo],
   )
+
+  const openCycleCount = cycles.filter((c) => !c.isClosed).length
+  const hasOpenCycle = openCycleCount > 0
+  const lastEndDate = cycles.reduce((m, c) => (c.endDate && c.endDate > m ? c.endDate : m), '')
 
   if (cycles.length === 0) {
     return (
@@ -57,13 +81,14 @@ export default function VrTrendPage() {
     <div className="p-6">
       <PageHeader
         title="사이클 추이"
-        description="사이클별 평단·보유수량·Pool 변화를 시간순으로 봅니다."
+        description="사이클별(또는 전체를 이어서) 평단·보유수량·Pool 변화를 시간순으로 봅니다."
         action={
-          <Select value={String(activeCycleNo)} onValueChange={(v) => setSelectedCycle(Number(v))}>
+          <Select value={isAll ? 'all' : String(activeCycleNo)} onValueChange={(v) => setSelected(v === 'all' ? 'all' : Number(v))}>
             <SelectTrigger className="w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">전체</SelectItem>
               {cycles
                 .slice()
                 .sort((a, b) => b.cycleNo - a.cycleNo)
@@ -77,6 +102,35 @@ export default function VrTrendPage() {
         }
       />
 
+      {isAll ? (
+        allFills.length < 2 ? (
+          <p className="mt-6 text-xs text-muted-foreground">체결이 2건 미만이라 그래프를 그릴 수 없습니다.</p>
+        ) : (
+          <>
+            <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <StatTile label="기간" value={`${allFills[0].fillDate} ~ ${hasOpenCycle ? '진행 중' : lastEndDate}`} />
+              <StatTile
+                label="평단 (처음 → 지금)"
+                value={`${usd(allFills[0].avgPriceAfter)} → ${usd(allFills[allFills.length - 1].avgPriceAfter)}`}
+              />
+              <StatTile label="보유수량" value={`${allFills[allFills.length - 1].qtyAfter}주`} />
+              <StatTile label="사이클" value={`${cycles.length}개${openCycleCount > 0 ? ` (진행 중 ${openCycleCount})` : ''}`} />
+            </div>
+            <div className="mt-6 grid gap-6 lg:grid-cols-2">
+              <ChartCard title="평단 추이 · 전체 (실선 평단 / 점선 체결가)">
+                <AvgPriceChart fills={allFills} bands={bands} showFillPrice />
+              </ChartCard>
+              <ChartCard title="보유수량 추이 · 전체">
+                <QuantityChart fills={allFills} bands={bands} />
+              </ChartCard>
+            </div>
+            <p className="mt-4 text-xs text-muted-foreground">
+              세로 점선은 사이클 경계(위 숫자가 사이클 번호)입니다. 입금은 빼고 매수·매도 체결만 이어 그립니다.
+            </p>
+          </>
+        )
+      ) : (
+        <>
       {cycle && (
         <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
           <StatTile label="기간" value={`${cycle.startDate} ~ ${cycle.endDate}`} />
@@ -100,6 +154,8 @@ export default function VrTrendPage() {
       </div>
       {cycleFills.length < 2 && (
         <p className="mt-4 text-xs text-muted-foreground">체결이 2건 미만이라 그래프를 그릴 수 없습니다.</p>
+      )}
+        </>
       )}
     </div>
   )

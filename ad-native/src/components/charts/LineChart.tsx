@@ -25,6 +25,8 @@ interface LineChartProps {
   color2?: string;
   /** [계열1 이름, 계열2 이름] — 지정하면 차트 아래 범례를 그림 */
   legendLabels?: [string, string];
+  /** 데이터 index 구간(from~to, 포함)별 라벨 + 구간 사이 세로 점선 — 여러 사이클을 이어 그릴 때 경계 표시용 */
+  bands?: { from: number; to: number; label: string }[];
 }
 
 export default function LineChart({
@@ -38,6 +40,7 @@ export default function LineChart({
   series2,
   color2 = '#8B95A1',
   legendLabels,
+  bands,
 }: LineChartProps) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const gradId = useRef(`lc-${Math.random().toString(36).slice(2, 7)}`).current;
@@ -118,6 +121,21 @@ export default function LineChart({
             </SvgText>
           </G>
         ))}
+
+        {bands?.map((b, i) => {
+          const bx = (idx: number) => padding.left + (idx / (data.length - 1)) * w;
+          const boundaryX = i > 0 ? (bx(b.from) + bx(b.from - 1)) / 2 : null;
+          return (
+            <G key={`band-${i}`}>
+              {boundaryX !== null && (
+                <Line x1={boundaryX} x2={boundaryX} y1={padding.top - 4} y2={padding.top + h} stroke={labelColor} strokeWidth={1} strokeDasharray="3,3" opacity={0.6} />
+              )}
+              <SvgText x={(bx(b.from) + bx(b.to)) / 2} y={padding.top - 7} textAnchor="middle" fontSize={9.5} fill={labelColor}>
+                {b.label}
+              </SvgText>
+            </G>
+          );
+        })}
 
         <Path d={areaD} fill={`url(#${gradId})`} />
         {path2D && <Path d={path2D} fill="none" stroke={color2} strokeWidth={2} strokeDasharray="5,4" strokeLinecap="round" strokeLinejoin="round" />}

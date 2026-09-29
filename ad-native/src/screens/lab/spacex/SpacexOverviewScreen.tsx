@@ -66,6 +66,8 @@ export default function SpacexOverviewScreen({ navigation }: Props) {
   const days = s.startDate
     ? Math.round((new Date(isClosed ? s.closedAt! : new Date().toISOString()).getTime() - new Date(s.startDate).getTime()) / 86400000) + 1
     : 0;
+  const currentDiff = s.currentValue !== null ? s.currentValue - s.totalPrincipal : null;
+  const currentDiffPct = currentDiff !== null && s.totalPrincipal > 0 ? (currentDiff / s.totalPrincipal) * 100 : null;
 
   async function handleClose() {
     setClosing(true);
@@ -90,6 +92,17 @@ export default function SpacexOverviewScreen({ navigation }: Props) {
 
       <View style={styles.tileGrid}>
         <Tile theme={theme} label="총 매수원금" value={usdTrunc(s.totalPrincipal)} sub="누적 입금 기준" />
+        <Tile
+          theme={theme}
+          label="총 금액"
+          value={s.currentValue !== null ? usdTrunc(s.currentValue) : '—'}
+          sub={
+            currentDiff !== null
+              ? `${currentDiff >= 0 ? '+' : ''}${usd(currentDiff)}${currentDiffPct !== null ? ` (${currentDiffPct >= 0 ? '+' : ''}${currentDiffPct.toFixed(2)}%)` : ''}`
+              : '시세 조회 실패'
+          }
+          valueColor={currentDiff === null ? undefined : currentDiff >= 0 ? theme.brand : theme.danger}
+        />
         <Tile theme={theme} label="매수 일수" value={`${s.daysCount}일`} />
         <Tile theme={theme} label="평단" value={s.avgPrice !== null ? usd(s.avgPrice, 4) : '—'} sub={s.avgPrice !== null ? '가격 기록된 날 기준' : undefined} />
         <Tile

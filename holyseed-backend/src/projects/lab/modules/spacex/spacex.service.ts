@@ -14,12 +14,21 @@ function kstDate(d: Date = new Date()): string {
 @Injectable()
 export class SpacexService {
   private readonly logger = new Logger('Spacex');
+  private priceCache: { price: number; at: number } | null = null;
 
   constructor(
     @InjectRepository(SpacexEntry) private readonly entryRepo: Repository<SpacexEntry>,
     @InjectRepository(SpacexState) private readonly stateRepo: Repository<SpacexState>,
     private readonly toss: TossClientService,
   ) {}
+
+  /** 실시간 시세 — 60초 캐시로 rate limit 보호(다른 lab 모듈과 동일 패턴) */
+  private async getLivePrice(): Promise<number> {
+    if (this.priceCache && Date.now() - this.priceCache.at < 60_000) return this.priceCache.price;
+    const p = await this.toss.getPrice(SYMBOL);
+    this.priceCache = { price: Number(p.lastPrice), at: Date.now() };
+    return this.priceCache.price;
+  }
 
   /**
    * 토스에서 SPCX(스페이스X) 체결 내역을 가져와 아직 기록 안 된 것만 채워 넣는다.
@@ -99,6 +108,16 @@ export class SpacexService {
     const lastPrice = lastPriced ? Number(lastPriced.price) : null;
     const profitPct = avgPrice !== null && lastPrice !== null ? (lastPrice / avgPrice - 1) * 100 : null;
 
+    // 총 매수원금(넣은 돈) vs 현재 평가금액(지금 팔면 얼마) — 시세 조회 실패해도 나머지 상태는 정상 반환
+    let currentPrice: number | null = null;
+    let currentValue: number | null = null;
+    try {
+      currentPrice = await this.getLivePrice();
+      currentValue = qtySum > 0 ? qtySum * currentPrice : null;
+    } catch (e) {
+      this.logger.warn(`실시간 시세 조회 실패: ${(e as Error).message}`);
+    }
+
     return {
       startDate,
       closedAt: state.closedAt,
@@ -107,6 +126,8 @@ export class SpacexService {
       avgPrice,
       lastPrice,
       profitPct,
+      currentPrice,
+      currentValue,
       entries: [...entries].reverse(),
     };
   }

@@ -18,6 +18,8 @@ export interface SpacexStatusDto {
   avgPrice: number | null;
   lastPrice: number | null;
   profitPct: number | null;
+  currentPrice: number | null;
+  currentValue: number | null;
   entries: SpacexEntryDto[];
 }
 

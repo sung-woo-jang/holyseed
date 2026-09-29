@@ -6,7 +6,10 @@ export class CreateSpacexEntryDto {
   @IsDateString({}, { message: '날짜는 YYYY-MM-DD 형식이어야 합니다.' })
   date: string;
 
-  @ApiProperty({ description: '원금 증감액 ($) — 실제 체결금액을 정밀하게(소수점 이하까지) 넣을 것', example: 1.999965 })
+  @ApiProperty({
+    description: '원금 증감액 ($) — 실제 체결금액을 정밀하게(소수점 이하까지) 넣을 것',
+    example: 1.999965,
+  })
   @IsNumber({}, { message: '금액은 숫자여야 합니다.' })
   amount: number;
 

@@ -32,4 +32,10 @@ export class SpacexController {
   async close(@Body() dto: CloseInvestmentDto) {
     return ok('투자 종료 처리되었습니다.', await this.spacexService.close(dto.date));
   }
+
+  @Post('sync')
+  @ApiOperation({ summary: '토스 SPCX 체결 내역 즉시 동기화 (매일 자동으로도 돎, 수동 즉시 반영용)' })
+  async sync() {
+    return ok('동기화 완료', await this.spacexService.syncFromToss());
+  }
 }

@@ -9,7 +9,10 @@ export class SpacexEntry extends BaseEntity {
   @Column({ type: 'date' })
   date: string;
 
-  @ApiProperty({ description: '원금 증감액 ($) — 평소 매수는 양수, 리밸런싱 출금이면 음수일 수 있음', example: 1.999965 })
+  @ApiProperty({
+    description: '원금 증감액 ($) — 평소 매수는 양수, 리밸런싱 출금이면 음수일 수 있음',
+    example: 1.999965,
+  })
   @Column({ type: 'decimal', precision: 14, scale: 6, transformer: numeric })
   amount: number;
 
@@ -28,4 +31,10 @@ export class SpacexEntry extends BaseEntity {
   @ApiPropertyOptional({ description: '자유 메모' })
   @Column({ type: 'text', nullable: true })
   note: string | null;
+
+  @ApiPropertyOptional({
+    description: '토스 주문ID — 자동 동기화로 들어온 기록만 있음(중복 방지용), 수동/API 기록은 null',
+  })
+  @Column({ name: 'order_id', type: 'varchar', length: 255, nullable: true, unique: true })
+  orderId: string | null;
 }

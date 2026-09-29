@@ -1,15 +1,58 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { TossClientService } from '@shared/toss/toss-client.service';
 import { SpacexEntry, SpacexState } from './entities';
 import { CreateSpacexEntryDto } from './dto/request';
 
+const SYMBOL = 'SPCX';
+
+function kstDate(d: Date = new Date()): string {
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' }).format(d);
+}
+
 @Injectable()
 export class SpacexService {
+  private readonly logger = new Logger('Spacex');
+
   constructor(
     @InjectRepository(SpacexEntry) private readonly entryRepo: Repository<SpacexEntry>,
     @InjectRepository(SpacexState) private readonly stateRepo: Repository<SpacexState>,
+    private readonly toss: TossClientService,
   ) {}
+
+  /**
+   * 토스에서 SPCX(스페이스X) 체결 내역을 가져와 아직 기록 안 된 것만 채워 넣는다.
+   * orderId로 중복을 막기 때문에 몇 번을 돌려도, 스케줄러가 겹쳐 돌아도 안전.
+   */
+  async syncFromToss(): Promise<{ synced: number }> {
+    const { orders } = await this.toss.getOrders('CLOSED', { symbol: SYMBOL, limit: 100 });
+    const filled = orders.filter((o) => o.status === 'FILLED' && o.execution.filledAt);
+    const existingIds = new Set(
+      (await this.entryRepo.find({ where: {}, select: ['orderId'] }))
+        .map((e) => e.orderId)
+        .filter((id): id is string => id !== null),
+    );
+
+    let synced = 0;
+    for (const order of filled) {
+      if (existingIds.has(order.orderId)) continue;
+      await this.entryRepo.save(
+        this.entryRepo.create({
+          date: kstDate(new Date(order.execution.filledAt as string)),
+          amount: Number(order.execution.filledAmount),
+          price: order.execution.averageFilledPrice !== null ? Number(order.execution.averageFilledPrice) : null,
+          quantity: Number(order.execution.filledQuantity),
+          isRebalance: false,
+          note: null,
+          orderId: order.orderId,
+        }),
+      );
+      synced++;
+    }
+    if (synced > 0) this.logger.log(`토스 SPCX 체결 ${synced}건 동기화`);
+    return { synced };
+  }
 
   private async getOrCreateState(): Promise<SpacexState> {
     const [existing] = await this.stateRepo.find({ take: 1 });

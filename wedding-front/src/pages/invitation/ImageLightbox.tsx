@@ -7,6 +7,7 @@ import 'swiper/css'
 import 'swiper/css/navigation'
 import 'swiper/css/zoom'
 
+import RetryImg from '@/shared/ui/RetryImg'
 import styles from './InvitationPage.module.css'
 
 // 라이트박스 아래로 드래그해서 닫기 임계값
@@ -171,7 +172,7 @@ export default function ImageLightbox({ images, initialIndex, onClose }: ImageLi
             <SwiperSlide key={index} className={styles.swiperSlide}>
               <div className="swiper-zoom-container">
                 {Math.abs(index - currentSlideIndex) <= MOUNT_RADIUS && (
-                  <img src={image.src} alt={image.alt || `Image ${index + 1}`} className={styles.lightboxImage} />
+                  <RetryImg src={image.src} alt={image.alt || `Image ${index + 1}`} className={styles.lightboxImage} />
                 )}
               </div>
             </SwiperSlide>

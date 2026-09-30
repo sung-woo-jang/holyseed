@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import styles from './NetflixRow.module.css';
 import { RANK_GLYPHS } from './rankGlyphs';
+import RetryImg from '@/shared/ui/RetryImg';
 
 type RowItemType = 'image' | 'video' | 'info-card' | 'calendar-card' | 'account-card' | 'upload-card' | 'top-ranked';
 
@@ -114,8 +115,8 @@ export default function NetflixRow({ title, items, onItemClick, onVideoClick, ro
             onClick={() => onItemClick?.(index)}
           >
             {/* 세로/가로 어떤 비율의 사진이든 잘리지 않게: 흐린 배경(cover)이 카드를 채우고, 선명한 원본(contain)은 통째로 보임 */}
-            <img src={item.src} alt="" aria-hidden="true" className={styles.cardBackdrop} loading="lazy" />
-            <img src={item.src} alt={item.alt || ''} className={styles.cardImage} loading="lazy" />
+            <RetryImg src={item.src} alt="" aria-hidden="true" className={styles.cardBackdrop} loading="lazy" />
+            <RetryImg src={item.src} alt={item.alt || ''} className={styles.cardImage} loading="lazy" />
           </div>
         );
 
@@ -317,7 +318,7 @@ export default function NetflixRow({ title, items, onItemClick, onVideoClick, ro
               </svg>
             )}
             <div className={styles.topRankedImageWrapper}>
-              <img
+              <RetryImg
                 src={item.src}
                 alt={item.alt || `Top ${item.rank}`}
                 className={styles.topRankedImage}

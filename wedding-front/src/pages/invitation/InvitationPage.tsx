@@ -15,6 +15,7 @@ import { GuestbookSection } from '@/widgets/guestbook/GuestbookSection'
 import AttendanceModal from '@/features/rsvp/AttendanceModal'
 import NaverMapScript from '@/shared/ui/NaverMapScript'
 import PageSpinner from '@/shared/ui/PageSpinner'
+import RetryImg from '@/shared/ui/RetryImg'
 import { useToast } from '@/shared/ui/toast'
 import ImageLightbox from './ImageLightbox'
 import styles from './InvitationPage.module.css'
@@ -254,8 +255,8 @@ function InvitationContent() {
               return (
                 <div key={id} className={cn(styles.heroPhotoWrap, { [styles.heroPhotoActive]: slideIndex === heroIndex })}>
                   {/* 세로 사진 등 비율이 다른 사진도 잘리지 않게: 흐린 배경(cover)이 카드를 채우고, 선명한 원본(contain)은 잘림 없이 통째로 보임 */}
-                  <img src={src} alt="" aria-hidden="true" className={styles.heroPhotoBackdrop} loading={i === 0 ? 'eager' : 'lazy'} />
-                  <img src={src} alt={`${couple.groomName} & ${couple.brideName}`} className={styles.heroPhotoMain} loading={i === 0 ? 'eager' : 'lazy'} />
+                  <RetryImg src={src} alt="" aria-hidden="true" className={styles.heroPhotoBackdrop} loading={i === 0 ? 'eager' : 'lazy'} />
+                  <RetryImg src={src} alt={`${couple.groomName} & ${couple.brideName}`} className={styles.heroPhotoMain} loading={i === 0 ? 'eager' : 'lazy'} />
                 </div>
               )
             })}

@@ -1,15 +1,8 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import type { TouchEvent as ReactTouchEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import cn from 'classnames'
-import { Swiper, SwiperSlide } from 'swiper/react'
-import { Navigation, Keyboard, Zoom } from 'swiper/modules'
-import type { Swiper as SwiperType } from 'swiper'
-import 'swiper/css'
-import 'swiper/css/navigation'
-import 'swiper/css/zoom'
 
 import { useCouple, DEFAULT_COUPLE_SLUG } from '@/shared/lib/couple-context'
 import { api } from '@/shared/api'
@@ -23,17 +16,10 @@ import AttendanceModal from '@/features/rsvp/AttendanceModal'
 import NaverMapScript from '@/shared/ui/NaverMapScript'
 import PageSpinner from '@/shared/ui/PageSpinner'
 import { useToast } from '@/shared/ui/toast'
+import ImageLightbox from './ImageLightbox'
 import styles from './InvitationPage.module.css'
 
 const NaverMap = lazy(() => import('@/shared/ui/NaverMap'))
-
-// 라이트박스 아래로 드래그해서 닫기 임계값
-const DISMISS_AXIS_LOCK_PX = 10
-const DISMISS_DISTANCE_RATIO = 0.18
-const DISMISS_MIN_DISTANCE_PX = 100
-const DISMISS_VELOCITY_PX_MS = 0.5
-const DISMISS_FADE_RATIO = 0.75
-const DISMISS_MIN_OPACITY = 0.15
 
 // Hero 카드 첫 슬라이드로 고정 재생되는 영상
 const HERO_VIDEO_SRC = '/KakaoTalk_Video_2026-09-01-19-17-08.mp4'
@@ -55,25 +41,14 @@ function InvitationContent() {
   const [currentRowId, setCurrentRowId] = useState<string | null>(null)
   const [videoLightbox, setVideoLightbox] = useState<string | null>(null)
   const [guestMedia, setGuestMedia] = useState<Media[]>([])
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false)
   const [dynamicContentRows, setDynamicContentRows] = useState<any[]>([])
   const [heroIndex, setHeroIndex] = useState(0)
   const [openAccordion, setOpenAccordion] = useState<'groom' | 'bride' | null>(null)
   const [bgmPlaying, setBgmPlaying] = useState(false)
   const bgmRef = useRef<HTMLAudioElement | null>(null)
-  const swiperRef = useRef<SwiperType | null>(null)
-  const lightboxOverlayRef = useRef<HTMLDivElement | null>(null)
-  const zoomScaleRef = useRef(1)
-  const dismissDragRef = useRef({
-    active: false,
-    axisLocked: null as null | 'x' | 'y',
-    startX: 0,
-    startY: 0,
-    startTime: 0,
-    lastY: 0,
-    lastTime: 0,
-  })
+  const heroVideoRef = useRef<HTMLVideoElement | null>(null)
+  const lightboxOpen = lightboxIndex !== null
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -88,13 +63,23 @@ function InvitationContent() {
   }, [])
 
   useEffect(() => {
-    if (lightboxIndex !== null || videoLightbox !== null || attendanceModalOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
+    const locked = lightboxIndex !== null || videoLightbox !== null || attendanceModalOpen
+    document.body.style.overflow = locked ? 'hidden' : ''
+    // iOS 러버밴딩/당겨서 새로고침이 라이트박스 스와이프 중에 끼어드는 것을 방지
+    document.documentElement.style.overscrollBehavior = locked ? 'none' : ''
+    return () => {
       document.body.style.overflow = ''
+      document.documentElement.style.overscrollBehavior = ''
     }
-    return () => { document.body.style.overflow = '' }
   }, [lightboxIndex, videoLightbox, attendanceModalOpen])
+
+  // 라이트박스가 열려 있는 동안 아래 Hero 영상은 멈춰서 iOS 메모리/디코딩 부하를 줄임
+  useEffect(() => {
+    const video = heroVideoRef.current
+    if (!video) return
+    if (lightboxOpen) video.pause()
+    else video.play().catch(() => {})
+  }, [lightboxOpen])
 
   useEffect(() => {
     if (!couple?.id) return
@@ -112,13 +97,13 @@ function InvitationContent() {
   // Hero 배경 자동 전환 (5초 간격 크로스페이드) — 0번은 항상 영상, 그 뒤로 사진(앞쪽 6장만 순환)
   const heroSlideCount = 1 + Math.min(heroPhotoIds.length, 6)
   useEffect(() => {
-    if (heroSlideCount <= 1) return
+    if (heroSlideCount <= 1 || lightboxOpen) return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     const timer = setInterval(() => {
       setHeroIndex((i) => (i + 1) % heroSlideCount)
     }, 5000)
     return () => clearInterval(timer)
-  }, [heroSlideCount])
+  }, [heroSlideCount, lightboxOpen])
 
   // 인트로 자연 종료 시점의 자동재생은 사용자 제스처가 없어 브라우저 정책에 막히는 경우가 많음 —
   // 인트로가 끝난 뒤 방문자의 첫 터치/클릭/키 입력에 슬쩍 얹어 재생을 시도하는 안전망
@@ -201,100 +186,8 @@ function InvitationContent() {
     }
   }
 
-  const openLightbox = (index: number) => { setLightboxIndex(index); setCurrentSlideIndex(index) }
-  const closeLightbox = () => { setLightboxIndex(null); setCurrentSlideIndex(0); swiperRef.current = null }
-
-  const handleZoomChange = (_swiper: SwiperType, scale: number) => { zoomScaleRef.current = scale }
-
-  // 아래로 드래그하면 라이트박스가 닫히는 제스처. 핀치줌 중이거나(zoomScaleRef>1)
-  // 가로 스와이프(이미지 전환)로 판정되면 관여하지 않고 Swiper 자체 동작에 맡김.
-  const handleLightboxTouchStart = (e: ReactTouchEvent<HTMLDivElement>) => {
-    if (e.touches.length !== 1) return
-    const drag = dismissDragRef.current
-    drag.active = true
-    drag.axisLocked = null
-    drag.startX = e.touches[0].clientX
-    drag.startY = e.touches[0].clientY
-    drag.startTime = Date.now()
-    drag.lastY = drag.startY
-    drag.lastTime = drag.startTime
-  }
-
-  const handleLightboxTouchMove = (e: ReactTouchEvent<HTMLDivElement>) => {
-    const drag = dismissDragRef.current
-    if (!drag.active || e.touches.length !== 1) return
-
-    if (zoomScaleRef.current > 1.01) {
-      drag.active = false
-      return
-    }
-
-    const touch = e.touches[0]
-    const dx = touch.clientX - drag.startX
-    const dy = touch.clientY - drag.startY
-
-    if (drag.axisLocked === null) {
-      if (Math.abs(dx) < DISMISS_AXIS_LOCK_PX && Math.abs(dy) < DISMISS_AXIS_LOCK_PX) return
-      drag.axisLocked = Math.abs(dy) > Math.abs(dx) ? 'y' : 'x'
-      if (drag.axisLocked === 'y') {
-        if (swiperRef.current) swiperRef.current.allowTouchMove = false
-        if (lightboxOverlayRef.current) lightboxOverlayRef.current.style.transition = 'none'
-      }
-    }
-
-    if (drag.axisLocked !== 'y') return
-
-    drag.lastY = touch.clientY
-    drag.lastTime = Date.now()
-
-    const node = lightboxOverlayRef.current
-    if (!node) return
-
-    if (dy <= 0) {
-      node.style.transform = 'translateY(0px)'
-      node.style.opacity = '1'
-      return
-    }
-
-    node.style.transform = `translateY(${dy}px)`
-    const progress = Math.min(dy / (window.innerHeight * DISMISS_FADE_RATIO), 1)
-    node.style.opacity = String(Math.max(1 - progress, DISMISS_MIN_OPACITY))
-  }
-
-  const handleLightboxTouchEnd = () => {
-    const drag = dismissDragRef.current
-    if (!drag.active) return
-    drag.active = false
-
-    const wasVertical = drag.axisLocked === 'y'
-    drag.axisLocked = null
-
-    if (swiperRef.current) swiperRef.current.allowTouchMove = true
-
-    if (!wasVertical) return
-
-    const dy = drag.lastY - drag.startY
-    const dt = Math.max(drag.lastTime - drag.startTime, 1)
-    const velocity = dy / dt
-
-    const node = lightboxOverlayRef.current
-    if (!node) return
-
-    const threshold = Math.max(DISMISS_MIN_DISTANCE_PX, window.innerHeight * DISMISS_DISTANCE_RATIO)
-
-    if (dy > 0 && (dy > threshold || velocity > DISMISS_VELOCITY_PX_MS)) {
-      node.style.transition = 'transform 200ms ease-in, opacity 200ms ease-in'
-      node.style.transform = `translateY(${window.innerHeight}px)`
-      node.style.opacity = '0'
-      window.setTimeout(closeLightbox, 200)
-    } else if (dy > 0) {
-      node.style.transition = 'transform 200ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms cubic-bezier(0.4, 0, 0.2, 1)'
-      node.style.transform = 'translateY(0px)'
-      node.style.opacity = '1'
-    } else {
-      node.style.transition = ''
-    }
-  }
+  const openLightbox = (index: number) => setLightboxIndex(index)
+  const closeLightbox = () => setLightboxIndex(null)
 
   // 관리자가 콘텐츠 Row에서 직접 TOP 랭킹을 만들었으면 하드코딩된 기본 TOP 랭킹은 숨김(중복 방지)
   const hasCustomTopRanked = dynamicContentRows.some((row) => row.type === 'top-ranked-row')
@@ -340,7 +233,7 @@ function InvitationContent() {
         </svg>
       </button>
 
-      <div className={cn(styles.container, { [styles.zoomInFromIntro]: !showIntro && !wasSkipped, [styles.fadeInNormal]: !showIntro && wasSkipped })}>
+      <div className={cn(styles.container, { [styles.zoomInFromIntro]: !showIntro && !wasSkipped, [styles.fadeInNormal]: !showIntro && wasSkipped, [styles.contentHidden]: lightboxOpen })}>
         <NetflixNav groomName={couple.groomName} brideName={couple.brideName} />
         {/* Hero */}
         <section className={styles.hero}>
@@ -353,7 +246,7 @@ function InvitationContent() {
 
           <div className={styles.heroCard}>
             <div className={cn(styles.heroPhotoWrap, { [styles.heroPhotoActive]: heroIndex === 0 })}>
-              <video className={styles.heroVideoBg} src={HERO_VIDEO_SRC} autoPlay loop muted playsInline />
+              <video ref={heroVideoRef} className={styles.heroVideoBg} src={HERO_VIDEO_SRC} autoPlay loop muted playsInline />
             </div>
             {heroPhotoIds.slice(0, 6).map((id, i) => {
               const src = mediaResizedUrl(id)
@@ -640,31 +533,7 @@ function InvitationContent() {
 
         {/* Lightbox */}
         {lightboxIndex !== null && currentImages.length > 0 && (
-          <div
-            ref={lightboxOverlayRef}
-            className={styles.lightbox}
-            onClick={closeLightbox}
-            onTouchStart={handleLightboxTouchStart}
-            onTouchMove={handleLightboxTouchMove}
-            onTouchEnd={handleLightboxTouchEnd}
-            onTouchCancel={handleLightboxTouchEnd}
-          >
-            <button className={styles.lightboxClose} onClick={closeLightbox} aria-label="Close">✕</button>
-            <div className={styles.swiperContainer} onClick={(e) => e.stopPropagation()}>
-              <Swiper modules={[Navigation, Keyboard, Zoom]} navigation={{ prevEl: `.${styles.swiperPrev}`, nextEl: `.${styles.swiperNext}` }} keyboard={{ enabled: true }} zoom={{ maxRatio: 3 }} initialSlide={lightboxIndex} spaceBetween={50} slidesPerView={1} speed={400} loop={currentImages.length > 1} onSwiper={(s) => { swiperRef.current = s; setCurrentSlideIndex(s.realIndex) }} onSlideChange={(s) => { setCurrentSlideIndex(s.realIndex); zoomScaleRef.current = 1 }} onZoomChange={handleZoomChange} className={styles.swiper}>
-                {currentImages.map((image: any, index: number) => (
-                  <SwiperSlide key={index} className={styles.swiperSlide}>
-                    <div className="swiper-zoom-container">
-                      <img src={image.src} alt={image.alt || `Image ${index + 1}`} className={styles.lightboxImage} />
-                    </div>
-                  </SwiperSlide>
-                ))}
-              </Swiper>
-              <button className={styles.swiperPrev} aria-label="Previous">‹</button>
-              <button className={styles.swiperNext} aria-label="Next">›</button>
-              <div className={styles.lightboxCounter}>{currentSlideIndex + 1} / {currentImages.length}</div>
-            </div>
-          </div>
+          <ImageLightbox images={currentImages} initialIndex={lightboxIndex} onClose={closeLightbox} />
         )}
 
         {/* Video Lightbox */}

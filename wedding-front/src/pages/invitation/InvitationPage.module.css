@@ -1070,6 +1070,12 @@
   transform: scale(1.1);
 }
 
+/* 라이트박스가 열려 있는 동안 아래 메인 콘텐츠의 페인팅/합성 레이어를 내려서 iOS 메모리 부하를 줄임.
+   layout은 유지되므로 닫을 때 스크롤 위치가 보존됨 (라이트박스는 .lightbox의 visibility: visible로 예외) */
+.contentHidden {
+  visibility: hidden;
+}
+
 /* ============================================
    LIGHTBOX - NETFLIX STYLE WITH SWIPER
    ============================================ */
@@ -1087,6 +1093,7 @@
   justify-content: center;
   animation: fadeIn 0.3s ease;
   will-change: transform, opacity;
+  visibility: visible;
 }
 
 .swiperContainer {
@@ -1142,7 +1149,6 @@
   padding: 0;
   line-height: 1;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
   z-index: 10001;
   font-weight: 700;
 }
@@ -1170,7 +1176,6 @@
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
   z-index: 10001;
   font-weight: 700;
   opacity: 0;

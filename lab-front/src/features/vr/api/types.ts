@@ -57,6 +57,12 @@ export interface VrState {
   investedPrincipal: number
 }
 
+export interface VrWealthHistoryPoint {
+  date: string
+  tqqqValue: number
+  cumulativePrincipal: number
+}
+
 export interface VrPriceDto {
   price: number
   ts: string

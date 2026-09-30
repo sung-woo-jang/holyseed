@@ -192,3 +192,105 @@ export function PoolChart({ fills }: TrendChartProps) {
     </div>
   )
 }
+
+const dayNum = (s: string) => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)) / 86400000
+const shortDate = (s: string) => `${+s.slice(5, 7)}/${+s.slice(8, 10)}`
+
+export interface BandCycle {
+  cycleNo: number
+  startDate: string
+  endDate: string | null
+  minBand: number
+  maxBand: number
+}
+
+/**
+ * 평가금(선)이 사이클별 V 최소~최대 밴드(띠) 안에서 움직이는 모습 — x축은 날짜 비례.
+ * 밴드는 사이클 안에서 고정이고 새 사이클 시작에 계단식으로 바뀐다. 밴드 밖으로 나간 기록은 경고색 점으로 강조.
+ */
+export function BandChart({ cycles, points }: { cycles: BandCycle[]; points: { date: string; value: number }[] }) {
+  const { ref: chartRef, width } = useContainerWidth<HTMLDivElement>(720)
+  if (cycles.length === 0) return null
+  const sorted = [...cycles].sort((a, b) => a.cycleNo - b.cycleNo)
+  const W = Math.max(280, width)
+  const H = 220
+  const PAD = { l: 52, r: 20, t: 26, b: 24 }
+  const lastDate = points.length > 0 ? points[points.length - 1].date : sorted[sorted.length - 1].startDate
+  const lastCycleEnd = sorted[sorted.length - 1].endDate ?? lastDate
+  const endDate = lastCycleEnd > lastDate ? lastCycleEnd : lastDate
+  const x0 = dayNum(sorted[0].startDate)
+  const x1 = Math.max(dayNum(endDate), dayNum(lastDate))
+  const xs = (s: string) => PAD.l + ((dayNum(s) - x0) / (x1 - x0 || 1)) * (W - PAD.l - PAD.r)
+
+  const segs = sorted.map((c, i) => ({ c, a: c.startDate, b: i < sorted.length - 1 ? sorted[i + 1].startDate : endDate }))
+  const cycleOf = (date: string) => sorted.filter((c) => c.startDate <= date).pop() ?? null
+
+  const lo = Math.min(...sorted.map((c) => c.minBand), ...points.map((p) => p.value)) * 0.9
+  const hi = Math.max(...sorted.map((c) => c.maxBand), ...points.map((p) => p.value)) * 1.05
+  const step = hi - lo > 4000 ? 1000 : 500
+  const yMin = Math.floor(lo / step) * step
+  const yMax = Math.ceil(hi / step) * step
+  const ys = (v: number) => PAD.t + (1 - (v - yMin) / (yMax - yMin)) * (H - PAD.t - PAD.b)
+  const ticks: number[] = []
+  for (let v = yMin; v <= yMax; v += step) ticks.push(v)
+
+  const stepPath = (key: 'minBand' | 'maxBand') =>
+    segs
+      .map((g, i) => `${i ? 'L' : 'M'}${xs(g.a).toFixed(1)},${ys(g.c[key]).toFixed(1)} L${xs(g.b).toFixed(1)},${ys(g.c[key]).toFixed(1)}`)
+      .join(' ')
+  const lower = [...segs]
+    .reverse()
+    .map((g) => `L${xs(g.b).toFixed(1)},${ys(g.c.minBand).toFixed(1)} L${xs(g.a).toFixed(1)},${ys(g.c.minBand).toFixed(1)}`)
+    .join(' ')
+  const line = points.map((p, i) => `${i ? 'L' : 'M'}${xs(p.date).toFixed(1)},${ys(p.value).toFixed(1)}`).join(' ')
+  const last = points[points.length - 1]
+  const outPoints = points.filter((p) => {
+    const c = cycleOf(p.date)
+    return c ? p.value < c.minBand || p.value > c.maxBand : false
+  })
+
+  return (
+    <div ref={chartRef}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="block w-full">
+        {ticks.map((v) => (
+          <g key={v}>
+            <line x1={PAD.l} x2={W - PAD.r} y1={ys(v)} y2={ys(v)} stroke="var(--border)" strokeWidth="1" />
+            <text x={PAD.l - 6} y={ys(v) + 4} textAnchor="end" fontSize="10" fill="var(--muted-foreground)">
+              ${v.toLocaleString('en-US')}
+            </text>
+          </g>
+        ))}
+        <path d={`${stepPath('maxBand')} ${lower} Z`} fill="#7a5fd0" opacity="0.13" />
+        <path d={stepPath('maxBand')} fill="none" stroke="#7a5fd0" strokeWidth="1.4" strokeDasharray="4 3" />
+        <path d={stepPath('minBand')} fill="none" stroke="#7a5fd0" strokeWidth="1.4" strokeDasharray="4 3" />
+        {segs.map((g, i) => (
+          <g key={g.c.cycleNo}>
+            {i > 0 && (
+              <line x1={xs(g.a)} x2={xs(g.a)} y1={PAD.t - 4} y2={H - PAD.b} stroke="var(--border)" strokeWidth="1" strokeDasharray="2 3" />
+            )}
+            <text x={(xs(g.a) + xs(g.b)) / 2} y={PAD.t - 9} textAnchor="middle" fontSize="10" fill="var(--muted-foreground)">
+              {g.c.cycleNo}
+            </text>
+          </g>
+        ))}
+        {points.length > 1 && <path d={line} fill="none" stroke="var(--primary)" strokeWidth="2.2" strokeLinejoin="round" />}
+        {outPoints.map((p) => (
+          <circle key={p.date} cx={xs(p.date)} cy={ys(p.value)} r="4" fill="var(--status-critical)" stroke="var(--card)" strokeWidth="1.5" />
+        ))}
+        {last && (
+          <>
+            <circle cx={xs(last.date)} cy={ys(last.value)} r="4" fill="var(--primary)" stroke="var(--card)" strokeWidth="2" />
+            <text x={xs(last.date) - 8} y={ys(last.value) + 16} textAnchor="end" fontSize="11" fill="var(--foreground)">
+              ${Math.round(last.value).toLocaleString('en-US')}
+            </text>
+          </>
+        )}
+        {[sorted[0].startDate, ...sorted.filter((_, i) => i > 0 && i % 2 === 0).map((c) => c.startDate), endDate].map((d, i) => (
+          <text key={`${d}-${i}`} x={xs(d)} y={H - 6} textAnchor="middle" fontSize="10" fill="var(--muted-foreground)">
+            {shortDate(d)}
+          </text>
+        ))}
+      </svg>
+    </div>
+  )
+}

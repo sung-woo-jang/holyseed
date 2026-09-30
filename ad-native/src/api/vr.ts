@@ -23,6 +23,10 @@ export interface VrCycle {
   poolEnd: number | null;
   depositAmount: number;
   isClosed: boolean;
+  minBand: number;
+  maxBand: number;
+  /** 이 사이클에서 체결한 매수·매도 금액 합 */
+  tradeAmount: number;
 }
 
 export interface VrFill {

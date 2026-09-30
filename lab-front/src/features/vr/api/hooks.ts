@@ -13,6 +13,7 @@ import type {
   VrPriceDto,
   VrSettings,
   VrState,
+  VrWealthHistoryPoint,
   VrStatusDto,
 } from './types'
 
@@ -23,6 +24,7 @@ const KEYS = {
   status: ['vr', 'status'],
   fills: ['vr', 'fills'],
   cycles: ['vr', 'cycles'],
+  wealth: ['vr', 'wealth-history'],
   candles: (range: VrCandleRange) => ['vr', 'candles', range],
 }
 
@@ -68,6 +70,14 @@ export function useVrFills() {
   return useStandardQuery<VrFill[]>({
     queryKey: KEYS.fills,
     queryFn: async () => (await axiosInstance.get<VrFill[]>(VR_API.FILLS)).data,
+  })
+}
+
+/** 일별 TQQQ 평가금 — 계좌 스냅샷 기반이라 기록이 시작된 날부터만 있음 */
+export function useVrWealthHistory() {
+  return useStandardQuery<VrWealthHistoryPoint[]>({
+    queryKey: KEYS.wealth,
+    queryFn: async () => (await axiosInstance.get<VrWealthHistoryPoint[]>(VR_API.WEALTH_HISTORY)).data,
   })
 }
 

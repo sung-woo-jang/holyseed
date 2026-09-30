@@ -20,6 +20,7 @@ export const VR_API = {
   FILLS: '/vr/fills',
   FILL_DELETE: (id: number | string) => `/vr/fills/${id}/delete`,
   CYCLES: '/vr/cycles',
+  WEALTH_HISTORY: '/vr/wealth-history',
   ROLLOVER: '/vr/cycles/rollover',
   SETTINGS_UPDATE: '/vr/settings/update',
   EVENTS: '/vr/events',

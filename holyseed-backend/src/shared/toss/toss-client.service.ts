@@ -33,6 +33,8 @@ export interface TossOrder {
   orderType: string;
   status: string;
   quantity: string;
+  /** 지정가 주문의 지정가 (시장가/금액주문은 null) */
+  price?: string | null;
   orderAmount: string | null;
   orderedAt: string;
   execution: {
@@ -292,7 +294,15 @@ export class TossClientService {
   /** 정수 수량 LOC(종가 지정가) 매도 — buyLoc과 대칭, side만 SELL. 마감 시점 종가가 지정가 이상이면 체결. */
   async sellLoc(symbol: string, quantity: string, limitPrice: string, clientOrderId: string): Promise<TossOrder> {
     return this.request('POST', '/api/v1/orders', {
-      body: { symbol, side: 'SELL', orderType: 'LIMIT', timeInForce: 'CLS', quantity, price: limitPrice, clientOrderId },
+      body: {
+        symbol,
+        side: 'SELL',
+        orderType: 'LIMIT',
+        timeInForce: 'CLS',
+        quantity,
+        price: limitPrice,
+        clientOrderId,
+      },
       withAccount: true,
     });
   }

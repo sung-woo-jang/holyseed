@@ -4,12 +4,12 @@ import { CronJob } from 'cron';
 import { VrEngineService } from './vr-engine.service';
 
 /**
- * VR(TQQQ 밸류 리밸런싱) 스케줄러 — laofus와 달리 "마감 임박 1회 실행"이 아니라
- * 밴드 이탈 여부를 상시 감시해야 하므로 프리+정규+애프터마켓 내내 1시간 주기로 돈다.
- * (활성 세션 판별과 회수는 매 틱마다 VrEngineService.run()이 처리 — 별도 회수 전용 크론 불필요)
+ * VR(TQQQ 밸류 리밸런싱) 스케줄러 — 5분마다 엔진 틱(회수 → 예약주문 계단 보충 → 안전장치)을 돌린다.
+ * 하루 시작(09:00 첫 틱)에 전날 만료된 예약주문이 자동으로 다시 걸리고, 체결로 부족해진 단계는 다음 틱에 채워진다.
+ * (세션/트레이딩 데이 판별은 VrEngineService.run()이 처리)
  *
  * env:
- * - VR_RUN_CRON (기본 매시 5분 '5 * * * *')
+ * - VR_RUN_CRON (기본 매시 5분, 운영은 5분마다)
  * - VR_SCHEDULER=false 로 비활성 (기본 활성)
  * - VR_LIVE=true 로 실주문 (기본 dry-run)
  */

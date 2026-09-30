@@ -48,3 +48,19 @@ export function activeSession(cal: UsMarketCalendar, now: Date = new Date()): Ma
   }
   return null;
 }
+
+/**
+ * 트레이딩 데이 창(주간거래 시작 ~ 애프터마켓 종료) 안인지 — 예약주문(DAY)을 걸어둘 수 있는 시간대.
+ * activeSession은 프리/정규/애프터만 보지만, 예약은 09:00(주간거래 시작)부터 걸어야 하루치가 커버된다.
+ */
+export function tradingWindowOpen(cal: UsMarketCalendar, now: Date = new Date()): boolean {
+  const t = now.getTime();
+  for (const day of [cal.previousBusinessDay, cal.today, cal.nextBusinessDay]) {
+    if (!day) continue;
+    const start = day.dayMarket?.startTime ?? day.preMarket?.startTime;
+    const end = day.afterMarket?.endTime ?? day.regularMarket?.endTime;
+    if (!start || !end) continue;
+    if (t >= new Date(start).getTime() && t <= new Date(end).getTime()) return true;
+  }
+  return false;
+}

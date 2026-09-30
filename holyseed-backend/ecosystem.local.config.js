@@ -43,7 +43,9 @@ module.exports = {
         // 같은 프로세스(이 laofus-backend 앱)에서 함께 돈다. 절대 별도 pm2 앱으로 분리하지 말 것.
         VR_LIVE: 'true',
         VR_SCHEDULER: 'true',
-        VR_RUN_CRON: '*/5 * * * *', // 5분마다, 프리+정규+애프터마켓 전부
+        VR_RUN_CRON: '*/5 * * * *', // 5분 틱: ①체결 회수 ②예약주문 계단 보충(트레이딩 데이 09:00~다음날 08:50) ③안전장치
+        VR_LADDER_STEPS: '3', // 매수·매도 각각 걸어둘 예약 단계 수 (1주씩 지정가 DAY)
+        // VR_SAFETYNET=false 로 안전장치(계단 범위를 넘는 급락·급등 시 즉시 주문) 끌 수 있음 — 기본 켜짐
         VR_EXTENDED_LIMIT_BUFFER_PCT: '0.3',
       },
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',

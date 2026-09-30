@@ -294,3 +294,51 @@ export function BandChart({ cycles, points }: { cycles: BandCycle[]; points: { d
     </div>
   )
 }
+
+/** 누적 정리 차트 — 계좌총액(실선)과 투자원금(점선)을 날짜 비례 x축에 겹쳐 그림. 선이 점선 위/아래로 오가는 게 곧 수익/손실 */
+export function CumulativeChart({ points }: { points: { date: string; totalAssets: number; principal: number }[] }) {
+  const { ref: chartRef, width } = useContainerWidth<HTMLDivElement>(720)
+  if (points.length < 2) return null
+  const W = Math.max(280, width)
+  const H = 200
+  const PAD = { l: 52, r: 20, t: 12, b: 24 }
+  const x0 = dayNum(points[0].date)
+  const x1 = dayNum(points[points.length - 1].date)
+  const xs = (s: string) => PAD.l + ((dayNum(s) - x0) / (x1 - x0 || 1)) * (W - PAD.l - PAD.r)
+  const all = points.flatMap((p) => [p.totalAssets, p.principal])
+  const lo = Math.floor((Math.min(...all) * 0.95) / 500) * 500
+  const hi = Math.ceil((Math.max(...all) * 1.03) / 500) * 500
+  const ys = (v: number) => PAD.t + (1 - (v - lo) / (hi - lo || 1)) * (H - PAD.t - PAD.b)
+  const ticks: number[] = []
+  for (let v = lo; v <= hi; v += (hi - lo) / 4) ticks.push(v)
+  const path = (key: 'totalAssets' | 'principal') =>
+    points.map((p, i) => `${i ? 'L' : 'M'}${xs(p.date).toFixed(1)},${ys(p[key]).toFixed(1)}`).join(' ')
+  const last = points[points.length - 1]
+  const labelDates = [points[0].date, points[Math.floor(points.length / 2)].date, last.date]
+
+  return (
+    <div ref={chartRef}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="block w-full">
+        {ticks.map((v) => (
+          <g key={v}>
+            <line x1={PAD.l} x2={W - PAD.r} y1={ys(v)} y2={ys(v)} stroke="var(--border)" strokeWidth="1" />
+            <text x={PAD.l - 6} y={ys(v) + 4} textAnchor="end" fontSize="10" fill="var(--muted-foreground)">
+              ${Math.round(v).toLocaleString('en-US')}
+            </text>
+          </g>
+        ))}
+        <path d={path('principal')} fill="none" stroke="var(--muted-foreground)" strokeWidth="1.6" strokeDasharray="4 3" />
+        <path d={path('totalAssets')} fill="none" stroke="var(--primary)" strokeWidth="2.2" strokeLinejoin="round" />
+        <circle cx={xs(last.date)} cy={ys(last.totalAssets)} r="4" fill="var(--primary)" stroke="var(--card)" strokeWidth="2" />
+        <text x={xs(last.date) - 8} y={ys(last.totalAssets) - 8} textAnchor="end" fontSize="11" fill="var(--foreground)">
+          ${Math.round(last.totalAssets).toLocaleString('en-US')}
+        </text>
+        {labelDates.map((d, i) => (
+          <text key={d} x={xs(d)} y={H - 6} textAnchor={i === 0 ? 'start' : i === 2 ? 'end' : 'middle'} fontSize="10" fill="var(--muted-foreground)">
+            {shortDate(d)}
+          </text>
+        ))}
+      </svg>
+    </div>
+  )
+}

@@ -87,6 +87,11 @@ export default function VrTrendScreen() {
   const poolData = cycleFills.map((f) => ({ date: f.fillDate, value: f.poolAfter }));
   const wealth = wealthQ.data ?? [];
   const wealthPoints = wealth.map((w) => ({ date: w.date, value: w.tqqqValue }));
+  // 누적 정리 — 표와 차트 모두 같은 스냅샷 시점의 평가금·Pool·계좌총액으로 맞춘다
+  const lastWealth = wealth.length > 0 ? wealth[wealth.length - 1] : null;
+  const cumProfit = lastWealth ? lastWealth.totalAssets - lastWealth.cumulativePrincipal : null;
+  const cumPct = lastWealth && cumProfit !== null && lastWealth.cumulativePrincipal > 0 ? (lastWealth.totalAssets / lastWealth.cumulativePrincipal - 1) * 100 : null;
+  const cumNeg = cumProfit !== null && cumProfit < 0;
   const today = wealthPoints.length > 0 ? wealthPoints[wealthPoints.length - 1].date : '';
   // 사이클별 요약(시트 위쪽 표와 같은 항목) — 말 평가금이 그 사이클 밴드 안인지도 같이 표시
   const cycleRows = [...cycles]
@@ -133,6 +138,51 @@ export default function VrTrendScreen() {
           })}
         </View>
       </ScrollView>
+
+      {isAll && lastWealth && cumProfit !== null && cumPct !== null && (
+        <View style={[styles.chartCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Text style={[styles.chartTitle, { color: theme.text, marginBottom: 2 }]}>누적 정리</Text>
+          <Text style={{ color: theme.textMuted, fontSize: 10.5, marginBottom: 8 }}>{lastWealth.date} 기준 · 계좌총액 = TQQQ 평가금 + Pool</Text>
+          <View style={[styles.sumTable, { borderColor: theme.border }]}>
+            {[
+              { k: 'TQQQ 평가금', v: usd(lastWealth.tqqqValue) },
+              { k: 'Pool', v: usd(lastWealth.pool) },
+              { k: '계좌총액', v: usd(lastWealth.totalAssets), hl: true },
+              { k: '투자금', v: usd(lastWealth.cumulativePrincipal) },
+              { k: '수익률', v: `${cumPct >= 0 ? '+' : ''}${cumPct.toFixed(2)}%`, neg: cumNeg, tone: true },
+              { k: '수익금', v: `${cumProfit >= 0 ? '+' : '-'}${usd(Math.abs(cumProfit))}`, neg: cumNeg, tone: true },
+            ].map((row, i, arr) => (
+              <View key={row.k} style={[styles.sumRow, { borderColor: theme.border }, i === arr.length - 1 && { borderBottomWidth: 0 }]}>
+                <Text style={[styles.sumK, { color: theme.textMuted, backgroundColor: theme.bg }]}>{row.k}</Text>
+                <Text
+                  style={[
+                    styles.sumV,
+                    { color: row.tone ? (row.neg ? theme.danger : theme.brand) : row.hl ? theme.brand : theme.text },
+                    row.hl && { backgroundColor: theme.brandSoft },
+                  ]}
+                >
+                  {row.v}
+                </Text>
+              </View>
+            ))}
+          </View>
+          {wealth.length > 1 && (
+            <View style={{ marginTop: 10 }}>
+              <LineChart
+                data={wealth.map((w) => ({ date: w.date, value: w.totalAssets }))}
+                series2={wealth.map((w) => ({ date: w.date, value: w.cumulativePrincipal }))}
+                legendLabels={['계좌총액', '투자원금']}
+                width={chartWidth}
+                height={150}
+                color={theme.brand}
+                color2={theme.textMuted}
+                dark={theme.dark}
+                formatValue={usd}
+              />
+            </View>
+          )}
+        </View>
+      )}
 
       {isAll && wealthPoints.length > 1 && (
         <>
@@ -260,6 +310,10 @@ const styles = StyleSheet.create({
   tile: { width: '48%', borderWidth: 1, borderRadius: 12, padding: 12 },
   chartCard: { borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 12 },
   chartTitle: { fontSize: 13, fontWeight: '700', marginBottom: 8 },
+  sumTable: { borderWidth: 1, borderRadius: 10, overflow: 'hidden' },
+  sumRow: { flexDirection: 'row', borderBottomWidth: 1 },
+  sumK: { flex: 1, fontSize: 12, fontWeight: '600', paddingVertical: 8, paddingHorizontal: 10 },
+  sumV: { flex: 1, fontSize: 12, fontWeight: '800', textAlign: 'right', paddingVertical: 8, paddingHorizontal: 10 },
   bandHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2, gap: 8 },
   pill: { borderRadius: 999, paddingVertical: 2, paddingHorizontal: 8 },
   cyRow: { paddingVertical: 9 },

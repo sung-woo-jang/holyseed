@@ -93,6 +93,10 @@ export interface VrWealthHistoryPoint {
   date: string;
   tqqqValue: number;
   cumulativePrincipal: number;
+  /** 그 날짜까지의 마지막 체결 기준 VR Pool */
+  pool: number;
+  /** 계좌총액 = TQQQ 평가금 + Pool */
+  totalAssets: number;
 }
 
 export const vrApi = {

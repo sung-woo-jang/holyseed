@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { PageHeader } from '@/widgets/page-header'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { useVrCycles, useVrFills, useVrWealthHistory } from '@/features/vr/api/hooks'
-import { AvgPriceChart, BandChart, PoolChart, QuantityChart } from '@/features/vr/ui/VrTrendCharts'
+import { AvgPriceChart, BandChart, CumulativeChart, PoolChart, QuantityChart } from '@/features/vr/ui/VrTrendCharts'
 
 const usd = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
@@ -30,7 +30,15 @@ export default function VrTrendPage() {
   const { data: wealthRes } = useVrWealthHistory()
   const cycles = cyclesRes?.data ?? []
   const fills = fillsRes?.data ?? []
-  const wealthPoints = (wealthRes?.data ?? []).map((w) => ({ date: w.date, value: w.tqqqValue }))
+  const wealth = wealthRes?.data ?? []
+  const wealthPoints = wealth.map((w) => ({ date: w.date, value: w.tqqqValue }))
+  // 누적 정리 — 표와 차트 모두 같은 스냅샷 시점의 평가금·Pool·계좌총액으로 맞춘다
+  const lastWealth = wealth.length > 0 ? wealth[wealth.length - 1] : null
+  const cumProfit = lastWealth ? lastWealth.totalAssets - lastWealth.cumulativePrincipal : null
+  const cumPct =
+    lastWealth && cumProfit !== null && lastWealth.cumulativePrincipal > 0
+      ? (lastWealth.totalAssets / lastWealth.cumulativePrincipal - 1) * 100
+      : null
   const lastWealthDate = wealthPoints.length > 0 ? wealthPoints[wealthPoints.length - 1].date : ''
   const sortedCycles = cycles.slice().sort((a, b) => a.cycleNo - b.cycleNo)
   // 사이클별 요약(시트 위쪽 표와 같은 항목) — 말 평가금이 그 사이클 밴드 안인지도 같이 표시
@@ -120,6 +128,40 @@ export default function VrTrendPage() {
           </Select>
         }
       />
+
+      {isAll && lastWealth && cumProfit !== null && cumPct !== null && (
+        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_2fr]">
+          <ChartCard title={`누적 정리 · ${lastWealth.date} 기준`}>
+            <div className="divide-y rounded-lg border text-sm">
+              {[
+                { k: 'TQQQ 평가금', v: usd(lastWealth.tqqqValue) },
+                { k: 'Pool', v: usd(lastWealth.pool) },
+                { k: '계좌총액', v: usd(lastWealth.totalAssets), hl: true },
+                { k: '투자금', v: usd(lastWealth.cumulativePrincipal) },
+                { k: '수익률', v: `${cumPct >= 0 ? '+' : ''}${cumPct.toFixed(2)}%`, tone: true },
+                { k: '수익금', v: `${cumProfit >= 0 ? '+' : '-'}${usd(Math.abs(cumProfit))}`, tone: true },
+              ].map((row) => (
+                <div key={row.k} className="flex">
+                  <span className="flex-1 bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground">{row.k}</span>
+                  <span
+                    className={`flex-1 px-3 py-2 text-right font-semibold tabular-nums ${
+                      row.tone ? (cumProfit < 0 ? 'text-destructive' : 'text-primary') : row.hl ? 'bg-primary/10 text-primary' : ''
+                    }`}
+                  >
+                    {row.v}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">계좌총액 = TQQQ 평가금 + Pool, 수익금 = 계좌총액 − 투자금</p>
+          </ChartCard>
+          <ChartCard title="계좌총액 vs 투자원금 (실선: 계좌총액 / 점선: 투자원금)">
+            <CumulativeChart
+              points={wealth.map((w) => ({ date: w.date, totalAssets: w.totalAssets, principal: w.cumulativePrincipal }))}
+            />
+          </ChartCard>
+        </div>
+      )}
 
       {isAll && wealthPoints.length > 1 && (
         <div className="mt-6 grid gap-6 lg:grid-cols-[2fr_1fr]">

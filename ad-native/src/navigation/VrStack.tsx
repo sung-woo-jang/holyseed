@@ -4,7 +4,6 @@ import VrFillsScreen from '../screens/lab/vr/VrFillsScreen';
 import VrLadderScreen from '../screens/lab/vr/VrLadderScreen';
 import VrTrendScreen from '../screens/lab/vr/VrTrendScreen';
 import VrSystemScreen from '../screens/lab/vr/VrSystemScreen';
-import VrTestScreen from '../screens/lab/vr/VrTestScreen';
 import VrTabBar from './VrTabBar';
 
 export type VrStackParamList = {
@@ -13,7 +12,6 @@ export type VrStackParamList = {
   VrLadder: undefined;
   VrTrend: undefined;
   VrSystem: undefined;
-  VrTest: undefined;
 };
 
 const Stack = createNativeStackNavigator<VrStackParamList>();
@@ -26,7 +24,6 @@ export default function VrStack() {
       <Stack.Screen name="VrLadder" component={VrLadderScreen} />
       <Stack.Screen name="VrTrend" component={VrTrendScreen} />
       <Stack.Screen name="VrSystem" component={VrSystemScreen} />
-      <Stack.Screen name="VrTest" component={VrTestScreen} />
     </Stack.Navigator>
   );
 }

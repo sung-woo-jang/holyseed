@@ -8,6 +8,10 @@ export interface WealthHistoryPoint {
   date: string;
   tqqqValue: number;
   cumulativePrincipal: number;
+  /** 그 날짜까지의 마지막 체결 기준 VR Pool (현금 여력) */
+  pool: number;
+  /** 계좌총액 = TQQQ 평가금 + Pool */
+  totalAssets: number;
 }
 
 const SYMBOL = 'TQQQ';
@@ -44,10 +48,17 @@ export class VrPerformanceService {
     });
   }
 
+  /** 체결(DEPOSIT 포함) 직후의 poolAfter를 날짜순으로 — 날짜별 Pool은 그 날짜까지의 마지막 값 */
+  private async getPoolSeries(): Promise<{ date: string; pool: number }[]> {
+    const fills = await this.fillRepo.find({ order: { fillDate: 'ASC', id: 'ASC' } });
+    return fills.map((f) => ({ date: f.fillDate, pool: f.poolAfter }));
+  }
+
   async getWealthHistory(): Promise<WealthHistoryPoint[]> {
-    const [tqqqSeries, principalSeries] = await Promise.all([
+    const [tqqqSeries, principalSeries, poolSeries] = await Promise.all([
       this.getTqqqValueSeries(),
       this.getCumulativePrincipalSeries(),
+      this.getPoolSeries(),
     ]);
     if (tqqqSeries.length === 0) return [];
 
@@ -58,7 +69,18 @@ export class VrPerformanceService {
         if (p.date > date) break;
         principal = p.cumulative;
       }
-      return { date, tqqqValue: value, cumulativePrincipal: principal };
+      let pool = 0;
+      for (const p of poolSeries) {
+        if (p.date > date) break;
+        pool = p.pool;
+      }
+      return {
+        date,
+        tqqqValue: value,
+        cumulativePrincipal: principal,
+        pool,
+        totalAssets: Math.round((value + pool) * 100) / 100,
+      };
     });
   }
 }

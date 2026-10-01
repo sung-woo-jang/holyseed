@@ -6,8 +6,11 @@ import Loader from '../../components/ui/Loader';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import AppToast from '../../components/common/AppToast';
 import { spacexApi } from '../../api/spacex';
+import { laofusRestApi } from '../../api/laofus';
 import { useTheme } from '../../lib/theme';
 import { getErrorMessage } from '../../lib/error';
+import { useLiveInterval, useNowTick } from '../../lib/use-live-interval';
+import { freshnessTag } from '../../lib/live-format';
 import type { LaofusMoreStackParamList } from '../../navigation/LaofusMoreStack';
 
 type Props = NativeStackScreenProps<LaofusMoreStackParamList, 'SpacexOverview'>;
@@ -25,12 +28,14 @@ function kstDate(iso: string): string {
 
 function Tile({
   label,
+  labelRight,
   value,
   sub,
   theme,
   valueColor,
 }: {
   label: string;
+  labelRight?: string;
   value: string;
   sub?: string;
   theme: ReturnType<typeof useTheme>;
@@ -38,7 +43,14 @@ function Tile({
 }) {
   return (
     <View style={[styles.tile, { backgroundColor: theme.card, borderColor: theme.border }]}>
-      <Text style={{ color: theme.textMuted, fontSize: 11.5 }}>{label}</Text>
+      {labelRight ? (
+        <View style={styles.tileLabelRow}>
+          <Text style={{ color: theme.textMuted, fontSize: 11.5 }}>{label}</Text>
+          <Text style={{ color: theme.brand, fontSize: 10.5, fontWeight: '700' }}>{labelRight}</Text>
+        </View>
+      ) : (
+        <Text style={{ color: theme.textMuted, fontSize: 11.5 }}>{label}</Text>
+      )}
       <Text style={{ color: valueColor ?? theme.text, fontSize: 16, fontWeight: '800', marginTop: 2 }}>{value}</Text>
       {sub && <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 2 }}>{sub}</Text>}
     </View>
@@ -47,7 +59,10 @@ function Tile({
 
 export default function SpacexOverviewScreen({ navigation }: Props) {
   const theme = useTheme();
-  const statusQ = useQuery({ queryKey: ['spacex-status'], queryFn: spacexApi.status });
+  const interval = useLiveInterval(5_000);
+  const nowMs = useNowTick(interval !== false);
+  const statusQ = useQuery({ queryKey: ['spacex-status'], queryFn: spacexApi.status, refetchInterval: interval });
+  const liveQ = useQuery({ queryKey: ['laofus-live'], queryFn: laofusRestApi.live, refetchInterval: interval });
   const [closeConfirm, setCloseConfirm] = useState(false);
   const [closing, setClosing] = useState(false);
   const [toast, setToast] = useState('');
@@ -95,6 +110,11 @@ export default function SpacexOverviewScreen({ navigation }: Props) {
         <Tile
           theme={theme}
           label="총 금액"
+          labelRight={
+            s.currentValue !== null
+              ? freshnessTag(liveQ.data?.session ?? null, statusQ.dataUpdatedAt, nowMs, !!liveQ.data?.symbols.find((x) => x.symbol === 'SPCX')?.stale)
+              : undefined
+          }
           value={s.currentValue !== null ? usdTrunc(s.currentValue) : '—'}
           sub={
             currentDiff !== null
@@ -153,6 +173,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   tileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
   tile: { width: '48%', borderWidth: 1, borderRadius: 12, padding: 12 },
+  tileLabelRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   memoCard: { borderWidth: 1, borderRadius: 12, padding: 13, marginBottom: 16 },
   btnRow: { flexDirection: 'row', gap: 8 },
   btn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 10 },

@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TossEmoji from '../components/common/TossEmoji';
 import LaofusStack from './LaofusStack';
 import VrStack from './VrStack';
+import LaofusLiveStack from './LaofusLiveStack';
 import LaofusMoreStack from './LaofusMoreStack';
 import { useTheme } from '../lib/theme';
 import { TE } from '../lib/toss-emoji';
@@ -10,6 +11,7 @@ import { TE } from '../lib/toss-emoji';
 export type LaofusTabParamList = {
   Laofus: undefined;
   Vr: undefined;
+  Live: undefined;
   More: undefined;
 };
 
@@ -47,6 +49,11 @@ export default function LaofusRootTabNavigator() {
         name="Vr"
         component={VrStack}
         options={{ tabBarLabel: 'VR', tabBarIcon: ({ size }) => <TossEmoji code={TE.chartBar} size={size} /> }}
+      />
+      <Tab.Screen
+        name="Live"
+        component={LaofusLiveStack}
+        options={{ tabBarLabel: '시세', tabBarIcon: ({ size }) => <TossEmoji code={TE.lightning} size={size} /> }}
       />
       <Tab.Screen
         name="More"

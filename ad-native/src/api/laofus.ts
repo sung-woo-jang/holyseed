@@ -133,9 +133,63 @@ export interface AssetTrendPoint {
   totalValueKrw: number;
 }
 
+export type LiveSessionType = 'DAY' | 'PRE' | 'REGULAR' | 'AFTER' | 'CLOSED';
+
+export interface LiveSessionDto {
+  session: LiveSessionType;
+  label: string;
+  shortLabel: string;
+  endsAt: string | null;
+  next: { session: LiveSessionType; label: string; startsAt: string } | null;
+  nextRegularOpenAt: string | null;
+}
+
+export interface LiveOrderDto {
+  orderId: string;
+  side: 'BUY' | 'SELL';
+  type: string;
+  quantity: number;
+  price: number | null;
+  /** (주문가 − 현재가) ÷ 현재가, % 단위 */
+  distancePct: number | null;
+  alert: boolean;
+}
+
+export interface LiveSymbolDto {
+  symbol: string;
+  label: string;
+  price: number | null;
+  ts: string | null;
+  stale: boolean;
+  changePct: number | null;
+  quantity: number | null;
+  avgPrice: number | null;
+  marketValueUsd: number | null;
+  profitPct: number | null;
+  orders: LiveOrderDto[];
+}
+
+export interface LiveDto {
+  now: string;
+  session: LiveSessionDto | null;
+  fx: number | null;
+  totals: {
+    marketValueUsd: number;
+    marketValueKrw: number | null;
+    profitUsd: number;
+    profitPct: number | null;
+    dayProfitUsd: number;
+    dayProfitPct: number | null;
+  } | null;
+  symbols: LiveSymbolDto[];
+  /** 일부 조회가 실패해 값이 비어 있음 */
+  partial: boolean;
+}
+
 export const laofusRestApi = {
   status: () => laofusApi.get<StatusDto>('/status').then((r) => r.data),
   price: () => laofusApi.get<{ price: number; ts: string }>('/price').then((r) => r.data),
+  live: () => laofusApi.get<LiveDto>('/live').then((r) => r.data),
   events: (cursor?: number, level?: string) =>
     laofusApi.get<{ events: EventDto[]; nextCursor: number | null }>('/events', { params: { cursor, level } }).then((r) => r.data),
   account: () => laofusApi.get<AccountDto>('/account').then((r) => r.data),

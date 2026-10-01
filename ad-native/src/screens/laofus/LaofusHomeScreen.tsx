@@ -6,6 +6,8 @@ import Loader from '../../components/ui/Loader';
 import { laofusRestApi, type EventDto } from '../../api/laofus';
 import { computeIndicators, computeBuyLocLegs, computeSellLocLegs, SPLITS, type ImuState } from '../../lib/laofus-core';
 import { useTheme } from '../../lib/theme';
+import { useLiveInterval, useNowTick } from '../../lib/use-live-interval';
+import { freshnessTag, signedPct } from '../../lib/live-format';
 import { useKeyboardScrollRegistration, KeyboardScrollProvider } from '../../lib/keyboard-scroll';
 import { getLaofusDismissedErrorId, setLaofusDismissedErrorId } from '../../lib/prefs';
 import type { LaofusStackParamList } from '../../navigation/LaofusStack';
@@ -22,10 +24,17 @@ function kst(iso: string): string {
   return new Date(iso).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-function Tile({ label, value, sub, color, theme }: { label: string; value: string; sub?: string; color?: string; theme: ReturnType<typeof useTheme> }) {
+function Tile({ label, labelRight, value, sub, color, theme }: { label: string; labelRight?: string; value: string; sub?: string; color?: string; theme: ReturnType<typeof useTheme> }) {
   return (
     <View style={[styles.tile, { backgroundColor: theme.card, borderColor: theme.border }]}>
-      <Text style={{ color: theme.textMuted, fontSize: 12 }}>{label}</Text>
+      {labelRight ? (
+        <View style={styles.tileLabelRow}>
+          <Text style={{ color: theme.textMuted, fontSize: 12 }}>{label}</Text>
+          <Text style={{ color: theme.brand, fontSize: 11, fontWeight: '700' }}>{labelRight}</Text>
+        </View>
+      ) : (
+        <Text style={{ color: theme.textMuted, fontSize: 12 }}>{label}</Text>
+      )}
       <Text style={{ color: color ?? theme.text, fontSize: 19, fontWeight: '800', marginTop: 2 }}>{value}</Text>
       {sub && <Text style={{ color: theme.textMuted, fontSize: 11.5, marginTop: 2 }}>{sub}</Text>}
     </View>
@@ -33,7 +42,8 @@ function Tile({ label, value, sub, color, theme }: { label: string; value: strin
 }
 
 /** 온주 LOC 스탠딩 주문은 engine_state만으로 계산되고 현재가와 무관 — 매수/매도 legs를 그대로 나열해서 보여준다 */
-function LegsCard({ s, theme }: { s: ImuState; theme: ReturnType<typeof useTheme> }) {
+function LegsCard({ s, price, theme }: { s: ImuState; price: number | null; theme: ReturnType<typeof useTheme> }) {
+  const distance = (legPrice: number) => (price ? signedPct(((legPrice - price) / price) * 100) : '');
   const buyLegs = computeBuyLocLegs(s);
   const sellLegs = computeSellLocLegs(s);
   if (buyLegs.length === 0 && sellLegs.length === 0) {
@@ -48,6 +58,7 @@ function LegsCard({ s, theme }: { s: ImuState; theme: ReturnType<typeof useTheme
             {leg.quantity}주 @ {usd(leg.price)}
           </Text>
           <Text style={{ color: theme.textMuted, fontSize: 11.5 }}>{leg.halfStep ? '절반' : '전액'}</Text>
+          <Text style={[styles.legDistance, { color: theme.text }]}>{distance(leg.price)}</Text>
         </View>
       ))}
       {sellLegs.map((leg, i) => (
@@ -57,6 +68,7 @@ function LegsCard({ s, theme }: { s: ImuState; theme: ReturnType<typeof useTheme
             {leg.quantity}주 @ {usd(leg.price)}
           </Text>
           <Text style={{ color: theme.textMuted, fontSize: 11.5 }}>{leg.kind}</Text>
+          <Text style={[styles.legDistance, { color: theme.text }]}>{distance(leg.price)}</Text>
         </View>
       ))}
     </View>
@@ -68,8 +80,10 @@ export default function LaofusHomeScreen({ navigation }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const { scrollRef, scrollToInput, onScroll, keyboardHeight } = useKeyboardScrollRegistration();
 
+  const interval = useLiveInterval(5_000);
+  const nowMs = useNowTick(interval !== false);
   const statusQ = useQuery({ queryKey: ['laofus-status'], queryFn: laofusRestApi.status, refetchInterval: 30_000 });
-  const priceQ = useQuery({ queryKey: ['laofus-price'], queryFn: laofusRestApi.price, refetchInterval: 60_000 });
+  const liveQ = useQuery({ queryKey: ['laofus-live'], queryFn: laofusRestApi.live, refetchInterval: interval });
 
   const [dismissedErrorId, setDismissedErrorId] = useState<number | null>(null);
   useEffect(() => {
@@ -79,14 +93,15 @@ export default function LaofusHomeScreen({ navigation }: Props) {
   async function onRefresh() {
     setRefreshing(true);
     try {
-      await Promise.all([statusQ.refetch(), priceQ.refetch()]);
+      await Promise.all([statusQ.refetch(), liveQ.refetch()]);
     } finally {
       setRefreshing(false);
     }
   }
 
   const status = statusQ.data;
-  const price = priceQ.data;
+  const soxl = liveQ.data?.symbols.find((x) => x.symbol === 'SOXL');
+  const price = soxl && soxl.price !== null ? { price: soxl.price } : undefined;
 
   const s: ImuState | null = useMemo(() => {
     const st = status?.state;
@@ -189,6 +204,7 @@ export default function LaofusHomeScreen({ navigation }: Props) {
             <Tile
               theme={theme}
               label="현재가"
+              labelRight={liveQ.data ? freshnessTag(liveQ.data.session, liveQ.dataUpdatedAt, nowMs, !!soxl?.stale) : undefined}
               value={price ? usd(price.price) : '—'}
               sub={pnl !== null ? `평가손익 ${pnl >= 0 ? '+' : ''}${usd(pnl)}` : undefined}
               color={pnl !== null ? (pnl >= 0 ? theme.brand : theme.danger) : undefined}
@@ -202,7 +218,7 @@ export default function LaofusHomeScreen({ navigation }: Props) {
             <Text style={{ color: theme.textMuted, fontSize: 11.5, marginBottom: 10 }}>
               engine_state로 미리 계산되는 온주 LOC — 현재가와 무관, 장마감 종가로 자동 판정
             </Text>
-            <LegsCard s={s} theme={theme} />
+            <LegsCard s={s} price={price?.price ?? null} theme={theme} />
           </View>
         </>
       )}
@@ -243,9 +259,11 @@ const styles = StyleSheet.create({
   liveBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, marginLeft: 'auto' },
   tileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   tile: { width: '48%', borderWidth: 1, borderRadius: 12, padding: 12 },
+  tileLabelRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   sectionCard: { borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 12 },
   sectionTitle: { fontSize: 14, fontWeight: '700' },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4 },
   legRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  legDistance: { width: 52, textAlign: 'right', fontSize: 11.5, fontWeight: '600', fontVariant: ['tabular-nums'] },
   eventRow: { flexDirection: 'row', gap: 10, paddingVertical: 6, borderTopWidth: 1, alignItems: 'center' },
 });

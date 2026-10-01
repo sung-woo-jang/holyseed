@@ -1,4 +1,4 @@
-import { labApi } from '../lib/lab-api';
+import { api } from '../lib/api';
 
 export interface SpacexEntryDto {
   id: number;
@@ -24,6 +24,6 @@ export interface SpacexStatusDto {
 }
 
 export const spacexApi = {
-  status: () => labApi.get<SpacexStatusDto>('/spacex/status').then((r) => r.data),
-  close: (date?: string) => labApi.post<{ closedAt: string | null }>('/spacex/close', { date }).then((r) => r.data),
+  status: () => api.get<SpacexStatusDto>('/spacex/status').then((r) => r.data),
+  close: (date?: string) => api.post<{ closedAt: string | null }>('/spacex/close', { date }).then((r) => r.data),
 };

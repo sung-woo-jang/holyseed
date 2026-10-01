@@ -1,10 +1,10 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import LaofusHomeScreen from '../screens/lab/laofus/LaofusHomeScreen';
-import LaofusSystemScreen from '../screens/lab/laofus/LaofusSystemScreen';
-import LaofusCyclesScreen from '../screens/lab/laofus/LaofusCyclesScreen';
-import LaofusCycleDetailScreen from '../screens/lab/laofus/LaofusCycleDetailScreen';
-import LaofusWealthScreen from '../screens/lab/laofus/LaofusWealthScreen';
-import LaofusAssetTrendScreen from '../screens/lab/laofus/LaofusAssetTrendScreen';
+import LaofusHomeScreen from '../screens/laofus/LaofusHomeScreen';
+import LaofusSystemScreen from '../screens/laofus/LaofusSystemScreen';
+import LaofusCyclesScreen from '../screens/laofus/LaofusCyclesScreen';
+import LaofusCycleDetailScreen from '../screens/laofus/LaofusCycleDetailScreen';
+import LaofusWealthScreen from '../screens/laofus/LaofusWealthScreen';
+import LaofusAssetTrendScreen from '../screens/laofus/LaofusAssetTrendScreen';
 
 export type LaofusStackParamList = {
   LaofusHome: undefined;

@@ -140,39 +140,6 @@ async function bootstrap() {
 
     console.log('💎 [Wedding] Swagger UI: http://localhost:8000/wedding/docs');
     console.log(`📊 [Wedding] API 개수: ${Object.keys(filteredWeddingDocument.paths).length}개`);
-
-    // ========================================
-    // LAB (개인 다목적 대시보드) API 문서
-    // ========================================
-    const labConfig = new DocumentBuilder()
-      .setTitle('Lab API')
-      .setDescription('개인 다목적 대시보드 — 무한매수법·VR·근무일지·일정·저축·필름 재단')
-      .setVersion('1.0')
-      .addBearerAuth()
-      .addTag('Lab 인증', '이메일/비밀번호 JWT 인증')
-      .addTag('Lab 사용자', '사용자 프로필 관리')
-      .addTag('Lab 필름 재단', '인테리어 필름 재단 최적화')
-      .addTag('Lab VR', 'TQQQ 밸류 리밸런싱 상태·체결·사이클')
-      .addTag('Lab 근무일지', '근무 기록·급여 계산·월별 집계')
-      .addTag('Lab 일정', '캘린더 일정 관리')
-      .addTag('Lab 저축', '1억 저축 플래너')
-      .build();
-
-    const labDocument = SwaggerModule.createDocument(app, labConfig, { include: [] });
-
-    const filteredLabDocument = {
-      ...labDocument,
-      paths: Object.fromEntries(Object.entries(labDocument.paths).filter(([path]) => path.startsWith('/api/lab/'))),
-    };
-
-    SwaggerModule.setup('lab/docs', app, filteredLabDocument, {
-      swaggerOptions: { persistAuthorization: true, tagsSorter: 'alpha', operationsSorter: 'alpha' },
-      customSiteTitle: 'Lab API - 개인 대시보드',
-      jsonDocumentUrl: '/lab/docs/json',
-    });
-
-    console.log('💎 [Lab] Swagger UI: http://localhost:8000/lab/docs');
-    console.log(`📊 [Lab] API 개수: ${Object.keys(filteredLabDocument.paths).length}개`);
   }
 
   await app.listen(port, '0.0.0.0');

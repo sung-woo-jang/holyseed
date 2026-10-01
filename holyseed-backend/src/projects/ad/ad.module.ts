@@ -13,6 +13,10 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { CashflowModule } from './modules/cashflow/cashflow.module';
 import { ComparisonModule } from './modules/comparison/comparison.module';
 import { AdMcpModule } from './modules/mcp/mcp.module';
+import { VrModule } from './modules/vr/vr.module';
+import { WorklogModule } from './modules/worklog/worklog.module';
+import { ExpenseModule } from './modules/expense/expense.module';
+import { SpacexModule } from './modules/spacex/spacex.module';
 
 @Module({
   imports: [
@@ -30,6 +34,10 @@ import { AdMcpModule } from './modules/mcp/mcp.module';
     CashflowModule,
     ComparisonModule,
     AdMcpModule,
+    VrModule,
+    WorklogModule,
+    ExpenseModule,
+    SpacexModule,
   ],
 })
 export class AdModule {}

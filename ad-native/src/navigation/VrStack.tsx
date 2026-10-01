@@ -1,9 +1,9 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import VrOverviewScreen from '../screens/lab/vr/VrOverviewScreen';
-import VrFillsScreen from '../screens/lab/vr/VrFillsScreen';
-import VrLadderScreen from '../screens/lab/vr/VrLadderScreen';
-import VrTrendScreen from '../screens/lab/vr/VrTrendScreen';
-import VrSystemScreen from '../screens/lab/vr/VrSystemScreen';
+import VrOverviewScreen from '../screens/vr/VrOverviewScreen';
+import VrFillsScreen from '../screens/vr/VrFillsScreen';
+import VrLadderScreen from '../screens/vr/VrLadderScreen';
+import VrTrendScreen from '../screens/vr/VrTrendScreen';
+import VrSystemScreen from '../screens/vr/VrSystemScreen';
 import VrTabBar from './VrTabBar';
 
 export type VrStackParamList = {

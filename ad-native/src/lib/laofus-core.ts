@@ -1,7 +1,7 @@
 /**
  * 무한매수법 V4.0 일반모드 (SOXL 20분할, 온주 LOC) 판단 로직 — packages/laofus-core를 ad-native에 그대로 복제.
  * ad-native는 yarn workspace가 아니라 그 패키지를 직접 import할 수 없어서(Metro 번들러 별도 설정 필요),
- * 작은 순수 함수라 중복 비용이 낮다고 판단해 여기 복제(백엔드/lab-front와 로직은 100% 동일하게 유지).
+ * 작은 순수 함수라 중복 비용이 낮다고 판단해 여기 복제(백엔드와 로직은 100% 동일하게 유지).
  */
 
 export interface ImuState {

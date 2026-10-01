@@ -1,7 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AppMoreScreen from '../screens/AppMoreScreen';
-import SpacexOverviewScreen from '../screens/lab/spacex/SpacexOverviewScreen';
-import SpacexEntriesScreen from '../screens/lab/spacex/SpacexEntriesScreen';
+import SpacexOverviewScreen from '../screens/spacex/SpacexOverviewScreen';
+import SpacexEntriesScreen from '../screens/spacex/SpacexEntriesScreen';
 import { TE } from '../lib/toss-emoji';
 
 export type LaofusMoreStackParamList = {

@@ -8,15 +8,15 @@ import axios, { AxiosInstance } from 'axios';
 import { z } from 'zod';
 import { AdUser } from '../users/entities/ad-user.entity';
 import { McpToken } from './entities/mcp-token.entity';
-import { LabMcpService } from '@lab/modules/mcp/mcp.service';
+import { OwnerToolsMcpService } from './owner-tools.service';
 
 /**
  * 자산일기 API를 MCP 도구로 노출 (조회 + 입력, 수정·삭제 제외).
  * 도구는 요청 시 URL의 개인 토큰으로 식별된 계정의 내부 JWT로 자기 REST API를 호출한다
  * — 가드·검증·멤버십 로직을 그대로 재사용. 계정마다 다른 요청일 수 있어 캐싱하지 않는다.
  *
- * lab(근무일지/VR/지출내역) 도구도 여기서 같이 노출한다 — 단, 토큰 소유자 이메일이
- * LAB_MCP_USER_EMAIL(소유자 계정)과 일치할 때만. AD는 가구 멤버 여러 명이 각자 자기
+ * 근무일지/VR/지출내역 도구도 여기서 같이 노출한다 — 단, 토큰 소유자 이메일이
+ * MCP_OWNER_EMAIL(소유자 계정)과 일치할 때만. AD는 가구 멤버 여러 명이 각자 자기
  * 토큰을 발급받을 수 있는 멀티테넌트 구조라서, 이 게이트가 없으면 다른 가구 멤버도
  * 소유자의 개인 근무일지·매매 데이터에 접근할 수 있게 되어버린다.
  */
@@ -27,7 +27,7 @@ export class McpService {
     private readonly jwtService: JwtService,
     @InjectRepository(McpToken)
     private readonly tokenRepo: Repository<McpToken>,
-    private readonly labMcpService: LabMcpService,
+    private readonly ownerTools: OwnerToolsMcpService,
   ) {}
 
   /** 토큰 → 소유 계정 조회. 없으면 null (컨트롤러가 404 처리) */
@@ -246,8 +246,13 @@ export class McpService {
           memo: z
             .string()
             .optional()
-            .describe('메모/내역 — 마크다운 문법(굵게 **텍스트**, 목록 -, 링크 [](), 인용문 >)을 쓰면 앱 거래 상세화면에서 서식 있게 표시돼요.'),
-          categoryId: z.number().optional().describe('카테고리 id (list_categories로 확인). 대분류·소분류 아무 id나 가능 — 애매하면 대분류로.'),
+            .describe(
+              '메모/내역 — 마크다운 문법(굵게 **텍스트**, 목록 -, 링크 [](), 인용문 >)을 쓰면 앱 거래 상세화면에서 서식 있게 표시돼요.',
+            ),
+          categoryId: z
+            .number()
+            .optional()
+            .describe('카테고리 id (list_categories로 확인). 대분류·소분류 아무 id나 가능 — 애매하면 대분류로.'),
         },
       },
       ({ type, amount, date, title, memo, categoryId }) =>
@@ -285,7 +290,10 @@ export class McpService {
           type: z.enum(['INCOME', 'EXPENSE']).describe('수입/지출'),
           amount: z.number().describe('금액 (원)'),
           dayOfMonth: z.number().min(1).max(31).describe('매월 결제일'),
-          categoryId: z.number().optional().describe('카테고리 id (list_categories로 확인). 대분류·소분류 아무거나 가능 — 애매하면 대분류로.'),
+          categoryId: z
+            .number()
+            .optional()
+            .describe('카테고리 id (list_categories로 확인). 대분류·소분류 아무거나 가능 — 애매하면 대분류로.'),
           endDate: z.string().optional().describe('종료일 YYYY-MM-DD'),
         },
       },
@@ -341,12 +349,17 @@ export class McpService {
           icon: z.string().optional().describe('아이콘 — 이모지 문자 그대로(예: 📱)'),
           color: z.string().optional().describe('색상 hex 코드 (예: #3182F6), 생략 가능'),
           parentId: z.number().optional().describe('상위 카테고리 id — 지정 시 그 카테고리의 소분류로 생성'),
-          defaultCostType: z.enum(['FIXED', 'VARIABLE']).optional().describe('기본 분류(고정비/변동비) — EXPENSE 카테고리에서만 의미 있음'),
+          defaultCostType: z
+            .enum(['FIXED', 'VARIABLE'])
+            .optional()
+            .describe('기본 분류(고정비/변동비) — EXPENSE 카테고리에서만 의미 있음'),
         },
       },
       ({ type, name, icon, color, parentId, defaultCostType }) =>
         this.call(user, async (api, hid) =>
-          this.unwrap(await api.post(`/households/${hid}/categories`, { type, name, icon, color, parentId, defaultCostType })),
+          this.unwrap(
+            await api.post(`/households/${hid}/categories`, { type, name, icon, color, parentId, defaultCostType }),
+          ),
         ),
     );
 
@@ -360,10 +373,10 @@ export class McpService {
       () => this.call(user, async (api, hid) => this.unwrap(await api.get(`/households/${hid}/comparison/yearly`))),
     );
 
-    // 소유자 계정일 때만 lab(근무일지/VR/지출내역) 도구도 같이 노출
-    const labOwnerEmail = (this.configService.get('LAB_MCP_USER_EMAIL') || '').toLowerCase();
-    if (labOwnerEmail && user.email.toLowerCase() === labOwnerEmail) {
-      this.labMcpService.registerTools(server);
+    // 소유자 계정일 때만 근무일지/VR/지출내역 도구도 같이 노출
+    const ownerEmail = (this.configService.get('MCP_OWNER_EMAIL') || '').toLowerCase();
+    if (ownerEmail && user.email.toLowerCase() === ownerEmail) {
+      this.ownerTools.registerTools(server, () => this.getApi(user));
     }
 
     return server;

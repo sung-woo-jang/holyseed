@@ -82,9 +82,11 @@ holyseed/
   - `laofus-backend`는 8001 포트 전용(holyseed-backend 8000과 분리, 2026-07-23 포트충돌 크래시 수정). ad-hoc `nest dev`(8000)는 `holyseed-backend`와 충돌하니 그쪽을 `pm2 stop`. 백엔드 수정 반영은 `yarn workspace @holyseed/backend build && pm2 delete laofus-backend && pm2 start ecosystem.local.config.js --only laofus-backend` (단순 `pm2 restart`는 pm2가 캐싱한 구 env를 재사용해 LIVE/SCHEDULER가 조용히 꺼진 채 남을 수 있음 — 2026-07-23 실제 발생)
   - **주의**: 무매 잔금은 `laofus.engine_state.cash` 기준 (계좌 예수금 아님). 계좌-DB 보유수량 불일치 시 엔진이 주문 중단
   - 방법론 문서·운용 규칙: `docs/laofus/README.md` 필독. 시드: `yarn laofus:seed`. (웹 대시보드는 2026-10-01 초기화됨 — 무한매수법은 앱 라오어 탭에서 확인)
-- **LAB 프로젝트**: `src/projects/lab/` - 개인 다목적 대시보드 (`lab` 스키마, `/api/lab/*`)
-  - 자체 이메일/비번 JWT 인증 (lab.users)
-  - 모듈: vr(TQQQ 밸류 리밸런싱), worklog(근무일지·급여계산), schedule(일정), saving(1억 저축 플래너)
+- **lab은 ad로 합쳐짐 (2026-10-01)**: 예전 `lab` 프로젝트(`/api/lab/*`, `lab` 스키마, lab 로그인)는 없어지고 모듈이 AD 프로젝트로 이동
+  - `src/projects/ad/modules/`의 `vr`(TQQQ 밸류 리밸런싱, **실주문 엔진 — laofus-backend :8001에서 LIVE**), `worklog`(근무일지·급여), `expense`(지출, Claude MCP로만 사용), `spacex`(스페이스X 매수 기록)
+  - 경로 `/api/ad/vr·worklog·expense·spacex`, DB `ad` 스키마(마이그레이션 `MergeLabIntoAd`로 이동), 인증은 AD JWT 하나. 옛 `/api/lab/*`는 앱 전환 확인 전까지 임시 별칭으로만 남아 있음(곧 제거)
+  - MCP: `/api/ad/mcp/:token`에 소유자 계정(`MCP_OWNER_EMAIL`)일 때만 VR·근무일지·지출 도구가 추가로 노출 (`ad/modules/mcp/owner-tools.service.ts`)
+  - **nginx(ad 도메인)**: `/api/ad/vr`·`/api/laofus`는 :8001(실주문 프로세스), 나머지 `/api`는 :8000
 - **공유 모듈**: `src/shared/` - 파일 업로드, 헬스체크, 주소 검색
 
 **개발 환경:**

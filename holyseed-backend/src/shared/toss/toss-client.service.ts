@@ -1,8 +1,16 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { Injectable, Logger } from '@nestjs/common';
+import { parseTossErrorBody, TossApiError } from './toss-api-error';
+
+export { TossApiError } from './toss-api-error';
 
 const BASE_URL = 'https://openapi.tossinvest.com';
+const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
+const MAX_GET_RETRIES = 3;
+const MIN_RETRY_WAIT_MS = 200;
+const MAX_RETRY_WAIT_MS = 10_000;
+const MAX_TOTAL_RETRY_WAIT_MS = 15_000;
 // client당 유효 토큰 1개(재발급 시 기존 무효화) + AUTH rate limit 때문에 프로세스 재시작 간 토큰 공유 필수.
 // laofus + VR 엔진이 이 서비스를 같은 프로세스(laofus-backend pm2 앱)에서 DI 싱글톤으로 공유 —
 // 파일명은 laofus 시절 그대로 유지 (바꾸면 기존 운영 캐시가 끊겨 재발급 레이스 발생).
@@ -131,6 +139,22 @@ export class TossClientService {
     return this.token as string;
   }
 
+  protected sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /** Retry-After(초 또는 날짜)를 우선 따르고, 없으면 지수 백오프+jitter. 너무 오래 기다려야 하면 null(재시도 포기) */
+  private retryDelayMs(res: Response, attempt: number): number | null {
+    const ra = res.headers.get('retry-after');
+    if (ra !== null) {
+      const sec = Number(ra);
+      const ms = Number.isFinite(sec) ? sec * 1000 : Date.parse(ra) - Date.now();
+      if (Number.isNaN(ms)) return null;
+      return ms > MAX_RETRY_WAIT_MS ? null : Math.max(MIN_RETRY_WAIT_MS, ms);
+    }
+    return 500 * 2 ** attempt + Math.floor(Math.random() * 250);
+  }
+
   private async request<T>(
     method: 'GET' | 'POST',
     path: string,
@@ -145,15 +169,57 @@ export class TossClientService {
       headers['Content-Type'] = 'application/json';
       init.body = JSON.stringify(opts.body);
     }
-    let res = await fetch(url, init);
-    if (res.status === 401) {
-      await this.fetchToken();
-      headers.Authorization = `Bearer ${this.token}`;
-      res = await fetch(url, init);
+
+    let tokenRefreshed = false;
+    let retries = 0;
+    let waitedMs = 0;
+    for (;;) {
+      const res = await fetch(url, init);
+      if (res.status === 401 && !tokenRefreshed) {
+        tokenRefreshed = true;
+        await this.fetchToken();
+        headers.Authorization = `Bearer ${this.token}`;
+        continue;
+      }
+      if (res.ok) {
+        const json = (await res.json()) as { result: T };
+        return json.result;
+      }
+
+      const rateLimit = {
+        limit: res.headers.get('x-ratelimit-limit'),
+        remaining: res.headers.get('x-ratelimit-remaining'),
+        reset: res.headers.get('x-ratelimit-reset'),
+        retryAfter: res.headers.get('retry-after'),
+      };
+      const text = await res.text();
+      const error = new TossApiError({
+        method,
+        path,
+        status: res.status,
+        ...parseTossErrorBody(text),
+        rawBody: text,
+        retries,
+        rateLimit,
+      });
+      if (res.status === 429) {
+        this.logger.warn(
+          `${error.message} | limit=${rateLimit.limit} remaining=${rateLimit.remaining} reset=${rateLimit.reset} retry-after=${rateLimit.retryAfter}`,
+        );
+      }
+
+      // 주문(POST)은 재시도하지 않는다 — 처리 여부가 불확실한 요청을 다시 보내 중복 주문이 생기는 것을 막기 위해
+      if (method === 'GET' && RETRYABLE_STATUS.has(res.status) && retries < MAX_GET_RETRIES) {
+        const wait = this.retryDelayMs(res, retries);
+        if (wait !== null && waitedMs + wait <= MAX_TOTAL_RETRY_WAIT_MS) {
+          retries += 1;
+          waitedMs += wait;
+          await this.sleep(wait);
+          continue;
+        }
+      }
+      throw error;
     }
-    if (!res.ok) throw new Error(`${method} ${path} 실패 ${res.status}: ${await res.text()}`);
-    const json = (await res.json()) as { result: T };
-    return json.result;
   }
 
   async getAccountSeq(): Promise<number> {
@@ -170,6 +236,11 @@ export class TossClientService {
     const prices = await this.request<TossPrice[]>('GET', '/api/v1/prices', { params: { symbols: symbol } });
     if (!prices.length) throw new Error(`${symbol} 시세 없음`);
     return prices[0];
+  }
+
+  async getPrices(symbols: string[]): Promise<TossPrice[]> {
+    if (!symbols.length) return [];
+    return this.request<TossPrice[]>('GET', '/api/v1/prices', { params: { symbols: symbols.join(',') } });
   }
 
   async getCandles(

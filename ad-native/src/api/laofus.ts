@@ -149,6 +149,8 @@ export interface LiveOrderDto {
   side: 'BUY' | 'SELL';
   type: string;
   quantity: number;
+  /** 금액으로 낸 주문(스페이스X 매일 매수 등)의 주문 금액 USD — 이때 quantity는 토스의 추정 수량 */
+  amount: number | null;
   price: number | null;
   /** (주문가 − 현재가) ÷ 현재가, % 단위 */
   distancePct: number | null;
@@ -176,6 +178,12 @@ export interface LiveDto {
   totals: {
     marketValueUsd: number;
     marketValueKrw: number | null;
+    /** 주문가능 잔고 (토스 매수가능금액) */
+    cashUsd: number | null;
+    cashKrw: number | null;
+    /** 총 자산 = 주식 평가금 + 달러 잔고 (원화는 × 환율 + 원화 잔고) */
+    totalAssetsUsd: number | null;
+    totalAssetsKrw: number | null;
     profitUsd: number;
     profitPct: number | null;
     dayProfitUsd: number;

@@ -28,7 +28,7 @@ function OrderRow({ o, theme }: { o: LiveOrderDto; theme: ThemeT }) {
     <View style={[styles.orderRow, { borderColor: theme.border }, o.alert && { backgroundColor: WARN + '26' }]}>
       <Text style={{ color: buy ? theme.brand : theme.danger, fontSize: 12, fontWeight: '800', width: 34 }}>{buy ? '매수' : '매도'}</Text>
       <Text style={{ color: theme.text, fontSize: 13, fontWeight: '600', flex: 1 }}>
-        {o.quantity}주{o.price !== null ? ` @ ${usd(o.price)}` : ''}
+        {o.amount !== null ? `${usd(o.amount)} · 약 ${o.quantity}주` : `${o.quantity}주${o.price !== null ? ` @ ${usd(o.price)}` : ''}`}
       </Text>
       <Text style={{ color: theme.textMuted, fontSize: 11, borderColor: theme.border, borderWidth: 1, borderRadius: 5, paddingHorizontal: 5 }}>{o.type}</Text>
       <Text style={{ color: o.alert ? WARN : theme.text, fontSize: 12, fontWeight: '700', width: 58, textAlign: 'right', fontVariant: ['tabular-nums'] }}>
@@ -67,23 +67,35 @@ function SymbolCard({ s, theme }: { s: LiveSymbolDto; theme: ThemeT }) {
 
 function Summary({ live, tag, theme }: { live: LiveDto; tag: string; theme: ThemeT }) {
   const t = live.totals;
+  const hasTotal = t?.totalAssetsUsd != null;
   return (
     <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
       <View style={styles.rowBetween}>
-        <Text style={{ color: theme.textMuted, fontSize: 12 }}>총 평가금</Text>
+        <Text style={{ color: theme.textMuted, fontSize: 12 }}>{hasTotal ? '총 자산 (주식 + 잔고)' : '주식 평가금'}</Text>
         <Text style={{ color: theme.brand, fontSize: 11, fontWeight: '700' }}>{tag}</Text>
       </View>
       {t ? (
         <>
-          <Text style={{ color: theme.text, fontSize: 24, fontWeight: '800', marginTop: 2 }}>{usd(t.marketValueUsd)}</Text>
-          {t.marketValueKrw !== null && live.fx !== null && (
+          <Text style={{ color: theme.text, fontSize: 24, fontWeight: '800', marginTop: 2 }}>{usd(t.totalAssetsUsd ?? t.marketValueUsd)}</Text>
+          {(t.totalAssetsKrw ?? t.marketValueKrw) !== null && live.fx !== null && (
             <Text style={{ color: theme.textMuted, fontSize: 12.5, marginTop: 1 }}>
-              {krw(t.marketValueKrw)} · 환율 {live.fx.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {krw((t.totalAssetsKrw ?? t.marketValueKrw) as number)} · 환율 {live.fx.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </Text>
           )}
+          <View style={[styles.splitRow, { borderColor: theme.border }]}>
+            <View style={styles.splitCell}>
+              <Text style={{ color: theme.textMuted, fontSize: 11.5 }}>주식 평가금</Text>
+              <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800', marginTop: 1 }}>{usd(t.marketValueUsd)}</Text>
+            </View>
+            <View style={styles.splitCell}>
+              <Text style={{ color: theme.textMuted, fontSize: 11.5 }}>잔고</Text>
+              <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800', marginTop: 1 }}>{t.cashUsd !== null ? usd(t.cashUsd) : '—'}</Text>
+              {t.cashKrw !== null && t.cashKrw > 0 && <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 1 }}>+ {krw(t.cashKrw)}</Text>}
+            </View>
+          </View>
           <View style={styles.sumLines}>
             <Text style={{ color: theme.textMuted, fontSize: 12.5 }}>
-              총손익{' '}
+              주식 손익{' '}
               <Text style={{ color: tone(t.profitUsd, theme), fontWeight: '700' }}>
                 {t.profitUsd >= 0 ? '+' : '−'}
                 {usd(Math.abs(t.profitUsd))} ({signedPct(t.profitPct, 2)})
@@ -186,6 +198,8 @@ const styles = StyleSheet.create({
   pill: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999 },
   rowBetween: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   rowBaseline: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  sumLines: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 2, marginTop: 6 },
+  sumLines: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 2, marginTop: 10 },
+  splitRow: { flexDirection: 'row', gap: 12, marginTop: 10, paddingTop: 10, borderTopWidth: 1 },
+  splitCell: { flex: 1 },
   orderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 7, borderTopWidth: 1 },
 });

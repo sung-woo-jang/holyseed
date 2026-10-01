@@ -19,7 +19,7 @@ export default defineConfig({
       manifest: {
         name: 'Lab',
         short_name: 'Lab',
-        description: '무한매수법·TQQQ VR·근무일지·필름 재단 개인 다목적 대시보드',
+        description: 'Lab',
         theme_color: '#0f172b',
         background_color: '#ffffff',
         display: 'standalone',

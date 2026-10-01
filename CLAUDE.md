@@ -43,14 +43,14 @@ holyseed/
 - Vite 6 + React 19 + CSS Modules, FSD 구조
 - 개발 서버: localhost:3600
 
-### 1-1. lab-front (개인 다목적 대시보드)
+### 1-1. lab-front (초기화됨 — 빈 React 껍데기)
 
-- Vite 6 + React 19, react-router 7, Tailwind 4 + shadcn/Radix (scss modules 혼용)
-- 개발 서버: localhost:4000 (proxy `/api` → :8000), preview/상시 서빙 :4800 (pm2 `lab-front`)
-- 2중 사이드바 레이아웃: 1차=섹션 아이콘 바, 2차=섹션 내 페이지 목록
-- 섹션 추가 = `src/app/nav/sections.tsx`의 SECTIONS 항목 + `App.tsx` 라우트 추가
-- 섹션 5개: **무한매수법**(구 laofus-front 흡수 — `/laofus`, `.laofus-scope` 스타일 격리, 자체 fetch로 `/api/laofus/*` 무인증 호출, laofus-core alias), TQQQ VR, 근무일지, 일정, 저축
-- 무한매수법 판단 로직은 `packages/laofus-core` 공유 (백엔드와 동일 순수함수)
+- 2026-10-01 웹 화면 코드를 전부 지우고 "준비 중" 한 화면만 남김. 냉장고 아이패드 대시보드를 이 자리에 새로 만들 예정(다른 세션)
+- Vite 6 + React 19 + Tailwind 4. 개발 서버 localhost:4000, preview/상시 서빙 :4800 (pm2 `lab-front`, `lab.holyseed.p-e.kr`)
+- **⚠️ `vite.config.ts`의 `preview`·`server.proxy`·`allowedHosts`는 지우면 안 됨** — ad-native 앱의 VR·근무일지·스페이스X·라오어 API가
+  `lab.holyseed.p-e.kr → nginx → :4800 → proxy(/api/laofus·/api/lab/vr → :8001, 그 외 /api → :8000)` 경로로 흐른다. 앱 화면이 전부 이 통로에 의존
+- 백엔드(`src/projects/lab`, `laofus`)·DB(`lab` 스키마)·VR 실거래 엔진은 그대로이고, 웹 화면만 없음. 무한매수법·VR·근무일지는 앱(ad-native)에서 봄
+- `packages/laofus-core`·`vr-core`·`shannon-core`는 현재 lab-front가 안 쓰지만 vite alias는 남겨둠(새 앱 만들 때 정리)
 
 ### 1-2. ad-native (자산일기 React Native 앱)
 
@@ -81,7 +81,7 @@ holyseed/
   - **⚠️ LIVE 운용 중 (2026-07-15~)**: pm2 `laofus-backend`가 상시 가동하며 실주문 담당. `.env`는 항상 `LAOFUS_LIVE=false`/`LAOFUS_SCHEDULER=false`(안전 기본값) — LIVE는 `ecosystem.local.config.js`의 pm2 env 주입으로만
   - `laofus-backend`는 8001 포트 전용(holyseed-backend 8000과 분리, 2026-07-23 포트충돌 크래시 수정). ad-hoc `nest dev`(8000)는 `holyseed-backend`와 충돌하니 그쪽을 `pm2 stop`. 백엔드 수정 반영은 `yarn workspace @holyseed/backend build && pm2 delete laofus-backend && pm2 start ecosystem.local.config.js --only laofus-backend` (단순 `pm2 restart`는 pm2가 캐싱한 구 env를 재사용해 LIVE/SCHEDULER가 조용히 꺼진 채 남을 수 있음 — 2026-07-23 실제 발생)
   - **주의**: 무매 잔금은 `laofus.engine_state.cash` 기준 (계좌 예수금 아님). 계좌-DB 보유수량 불일치 시 엔진이 주문 중단
-  - 방법론 문서·운용 규칙: `docs/laofus/README.md` 필독. 시드: `yarn laofus:seed`. 대시보드 상시 서빙 :4800 (pm2 `lab-front`, 무한매수법 섹션 `/laofus`)
+  - 방법론 문서·운용 규칙: `docs/laofus/README.md` 필독. 시드: `yarn laofus:seed`. (웹 대시보드는 2026-10-01 초기화됨 — 무한매수법은 앱 라오어 탭에서 확인)
 - **LAB 프로젝트**: `src/projects/lab/` - 개인 다목적 대시보드 (`lab` 스키마, `/api/lab/*`)
   - 자체 이메일/비번 JWT 인증 (lab.users)
   - 모듈: vr(TQQQ 밸류 리밸런싱), worklog(근무일지·급여계산), schedule(일정), saving(1억 저축 플래너)

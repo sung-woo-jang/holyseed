@@ -8,9 +8,9 @@ import { laofusRestApi } from '../../api/laofus';
 import { SPLITS } from '../../lib/laofus-core';
 import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
-import type { LaofusStackParamList } from '../../navigation/LaofusStack';
+import type { StrategyStackParamList } from '../../navigation/StrategyStack';
 
-type Props = NativeStackScreenProps<LaofusStackParamList, 'LaofusCycles'>;
+type Props = NativeStackScreenProps<StrategyStackParamList, 'LaofusCycles'>;
 type StatusFilter = '전체' | '진행중' | '종료';
 
 function n(v: string | number | null | undefined): number {

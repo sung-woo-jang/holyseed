@@ -1,24 +1,25 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import type { NavigatorScreenParams } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TossEmoji from '../components/common/TossEmoji';
-import LaofusStack from './LaofusStack';
-import VrStack from './VrStack';
-import LaofusLiveStack from './LaofusLiveStack';
-import LaofusMoreStack from './LaofusMoreStack';
+import LaofusHomeStack from './LaofusHomeStack';
+import StrategyStack, { type StrategyStackParamList } from './StrategyStack';
+import RecordsStack from './RecordsStack';
+import AppMoreScreen from '../screens/AppMoreScreen';
 import { useTheme } from '../lib/theme';
 import { TE } from '../lib/toss-emoji';
 
 export type LaofusTabParamList = {
-  Laofus: undefined;
-  Vr: undefined;
-  Live: undefined;
+  Home: undefined;
+  Strategy: NavigatorScreenParams<StrategyStackParamList> | undefined;
+  Records: undefined;
   More: undefined;
 };
 
 const Tab = createBottomTabNavigator<LaofusTabParamList>();
 const BASE_TAB_BAR_HEIGHT = 52;
 
-/** "라오어" 앱 — 무매(무한매수법)와 TQQQ VR을 한 탭바 안에 묶은 트레이딩 도구 묶음 */
+/** "라오어" 앱 — 홈(총 자산·시세) · 전략(무한매수법·VR) · 기록(스페이스X) · 더보기 */
 export default function LaofusRootTabNavigator() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -26,7 +27,7 @@ export default function LaofusRootTabNavigator() {
 
   return (
     <Tab.Navigator
-      initialRouteName="Laofus"
+      initialRouteName="Home"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: theme.brand,
@@ -41,25 +42,23 @@ export default function LaofusRootTabNavigator() {
       }}
     >
       <Tab.Screen
-        name="Laofus"
-        component={LaofusStack}
-        options={{ tabBarLabel: '무매', tabBarIcon: ({ size }) => <TossEmoji code={TE.chartUp} size={size} /> }}
+        name="Home"
+        component={LaofusHomeStack}
+        options={{ tabBarLabel: '홈', tabBarIcon: ({ size }) => <TossEmoji code={TE.house} size={size} /> }}
       />
       <Tab.Screen
-        name="Vr"
-        component={VrStack}
-        options={{ tabBarLabel: 'VR', tabBarIcon: ({ size }) => <TossEmoji code={TE.chartBar} size={size} /> }}
+        name="Strategy"
+        component={StrategyStack}
+        options={{ tabBarLabel: '전략', tabBarIcon: ({ size }) => <TossEmoji code={TE.chartUp} size={size} /> }}
       />
       <Tab.Screen
-        name="Live"
-        component={LaofusLiveStack}
-        options={{ tabBarLabel: '시세', tabBarIcon: ({ size }) => <TossEmoji code={TE.lightning} size={size} /> }}
+        name="Records"
+        component={RecordsStack}
+        options={{ tabBarLabel: '기록', tabBarIcon: ({ size }) => <TossEmoji code={TE.rocket} size={size} /> }}
       />
-      <Tab.Screen
-        name="More"
-        component={LaofusMoreStack}
-        options={{ tabBarLabel: '더보기', tabBarIcon: ({ size }) => <TossEmoji code={TE.gear} size={size} /> }}
-      />
+      <Tab.Screen name="More" options={{ tabBarLabel: '더보기', tabBarIcon: ({ size }) => <TossEmoji code={TE.gear} size={size} /> }}>
+        {() => <AppMoreScreen appName="라오어" />}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 }

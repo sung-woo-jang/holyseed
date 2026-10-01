@@ -9,6 +9,7 @@ const KEY_VR_FILLS_SORT = 'lab_vrFillsSortPref';
 const KEY_LAOFUS_WEALTH_SORT = 'lab_laofusWealthSortPref';
 const KEY_LAOFUS_LAST_COPY = 'lab_laofusWealthLastCopyDate';
 const KEY_LAOFUS_DISMISSED_ERROR_ID = 'lab_laofusDismissedErrorId';
+const KEY_LAOFUS_LAST_STRATEGY = 'lab_laofusLastStrategy';
 const isWeb = Platform.OS === 'web';
 
 async function readRaw(key: string): Promise<string | null> {
@@ -94,4 +95,14 @@ export async function getLaofusDismissedErrorId(): Promise<number | null> {
 
 export async function setLaofusDismissedErrorId(id: number): Promise<void> {
   return setPref(KEY_LAOFUS_DISMISSED_ERROR_ID, id);
+}
+
+/** 전략 탭에서 마지막으로 본 전략 — 다음에 열면 그 전략부터 보여줌 */
+export async function getLaofusLastStrategy(): Promise<'laofus' | 'vr' | null> {
+  const v = await getPref<string>(KEY_LAOFUS_LAST_STRATEGY);
+  return v === 'laofus' || v === 'vr' ? v : null;
+}
+
+export async function setLaofusLastStrategy(strategy: 'laofus' | 'vr'): Promise<void> {
+  return setPref(KEY_LAOFUS_LAST_STRATEGY, strategy);
 }

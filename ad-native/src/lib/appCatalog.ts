@@ -10,6 +10,6 @@ export interface AppCatalogEntry {
 
 export const APP_CATALOG: AppCatalogEntry[] = [
   { mode: 'assetDiary', emojiCode: TE.ledger, name: '자산일기', hint: '홈 · 자산 · 가계부' },
-  { mode: 'laofus', emojiCode: TE.chartUp, name: '라오어', hint: '무매 · TQQQ VR' },
+  { mode: 'laofus', emojiCode: TE.chartUp, name: '라오어', hint: '무한매수법 · VR · 스페이스X' },
   { mode: 'worklog', emojiCode: TE.briefcase, name: '근무일지', hint: '근무 기록 · 급여 계산' },
 ];

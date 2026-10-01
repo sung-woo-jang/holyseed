@@ -46,7 +46,7 @@ export default function RootNavigator() {
   useEffect(() => {
     if (!modeReady) return;
     let target: string | null = null;
-    if (mode === 'laofus') target = 'Laofus';
+    if (mode === 'laofus') target = 'Home';
     else if (mode === 'worklog') target = 'Worklog';
     else if (mode === 'assetDiary' && isAuthenticated && currentHousehold) target = 'Home';
     if (!target) return;

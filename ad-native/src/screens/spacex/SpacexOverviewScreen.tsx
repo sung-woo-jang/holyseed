@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Loader from '../../components/ui/Loader';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import AppToast from '../../components/common/AppToast';
@@ -27,9 +26,7 @@ import {
   type TodayCardModel,
 } from '../../lib/spacex-insights';
 import SpacexPriceChart from './SpacexPriceChart';
-import type { LaofusMoreStackParamList } from '../../navigation/LaofusMoreStack';
 
-type Props = NativeStackScreenProps<LaofusMoreStackParamList, 'SpacexOverview'>;
 type ThemeT = ReturnType<typeof useTheme>;
 
 const WARN = '#F5A623';
@@ -109,7 +106,7 @@ function calendarCell(state: CalendarState, theme: ThemeT): { bg: string; fg: st
   }
 }
 
-export default function SpacexOverviewScreen({ navigation }: Props) {
+export default function SpacexOverviewScreen() {
   const theme = useTheme();
   const interval = useLiveInterval(5_000);
   const nowMs = useNowTick(interval !== false);
@@ -422,9 +419,6 @@ export default function SpacexOverviewScreen({ navigation }: Props) {
       )}
 
       <View style={styles.btnRow}>
-        <Pressable style={[styles.btn, { backgroundColor: theme.brand }]} onPress={() => navigation.navigate('SpacexEntries')}>
-          <Text style={styles.btnTextPrimary}>기록 보기</Text>
-        </Pressable>
         {!isClosed && (
           <Pressable style={[styles.btn, styles.btnGhost, { borderColor: theme.border }]} onPress={() => setCloseConfirm(true)}>
             <Text style={[styles.btnTextGhost, { color: theme.textMuted }]}>투자 종료</Text>
@@ -472,6 +466,5 @@ const styles = StyleSheet.create({
   btnRow: { flexDirection: 'row', gap: 8 },
   btn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 10 },
   btnGhost: { borderWidth: 1 },
-  btnTextPrimary: { color: '#fff', fontSize: 13, fontWeight: '700' },
   btnTextGhost: { fontSize: 13, fontWeight: '700' },
 });

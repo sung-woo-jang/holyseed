@@ -9,9 +9,9 @@ import { laofusRestApi, type CycleDto } from '../../api/laofus';
 import { SPLITS } from '../../lib/laofus-core';
 import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
-import type { LaofusStackParamList } from '../../navigation/LaofusStack';
+import type { StrategyStackParamList } from '../../navigation/StrategyStack';
 
-type Props = NativeStackScreenProps<LaofusStackParamList, 'LaofusCycleDetail'>;
+type Props = NativeStackScreenProps<StrategyStackParamList, 'LaofusCycleDetail'>;
 
 /** 거래 1건당 최소 폭(px) — 이보다 촘촘해지면 가로 스크롤 (웹 대시보드와 동일했던 값) */
 const CHART_POINT_WIDTH = 28;

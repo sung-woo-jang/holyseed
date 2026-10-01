@@ -1,11 +1,17 @@
 import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Loader from '../../components/ui/Loader';
 import { laofusRestApi, type LiveDto, type LiveOrderDto, type LiveSessionDto, type LiveSymbolDto } from '../../api/laofus';
 import { useTheme } from '../../lib/theme';
 import { useLiveInterval, useNowTick } from '../../lib/use-live-interval';
 import { freshnessTag, krw, sessionHint, signedPct, usd } from '../../lib/live-format';
+import type { LaofusHomeStackParamList } from '../../navigation/LaofusHomeStack';
+import type { LaofusTabParamList } from '../../navigation/LaofusRootTabNavigator';
+
+type Props = NativeStackScreenProps<LaofusHomeStackParamList, 'LaofusLive'>;
 
 const WARN = '#F5A623';
 
@@ -38,15 +44,18 @@ function OrderRow({ o, theme }: { o: LiveOrderDto; theme: ThemeT }) {
   );
 }
 
-function SymbolCard({ s, theme }: { s: LiveSymbolDto; theme: ThemeT }) {
+function SymbolCard({ s, theme, onPress }: { s: LiveSymbolDto; theme: ThemeT; onPress: () => void }) {
   return (
-    <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+    <Pressable style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={onPress}>
       <View style={styles.rowBetween}>
         <View style={styles.rowBaseline}>
           <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{s.symbol}</Text>
           <Text style={{ color: theme.textMuted, fontSize: 11, fontWeight: '600' }}>{s.label}</Text>
         </View>
-        <Text style={{ color: theme.text, fontSize: 20, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{s.price !== null ? usd(s.price) : '—'}</Text>
+        <View style={styles.rowBaseline}>
+          <Text style={{ color: theme.text, fontSize: 20, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{s.price !== null ? usd(s.price) : '—'}</Text>
+          <Text style={{ color: theme.textMuted, fontSize: 16 }}>›</Text>
+        </View>
       </View>
       <View style={[styles.rowBetween, { marginTop: 2 }]}>
         <Text style={{ color: theme.textMuted, fontSize: 12 }}>
@@ -61,7 +70,7 @@ function SymbolCard({ s, theme }: { s: LiveSymbolDto; theme: ThemeT }) {
           s.orders.map((o) => <OrderRow key={o.orderId} o={o} theme={theme} />)
         )}
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -117,12 +126,20 @@ function Summary({ live, tag, theme }: { live: LiveDto; tag: string; theme: Them
   );
 }
 
-export default function LaofusLiveScreen() {
+export default function LaofusLiveScreen({ navigation }: Props) {
   const theme = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const interval = useLiveInterval(5_000);
   const nowMs = useNowTick(interval !== false);
   const liveQ = useQuery({ queryKey: ['laofus-live'], queryFn: laofusRestApi.live, refetchInterval: interval });
+
+  /** 종목을 누르면 그 종목의 전략(무한매수법·VR) 또는 기록(스페이스X) 탭으로 이동 */
+  function openSymbol(symbol: string) {
+    const tabs = navigation.getParent<BottomTabNavigationProp<LaofusTabParamList>>();
+    if (symbol === 'TQQQ') tabs?.navigate('Strategy', { screen: 'VrOverview' });
+    else if (symbol === 'SOXL') tabs?.navigate('Strategy', { screen: 'LaofusHome' });
+    else if (symbol === 'SPCX') tabs?.navigate('Records');
+  }
 
   async function onRefresh() {
     setRefreshing(true);
@@ -177,8 +194,17 @@ export default function LaofusLiveScreen() {
       <Summary live={live} tag={tag} theme={theme} />
 
       {live.symbols.map((s) => (
-        <SymbolCard key={s.symbol} s={s} theme={theme} />
+        <SymbolCard key={s.symbol} s={s} theme={theme} onPress={() => openSymbol(s.symbol)} />
       ))}
+
+      <View style={styles.chipRow}>
+        <Pressable style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.card }]} onPress={() => navigation.navigate('LaofusWealth')}>
+          <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>실계좌 자산</Text>
+        </Pressable>
+        <Pressable style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.card }]} onPress={() => navigation.navigate('LaofusAssetTrend')}>
+          <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>자산 추이</Text>
+        </Pressable>
+      </View>
 
       {(live.partial || anyStale) && (
         <Text style={{ color: theme.textMuted, fontSize: 11.5, textAlign: 'center' }}>
@@ -198,6 +224,8 @@ const styles = StyleSheet.create({
   pill: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999 },
   rowBetween: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   rowBaseline: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
+  chipRow: { flexDirection: 'row', gap: 8 },
+  chip: { flex: 1, borderWidth: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
   sumLines: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 2, marginTop: 10 },
   splitRow: { flexDirection: 'row', gap: 12, marginTop: 10, paddingTop: 10, borderTopWidth: 1 },
   splitCell: { flex: 1 },

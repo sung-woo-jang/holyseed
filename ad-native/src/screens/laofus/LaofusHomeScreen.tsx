@@ -10,9 +10,9 @@ import { useLiveInterval, useNowTick } from '../../lib/use-live-interval';
 import { freshnessTag, signedPct } from '../../lib/live-format';
 import { useKeyboardScrollRegistration, KeyboardScrollProvider } from '../../lib/keyboard-scroll';
 import { getLaofusDismissedErrorId, setLaofusDismissedErrorId } from '../../lib/prefs';
-import type { LaofusStackParamList } from '../../navigation/LaofusStack';
+import type { StrategyStackParamList } from '../../navigation/StrategyStack';
 
-type Props = NativeStackScreenProps<LaofusStackParamList, 'LaofusHome'>;
+type Props = NativeStackScreenProps<StrategyStackParamList, 'LaofusHome'>;
 
 function n(v: string | number | null | undefined): number {
   return Number(v ?? 0);
@@ -150,18 +150,6 @@ export default function LaofusHomeScreen({ navigation }: Props) {
       scrollEventThrottle={16}
     >
       <KeyboardScrollProvider value={scrollToInput}>
-      <View style={styles.navRow}>
-        <Pressable style={[styles.navChip, { borderColor: theme.border }]} onPress={() => navigation.navigate('LaofusCycles')}>
-          <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>사이클 기록</Text>
-        </Pressable>
-        <Pressable style={[styles.navChip, { borderColor: theme.border }]} onPress={() => navigation.navigate('LaofusWealth')}>
-          <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>실계좌 자산</Text>
-        </Pressable>
-        <Pressable style={[styles.navChip, { borderColor: theme.border }]} onPress={() => navigation.navigate('LaofusAssetTrend')}>
-          <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>자산 추이</Text>
-        </Pressable>
-      </View>
-
       {latestError && (
         <View style={[styles.errorBanner, { borderColor: theme.danger, backgroundColor: theme.danger + '15' }]}>
           <View style={styles.errorHeaderRow}>
@@ -249,8 +237,6 @@ export default function LaofusHomeScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  navRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  navChip: { flex: 1, borderWidth: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
   errorBanner: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12 },
   errorHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   engineBar: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12 },

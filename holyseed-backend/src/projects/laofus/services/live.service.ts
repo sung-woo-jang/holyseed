@@ -17,7 +17,7 @@ export interface LiveOrderDto {
   /** LOC / 지정가 / 시장가 / 그 외 토스 주문유형 */
   type: string;
   quantity: number;
-  /** 금액으로 낸 주문(스페이스X 매일 매수 등)의 주문 금액 USD — 이때 quantity는 토스의 추정 수량 */
+  /** 금액으로 낸 주문(가격 없는 시장가, 스페이스X 매일 매수 등)의 주문 금액 USD — 이때 quantity는 토스의 추정 수량. 지정가 주문은 null */
   amount: number | null;
   price: number | null;
   /** (주문가 − 현재가) ÷ 현재가, % 단위 */
@@ -199,7 +199,8 @@ export class LaofusLiveService {
           side: o.side,
           type: orderType(o),
           quantity: Number(o.quantity),
-          amount: o.orderAmount != null ? Number(o.orderAmount) : null,
+          // 지정가 주문도 토스는 orderAmount(가격×수량)를 주므로, 가격이 없는 금액 주문일 때만 주문 금액으로 취급
+          amount: o.price == null && o.orderAmount != null ? Number(o.orderAmount) : null,
           price: orderPrice,
           distancePct,
           alert:

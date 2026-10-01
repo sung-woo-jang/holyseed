@@ -214,6 +214,18 @@ describe('LaofusLiveService', () => {
     ]);
   });
 
+  it('지정가 주문에 토스가 가격×수량 orderAmount를 줘도 주문 금액(amount)은 비운다', async () => {
+    toss.getOrders.mockResolvedValue({
+      orders: [{ ...order('TQQQ', 'BUY', 'DAY', '1', '73.18'), orderAmount: '73.18' }],
+      nextCursor: null,
+      hasNext: false,
+    });
+
+    const live = await service.getLive();
+
+    expect(live.symbols[0].orders[0]).toMatchObject({ price: 73.18, amount: null, quantity: 1 });
+  });
+
   it('장 상태(프리마켓)와 다음 정규장 개장 시각을 포함한다', async () => {
     const live = await service.getLive();
 

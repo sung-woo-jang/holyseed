@@ -43,6 +43,7 @@ export interface TossOrder {
   quantity: string;
   /** 지정가 주문의 지정가 (시장가/금액주문은 null) */
   price?: string | null;
+  timeInForce?: string;
   orderAmount: string | null;
   orderedAt: string;
   execution: {
@@ -158,7 +159,7 @@ export class TossClientService {
   private async request<T>(
     method: 'GET' | 'POST',
     path: string,
-    opts: { params?: Record<string, string>; body?: unknown; withAccount?: boolean } = {},
+    opts: { params?: Record<string, string>; body?: unknown; withAccount?: boolean; retry?: boolean } = {},
   ): Promise<T> {
     const headers: Record<string, string> = { Authorization: `Bearer ${await this.getToken()}` };
     if (opts.withAccount) headers['X-Tossinvest-Account'] = String(await this.getAccountSeq());
@@ -209,7 +210,7 @@ export class TossClientService {
       }
 
       // 주문(POST)은 재시도하지 않는다 — 처리 여부가 불확실한 요청을 다시 보내 중복 주문이 생기는 것을 막기 위해
-      if (method === 'GET' && RETRYABLE_STATUS.has(res.status) && retries < MAX_GET_RETRIES) {
+      if (method === 'GET' && opts.retry !== false && RETRYABLE_STATUS.has(res.status) && retries < MAX_GET_RETRIES) {
         const wait = this.retryDelayMs(res, retries);
         if (wait !== null && waitedMs + wait <= MAX_TOTAL_RETRY_WAIT_MS) {
           retries += 1;
@@ -238,9 +239,13 @@ export class TossClientService {
     return prices[0];
   }
 
-  async getPrices(symbols: string[]): Promise<TossPrice[]> {
+  /** 여러 종목을 한 번에 조회. retry=false면 429/5xx에도 재시도 없이 바로 실패(한도에 걸렸을 때 엔진에 양보해야 하는 호출용) */
+  async getPrices(symbols: string[], opts: { retry?: boolean } = {}): Promise<TossPrice[]> {
     if (!symbols.length) return [];
-    return this.request<TossPrice[]>('GET', '/api/v1/prices', { params: { symbols: symbols.join(',') } });
+    return this.request<TossPrice[]>('GET', '/api/v1/prices', {
+      params: { symbols: symbols.join(',') },
+      retry: opts.retry,
+    });
   }
 
   async getCandles(

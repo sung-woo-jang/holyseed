@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { Public } from '@common/decorators';
 import { LaofusKeyGuard } from './laofus-key.guard';
 import { LaofusStatusService } from './services/status.service';
+import { LaofusLiveService } from './services/live.service';
 import { LaofusEngineService } from './services/engine.service';
 import { LaofusRunRequestDto } from './dto/run-request.dto';
 
@@ -17,6 +18,7 @@ function ok<T>(data: T, message = '조회 성공') {
 export class LaofusController {
   constructor(
     private readonly status: LaofusStatusService,
+    private readonly live: LaofusLiveService,
     private readonly engine: LaofusEngineService,
   ) {}
 
@@ -30,6 +32,14 @@ export class LaofusController {
   @ApiOperation({ summary: 'SOXL 현재가 (60초 캐시)' })
   async getPrice() {
     return ok(await this.status.getPrice());
+  }
+
+  @Get('live')
+  @ApiOperation({
+    summary: '시세 탭 — 3종목 실시간 시세(5초) + 보유·미체결 주문과 현재가 대비 거리 + 장 상태 (읽기 전용)',
+  })
+  async getLive() {
+    return ok(await this.live.getLive());
   }
 
   @Get('candles')

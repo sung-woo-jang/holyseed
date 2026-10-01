@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
 import { TossClientService, TossOrder } from '@shared/toss/toss-client.service';
+import { TossPriceHubService } from '@shared/toss/toss-price-hub.service';
 import { VrFill } from '@/projects/ad/modules/vr/entities/vr-fill.entity';
 import { LaofusEngineService } from './engine.service';
 import { LaofusSchedulerService } from './scheduler.service';
@@ -81,7 +82,6 @@ export interface LaofusLastRun {
 @Injectable()
 export class LaofusStatusService {
   private calendarCache: { data: unknown; at: number } | null = null;
-  private priceCache: { price: number; ts: string; at: number } | null = null;
   private accountCache: { data: unknown; at: number } | null = null;
   private ordersCache: { data: unknown; at: number } | null = null;
   private candleCache = new Map<string, { data: unknown; at: number }>();
@@ -89,6 +89,7 @@ export class LaofusStatusService {
 
   constructor(
     private readonly toss: TossClientService,
+    private readonly hub: TossPriceHubService,
     private readonly engine: LaofusEngineService,
     private readonly scheduler: LaofusSchedulerService,
     @InjectRepository(LaofusEngineState) private readonly stateRepo: Repository<LaofusEngineState>,
@@ -107,11 +108,10 @@ export class LaofusStatusService {
     return data;
   }
 
-  async getPrice(): Promise<{ price: number; ts: string }> {
-    if (this.priceCache && Date.now() - this.priceCache.at < 60_000) return this.priceCache;
-    const p = await this.toss.getPrice('SOXL');
-    this.priceCache = { price: Number(p.lastPrice), ts: p.timestamp, at: Date.now() };
-    return this.priceCache;
+  /** 화면용 현재가 — 가격 허브(5초 재사용). 주문 엔진은 이 값을 쓰지 않고 토스를 직접 조회한다 */
+  async getPrice(): Promise<{ price: number; ts: string; at: number }> {
+    const p = await this.hub.getPrice('SOXL');
+    return { price: p.price, ts: p.ts, at: p.fetchedAt };
   }
 
   async getCandles(range: string): Promise<unknown> {

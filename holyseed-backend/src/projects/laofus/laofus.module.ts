@@ -4,6 +4,7 @@ import { TossModule } from '@shared/toss/toss.module';
 import { LaofusController } from './laofus.controller';
 import { LaofusEngineService } from './services/engine.service';
 import { LaofusStatusService } from './services/status.service';
+import { LaofusLiveService } from './services/live.service';
 import { LaofusSchedulerService } from './services/scheduler.service';
 import { LaofusEngineState } from './entities/engine-state.entity';
 import { LaofusCycle } from './entities/cycle.entity';
@@ -33,6 +34,6 @@ import { VrFill } from '@/projects/ad/modules/vr/entities/vr-fill.entity';
     TossModule,
   ],
   controllers: [LaofusController],
-  providers: [LaofusEngineService, LaofusStatusService, LaofusSchedulerService],
+  providers: [LaofusEngineService, LaofusStatusService, LaofusLiveService, LaofusSchedulerService],
 })
 export class LaofusModule {}

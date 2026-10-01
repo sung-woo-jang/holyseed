@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
 import { TossClientService } from '@shared/toss/toss-client.service';
+import { TossPriceHubService } from '@shared/toss/toss-price-hub.service';
 import { LaofusEngineState } from '@/projects/laofus/entities/engine-state.entity';
 import { VrService } from '../vr.service';
 import { VrEngineService } from './vr-engine.service';
@@ -23,11 +24,11 @@ export interface VrLastRun {
 export class VrStatusService {
   private calendarCache: { data: UsMarketCalendar; at: number } | null = null;
   private candleCache = new Map<string, { data: unknown; at: number }>();
-  private priceCache: { price: number; ts: string; at: number } | null = null;
   private cashCache: { totalCash: number; laofusCash: number; vrCash: number; ts: string; at: number } | null = null;
 
   constructor(
     private readonly toss: TossClientService,
+    private readonly hub: TossPriceHubService,
     private readonly vrService: VrService,
     private readonly engine: VrEngineService,
     private readonly scheduler: VrSchedulerService,
@@ -42,11 +43,10 @@ export class VrStatusService {
     return data;
   }
 
-  async getPrice(): Promise<{ price: number; ts: string }> {
-    if (this.priceCache && Date.now() - this.priceCache.at < 60_000) return this.priceCache;
-    const p = await this.toss.getPrice('TQQQ');
-    this.priceCache = { price: Number(p.lastPrice), ts: p.timestamp, at: Date.now() };
-    return this.priceCache;
+  /** 화면용 현재가 — 가격 허브(5초 재사용). VR 엔진은 이 값을 쓰지 않고 토스를 직접 조회한다 */
+  async getPrice(): Promise<{ price: number; ts: string; at: number }> {
+    const p = await this.hub.getPrice('TQQQ');
+    return { price: p.price, ts: p.ts, at: p.fetchedAt };
   }
 
   /**

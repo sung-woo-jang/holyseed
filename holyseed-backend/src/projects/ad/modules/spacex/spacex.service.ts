@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TossClientService } from '@shared/toss/toss-client.service';
+import { TossPriceHubService } from '@shared/toss/toss-price-hub.service';
 import { SpacexEntry, SpacexState } from './entities';
 import { CreateSpacexEntryDto } from './dto/request';
 
@@ -14,20 +15,17 @@ function kstDate(d: Date = new Date()): string {
 @Injectable()
 export class SpacexService {
   private readonly logger = new Logger('Spacex');
-  private priceCache: { price: number; at: number } | null = null;
 
   constructor(
     @InjectRepository(SpacexEntry) private readonly entryRepo: Repository<SpacexEntry>,
     @InjectRepository(SpacexState) private readonly stateRepo: Repository<SpacexState>,
     private readonly toss: TossClientService,
+    private readonly hub: TossPriceHubService,
   ) {}
 
-  /** 실시간 시세 — 60초 캐시로 rate limit 보호(다른 모듈과 동일 패턴) */
+  /** 실시간 시세 — 가격 허브(5초 재사용·한도 보호) */
   private async getLivePrice(): Promise<number> {
-    if (this.priceCache && Date.now() - this.priceCache.at < 60_000) return this.priceCache.price;
-    const p = await this.toss.getPrice(SYMBOL);
-    this.priceCache = { price: Number(p.lastPrice), at: Date.now() };
-    return this.priceCache.price;
+    return (await this.hub.getPrice(SYMBOL)).price;
   }
 
   /**

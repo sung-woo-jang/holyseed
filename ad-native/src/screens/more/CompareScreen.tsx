@@ -7,17 +7,16 @@ import Loader from '../../components/ui/Loader';
 import EmptyState from '../../components/common/EmptyState';
 import WaterfallChart from '../../components/charts/WaterfallChart';
 import { useTheme } from '../../lib/theme';
-import { useHouseholdData } from '../../queries/useHouseholdData';
 import { useAuthStore } from '../../stores/auth.store';
 import { comparisonApi } from '../../api';
 import { qk } from '../../queries/keys';
 import { krw, krwShort } from '../../lib/format';
 import { TE } from '../../lib/toss-emoji';
 import { ASSET_CATEGORY_META } from '../../lib/category-meta';
+import { adaptYearlyComparison, summarizeChange } from '../../lib/net-worth';
 
 export default function CompareScreen() {
   const theme = useTheme();
-  const data = useHouseholdData();
   const hid = useAuthStore((s) => s.currentHousehold?.id);
 
   const compareQ = useQuery({
@@ -27,33 +26,24 @@ export default function CompareScreen() {
     staleTime: 60_000,
   });
 
-  const apiData: any = compareQ.data;
-  const apiYearlyContrib: Record<number, any[]> = apiData?.yearlyContrib ?? {};
-  const years = Object.keys(apiYearlyContrib).map(Number).sort((a, b) => a - b);
-  const [selectedYearIdx, setSelectedYearIdx] = useState(years.length > 1 ? years.length - 1 : 0);
-  const selectedYear = years[selectedYearIdx] ?? years[years.length - 1] ?? new Date().getFullYear();
+  const { yearlyContrib: apiYearlyContrib, netWorthByYear } = useMemo(() => adaptYearlyComparison(compareQ.data), [compareQ.data]);
+  const years = Object.keys(netWorthByYear).map(Number).sort((a, b) => a - b);
+  const [pickedYear, setPickedYear] = useState<number | null>(null);
+  const currentYear = new Date().getFullYear();
+  const selectedYear = pickedYear != null && years.includes(pickedYear) ? pickedYear : (years[years.length - 1] ?? currentYear);
   const prevYear = selectedYear - 1;
 
-  const contribs: { category: string; value: number; color: string }[] = apiYearlyContrib[selectedYear] ?? [];
-
-  const prevNetWorth = useMemo(() => {
-    const h = data.netWorth.monthlyHistory;
-    const prevEntry = h.filter((p) => p.date.startsWith(`${prevYear}-12`)).pop();
-    const fallback = data.netWorth.current - contribs.reduce((s, c) => s + c.value, 0);
-    return prevEntry?.value ?? fallback;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedYear, data, prevYear, contribs]);
-
+  const contribs = apiYearlyContrib[selectedYear] ?? [];
   const change = contribs.reduce((s, c) => s + c.value, 0);
-  const currentNetWorth = prevNetWorth + change;
+  const prevNetWorth = netWorthByYear[prevYear] ?? 0;
+  const currentNetWorth = netWorthByYear[selectedYear] ?? prevNetWorth + change;
 
   const wfData: { label: string; value: number }[] = [
     { label: `${prevYear}년말`, value: prevNetWorth },
     ...contribs.map((c) => ({ label: c.category, value: c.value })),
-    { label: `${selectedYear}년말`, value: currentNetWorth },
+    { label: selectedYear === currentYear ? '현재' : `${selectedYear}년말`, value: currentNetWorth },
   ];
 
-  const netWorthByYear: Record<number, number> = apiData?.netWorthByYear ?? {};
   const yearBars = years.map((y) => ({ year: y, value: netWorthByYear[y] ?? 0 }));
   const maxBar = Math.max(...yearBars.map((b) => b.value), 1);
 
@@ -82,7 +72,7 @@ export default function CompareScreen() {
             <Pressable
               key={y}
               style={[styles.yearPill, { backgroundColor: isActive ? theme.brand : theme.bg, borderColor: isActive ? theme.brand : theme.border }]}
-              onPress={() => setSelectedYearIdx(years.indexOf(y))}
+              onPress={() => setPickedYear(y)}
             >
               <Text style={{ color: isActive ? '#fff' : theme.textMuted, fontSize: 12, fontWeight: '700' }}>
                 {y - 1} → {y}
@@ -98,7 +88,7 @@ export default function CompareScreen() {
           {krw(change)} {change >= 0 ? '늘었어요' : '줄었어요'}
         </Text>
         <View style={[styles.pctChip, { backgroundColor: change >= 0 ? theme.brandSoft : '#FEE2E2' }]}>
-          <Text style={{ color: change >= 0 ? theme.brand : theme.danger, fontSize: 12, fontWeight: '700' }}>{prevNetWorth > 0 ? ((change / prevNetWorth) * 100).toFixed(1) : 0}%</Text>
+          <Text style={{ color: change >= 0 ? theme.brand : theme.danger, fontSize: 12, fontWeight: '700' }}>{summarizeChange(prevNetWorth, currentNetWorth).rateText ?? '—'}</Text>
         </View>
       </View>
 
@@ -109,7 +99,7 @@ export default function CompareScreen() {
             const h = Math.max(8, (b.value / maxBar) * 120);
             const isActive = b.year === selectedYear;
             return (
-              <Pressable key={b.year} style={styles.barCol} onPress={() => setSelectedYearIdx(years.indexOf(b.year))}>
+              <Pressable key={b.year} style={styles.barCol} onPress={() => setPickedYear(b.year)}>
                 <Text style={{ color: isActive ? theme.brand : theme.textMuted, fontSize: 10, fontWeight: '700', height: 14 }}>{isActive ? krwShort(b.value) : ''}</Text>
                 <View style={[styles.barBody, { height: h, backgroundColor: isActive ? theme.brand : theme.brandSoft }]} />
                 <Text style={{ color: isActive ? theme.brand : theme.textMuted, fontSize: 11, fontWeight: '700', marginTop: 4 }}>{b.year}</Text>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -17,6 +17,8 @@ import { getAssetCategoryMeta } from '../lib/category-meta';
 import { useHouseholdData, type HouseholdAsset } from '../queries/useHouseholdData';
 import { krw, krwShort, pct } from '../lib/format';
 import { useTheme } from '../lib/theme';
+import { todayLocal } from '../lib/date';
+import { assetChangeSince, findStaleAssets, signedValue, summarizeChange } from '../lib/net-worth';
 import { TE } from '../lib/toss-emoji';
 import { useAuthStore } from '../stores/auth.store';
 import { useDeleteAsset } from '../queries/mutations';
@@ -32,6 +34,7 @@ export default function AssetsScreen({ navigation, route }: Props) {
   const myId = user ? Number(user.id) : null;
   const isViewer = currentHousehold?.role === 'VIEWER';
   const [snapshotOpen, setSnapshotOpen] = useState(false);
+  const [staleOpen, setStaleOpen] = useState(false);
   const [actionAsset, setActionAsset] = useState<HouseholdAsset | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<HouseholdAsset | null>(null);
   const [toast, setToast] = useState('');
@@ -91,16 +94,29 @@ export default function AssetsScreen({ navigation, route }: Props) {
     if (!grouped[a.category]) grouped[a.category] = [];
     grouped[a.category]!.push(a);
   });
+  const groupSum = (items: HouseholdAsset[]) => items.reduce((s, a) => s + a.value, 0);
+  // 큰 자산군부터, 부채는 맨 아래 — 자산군 안에서도 금액순
+  const groupEntries = (Object.entries(grouped) as [AssetCategory, HouseholdAsset[]][])
+    .map(([cat, items]) => [cat, [...items].sort((x, y) => y.value - x.value)] as [AssetCategory, HouseholdAsset[]])
+    .sort(([ca, ia], [cb, ib]) => (ca === 'LIABILITY' ? 1 : cb === 'LIABILITY' ? -1 : groupSum(ib) - groupSum(ia)));
 
-  const total = filteredAssets.reduce((s, a) => s + (a.isLiability ? -a.value : a.value), 0);
+  const today = todayLocal();
+  const base30 = data.periods?.d30 ?? null;
+  const total = filteredAssets.reduce((s, a) => s + signedValue(a.isLiability, a.value), 0);
   const totalAssets = filteredAssets.reduce((s, a) => s + (a.isLiability ? 0 : a.value), 0);
   const totalLiabilities = filteredAssets.reduce((s, a) => s + (a.isLiability ? a.value : 0), 0);
-  const totalDelta = filteredAssets.reduce((s, a) => s + (a.delta ?? 0), 0);
-  const prevTotal = total - totalDelta;
-  const totalDeltaPct = prevTotal !== 0 ? (totalDelta / prevTotal) * 100 : 0;
+  // 30일 전 대비 — 그때 없던 자산은 전액을 증가로 계산 (홈 순자산 변화와 같은 기준)
+  const totalEffect = base30
+    ? filteredAssets.reduce((s, a) => {
+        const c = assetChangeSince(a, base30);
+        return s + (c ? (c.isNew ? signedValue(a.isLiability, a.value) : c.effect) : 0);
+      }, 0)
+    : 0;
+  const totalChange = base30 ? summarizeChange(total - totalEffect, total) : null;
+  const staleAssets = useMemo(() => findStaleAssets(filteredAssets, today), [filteredAssets, today]);
 
   const grossAssetsTotal = totalAssets || 1;
-  const compositionList = (Object.entries(grouped) as [AssetCategory, HouseholdAsset[]][])
+  const compositionList = groupEntries
     .filter(([cat]) => cat !== 'LIABILITY')
     .map(([cat, items]) => {
       const meta = getAssetCategoryMeta(cat);
@@ -129,6 +145,32 @@ export default function AssetsScreen({ navigation, route }: Props) {
     );
   }
 
+  function renderAssetMeta(a: HouseholdAsset) {
+    const change = assetChangeSince(a, base30);
+    const stale = a.snapshotDate ? findStaleAssets([a], today)[0] : undefined;
+    const showChange = change && (change.isNew || Math.abs(change.effect) >= 1);
+    if (!showChange && !stale) return null;
+    const baseVal = change && !change.isNew ? signedValue(a.isLiability, a.value) - change.effect : 0;
+    const ratePct = change && !change.isNew && !a.isLiability && baseVal > 0 ? (change.effect / baseVal) * 100 : null;
+    return (
+      <Text style={{ fontSize: 11, fontWeight: '600', color: theme.textMuted }}>
+        {showChange && change && (
+          change.isNew ? (
+            '신규 · '
+          ) : (
+            <Text style={{ color: change.effect >= 0 ? theme.brand : theme.danger }}>
+              30일 {change.effect > 0 ? '+' : ''}
+              {krwShort(change.effect)}
+              {ratePct != null ? ` (${pct(ratePct)})` : ''}
+              {stale ? ' · ' : ''}
+            </Text>
+          )
+        )}
+        {stale && <Text style={{ color: theme.danger }}>{stale.daysAgo}일 전 입력</Text>}
+      </Text>
+    );
+  }
+
   return (
     <SafeAreaView edges={['top']} style={[styles.root, { backgroundColor: theme.bg }]}>
       <ScrollView
@@ -149,11 +191,12 @@ export default function AssetsScreen({ navigation, route }: Props) {
                   </>
                 )}
               </Text>
-              {totalDelta !== 0 && (
-                <View style={[styles.deltaPill, { backgroundColor: totalDelta >= 0 ? 'rgba(18,185,129,0.12)' : 'rgba(255,59,48,0.12)' }]}>
-                  <Text style={{ color: totalDelta >= 0 ? '#0E9F6E' : theme.danger, fontSize: 11.5, fontWeight: '800' }}>
-                    {totalDelta >= 0 ? '▲' : '▼'} 직전 대비 {totalDelta > 0 ? '+' : ''}
-                    {krw(totalDelta)} ({pct(totalDeltaPct)})
+              {totalChange && totalEffect !== 0 && (
+                <View style={[styles.deltaPill, { backgroundColor: totalEffect >= 0 ? 'rgba(18,185,129,0.12)' : 'rgba(255,59,48,0.12)' }]}>
+                  <Text style={{ color: totalEffect >= 0 ? '#0E9F6E' : theme.danger, fontSize: 11.5, fontWeight: '800' }}>
+                    {totalEffect >= 0 ? '▲' : '▼'} 30일 전 대비 {totalEffect > 0 ? '+' : ''}
+                    {krw(totalEffect)}
+                    {totalChange.rateText ? ` (${totalChange.rateText})` : ''}
                   </Text>
                 </View>
               )}
@@ -176,6 +219,18 @@ export default function AssetsScreen({ navigation, route }: Props) {
               ))}
             </View>
           </View>
+        )}
+
+        {!isViewer && staleAssets.length > 0 && (
+          <Pressable
+            style={[styles.staleBanner, { backgroundColor: theme.card, borderColor: theme.border }]}
+            onPress={() => setStaleOpen(true)}
+          >
+            <Text style={[styles.staleBannerText, { color: theme.text }]}>
+              {staleAssets.length}개 자산이 일주일 넘게 그대로예요
+            </Text>
+            <Text style={{ color: theme.brand, fontSize: 12.5, fontWeight: '700' }}>지금 입력</Text>
+          </Pressable>
         )}
 
         {data.isLoading && (
@@ -223,10 +278,10 @@ export default function AssetsScreen({ navigation, route }: Props) {
         {!isViewer && (
           <View style={styles.actionRow}>
             <Pressable
-              style={[styles.actionBtn, { backgroundColor: theme.brand }]}
+              style={[styles.actionBtn, { backgroundColor: theme.brandSoft }]}
               onPress={() => navigation.navigate('AssetAdd', { mode: 'add' })}
             >
-              <Text style={styles.actionBtnPrimary}>＋ 자산 추가</Text>
+              <Text style={[styles.actionBtnPrimary, { color: theme.brand }]}>＋ 자산 추가</Text>
             </Pressable>
             {data.assets.length > 0 && (
               <Pressable
@@ -243,9 +298,9 @@ export default function AssetsScreen({ navigation, route }: Props) {
         {data.assets.length === 0 && <EmptyState iconCode={TE.piggy} title="아직 등록된 자산이 없어요" desc="위 버튼으로 첫 자산을 추가해보세요" />}
         {data.assets.length > 0 && filteredAssets.length === 0 && <EmptyState compact iconCode={TE.piggy} title="이 소유자의 자산이 없어요" />}
 
-        {(Object.entries(grouped) as [AssetCategory, HouseholdAsset[]][]).map(([cat, items]) => {
+        {groupEntries.map(([cat, items]) => {
           const meta = getAssetCategoryMeta(cat);
-          const sum = items.reduce((s, a) => s + (a.isLiability ? -a.value : a.value), 0);
+          const sum = items.reduce((s, a) => s + signedValue(a.isLiability, a.value), 0);
           return (
             <View key={cat} style={styles.groupBlock}>
               <View style={styles.groupHeader}>
@@ -273,12 +328,7 @@ export default function AssetsScreen({ navigation, route }: Props) {
                           <Text style={[styles.assetName, { color: theme.text }]} numberOfLines={1}>
                             {a.name}
                           </Text>
-                          {a.delta != null && (
-                            <Text style={{ color: a.delta >= 0 ? theme.brand : theme.danger, fontWeight: '600', fontSize: 11 }}>
-                              {a.delta > 0 ? '+' : ''}
-                              {krwShort(a.delta)} ({pct(a.deltaPct ?? 0)})
-                            </Text>
-                          )}
+                          {renderAssetMeta(a)}
                         </View>
                       }
                       right={
@@ -304,6 +354,12 @@ export default function AssetsScreen({ navigation, route }: Props) {
       </ScrollView>
 
       <SnapshotSheet visible={snapshotOpen} onClose={() => setSnapshotOpen(false)} onSaved={() => setToast('스냅샷을 저장했어요')} />
+      <SnapshotSheet
+        visible={staleOpen}
+        onClose={() => setStaleOpen(false)}
+        onlyAssetIds={staleAssets.map((a) => a.id)}
+        onSaved={() => setToast('스냅샷을 저장했어요')}
+      />
 
       <ActionSheet
         visible={!!actionAsset}
@@ -347,6 +403,8 @@ const styles = StyleSheet.create({
   legendDot: { width: 8, height: 8, borderRadius: 999 },
   legendName: { flex: 1, fontSize: 11, fontWeight: '600' },
   legendPct: { fontSize: 11, fontWeight: '700' },
+  staleBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 20, marginBottom: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1 },
+  staleBannerText: { fontSize: 12.5, fontWeight: '600' },
   ownerFilterSkeleton: { flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingBottom: 12 },
   ownerChipSkeleton: { width: 64, height: 30, borderRadius: 999, opacity: 0.5 },
   ownerFilterRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingBottom: 12 },

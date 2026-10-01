@@ -11,6 +11,7 @@ import { useTheme } from '../../lib/theme';
 import { useHouseholdData } from '../../queries/useHouseholdData';
 import { useAuthStore } from '../../stores/auth.store';
 import { krw, krwShort } from '../../lib/format';
+import { signedValue } from '../../lib/net-worth';
 import { todayLocal } from '../../lib/date';
 import { getErrorMessage } from '../../lib/error';
 import { TE } from '../../lib/toss-emoji';
@@ -20,6 +21,8 @@ interface SnapshotSheetProps {
   visible: boolean;
   onClose: () => void;
   focusAssetId?: string;
+  /** 지정하면 이 자산들만 입력 대상으로 보여줌 (예: 오래된 자산만) */
+  onlyAssetIds?: string[];
   /** 저장 성공 콜백 — 호출부에서 토스트 표시 */
   onSaved?: () => void;
 }
@@ -37,7 +40,7 @@ const QUICK_STEPS = [
   { label: '+1000만', value: 10_000_000 },
 ];
 
-export default function SnapshotSheet({ visible, onClose, focusAssetId, onSaved }: SnapshotSheetProps) {
+export default function SnapshotSheet({ visible, onClose, focusAssetId, onlyAssetIds, onSaved }: SnapshotSheetProps) {
   const theme = useTheme();
   const data = useHouseholdData();
   const { user } = useAuthStore();
@@ -64,18 +67,21 @@ export default function SnapshotSheet({ visible, onClose, focusAssetId, onSaved 
 
   const assets = focusAssetId
     ? data.assets.filter((a) => a.id === focusAssetId)
-    : data.assets.filter((a) => a.ownerUserId == null || a.ownerUserId === myId);
+    : data.assets.filter(
+        (a) => (a.ownerUserId == null || a.ownerUserId === myId) && (!onlyAssetIds || onlyAssetIds.includes(a.id)),
+      );
 
   const getNum = (id: string) => {
     const raw = values[id]?.replace(/[^0-9]/g, '');
     return raw ? Number(raw) : null;
   };
 
+  // 부채는 순자산에서 차감되므로 합계 변화도 부호를 반영
   const totalNew = assets.reduce((sum, a) => {
     const v = getNum(a.id);
-    return sum + (v !== null ? v : a.value);
+    return sum + signedValue(a.isLiability, v !== null ? v : a.value);
   }, 0);
-  const totalOld = assets.reduce((sum, a) => sum + a.value, 0);
+  const totalOld = assets.reduce((sum, a) => sum + signedValue(a.isLiability, a.value), 0);
   const delta = totalNew - totalOld;
   const filledCount = assets.filter((a) => getNum(a.id) !== null).length;
   const hasInput = filledCount > 0;
@@ -148,7 +154,7 @@ export default function SnapshotSheet({ visible, onClose, focusAssetId, onSaved 
   }
 
   const isPending = upsert.isPending || batch.isPending;
-  const title = focusAssetId ? '개별 스냅샷 입력' : '일괄 스냅샷 입력';
+  const title = focusAssetId ? '개별 스냅샷 입력' : onlyAssetIds ? '오래된 자산 입력' : '일괄 스냅샷 입력';
   const isEmpty = assets.length === 0;
 
   if (isEmpty) {

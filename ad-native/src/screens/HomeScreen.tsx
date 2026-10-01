@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -18,11 +18,20 @@ import AutoBadge from '../components/common/AutoBadge';
 import TossEmoji from '../components/common/TossEmoji';
 import { Icon } from '../components/common/Icon';
 import LineChart from '../components/charts/LineChart';
-import DonutChart from '../components/charts/DonutChart';
 import SnapshotSheet from '../components/sheets/SnapshotSheet';
 import EmptyState from '../components/common/EmptyState';
 import AppToast from '../components/common/AppToast';
 import { todayLocal, daysBetween, isSameMonth } from '../lib/date';
+import {
+  PERIOD_BASE_TEXT,
+  PERIOD_LABELS,
+  categoryContributions,
+  findStaleAssets,
+  hasFlowCoverage,
+  sumFlows,
+  summarizeChange,
+  type PeriodKey,
+} from '../lib/net-worth';
 import type { MainTabParamList } from '../navigation/types';
 
 type Props = BottomTabScreenProps<MainTabParamList, 'Home'>;
@@ -31,7 +40,9 @@ export default function HomeScreen({ navigation }: Props) {
   const theme = useTheme();
   const data = useHouseholdData();
   const [chartRange, setChartRange] = useState('1년');
+  const [periodLabel, setPeriodLabel] = useState(PERIOD_LABELS.d30);
   const [snapshotVisible, setSnapshotVisible] = useState(false);
+  const [staleSheetVisible, setStaleSheetVisible] = useState(false);
   const [toast, setToast] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
@@ -58,17 +69,71 @@ export default function HomeScreen({ navigation }: Props) {
       : `마지막 입력 후 ${daysBetween(lastInputDate, today)}일 지났어요`;
 
   const nw = data.netWorth;
-  const change = nw.current - nw.lastYear;
-  const changePct = nw.lastYear > 0 ? (change / nw.lastYear) * 100 : 0;
+  const periodKey = (Object.keys(PERIOD_LABELS) as PeriodKey[]).find((k) => PERIOD_LABELS[k] === periodLabel) ?? 'd30';
+  const base = data.periods?.[periodKey] ?? null;
+  const summary = base ? summarizeChange(base.netWorth, nw.current) : null;
+  const up = (summary?.change ?? 0) >= 0;
+
+  // 수입·지출로 설명되는 변화(모은 돈)와 나머지(평가손익·입력 차이)로 분해 — 거래 기록이 기준일 이전부터 있을 때만
+  const flows = useMemo(() => {
+    if (!base || !summary || !hasFlowCoverage(data.transactions, base.date)) return null;
+    const f = sumFlows(data.transactions, base.date, today);
+    const saved = f.income - f.expense;
+    return { ...f, saved, other: summary.change - saved };
+  }, [base, summary, data.transactions, today]);
+
+  const contribs = useMemo(() => (base ? categoryContributions(data.donut, base.byCategory) : []), [base, data.donut]);
+  const maxContrib = Math.max(...contribs.map((c) => Math.abs(c.value)), 1);
+
+  const staleAssets = useMemo(() => findStaleAssets(data.assets, today), [data.assets, today]);
 
   const all = nw.monthlyHistory;
   const sliced = chartRange === '1년' ? all.slice(-12) : chartRange === '3년' ? all.slice(-36) : all;
-  const first = sliced[0]?.value ?? 0;
-  const last = sliced[sliced.length - 1]?.value ?? 0;
-  const delta = last - first;
-  const deltaPct = first ? (delta / first) * 100 : 0;
+  const chartChange = summarizeChange(sliced[0]?.value ?? 0, sliced[sliced.length - 1]?.value ?? 0);
 
-  const recentTxs = data.transactions.slice(0, 3);
+  const pastTxs = data.transactions.filter((t) => t.date <= today);
+  const recentTxs = pastTxs.slice(0, 3);
+  const upcomingTxs = data.transactions
+    .filter((t) => t.date > today)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 3);
+
+  function renderTx(tx: (typeof data.transactions)[number], i: number, list: unknown[], upcoming = false) {
+    const catVisual = resolveCategoryVisual(tx.categoryId, tx.category, data.categories);
+    return (
+      <React.Fragment key={tx.id}>
+        <ListRow
+          left={
+            <View style={[styles.txIcon, { backgroundColor: theme.bg }]}>
+              <CategoryIcon icon={catVisual.icon} size={22} />
+            </View>
+          }
+          contents={
+            <View style={{ minWidth: 0 }}>
+              <View style={styles.txTitleRow}>
+                <Text style={[styles.txTitle, { color: theme.text }]} numberOfLines={1}>
+                  {tx.title}
+                </Text>
+                {tx.auto && <AutoBadge />}
+              </View>
+              <Text style={[styles.txMeta, { color: theme.textMuted }]}>
+                {tx.category} · {tx.date.slice(5).replace('-', '/')}
+                {upcoming ? ` · ${daysBetween(today, tx.date)}일 뒤` : ''}
+              </Text>
+            </View>
+          }
+          right={
+            <Text style={[styles.txAmount, { color: upcoming ? theme.textMuted : tx.type === 'INCOME' ? theme.brand : theme.text }]}>
+              {tx.type === 'INCOME' ? '+' : '-'}
+              {krwShort(tx.amount)}원
+            </Text>
+          }
+          verticalPadding="small"
+        />
+        {i < list.length - 1 && <Border type="full" />}
+      </React.Fragment>
+    );
+  }
 
   return (
     <SafeAreaView edges={['top']} style={[styles.root, { backgroundColor: theme.bg }]}>
@@ -76,21 +141,34 @@ export default function HomeScreen({ navigation }: Props) {
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.brand} colors={[theme.brand]} />}
       >
-        {/* Period label */}
-        <View style={styles.periodRow}>
-          <Text style={[styles.periodText, { color: theme.textMuted }]}>전년 동기 대비</Text>
-          <Text style={[styles.periodText, { color: theme.textMuted }]}>{nw.snapshotDate} 기준</Text>
-        </View>
-
         {/* Net worth hero */}
         <View style={styles.heroBlock}>
-          <Text style={[styles.heroLabel, { color: theme.textMuted }]}>우리집 순자산</Text>
+          <View style={styles.periodRow}>
+            <Text style={[styles.heroLabel, { color: theme.textMuted }]}>우리집 순자산</Text>
+            <Text style={[styles.periodText, { color: theme.textMuted }]}>{data.periods?.asOf ?? nw.snapshotDate} 기준</Text>
+          </View>
           <Text style={[styles.heroValue, { color: theme.text }]}>{krw(nw.current)}</Text>
-          <View style={styles.changeRow}>
-            <Badge type="blue" badgeStyle="weak" size="small">
-              {pct(changePct)}
-            </Badge>
-            <Text style={[styles.changeAbs, { color: theme.text }]}>{krw(change)}</Text>
+          {summary && base && (
+            <>
+              <View style={styles.changeRow}>
+                {summary.rateText && (
+                  <Badge type={up ? 'blue' : 'red'} badgeStyle="weak" size="small">
+                    {summary.rateText}
+                  </Badge>
+                )}
+                <Text style={[styles.changeAbs, { color: up ? theme.brand : theme.danger }]}>
+                  {up ? '+' : ''}
+                  {krw(summary.change)}
+                </Text>
+                <Text style={[styles.periodText, { color: theme.textMuted }]}>{PERIOD_BASE_TEXT[periodKey]} 대비</Text>
+              </View>
+              <Text style={[styles.baseLine, { color: theme.textMuted }]}>
+                {base.date} {krwShort(base.netWorth)}원 → 지금 {krwShort(nw.current)}원
+              </Text>
+            </>
+          )}
+          <View style={styles.periodSeg}>
+            <Segmented options={Object.values(PERIOD_LABELS)} value={periodLabel} onChange={setPeriodLabel} small alignment="fluid" />
           </View>
         </View>
 
@@ -109,18 +187,82 @@ export default function HomeScreen({ navigation }: Props) {
           <Text style={[styles.ctaCaption, { color: theme.textMuted }]}>{ctaCaption}</Text>
         </View>
 
+        {/* Stale assets */}
+        {staleAssets.length > 0 && (
+          <View style={styles.sectionPad}>
+            <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <Text style={[styles.cardTitle, { color: theme.text }]}>{staleAssets.length}개 자산이 일주일 넘게 그대로예요</Text>
+              <Text style={[styles.cardSub, { color: theme.textMuted }]}>오래된 값이 섞이면 순자산이 실제와 달라질 수 있어요</Text>
+              {staleAssets.slice(0, 3).map((a) => (
+                <View key={a.id} style={styles.staleRow}>
+                  <Text style={[styles.staleName, { color: theme.text }]} numberOfLines={1}>
+                    {a.name}
+                  </Text>
+                  <Text style={[styles.staleDays, { color: theme.danger }]}>{a.daysAgo}일 전</Text>
+                </View>
+              ))}
+              {staleAssets.length > 3 && <Text style={[styles.txMeta, { color: theme.textMuted }]}>외 {staleAssets.length - 3}개</Text>}
+              <View style={{ marginTop: 12 }}>
+                <Button display="full" size="medium" type="primary" style="weak" onPress={() => setStaleSheetVisible(true)}>
+                  이 자산만 입력하기
+                </Button>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Why it changed */}
+        {flows && base && (
+          <View style={styles.sectionPad}>
+            <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <Text style={[styles.cardTitle, { color: theme.text }]}>{PERIOD_BASE_TEXT[periodKey]}부터 왜 변했나요?</Text>
+              <Text style={[styles.cardSub, { color: theme.textMuted }]}>가계부 수입·지출로 설명되는 부분과 나머지를 나눠봤어요</Text>
+              <View style={styles.whyRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.whyLabel, { color: theme.text }]}>모은 돈 (수입 − 지출)</Text>
+                  <Text style={[styles.txMeta, { color: theme.textMuted }]}>
+                    수입 {krwShort(flows.income)}원 · 지출 {krwShort(flows.expense)}원
+                  </Text>
+                </View>
+                <Text style={[styles.whyValue, { color: flows.saved >= 0 ? theme.brand : theme.danger }]}>
+                  {flows.saved >= 0 ? '+' : ''}
+                  {krwShort(flows.saved)}원
+                </Text>
+              </View>
+              <View style={styles.whyRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.whyLabel, { color: theme.text }]}>투자 평가·기타</Text>
+                  <Text style={[styles.txMeta, { color: theme.textMuted }]}>주가 변동, 스냅샷 입력 시차 등</Text>
+                </View>
+                <Text style={[styles.whyValue, { color: flows.other >= 0 ? theme.brand : theme.danger }]}>
+                  {flows.other >= 0 ? '+' : ''}
+                  {krwShort(flows.other)}원
+                </Text>
+              </View>
+              <Border type="full" />
+              <View style={styles.whyRow}>
+                <Text style={[styles.whyLabel, { color: theme.text, flex: 1 }]}>순자산 변화</Text>
+                <Text style={[styles.whyValue, { color: up ? theme.brand : theme.danger }]}>
+                  {up ? '+' : ''}
+                  {krwShort(summary!.change)}원
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* Chart card */}
         <View style={styles.sectionPad}>
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={styles.cardHeader}>
               <Text style={[styles.cardTitle, { color: theme.text }]}>순자산 변화</Text>
-              <Segmented options={['1년', '3년', '5년']} value={chartRange} onChange={setChartRange} small alignment="fluid" />
+              <Segmented options={['1년', '3년', '전체']} value={chartRange} onChange={setChartRange} small alignment="fluid" />
             </View>
             <Text style={[styles.chartSubtitle, { color: theme.textMuted }]}>
               {sliced[0]?.date} → {sliced[sliced.length - 1]?.date}{'  '}
-              <Text style={{ color: delta >= 0 ? theme.brand : theme.danger, fontWeight: '700' }}>
-                {delta > 0 ? '+' : ''}
-                {krwShort(delta)}원 ({pct(deltaPct)})
+              <Text style={{ color: chartChange.change >= 0 ? theme.brand : theme.danger, fontWeight: '700' }}>
+                {chartChange.change > 0 ? '+' : ''}
+                {krwShort(chartChange.change)}원{chartChange.rateText ? ` (${chartChange.rateText})` : ''}
               </Text>
             </Text>
             <LineChart data={sliced} width={295} height={180} color={theme.brand} dark={theme.dark} />
@@ -142,53 +284,31 @@ export default function HomeScreen({ navigation }: Props) {
           </Pressable>
         </View>
 
-        {/* Donut contribution card */}
+        {/* Category contribution card */}
         <View style={styles.sectionPad}>
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <Text style={[styles.cardTitle, { color: theme.text }]}>올해 자산군별 기여도</Text>
-            <Text style={[styles.cardSub, { color: theme.textMuted }]}>우리집 순자산이 얼마나 늘었는지 자산별로 쪼개봤어요</Text>
-            {data.contributions.length === 0 ? (
-              <EmptyState compact iconCode={TE.chartBar} title="아직 기여도 데이터가 없어요" desc="스냅샷을 입력하면 자산군별 기여도가 표시돼요" />
+            <Text style={[styles.cardTitle, { color: theme.text }]}>{PERIOD_BASE_TEXT[periodKey]}보다 자산군별로 이만큼 달라졌어요</Text>
+            <Text style={[styles.cardSub, { color: theme.textMuted }]}>순자산 변화를 자산군별로 쪼갠 값이에요 (부채가 줄면 +)</Text>
+            {contribs.length === 0 ? (
+              <EmptyState compact iconCode={TE.chartBar} title="아직 비교할 데이터가 없어요" desc="스냅샷이 쌓이면 자산군별 변화가 표시돼요" />
             ) : (
-              <>
-                <View style={styles.donutRow}>
-                  <View style={styles.donutWrap}>
-                    <DonutChart data={data.contributions} size={140} thickness={18} dark={theme.dark} />
-                    <View style={styles.donutCenter}>
-                      <Text style={[styles.donutLabel, { color: theme.textMuted }]}>총 기여</Text>
-                      <Text style={[styles.donutValue, { color: theme.text }]}>
-                        {(() => {
-                          const sum = data.contributions.reduce((s, c) => s + c.value, 0);
-                          return `${sum >= 0 ? '+' : ''}${krwShort(sum)}`;
-                        })()}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.legend}>
-                    {data.contributions.slice(0, 4).map((c, i) => (
-                      <View key={i} style={styles.legendRow}>
-                        <View style={[styles.legendDot, { backgroundColor: c.color }]} />
-                        <Text style={[styles.legendCat, { color: theme.text }]} numberOfLines={1}>
-                          {c.category}
-                        </Text>
-                        <Text style={[styles.legendVal, { color: c.value >= 0 ? theme.brand : theme.danger }]}>
-                          {c.value > 0 ? '+' : ''}
-                          {krwShort(c.value)}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-                {data.contributions[0] && (
-                  <View style={[styles.insightBox, { backgroundColor: theme.brandSoft }]}>
-                    <Text style={[styles.insightText, { color: theme.text }]}>
-                      {'💡 '}
-                      <Text style={{ fontWeight: '800' }}>{data.contributions[0].category}</Text>
-                      {`가 우리집 자산 성장의 가장 큰 원동력이에요.\n올해만 +${krwShort(data.contributions[0].value)} 기여했어요.`}
+              contribs.map((c) => (
+                <View key={c.category} style={styles.contribBlock}>
+                  <View style={styles.legendRow}>
+                    <View style={[styles.legendDot, { backgroundColor: c.color }]} />
+                    <Text style={[styles.legendCat, { color: theme.text }]} numberOfLines={1}>
+                      {c.label}
+                    </Text>
+                    <Text style={[styles.legendVal, { color: c.value >= 0 ? theme.brand : theme.danger }]}>
+                      {c.value > 0 ? '+' : ''}
+                      {krwShort(c.value)}원
                     </Text>
                   </View>
-                )}
-              </>
+                  <View style={[styles.barTrack, { backgroundColor: theme.border }]}>
+                    <View style={[styles.barFill, { width: `${Math.max(3, (Math.abs(c.value) / maxContrib) * 100)}%`, backgroundColor: c.value >= 0 ? c.color : theme.danger }]} />
+                  </View>
+                </View>
+              ))
             )}
           </View>
         </View>
@@ -204,45 +324,23 @@ export default function HomeScreen({ navigation }: Props) {
             )}
           </View>
           {recentTxs.length === 0 && <EmptyState compact iconCode={TE.receipt} title="아직 거래 내역이 없어요" desc="가계부에서 첫 거래를 기록해보세요" />}
-          {recentTxs.map((tx, i) => {
-            const catVisual = resolveCategoryVisual(tx.categoryId, tx.category, data.categories);
-            return (
-              <React.Fragment key={tx.id}>
-                <ListRow
-                  left={
-                    <View style={[styles.txIcon, { backgroundColor: theme.bg }]}>
-                      <CategoryIcon icon={catVisual.icon} size={22} />
-                    </View>
-                  }
-                  contents={
-                    <View style={{ minWidth: 0 }}>
-                      <View style={styles.txTitleRow}>
-                        <Text style={[styles.txTitle, { color: theme.text }]} numberOfLines={1}>
-                          {tx.title}
-                        </Text>
-                        {tx.auto && <AutoBadge />}
-                      </View>
-                      <Text style={[styles.txMeta, { color: theme.textMuted }]}>
-                        {tx.category} · {tx.date.slice(5).replace('-', '/')}
-                      </Text>
-                    </View>
-                  }
-                  right={
-                    <Text style={[styles.txAmount, { color: tx.type === 'INCOME' ? theme.brand : theme.text }]}>
-                      {tx.type === 'INCOME' ? '+' : '-'}
-                      {krwShort(tx.amount)}원
-                    </Text>
-                  }
-                  verticalPadding="small"
-                />
-                {i < recentTxs.length - 1 && <Border type="full" />}
-              </React.Fragment>
-            );
-          })}
+          {recentTxs.map((tx, i) => renderTx(tx, i, recentTxs))}
+          {upcomingTxs.length > 0 && (
+            <>
+              <Text style={[styles.upcomingTitle, { color: theme.textMuted }]}>예정된 거래 · {upcomingTxs.length}건</Text>
+              {upcomingTxs.map((tx, i) => renderTx(tx, i, upcomingTxs, true))}
+            </>
+          )}
         </View>
       </ScrollView>
 
       <SnapshotSheet visible={snapshotVisible} onClose={() => setSnapshotVisible(false)} onSaved={() => setToast('스냅샷을 저장했어요')} />
+      <SnapshotSheet
+        visible={staleSheetVisible}
+        onClose={() => setStaleSheetVisible(false)}
+        onlyAssetIds={staleAssets.map((a) => a.id)}
+        onSaved={() => setToast('스냅샷을 저장했어요')}
+      />
       <AppToast open={!!toast} text={toast} onClose={() => setToast('')} />
     </SafeAreaView>
   );
@@ -251,13 +349,25 @@ export default function HomeScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingBottom: 24 },
-  periodRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12 },
+  periodRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   periodText: { fontSize: 12 },
-  heroBlock: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4 },
+  heroBlock: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 },
   heroLabel: { fontSize: 13, fontWeight: '500', marginBottom: 4 },
   heroValue: { fontSize: 30, fontWeight: '800', letterSpacing: -0.8 },
   changeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   changeAbs: { fontSize: 14, fontWeight: '700' },
+  baseLine: { fontSize: 12, marginTop: 6 },
+  periodSeg: { marginTop: 12 },
+  staleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
+  staleName: { flex: 1, fontSize: 13, fontWeight: '600' },
+  staleDays: { fontSize: 12, fontWeight: '700' },
+  whyRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10 },
+  whyLabel: { fontSize: 13.5, fontWeight: '600' },
+  whyValue: { fontSize: 14, fontWeight: '800' },
+  contribBlock: { marginTop: 12, gap: 6 },
+  barTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
+  barFill: { height: 6, borderRadius: 3 },
+  upcomingTitle: { fontSize: 12, fontWeight: '700', marginTop: 16, marginBottom: 4 },
   sectionPad: { paddingHorizontal: 20, paddingTop: 16 },
   ctaCaption: { fontSize: 12, textAlign: 'center', marginTop: 8 },
   card: { borderRadius: 16, borderWidth: 1, padding: 16 },
@@ -269,18 +379,10 @@ const styles = StyleSheet.create({
   yoyCard: { flexDirection: 'row', alignItems: 'center' },
   yoyTitle: { fontSize: 14, fontWeight: '700', marginBottom: 2 },
   yoySub: { fontSize: 12 },
-  donutRow: { flexDirection: 'row', alignItems: 'center', gap: 20 },
-  donutWrap: { alignItems: 'center', justifyContent: 'center' },
-  donutCenter: { position: 'absolute', alignItems: 'center' },
-  donutLabel: { fontSize: 11 },
-  donutValue: { fontSize: 15, fontWeight: '800' },
-  legend: { flex: 1, gap: 8 },
   legendRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
   legendCat: { flex: 1, fontSize: 12, fontWeight: '600' },
   legendVal: { fontSize: 12, fontWeight: '700' },
-  insightBox: { borderRadius: 12, padding: 12, marginTop: 14 },
-  insightText: { fontSize: 12.5, lineHeight: 18 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   txIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   txTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },

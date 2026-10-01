@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { dashboardApi, assetsApi, txApi, recurringApi, householdsApi, categoriesApi } from '../api';
 import { useAuthStore } from '../stores/auth.store';
 import type { AssetCategory, Category, CostType, MemberRole, RecurringFrequency } from '../types/api';
-import { ASSET_CATEGORY_META } from '../lib/category-meta';
+import { normalizeAssetCategory, parsePeriods, type Periods } from '../lib/net-worth';
 import { qk } from './keys';
 import { toLocalDateString } from '../lib/date';
 
@@ -66,11 +66,13 @@ export interface HouseholdMember {
 export interface HouseholdData {
   netWorth: {
     current: number;
-    lastYear: number;
     snapshotDate: string;
     monthlyHistory: { date: string; value: number }[];
   };
-  contributions: { category: string; value: number; color: string }[];
+  /** 현재 자산군별 합계 (부채는 isLiability로 구분, 금액은 양수) */
+  donut: { category: AssetCategory; isLiability: boolean; valueKRW: number }[];
+  /** 30일 전·작년 말·1년 전 시점 순자산 (기간별 증감 계산 기준) */
+  periods: Periods | null;
   assets: HouseholdAsset[];
   transactions: HouseholdTransaction[];
   recurring: HouseholdRecurring[];
@@ -82,8 +84,9 @@ export interface HouseholdData {
 }
 
 const EMPTY: HouseholdData = {
-  netWorth: { current: 0, lastYear: 0, snapshotDate: '—', monthlyHistory: [] },
-  contributions: [],
+  netWorth: { current: 0, snapshotDate: '—', monthlyHistory: [] },
+  donut: [],
+  periods: null,
   assets: [],
   transactions: [],
   recurring: [],
@@ -92,33 +95,6 @@ const EMPTY: HouseholdData = {
   categories: [],
   isLoading: false,
   refetch: async () => {},
-};
-
-// 백엔드 자산 카테고리 enum(REAL_ASSET/DEBT)을 프론트 키(REAL_ESTATE/LIABILITY)로 정규화
-const CATEGORY_ALIAS: Record<string, string> = {
-  REAL_ASSET: 'REAL_ESTATE',
-  DEBT: 'LIABILITY',
-};
-function normalizeAssetCategory(c: string): AssetCategory {
-  return (CATEGORY_ALIAS[c] ?? c) as AssetCategory;
-}
-
-const CATEGORY_LABEL: Record<string, string> = {
-  CASH:        ASSET_CATEGORY_META.CASH.label,
-  INVESTMENT:  ASSET_CATEGORY_META.INVESTMENT.label,
-  CRYPTO:      ASSET_CATEGORY_META.CRYPTO.label,
-  REAL_ESTATE: ASSET_CATEGORY_META.REAL_ESTATE.label,
-  PENSION:     ASSET_CATEGORY_META.PENSION.label,
-  LIABILITY:   ASSET_CATEGORY_META.LIABILITY.label,
-};
-
-const CATEGORY_COLOR: Record<string, string> = {
-  CASH: '#0AB39C',
-  INVESTMENT: '#3182F6',
-  CRYPTO: '#A78BFA',
-  REAL_ESTATE: '#F59E0B',
-  PENSION: '#EC4899',
-  LIABILITY: '#94A3B8',
 };
 
 function computeNextDate(dayOfMonth: number): string {
@@ -218,21 +194,15 @@ export function useHouseholdData(): HouseholdData {
   // 순자산 시계열
   const timeseries: { month: string; netWorth: number }[] = dash?.timeseries ?? [];
   const monthlyHistory = timeseries.map((t) => ({ date: t.month, value: Number(t.netWorth) || 0 }));
-  const lastYearEntry = timeseries.length >= 13 ? timeseries[timeseries.length - 13] : null;
   const snapshotDate = timeseries[timeseries.length - 1]?.month ?? '—';
 
-  // 자산군별 기여도 (도넛)
-  const donut: { category: string; isLiability: boolean; valueKRW: number }[] = dash?.donut ?? [];
-  const contributions = donut
-    .filter((d) => !d.isLiability)
-    .map((d) => {
-      const key = normalizeAssetCategory(d.category);
-      return {
-        category: CATEGORY_LABEL[key] ?? key,
-        value: Number(d.valueKRW) || 0,
-        color: CATEGORY_COLOR[key] ?? '#8B95A1',
-      };
-    });
+  // 현재 자산군별 합계 (도넛)
+  const donut = ((dash?.donut ?? []) as { category: string; isLiability: boolean; valueKRW: number }[]).map((d) => ({
+    category: normalizeAssetCategory(d.category),
+    isLiability: !!d.isLiability,
+    valueKRW: Number(d.valueKRW) || 0,
+  }));
+  const periods = parsePeriods(dash?.periods);
 
   // 자산
   const assets = rawAssets.map((a: any) => {
@@ -328,11 +298,11 @@ export function useHouseholdData(): HouseholdData {
   return {
     netWorth: {
       current: Number(dash?.netWorth) || 0,
-      lastYear: Number(lastYearEntry?.netWorth) || 0,
       snapshotDate,
       monthlyHistory,
     },
-    contributions,
+    donut,
+    periods,
     assets,
     transactions,
     recurring,

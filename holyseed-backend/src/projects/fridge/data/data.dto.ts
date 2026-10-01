@@ -57,6 +57,12 @@ export class CreateShopDto {
   @IsOptional()
   @IsBoolean()
   done?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @Transform(trim)
+  @Length(0, 50, { message: '메모는 50자 이하여야 합니다.' })
+  note?: string | null;
 }
 export class UpdateShopDto extends PartialType(CreateShopDto) {}
 

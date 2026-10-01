@@ -11,6 +11,45 @@ import { useFridgeState } from '../hooks/useFridge'
 import { useNow } from '../hooks/useNow'
 import SheetHost from '../sheets/SheetHost'
 
+interface NavItem {
+  to: string
+  label: string
+  icon: ReactNode
+  badge?: number
+  urgent?: boolean
+}
+
+function Badge({ item, className = '' }: { item: NavItem; className?: string }) {
+  if (!item.badge) return null
+  return (
+    <span
+      className={`min-w-[22px] rounded-full px-1.5 text-center text-[13px] font-bold leading-[22px] text-bg ${
+        item.urgent ? 'bg-coral' : 'bg-sub'
+      } ${className}`}
+    >
+      {item.badge}
+    </span>
+  )
+}
+
+function SideItem({ item, className = '' }: { item: NavItem; className?: string }) {
+  return (
+    <li className={className}>
+      <NavLink
+        to={item.to}
+        end={item.to === '/'}
+        className={({ isActive }) =>
+          `relative flex flex-col items-center gap-1.5 rounded-[18px] px-1 py-4 ${isActive ? 'bg-amber text-bg' : 'text-sub'}`
+        }
+      >
+        {item.icon}
+        <span className="text-[18px] font-semibold leading-none">{item.label}</span>
+        <Badge item={item} className="absolute right-2 top-2" />
+      </NavLink>
+    </li>
+  )
+}
+
 export default function AppShell() {
   const q = useFridgeState()
   const now = useNow()
@@ -35,85 +74,47 @@ export default function AppShell() {
   const soon = toIngredientViews(state.ingredients).filter((x) => x.d <= 3).length
   const shopLeft = state.shop.filter((x) => !x.done).length
 
-  const items: { to: string; label: string; icon: ReactNode; sub: string; subCls: string }[] = [
-    { to: '/', label: '홈', icon: <HomeIcon />, sub: '', subCls: '' },
-    { to: '/calendar', label: '캘린더', icon: <CalIcon />, sub: todayCount ? `오늘 ${todayCount}` : '', subCls: '' },
-    { to: '/ingredients', label: '재료', icon: <FridgeIcon />, sub: soon ? `임박 ${soon}` : '', subCls: 'coral' },
-    { to: '/shopping', label: '장보기', icon: <CartIcon />, sub: shopLeft ? `${shopLeft}개` : '', subCls: '' },
+  const items: NavItem[] = [
+    { to: '/', label: '홈', icon: <HomeIcon /> },
+    { to: '/calendar', label: '캘린더', icon: <CalIcon />, badge: todayCount || undefined },
+    { to: '/ingredients', label: '재료', icon: <FridgeIcon />, badge: soon || undefined, urgent: true },
+    { to: '/shopping', label: '장보기', icon: <CartIcon />, badge: shopLeft || undefined },
   ]
-  const settings = { to: '/settings', label: '설정', icon: <GearIcon size={26} />, sub: '', subCls: '' }
+  const settings: NavItem = { to: '/settings', label: '설정', icon: <GearIcon size={26} /> }
 
   return (
     <div className="relative flex h-full bg-bg">
-      <nav className="hidden w-28 shrink-0 flex-col gap-2 bg-side px-3 py-5 lg:flex">
-        {items.map((it) => (
-          <NavLink
-            key={it.to}
-            to={it.to}
-            end={it.to === '/'}
-            className={({ isActive }) =>
-              `flex h-24 flex-col items-center justify-center gap-1 rounded-[18px] ${
-                isActive ? 'bg-amber text-bg' : 'text-sub'
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                {it.icon}
-                <span className="text-[19px] font-semibold">{it.label}</span>
-                <span
-                  className={`h-[18px] whitespace-nowrap text-[15px] font-medium ${
-                    isActive ? 'text-bg' : it.subCls === 'coral' ? 'text-coral' : 'text-sub'
-                  }`}
-                >
-                  {it.sub}
-                </span>
-              </>
-            )}
-          </NavLink>
-        ))}
-        <NavLink
-          to={settings.to}
-          className={({ isActive }) =>
-            `mt-auto flex h-[84px] flex-col items-center justify-center gap-1.5 rounded-[18px] ${
-              isActive ? 'bg-amber text-bg' : 'text-sub'
-            }`
-          }
-        >
-          {settings.icon}
-          <span className="text-[17px] font-semibold">{settings.label}</span>
-        </NavLink>
+      <nav className="hidden w-28 shrink-0 bg-side px-3 py-5 lg:flex lg:flex-col" aria-label="주 메뉴">
+        <ul className="flex flex-1 flex-col gap-2">
+          {items.map((it) => (
+            <SideItem key={it.to} item={it} />
+          ))}
+          <SideItem item={settings} className="mt-auto" />
+        </ul>
       </nav>
 
       <main className="relative flex min-w-0 flex-1 flex-col overflow-y-auto px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:overflow-hidden lg:px-7 lg:py-6">
         <Outlet context={{ state, now }} />
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-20 flex border-t border-line bg-side pb-[env(safe-area-inset-bottom)] lg:hidden">
-        {[...items, settings].map((it) => (
-          <NavLink
-            key={it.to}
-            to={it.to}
-            end={it.to === '/'}
-            className={({ isActive }) =>
-              `relative flex h-[68px] flex-1 flex-col items-center justify-center gap-0.5 ${
-                isActive ? 'text-amber' : 'text-sub'
-              }`
-            }
-          >
-            <span className="[&>svg]:size-6">{it.icon}</span>
-            <span className="text-[14px] font-semibold">{it.label}</span>
-            {it.sub && (
-              <span
-                className={`absolute right-[18%] top-1.5 rounded-full px-1.5 text-[12px] font-bold leading-[18px] text-bg ${
-                  it.subCls === 'coral' ? 'bg-coral' : 'bg-sub'
-                }`}
+      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-side pb-[env(safe-area-inset-bottom)] lg:hidden" aria-label="주 메뉴">
+        <ul className="flex">
+          {[...items, settings].map((it) => (
+            <li key={it.to} className="flex-1">
+              <NavLink
+                to={it.to}
+                end={it.to === '/'}
+                className={({ isActive }) =>
+                  `relative flex flex-col items-center gap-0.5 py-2.5 ${isActive ? 'text-amber' : 'text-sub'}`
+                }
               >
-                {it.sub.replace('오늘 ', '').replace('임박 ', '').replace('개', '')}
-              </span>
-            )}
-          </NavLink>
-        ))}
+                <span className="[&>svg]:size-6">{it.icon}</span>
+                <span className="text-[14px] font-semibold">{it.label}</span>
+                <Badge item={it} className="absolute right-[18%] top-1.5" />
+              </NavLink>
+            </li>
+          ))}
+        </ul>
       </nav>
 
       <SheetHost state={state} />

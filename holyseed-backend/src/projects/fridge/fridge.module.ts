@@ -14,12 +14,17 @@ import {
   FridgeHouseholdMember,
   FridgeIngredient,
   FridgeInvitation,
+  FridgeMcpToken,
   FridgePerson,
   FridgeShopItem,
   FridgeUser,
 } from './entities';
 import { HouseholdController } from './household/household.controller';
 import { HouseholdService } from './household/household.service';
+import { FridgeMcpController } from './mcp/mcp.controller';
+import { FridgeMcpTokenController } from './mcp/mcp-token.controller';
+import { FridgeMcpTokenService } from './mcp/mcp-token.service';
+import { FridgeMcpService } from './mcp/mcp.service';
 
 /**
  * 냉장고 대시보드 (/api/fridge/*) — `fridge` DB 스키마, 자체 구글 로그인(aud: fridge), 자체 가구 모델.
@@ -32,6 +37,7 @@ import { HouseholdService } from './household/household.service';
       FridgeHousehold,
       FridgeHouseholdMember,
       FridgeInvitation,
+      FridgeMcpToken,
       FridgePerson,
       FridgeFreqItem,
       FridgeIngredient,
@@ -47,7 +53,7 @@ import { HouseholdService } from './household/household.service';
       inject: [ConfigService],
     }),
   ],
-  controllers: [FridgeAuthController, HouseholdController, DataController],
-  providers: [FridgeAuthService, HouseholdService, DataService, HouseholdGuard],
+  controllers: [FridgeAuthController, HouseholdController, DataController, FridgeMcpTokenController, FridgeMcpController],
+  providers: [FridgeAuthService, HouseholdService, DataService, HouseholdGuard, FridgeMcpService, FridgeMcpTokenService],
 })
 export class FridgeModule {}

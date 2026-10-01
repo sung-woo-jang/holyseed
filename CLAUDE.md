@@ -93,6 +93,7 @@ holyseed/
   - AD와 **완전 독립**: 자체 DB 스키마·구글 로그인(서버 리다이렉트)·가구(household) 모델·JWT `aud='fridge'`. AD 계정/토큰과 섞이지 않음
   - 가구 단위 격리(`HouseholdGuard`가 모든 리소스 컨트롤러에 기본 적용), 초대 코드로 가족 합류, 1인 1가구
   - env 4종(`.env.production`에 필요): `FRIDGE_GOOGLE_CLIENT_ID`, `FRIDGE_GOOGLE_CLIENT_SECRET`, `FRIDGE_OAUTH_CALLBACK_BASE`(`https://fridge.holyseed.p-e.kr/api/fridge`), `FRIDGE_FRONT_URL`(`https://fridge.holyseed.p-e.kr`)
+  - MCP: `POST /api/fridge/mcp/:token`(stateless, URL 토큰 인증) — 삭제 계열을 뺀 25개 도구(조회·일정·재료·장보기·자주 사는 것·구성원 라벨·가구 설정). 토큰은 설정 화면 "Claude 연결"에서 발급(`fridge.mcp_tokens`, synchronize로 생성). 구현 `fridge/mcp/`
   - `fridge` 스키마는 TypeORM synchronize가 만들어주지 않아 마이그레이션 `CreateFridgeSchema`로 생성 (deploy-backend가 `migration:run` 실행)
 - **공유 모듈**: `src/shared/` - 파일 업로드, 헬스체크, 주소 검색
 

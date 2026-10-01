@@ -57,3 +57,11 @@ export interface HouseholdMemberView {
   avatarUrl: string | null
   role: Role
 }
+
+export interface McpTokenView {
+  id: number
+  label: string | null
+  lastUsedAt: string | null
+  createdAt: string
+  connectorUrl: string
+}

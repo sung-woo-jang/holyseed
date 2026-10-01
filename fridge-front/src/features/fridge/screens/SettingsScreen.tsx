@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { HouseholdMemberView } from '@/api/types'
+import type { HouseholdMemberView, McpTokenView } from '@/api/types'
 import { errorMessage, get, post } from '@/api/client'
 import { Seg, btnDanger, btnGhost, btnPrimary, inputCls } from '@/components/ui'
 import { useAuthStore } from '@/stores/auth.store'
@@ -42,6 +42,21 @@ export default function SettingsScreen() {
     queryKey: ['fridge', 'members'],
     queryFn: () => get<HouseholdMemberView[]>('/household/members'),
   })
+
+  const mcpTokens = useQuery({
+    queryKey: ['fridge', 'mcp-tokens'],
+    queryFn: () => get<McpTokenView[]>('/mcp-tokens'),
+  })
+
+  const issueMcp = async () => {
+    try {
+      const t = await post<McpTokenView>('/mcp-tokens', {})
+      await qc.invalidateQueries({ queryKey: ['fridge', 'mcp-tokens'] })
+      await copy(t.connectorUrl)
+    } catch (e) {
+      toast(errorMessage(e))
+    }
+  }
 
   const used = new Set(state.people.map((p) => p.color))
 
@@ -238,6 +253,29 @@ export default function SettingsScreen() {
                 )}
               </div>
             )}
+          </Card>
+
+          <Card title="Claude 연결" sub="Claude 앱의 '커스텀 커넥터'에 아래 주소를 넣으면 대화로 일정·재료·장보기를 보고 추가할 수 있어요 (삭제는 불가)">
+            <div className="flex flex-col gap-1.5">
+              {(mcpTokens.data ?? []).map((t) => (
+                <div key={t.id} className="flex items-center gap-3 rounded-[14px] bg-card2 py-2 pl-4 pr-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[19px] font-medium">{t.label ?? `연결 주소 ${t.id}`}</div>
+                    <div className="text-[15px] text-sub">
+                      {new Date(t.createdAt).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })} 만듦
+                      {t.lastUsedAt ? ' · 사용 중' : ' · 아직 안 씀'}
+                    </div>
+                  </div>
+                  <button className="h-11 rounded-xl bg-chip px-4 text-[18px]" onClick={() => copy(t.connectorUrl)}>
+                    주소 복사
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button className={`${btnGhost} self-start`} onClick={issueMcp}>
+              연결 주소 만들기
+            </button>
+            <div className="text-[16px] text-sub">주소가 곧 비밀번호예요. 다른 사람에게 보여주지 마세요.</div>
           </Card>
 
           <Card title="계정과 데이터">

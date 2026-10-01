@@ -7,3 +7,4 @@ export * from './freq-item.entity';
 export * from './ingredient.entity';
 export * from './shop-item.entity';
 export * from './event.entity';
+export * from './mcp-token.entity';

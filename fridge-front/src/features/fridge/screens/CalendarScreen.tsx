@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useUiStore } from '@/stores/ui.store'
 import { Seg } from '@/components/ui'
 import EventCard from '../components/EventCard'
 import { eventsOn, monthCells, monthLabel, weekDates, weekLabel } from '../lib/calendar'
-import { DOW, fmtDate, iso, todayIso } from '../lib/date'
+import { DOW, fmtDate, iso } from '../lib/date'
 import { BLUE_HEX } from '../lib/palette'
 import { personView, toEventView } from '../lib/people'
 import { useFridgeCtx } from '../layout/context'
@@ -11,13 +11,22 @@ import { useFridgeCtx } from '../layout/context'
 type View = 'week' | 'month'
 
 export default function CalendarScreen() {
-  const { state } = useFridgeCtx()
+  const { state, now } = useFridgeCtx()
   const ui = useUiStore()
-  const today = todayIso()
+  const today = iso(now)
   const [view, setView] = useState<View>('week')
   const [offset, setOffset] = useState(0)
   const [who, setWho] = useState<'all' | number>('all')
   const [selDate, setSelDate] = useState(today)
+
+  // 자정이 지나 날짜가 바뀌면 보던 주·달과 선택일을 오늘로 되돌린다 (보기 모드·구성원 필터는 유지)
+  const prevToday = useRef(today)
+  useEffect(() => {
+    if (prevToday.current === today) return
+    prevToday.current = today
+    setOffset(0)
+    setSelDate(today)
+  }, [today])
 
   const multi = state.people.length > 1
   const activeWho = multi && who !== 'all' && !state.people.some((p) => p.id === who) ? 'all' : who

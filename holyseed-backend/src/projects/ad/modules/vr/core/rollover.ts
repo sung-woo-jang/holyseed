@@ -1,6 +1,6 @@
 /**
  * V 갱신(사이클 롤오버) 공식 및 사이클 날짜 계산 — 순수함수.
- * packages/vr-core/src/rollover.ts와 동일 로직의 백엔드 사본.
+ *
  */
 
 const round2 = (n: number) => Math.round(n * 100) / 100;

@@ -11,7 +11,7 @@ const ok = (message: string, data: unknown) => ({
 });
 
 @ApiTags('지출내역')
-@Controller(['ad/expense', 'lab/expense'])
+@Controller('ad/expense')
 export class ExpenseController {
   constructor(private readonly expenseService: ExpenseService) {}
 

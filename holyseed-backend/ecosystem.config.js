@@ -13,7 +13,7 @@ module.exports = {
       env_production: {
         NODE_ENV: 'production',
         PORT: 8000,
-        CORS_ORIGINS: 'https://holyseed.p-e.kr,https://ad.holyseed.p-e.kr,https://wedding.holyseed.p-e.kr,https://lab.holyseed.p-e.kr,http://localhost:8081',
+        CORS_ORIGINS: 'https://holyseed.p-e.kr,https://ad.holyseed.p-e.kr,https://wedding.holyseed.p-e.kr,http://localhost:8081',
       },
 
       // 로그 설정
@@ -28,17 +28,6 @@ module.exports = {
       // 프로세스 시작 대기 시간
       listen_timeout: 10000,
       kill_timeout: 5000,
-    },
-    {
-      // lab 대시보드 상시 서빙 — vite preview가 dist/를 :4800에 서빙 (/api → :8000 프록시 내장)
-      name: 'lab-front',
-      cwd: '/Users/jangseong-u/project/holyseed/lab-front',
-      script: 'node_modules/vite/bin/vite.js',
-      args: 'preview',
-      instances: 1,
-      exec_mode: 'fork',
-      autorestart: true,
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     },
     {
       // laofus+VR 실주문 엔진 — holyseed-backend와 같은 dist/main.js를 다른 포트+LIVE env로 기동
@@ -64,7 +53,7 @@ module.exports = {
         // 다른 이유로 바뀌어도(2026-07-25 로컬 .env/.env.local이 holyseed_dev로 바뀌어 며칠 지난
         // 스냅샷 DB로 뜰 뻔한 사고 발생) 이 라이브 트레이딩 프로세스는 영향받지 않도록.
         DB_DATABASE: 'holyseed',
-        CORS_ORIGINS: 'https://holyseed.p-e.kr,https://ad.holyseed.p-e.kr,https://wedding.holyseed.p-e.kr,https://lab.holyseed.p-e.kr',
+        CORS_ORIGINS: 'https://holyseed.p-e.kr,https://ad.holyseed.p-e.kr,https://wedding.holyseed.p-e.kr',
         LAOFUS_LIVE: 'true',
         LAOFUS_SCHEDULER: 'true',
         LAOFUS_RUN_CRON_1: '25 3 * * 2-6',

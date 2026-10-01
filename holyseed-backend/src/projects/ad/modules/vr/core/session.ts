@@ -1,6 +1,6 @@
 /**
  * 미국 시장의 현재 활성 세션(PRE/REGULAR/AFTER) 판별 — 순수함수.
- * packages/vr-core/src/session.ts와 동일 로직의 백엔드 사본.
+ *
  *
  * laofus의 checkWindow()와 달리 VR은 "마감까지 몇 분"이 아니라 "지금 어떤 세션이 열려있는가"만
  * 필요하다. previousBusinessDay/today/nextBusinessDay 3영업일을 전부 검사한다(자정 근처 KST

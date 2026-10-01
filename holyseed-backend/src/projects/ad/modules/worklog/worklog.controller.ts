@@ -35,7 +35,7 @@ const ok = (message: string, data: unknown) => ({
 });
 
 @ApiTags('근무일지')
-@Controller(['ad/worklog', 'lab/worklog'])
+@Controller('ad/worklog')
 export class WorklogController {
   constructor(
     private readonly worklogService: WorklogService,

@@ -43,14 +43,10 @@ holyseed/
 - Vite 6 + React 19 + CSS Modules, FSD 구조
 - 개발 서버: localhost:3600
 
-### 1-1. lab-front (초기화됨 — 빈 React 껍데기)
+### 1-1. (삭제됨) lab-front / lab 도메인
 
-- 2026-10-01 웹 화면 코드를 전부 지우고 "준비 중" 한 화면만 남김. 냉장고 아이패드 대시보드를 이 자리에 새로 만들 예정(다른 세션)
-- Vite 6 + React 19 + Tailwind 4. 개발 서버 localhost:4000, preview/상시 서빙 :4800 (pm2 `lab-front`, `lab.holyseed.p-e.kr`)
-- **⚠️ `vite.config.ts`의 `preview`·`server.proxy`·`allowedHosts`는 지우면 안 됨** — ad-native 앱의 VR·근무일지·스페이스X·라오어 API가
-  `lab.holyseed.p-e.kr → nginx → :4800 → proxy(/api/laofus·/api/lab/vr → :8001, 그 외 /api → :8000)` 경로로 흐른다. 앱 화면이 전부 이 통로에 의존
-- 백엔드(`src/projects/lab`, `laofus`)·DB(`lab` 스키마)·VR 실거래 엔진은 그대로이고, 웹 화면만 없음. 무한매수법·VR·근무일지는 앱(ad-native)에서 봄
-- `packages/laofus-core`·`vr-core`·`shannon-core`는 현재 lab-front가 안 쓰지만 vite alias는 남겨둠(새 앱 만들 때 정리)
+- 2026-10-01에 웹 대시보드 `lab-front`, `lab.holyseed.p-e.kr` 도메인, pm2 `lab-front`, `deploy-lab-front` 워크플로, `packages/{laofus,vr,shannon}-core`를 모두 삭제. 백엔드 `lab`도 ad로 합쳐짐(아래 2번 참고)
+- 냉장고 아이패드 대시보드는 별도 폴더·이름으로 새로 만들 예정(다른 세션). 라오어(무한매수법)·VR·근무일지는 ad-native 앱에서만 봄
 
 ### 1-2. ad-native (자산일기 React Native 앱)
 
@@ -84,7 +80,7 @@ holyseed/
   - 방법론 문서·운용 규칙: `docs/laofus/README.md` 필독. 시드: `yarn laofus:seed`. (웹 대시보드는 2026-10-01 초기화됨 — 무한매수법은 앱 라오어 탭에서 확인)
 - **lab은 ad로 합쳐짐 (2026-10-01)**: 예전 `lab` 프로젝트(`/api/lab/*`, `lab` 스키마, lab 로그인)는 없어지고 모듈이 AD 프로젝트로 이동
   - `src/projects/ad/modules/`의 `vr`(TQQQ 밸류 리밸런싱, **실주문 엔진 — laofus-backend :8001에서 LIVE**), `worklog`(근무일지·급여), `expense`(지출, Claude MCP로만 사용), `spacex`(스페이스X 매수 기록)
-  - 경로 `/api/ad/vr·worklog·expense·spacex`, DB `ad` 스키마(마이그레이션 `MergeLabIntoAd`로 이동), 인증은 AD JWT 하나. 옛 `/api/lab/*`는 앱 전환 확인 전까지 임시 별칭으로만 남아 있음(곧 제거)
+  - 경로 `/api/ad/vr·worklog·expense·spacex`, DB `ad` 스키마(마이그레이션 `MergeLabIntoAd`로 이동), 인증은 AD JWT 하나. `/api/lab/*`·`lab.holyseed.p-e.kr`은 제거됨
   - MCP: `/api/ad/mcp/:token`에 소유자 계정(`MCP_OWNER_EMAIL`)일 때만 VR·근무일지·지출 도구가 추가로 노출 (`ad/modules/mcp/owner-tools.service.ts`)
   - **nginx(ad 도메인)**: `/api/ad/vr`·`/api/laofus`는 :8001(실주문 프로세스), 나머지 `/api`는 :8000
 - **공유 모듈**: `src/shared/` - 파일 업로드, 헬스체크, 주소 검색
@@ -108,7 +104,7 @@ holyseed/
 | 린트    | `npm run lint`      |
 | 테스트   | `npm run test`      |
 
-루트에서: `yarn dev:back`, `yarn dev:lab`, `yarn build:lab`, `yarn typecheck:lab`, `yarn dev:ad-native`, `yarn typecheck:ad-native`
+루트에서: `yarn dev:back`, `yarn dev:ad-native`, `yarn typecheck:ad-native`
 
 ---
 

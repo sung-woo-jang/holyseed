@@ -15,7 +15,7 @@ const ok = (message: string, data: unknown) => ({
 });
 
 @ApiTags('VR')
-@Controller(['ad/vr', 'lab/vr'])
+@Controller('ad/vr')
 export class VrController {
   constructor(
     private readonly vrService: VrService,

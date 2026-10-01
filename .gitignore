@@ -45,5 +45,3 @@ docs/securityMail.html
 .laofus-token-cache.json
 .laofus-probe-results.json
 
-# lab
-lab-front/dist/

@@ -13,9 +13,6 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\" --ignore-path .prettierignore",
     "clean": "rm -rf node_modules **/node_modules",
     "reset": "yarn clean && yarn install",
-    "dev:lab": "yarn --cwd lab-front dev",
-    "build:lab": "yarn --cwd lab-front build",
-    "typecheck:lab": "yarn --cwd lab-front typecheck",
     "dev:ad-native": "yarn --cwd ad-native start",
     "typecheck:ad-native": "yarn --cwd ad-native typecheck"
   },

@@ -51,17 +51,6 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     },
     {
-      // lab 대시보드 상시 서빙 (무한매수법 섹션 포함) — vite preview가 dist/를 :4800에 서빙 (/api → :8000 프록시 내장)
-      name: 'lab-front',
-      cwd: `${__dirname}/../lab-front`,
-      script: 'node_modules/vite/bin/vite.js',
-      args: 'preview',
-      instances: 1,
-      exec_mode: 'fork',
-      autorestart: true,
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-    },
-    {
       // 새벽 실행 보장 — 유휴/시스템 잠자기 방지 (전원 연결 시). 뚜껑은 열어둘 것.
       name: 'laofus-caffeinate',
       script: '/usr/bin/caffeinate',

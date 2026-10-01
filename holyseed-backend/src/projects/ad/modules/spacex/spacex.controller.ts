@@ -11,7 +11,7 @@ const ok = (message: string, data: unknown) => ({
 });
 
 @ApiTags('스페이스X')
-@Controller(['ad/spacex', 'lab/spacex'])
+@Controller('ad/spacex')
 export class SpacexController {
   constructor(private readonly spacexService: SpacexService) {}
 

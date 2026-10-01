@@ -1,6 +1,6 @@
 /**
  * V값·밴드폭으로 최소/최대 밴드를 계산 — 순수함수.
- * packages/vr-core/src/band.ts와 동일 로직의 백엔드 사본 (laofus/core와 동일한 관행).
+ *  (laofus/core와 동일한 관행).
  */
 
 export interface VrBand {

@@ -125,9 +125,9 @@ export default function AssetsScreen({ navigation, route }: Props) {
     .sort((a, b) => b.value - a.value);
   const compositionData = compositionList.map((c) => ({ value: c.value, color: c.color }));
 
-  const showOwner = data.members.length > 1;
+  // 공동 자산이 기본값이라 라벨을 붙이지 않고, 개인 소유 자산만 구성원이 여럿일 때 이름을 표시
   function ownerName(ownerUserId: number | null | undefined): string {
-    if (ownerUserId == null) return '공동';
+    if (ownerUserId == null || data.members.length < 2) return '';
     return data.members.find((m) => Number(m.id) === ownerUserId)?.name ?? '';
   }
 
@@ -135,7 +135,7 @@ export default function AssetsScreen({ navigation, route }: Props) {
     const change = assetChangeSince(a, base30);
     const stale = a.snapshotDate ? findStaleAssets([a], today)[0] : undefined;
     const showChange = change && (change.isNew || Math.abs(change.effect) >= 1);
-    const owner = showOwner ? ownerName(a.ownerUserId) : '';
+    const owner = ownerName(a.ownerUserId);
     if (!showChange && !stale && !owner) return null;
     const baseVal = change && !change.isNew ? signedValue(a.isLiability, a.value) - change.effect : 0;
     const ratePct = change && !change.isNew && !a.isLiability && baseVal > 0 ? (change.effect / baseVal) * 100 : null;

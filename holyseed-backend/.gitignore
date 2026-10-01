@@ -78,6 +78,7 @@ ssl/
 
 # Data files (행정구역 JSON 파일)
 data/
+!src/projects/fridge/data/
 
 
 .claude/*

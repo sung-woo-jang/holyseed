@@ -25,6 +25,7 @@ import { AdModule } from '@/projects/ad/ad.module';
 import { AdNativeModule } from '@/projects/ad-native/ad-native.module';
 import { WeddingModule } from '@/projects/wedding/wedding.module';
 import { LaofusModule } from '@/projects/laofus/laofus.module';
+import { FridgeModule } from '@/projects/fridge/fridge.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { LaofusModule } from '@/projects/laofus/laofus.module';
     AdNativeModule, // 자산일기 RN 앱 OTA 업데이트 서버 (/api/ad-native/* 경로)
     WeddingModule, // 결혼식 아카이브 (/api/wedding/* 경로)
     LaofusModule, // SOXL 무한매수법 자동매매 (/api/laofus/* 경로)
+    FridgeModule, // 냉장고 대시보드 (/api/fridge/* 경로, 독립 스키마·로그인)
   ],
   providers: [
     JwtStrategy,

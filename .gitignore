@@ -45,3 +45,7 @@ docs/securityMail.html
 .laofus-token-cache.json
 .laofus-probe-results.json
 
+
+# fridge-front 빌드 결과 (nginx가 직접 서빙)
+fridge-front/dist/
+fridge-front/node_modules/

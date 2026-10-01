@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans KR", system-ui, -apple-system, sans-serif;
+  --color-bg: #14130f;
+  --color-card: #211f19;
+  --color-card2: #2a2820;
+  --color-chip: #2c2a23;
+  --color-chip2: #34312a;
+  --color-line: #3a372e;
+  --color-line2: #4a463b;
+  --color-ink: #f3efe6;
+  --color-sub: #a8a191;
+  --color-amber: #f0a53a;
+  --color-coral: #ff8a6b;
+  --color-teal: #6fd0a4;
+  --color-side: #1a1914;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 20px;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
+}
+
+input {
+  font: inherit;
+  color-scheme: dark;
+}
+
+input::placeholder {
+  color: var(--color-sub);
+  opacity: 0.7;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--color-amber);
+  outline-offset: 2px;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}

@@ -17,6 +17,7 @@ export interface JwtPayload {
 const PROJECT_PREFIXES: Record<string, string> = {
   '/api/ad': 'ad',
   '/api/wedding': 'wedding',
+  '/api/fridge': 'fridge',
 };
 
 @Injectable()

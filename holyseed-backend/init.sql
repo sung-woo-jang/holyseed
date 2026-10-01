@@ -15,6 +15,7 @@ CREATE SCHEMA IF NOT EXISTS pc;
 CREATE SCHEMA IF NOT EXISTS iv;
 CREATE SCHEMA IF NOT EXISTS wedding;
 CREATE SCHEMA IF NOT EXISTS laofus;
+CREATE SCHEMA IF NOT EXISTS fridge;
 
 -- 초기 설정 완료 로그
 SELECT 'Database initialization completed' as status;

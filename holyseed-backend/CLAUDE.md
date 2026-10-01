@@ -13,6 +13,13 @@
 - **모듈 위치**: `src/projects/ad/`
 - **Swagger 문서**: `/ad/docs`
 
+### FRIDGE (냉장고 대시보드) 프로젝트
+
+- **API Prefix**: `/api/fridge/*`, **스키마**: `fridge`, **모듈 위치**: `src/projects/fridge/`, **Swagger**: `/fridge/docs`
+- AD와 완전 독립 — 자체 구글 로그인·가구(household)·초대 코드, JWT `aud='fridge'`(`jwt.strategy.ts`의 `PROJECT_PREFIXES`로 다른 프로젝트 토큰과 상호 거부)
+- 모든 데이터 컨트롤러는 `HouseholdGuard`로 가구 단위 격리. 스키마 생성은 마이그레이션 `CreateFridgeSchema`(synchronize는 스키마를 만들지 못함)
+- env: `FRIDGE_GOOGLE_CLIENT_ID/SECRET`, `FRIDGE_OAUTH_CALLBACK_BASE`, `FRIDGE_FRONT_URL`
+
 ### 공유 모듈
 
 - **파일 업로드**: 이미지 및 문서 업로드 기능 (Multer + Sharp + NCP Object Storage)

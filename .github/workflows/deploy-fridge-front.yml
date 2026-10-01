@@ -1,0 +1,32 @@
+name: Deploy Fridge Front
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'fridge-front/**'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-fridge-front
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Sync live repo to origin/master
+        run: |
+          git -C /Users/jangseong-u/project/holyseed fetch origin master
+          git -C /Users/jangseong-u/project/holyseed reset --hard origin/master
+
+      # dist는 nginx가 이 경로에서 직접 서빙하므로 별도 복사 없이 빌드만 한다
+      - name: Install dependencies & build
+        working-directory: /Users/jangseong-u/project/holyseed/fridge-front
+        run: |
+          yarn install --frozen-lockfile
+          yarn build
+
+      - name: Verify
+        run: curl -sf -o /dev/null -w "%{http_code}\n" https://fridge.holyseed.p-e.kr

@@ -14,7 +14,10 @@
     "clean": "rm -rf node_modules **/node_modules",
     "reset": "yarn clean && yarn install",
     "dev:ad-native": "yarn --cwd ad-native start",
-    "typecheck:ad-native": "yarn --cwd ad-native typecheck"
+    "typecheck:ad-native": "yarn --cwd ad-native typecheck",
+    "dev:fridge": "yarn --cwd fridge-front dev",
+    "build:fridge": "yarn --cwd fridge-front build",
+    "typecheck:fridge": "yarn --cwd fridge-front typecheck"
   },
   "devDependencies": {
     "turbo": "^2.5.4",

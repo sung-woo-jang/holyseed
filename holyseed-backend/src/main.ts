@@ -140,6 +140,37 @@ async function bootstrap() {
 
     console.log('💎 [Wedding] Swagger UI: http://localhost:8000/wedding/docs');
     console.log(`📊 [Wedding] API 개수: ${Object.keys(filteredWeddingDocument.paths).length}개`);
+
+    // ========================================
+    // FRIDGE (냉장고 대시보드) API 문서
+    // ========================================
+    const fridgeConfig = new DocumentBuilder()
+      .setTitle('Fridge API')
+      .setDescription('냉장고 대시보드 — 일정·재료·장보기를 가구 단위로 공유 (구글 로그인)')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addTag('Fridge 인증', '구글 로그인·토큰 갱신')
+      .addTag('Fridge 가구', '가구 생성·초대·구성원 관리')
+      .addTag('Fridge 데이터', '일정·재료·장보기·자주 사는 것')
+      .build();
+
+    const fridgeDocument = SwaggerModule.createDocument(app, fridgeConfig, { include: [] });
+
+    const filteredFridgeDocument = {
+      ...fridgeDocument,
+      paths: Object.fromEntries(
+        Object.entries(fridgeDocument.paths).filter(([path]) => path.startsWith('/api/fridge/')),
+      ),
+    };
+
+    SwaggerModule.setup('fridge/docs', app, filteredFridgeDocument, {
+      swaggerOptions: { persistAuthorization: true, tagsSorter: 'alpha', operationsSorter: 'alpha' },
+      customSiteTitle: 'Fridge API - 냉장고 대시보드',
+      jsonDocumentUrl: '/fridge/docs/json',
+    });
+
+    console.log('💎 [Fridge] Swagger UI: http://localhost:8000/fridge/docs');
+    console.log(`📊 [Fridge] API 개수: ${Object.keys(filteredFridgeDocument.paths).length}개`);
   }
 
   await app.listen(port, '0.0.0.0');

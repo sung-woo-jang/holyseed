@@ -22,6 +22,8 @@ holyseed/
 │
 ├── wedding-front/           # 결혼식 아카이브 웹앱 (Vite + React)
 │
+├── fridge-front/            # 냉장고 대시보드 (Vite + React + Tailwind, iPad·폰 PWA)
+│
 └── holyseed-backend/    # API 서버 (NestJS)
     └── CLAUDE.md            # Backend 프로젝트 가이드
 ```
@@ -43,10 +45,14 @@ holyseed/
 - Vite 6 + React 19 + CSS Modules, FSD 구조
 - 개발 서버: localhost:3600
 
-### 1-1. (삭제됨) lab-front / lab 도메인
+### 1-1. fridge-front (냉장고 대시보드)
 
-- 2026-10-01에 웹 대시보드 `lab-front`, `lab.holyseed.p-e.kr` 도메인, pm2 `lab-front`, `deploy-lab-front` 워크플로, `packages/{laofus,vr,shannon}-core`를 모두 삭제. 백엔드 `lab`도 ad로 합쳐짐(아래 2번 참고)
-- 냉장고 아이패드 대시보드는 별도 폴더·이름으로 새로 만들 예정(다른 세션). 라오어(무한매수법)·VR·근무일지는 ad-native 앱에서만 봄
+- 냉장고에 붙이는 iPad + 폰용 대시보드(홈·캘린더·재료·장보기·설정, 야간모드, 가구 단위 공유). `fridge.holyseed.p-e.kr`
+- Vite 6 + React 19 + Tailwind 4 + TanStack Query + zustand + PWA. **루트 워크스페이스에 포함되지 않음** — 자체 `yarn.lock`/`node_modules` (`cd fridge-front && yarn install`)
+- 개발 서버: localhost:4000 (`/api` → :8000 프록시). 루트에서 `yarn dev:fridge`·`yarn build:fridge`·`yarn typecheck:fridge`
+- 구글 로그인만 지원. 로그인 토큰은 localStorage `@fridge:*`. 서버 상태는 `GET /api/fridge/state` 한 번 + 30초 폴링/포커스 refetch
+- 배포: `deploy-fridge-front.yml`이 빌드만 하고, nginx가 `fridge-front/dist`를 레포 경로에서 직접 서빙 (pm2 프로세스 없음). 날씨는 `weather.sample.ts` 고정값(추후 연동)
+- 옛 웹 대시보드와 그 도메인은 2026-10-01에 삭제됨. 라오어(무한매수법)·VR·근무일지는 ad-native 앱에서만 봄
 
 ### 1-2. ad-native (자산일기 React Native 앱)
 
@@ -83,6 +89,11 @@ holyseed/
   - 경로 `/api/ad/vr·worklog·expense·spacex`, DB `ad` 스키마(마이그레이션 `MergeLabIntoAd`로 이동), 인증은 AD JWT 하나. `/api/lab/*`·`lab.holyseed.p-e.kr`은 제거됨
   - MCP: `/api/ad/mcp/:token`에 소유자 계정(`MCP_OWNER_EMAIL`)일 때만 VR·근무일지·지출 도구가 추가로 노출 (`ad/modules/mcp/owner-tools.service.ts`)
   - **nginx(ad 도메인)**: `/api/ad/vr`·`/api/laofus`는 :8001(실주문 프로세스), 나머지 `/api`는 :8000
+- **FRIDGE 프로젝트**: `src/projects/fridge/` - 냉장고 대시보드 (`fridge` 스키마, `/api/fridge/*`)
+  - AD와 **완전 독립**: 자체 DB 스키마·구글 로그인(서버 리다이렉트)·가구(household) 모델·JWT `aud='fridge'`. AD 계정/토큰과 섞이지 않음
+  - 가구 단위 격리(`HouseholdGuard`가 모든 리소스 컨트롤러에 기본 적용), 초대 코드로 가족 합류, 1인 1가구
+  - env 4종(`.env.production`에 필요): `FRIDGE_GOOGLE_CLIENT_ID`, `FRIDGE_GOOGLE_CLIENT_SECRET`, `FRIDGE_OAUTH_CALLBACK_BASE`(`https://fridge.holyseed.p-e.kr/api/fridge`), `FRIDGE_FRONT_URL`(`https://fridge.holyseed.p-e.kr`)
+  - `fridge` 스키마는 TypeORM synchronize가 만들어주지 않아 마이그레이션 `CreateFridgeSchema`로 생성 (deploy-backend가 `migration:run` 실행)
 - **공유 모듈**: `src/shared/` - 파일 업로드, 헬스체크, 주소 검색
 
 **개발 환경:**
@@ -104,7 +115,7 @@ holyseed/
 | 린트    | `npm run lint`      |
 | 테스트   | `npm run test`      |
 
-루트에서: `yarn dev:back`, `yarn dev:ad-native`, `yarn typecheck:ad-native`
+루트에서: `yarn dev:back`, `yarn dev:ad-native`, `yarn typecheck:ad-native`, `yarn dev:fridge`, `yarn build:fridge`, `yarn typecheck:fridge`
 
 ---
 

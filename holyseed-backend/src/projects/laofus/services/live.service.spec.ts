@@ -73,7 +73,7 @@ function hubPrice(symbol: string, price: number, stale = false): HubPrice {
 
 describe('LaofusLiveService', () => {
   const prices: Record<string, number> = { TQQQ: 79.53, SOXL: 151.2, SPCX: 151.49 };
-  let toss: { getHoldingsAll: jest.Mock; getExchangeRate: jest.Mock; getOrders: jest.Mock };
+  let toss: { getHoldingsAll: jest.Mock; getExchangeRate: jest.Mock; getOrders: jest.Mock; getBuyingPower: jest.Mock };
   let hub: { getPrice: jest.Mock };
   let status: { getCalendar: jest.Mock };
   let service: LaofusLiveService;
@@ -85,6 +85,7 @@ describe('LaofusLiveService', () => {
       getHoldingsAll: jest.fn().mockResolvedValue({ items: HOLDINGS }),
       getExchangeRate: jest.fn().mockResolvedValue({ rate: '1366.2', midRate: '1365.7', rateChangeType: 'DOWN' }),
       getOrders: jest.fn().mockResolvedValue({ orders: OPEN_ORDERS, nextCursor: null, hasNext: false }),
+      getBuyingPower: jest.fn((currency: string) => Promise.resolve(currency === 'USD' ? '6648.82' : '437')),
     };
     hub = { getPrice: jest.fn((symbol: string) => Promise.resolve(hubPrice(symbol, prices[symbol]))) };
     status = { getCalendar: jest.fn().mockResolvedValue(CALENDAR) };
@@ -126,6 +127,26 @@ describe('LaofusLiveService', () => {
     expect(live.totals?.marketValueKrw).toBe(7867892);
     expect(live.totals?.profitUsd).toBe(478.86);
     expect(live.totals?.profitPct).toBe(9.07);
+  });
+
+  it('총 자산은 주식 평가금 + 달러 잔고이고, 원화는 환율 환산에 원화 잔고를 더한다', async () => {
+    const live = await service.getLive();
+
+    expect(live.totals?.cashUsd).toBe(6648.82);
+    expect(live.totals?.cashKrw).toBe(437);
+    expect(live.totals?.totalAssetsUsd).toBe(12407.78);
+    expect(live.totals?.totalAssetsKrw).toBe(Math.round(12407.7804 * 1366.2 + 437));
+  });
+
+  it('잔고 조회가 실패해도 주식 합계는 내려주고 총 자산만 비운다', async () => {
+    toss.getBuyingPower.mockRejectedValue(new Error('429'));
+
+    const live = await service.getLive();
+
+    expect(live.totals?.marketValueUsd).toBe(5758.96);
+    expect(live.totals?.cashUsd).toBeNull();
+    expect(live.totals?.totalAssetsUsd).toBeNull();
+    expect(live.totals?.totalAssetsKrw).toBeNull();
   });
 
   it('주문을 현재가 대비 거리와 함께 매수→매도 순, 각각 현재가에서 가까운 순으로 정렬한다', async () => {
@@ -173,7 +194,7 @@ describe('LaofusLiveService', () => {
 
   it('시장가 주문은 가격 없이 "시장가"로 내려주고 거리는 비운다', async () => {
     toss.getOrders.mockResolvedValue({
-      orders: [{ ...order('SPCX', 'BUY', 'DAY', '0.013209', '0'), orderType: 'MARKET', price: null }],
+      orders: [{ ...order('SPCX', 'BUY', 'DAY', '0.013209', '0'), orderType: 'MARKET', price: null, orderAmount: '2' }],
       nextCursor: null,
       hasNext: false,
     });
@@ -185,6 +206,7 @@ describe('LaofusLiveService', () => {
         side: 'BUY',
         type: '시장가',
         quantity: 0.013209,
+        amount: 2,
         price: null,
         distancePct: null,
         alert: false,

@@ -17,6 +17,8 @@ export interface LiveOrderDto {
   /** LOC / 지정가 / 시장가 / 그 외 토스 주문유형 */
   type: string;
   quantity: number;
+  /** 금액으로 낸 주문(스페이스X 매일 매수 등)의 주문 금액 USD — 이때 quantity는 토스의 추정 수량 */
+  amount: number | null;
   price: number | null;
   /** (주문가 − 현재가) ÷ 현재가, % 단위 */
   distancePct: number | null;
@@ -44,6 +46,12 @@ export interface LiveDto {
   totals: {
     marketValueUsd: number;
     marketValueKrw: number | null;
+    /** 주문가능 잔고 (토스 매수가능금액) */
+    cashUsd: number | null;
+    cashKrw: number | null;
+    /** 총 자산 = 주식 평가금 + 달러 잔고 (원화는 × 환율 + 원화 잔고) — 실계좌 자산 스냅샷과 같은 기준 */
+    totalAssetsUsd: number | null;
+    totalAssetsKrw: number | null;
     profitUsd: number;
     profitPct: number | null;
     dayProfitUsd: number;
@@ -95,7 +103,12 @@ class TtlCache<T> {
 @Injectable()
 export class LaofusLiveService {
   private readonly logger = new Logger(LaofusLiveService.name);
-  private readonly holdings: TtlCache<{ items: TossHoldingItem[]; fx: number | null }>;
+  private readonly holdings: TtlCache<{
+    items: TossHoldingItem[];
+    fx: number | null;
+    cashUsd: number | null;
+    cashKrw: number | null;
+  }>;
   private readonly openOrders: TtlCache<TossOrder[]>;
 
   constructor(
@@ -104,8 +117,18 @@ export class LaofusLiveService {
     private readonly status: LaofusStatusService,
   ) {
     this.holdings = new TtlCache(HOLDINGS_TTL_MS, async () => {
-      const [h, fx] = await Promise.all([this.toss.getHoldingsAll(), this.toss.getExchangeRate().catch(() => null)]);
-      return { items: h.items, fx: fx ? Number(fx.rate) : null };
+      const [h, fx, cashUsd, cashKrw] = await Promise.all([
+        this.toss.getHoldingsAll(),
+        this.toss.getExchangeRate().catch(() => null),
+        this.toss.getBuyingPower('USD').catch(() => null),
+        this.toss.getBuyingPower('KRW').catch(() => null),
+      ]);
+      return {
+        items: h.items,
+        fx: fx ? Number(fx.rate) : null,
+        cashUsd: cashUsd !== null ? Number(cashUsd) : null,
+        cashKrw: cashKrw !== null ? Number(cashKrw) : null,
+      };
     });
     this.openOrders = new TtlCache(ORDERS_TTL_MS, async () => (await this.toss.getOrders('OPEN')).orders);
   }
@@ -135,7 +158,7 @@ export class LaofusLiveService {
       now: new Date().toISOString(),
       session: getUsMarketSession(calendar),
       fx,
-      totals: holdings ? this.buildTotals(symbols, holdings.items, fx) : null,
+      totals: holdings ? this.buildTotals(symbols, holdings.items, fx, holdings.cashUsd, holdings.cashKrw) : null,
       symbols,
       partial,
     };
@@ -176,6 +199,7 @@ export class LaofusLiveService {
           side: o.side,
           type: orderType(o),
           quantity: Number(o.quantity),
+          amount: o.orderAmount != null ? Number(o.orderAmount) : null,
           price: orderPrice,
           distancePct,
           alert:
@@ -207,7 +231,13 @@ export class LaofusLiveService {
   }
 
   /** 총계: 허브 가격이 있는 종목은 실시간 평가금으로, 그 외 보유는 토스가 준 평가금 그대로 */
-  private buildTotals(symbols: LiveSymbolDto[], items: TossHoldingItem[], fx: number | null): LiveDto['totals'] {
+  private buildTotals(
+    symbols: LiveSymbolDto[],
+    items: TossHoldingItem[],
+    fx: number | null,
+    cashUsd: number | null,
+    cashKrw: number | null,
+  ): LiveDto['totals'] {
     let marketValue = 0;
     let purchase = 0;
     let dayProfit = 0;
@@ -226,6 +256,11 @@ export class LaofusLiveService {
     return {
       marketValueUsd: round(marketValue),
       marketValueKrw: fx !== null ? Math.round(marketValue * fx) : null,
+      cashUsd: cashUsd !== null ? round(cashUsd) : null,
+      cashKrw,
+      totalAssetsUsd: cashUsd !== null ? round(marketValue + cashUsd) : null,
+      totalAssetsKrw:
+        cashUsd !== null && fx !== null ? Math.round((marketValue + cashUsd) * fx + (cashKrw ?? 0)) : null,
       profitUsd: round(profit),
       profitPct: purchase > 0 ? round((profit / purchase) * 100) : null,
       dayProfitUsd: round(dayProfit),

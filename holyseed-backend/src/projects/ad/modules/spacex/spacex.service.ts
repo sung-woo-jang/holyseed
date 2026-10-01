@@ -1,12 +1,53 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TossClientService } from '@shared/toss/toss-client.service';
+import { TossClientService, TossOrder } from '@shared/toss/toss-client.service';
 import { TossPriceHubService } from '@shared/toss/toss-price-hub.service';
 import { SpacexEntry, SpacexState } from './entities';
 import { CreateSpacexEntryDto } from './dto/request';
 
 const SYMBOL = 'SPCX';
+const CANDLE_TTL_MS = 5 * 60_000;
+const ORDER_TTL_MS = 30_000;
+const MAX_CANDLE_PAGES = 5;
+
+export type SpacexCandleRange = 'all' | '1m' | '2w';
+
+export interface SpacexCandle {
+  /** 한국시간 기준 날짜 YYYY-MM-DD */
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+}
+
+export interface SpacexCandlesResult {
+  symbol: string;
+  range: SpacexCandleRange;
+  candles: SpacexCandle[];
+  /** 상장일 이후 전체 일봉 기준 — range와 무관 */
+  listing: {
+    date: string;
+    openPrice: number;
+    high: { price: number; date: string };
+    low: { price: number; date: string };
+  } | null;
+}
+
+export interface SpacexLatestOrder {
+  orderId: string;
+  status: 'PENDING' | 'FILLED' | 'CANCELED';
+  /** 금액 주문의 주문 금액($), 체결됐으면 체결 금액 */
+  amount: number | null;
+  /** 체결됐으면 체결 수량, 아니면 토스의 추정 수량 */
+  quantity: number | null;
+  avgPrice: number | null;
+  orderedAt: string;
+  filledAt: string | null;
+  /** 이미 기록(spacex_entries)에 동기화됐는지 — 체결 기록은 다음날 09:10 동기화로 들어온다 */
+  recorded: boolean;
+}
 
 function kstDate(d: Date = new Date()): string {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' }).format(d);
@@ -15,6 +56,8 @@ function kstDate(d: Date = new Date()): string {
 @Injectable()
 export class SpacexService {
   private readonly logger = new Logger('Spacex');
+  private candleCache: { candles: SpacexCandle[]; at: number } | null = null;
+  private orderCache: { orders: TossOrder[]; at: number } | null = null;
 
   constructor(
     @InjectRepository(SpacexEntry) private readonly entryRepo: Repository<SpacexEntry>,
@@ -61,6 +104,95 @@ export class SpacexService {
     return { synced };
   }
 
+  /** 상장일부터의 일봉 전체(오래된 순) — 5분 캐시. 한 번에 못 받는 만큼은 nextBefore로 이어 받는다 */
+  private async loadDailyCandles(): Promise<SpacexCandle[]> {
+    if (this.candleCache && Date.now() - this.candleCache.at < CANDLE_TTL_MS) return this.candleCache.candles;
+    const byDate = new Map<string, SpacexCandle>();
+    let before: string | undefined;
+    for (let page = 0; page < MAX_CANDLE_PAGES; page++) {
+      const res = await this.toss.getCandles(SYMBOL, '1d', 200, before);
+      for (const c of res.candles) {
+        const date = c.timestamp.slice(0, 10);
+        byDate.set(date, {
+          date,
+          open: Number(c.openPrice),
+          high: Number(c.highPrice),
+          low: Number(c.lowPrice),
+          close: Number(c.closePrice),
+        });
+      }
+      if (!res.nextBefore) break;
+      before = res.nextBefore;
+    }
+    const candles = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+    this.candleCache = { candles, at: Date.now() };
+    return candles;
+  }
+
+  async getCandles(range: string): Promise<SpacexCandlesResult> {
+    const all = await this.loadDailyCandles();
+    const r: SpacexCandleRange = range === '1m' || range === '2w' ? range : 'all';
+    const days = r === '1m' ? 30 : r === '2w' ? 14 : null;
+    const since = days !== null ? kstDate(new Date(Date.now() - days * 86_400_000)) : null;
+    const candles = since !== null ? all.filter((c) => c.date >= since) : all;
+
+    let listing: SpacexCandlesResult['listing'] = null;
+    if (all.length > 0) {
+      const high = all.reduce((m, c) => (c.high > m.high ? c : m));
+      const low = all.reduce((m, c) => (c.low < m.low ? c : m));
+      listing = {
+        date: all[0].date,
+        openPrice: all[0].open,
+        high: { price: high.high, date: high.date },
+        low: { price: low.low, date: low.date },
+      };
+    }
+    return { symbol: SYMBOL, range: r, candles, listing };
+  }
+
+  /** 최근 SPCX 주문(미체결 + 최근 종료 5건) — 30초 캐시 */
+  private async loadRecentOrders(): Promise<TossOrder[]> {
+    if (this.orderCache && Date.now() - this.orderCache.at < ORDER_TTL_MS) return this.orderCache.orders;
+    const [open, closed] = await Promise.all([
+      this.toss.getOrders('OPEN', { symbol: SYMBOL }),
+      this.toss.getOrders('CLOSED', { symbol: SYMBOL, limit: 5 }),
+    ]);
+    const orders = [...open.orders, ...closed.orders];
+    this.orderCache = { orders, at: Date.now() };
+    return orders;
+  }
+
+  /** 가장 최근 매수 주문 — 체결 기록이 DB에 들어오기 전(다음날 09:10)에도 오늘 매수 상태를 보여주기 위함. 실패하면 null */
+  private async getLatestOrder(): Promise<SpacexLatestOrder | null> {
+    try {
+      const buys = (await this.loadRecentOrders()).filter((o) => o.side === 'BUY');
+      if (buys.length === 0) return null;
+      const o = buys.reduce((m, c) => (Date.parse(c.orderedAt) > Date.parse(m.orderedAt) ? c : m));
+      const status: SpacexLatestOrder['status'] =
+        o.status === 'FILLED'
+          ? 'FILLED'
+          : ['CANCELED', 'REJECTED', 'EXPIRED'].includes(o.status)
+            ? 'CANCELED'
+            : 'PENDING';
+      const filled = status === 'FILLED';
+      const recorded = filled ? (await this.entryRepo.count({ where: { orderId: o.orderId } })) > 0 : false;
+      const amountRaw = filled ? (o.execution.filledAmount ?? o.orderAmount) : o.orderAmount;
+      return {
+        orderId: o.orderId,
+        status,
+        amount: amountRaw != null ? Number(amountRaw) : null,
+        quantity: filled ? Number(o.execution.filledQuantity) : Number(o.quantity),
+        avgPrice: o.execution.averageFilledPrice != null ? Number(o.execution.averageFilledPrice) : null,
+        orderedAt: o.orderedAt,
+        filledAt: o.execution.filledAt,
+        recorded,
+      };
+    } catch (e) {
+      this.logger.warn(`최근 주문 조회 실패: ${(e as Error).message}`);
+      return null;
+    }
+  }
+
   private async getOrCreateState(): Promise<SpacexState> {
     const [existing] = await this.stateRepo.find({ take: 1 });
     if (existing) return existing;
@@ -88,9 +220,10 @@ export class SpacexService {
   }
 
   async getStatus() {
-    const [entries, state] = await Promise.all([
+    const [entries, state, latestOrder] = await Promise.all([
       this.entryRepo.find({ order: { date: 'ASC', id: 'ASC' } }),
       this.getOrCreateState(),
+      this.getLatestOrder(),
     ]);
 
     const startDate = entries.length > 0 ? entries[0].date : null;
@@ -126,6 +259,7 @@ export class SpacexService {
       profitPct,
       currentPrice,
       currentValue,
+      latestOrder,
       entries: [...entries].reverse(),
     };
   }

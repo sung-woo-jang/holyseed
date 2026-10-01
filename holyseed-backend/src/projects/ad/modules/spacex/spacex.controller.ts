@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SpacexService } from './spacex.service';
 import { CreateSpacexEntryDto, CloseInvestmentDto } from './dto/request';
@@ -19,6 +19,12 @@ export class SpacexController {
   @ApiOperation({ summary: '스페이스X 기록 전체 조회 + 집계 (총 원금/평단/수익률)' })
   async getStatus() {
     return ok('조회 성공', await this.spacexService.getStatus());
+  }
+
+  @Get('candles')
+  @ApiOperation({ summary: 'SPCX 일봉 (range: all|1m|2w, 5분 캐시) + 상장가·상장 후 고점/저점' })
+  async getCandles(@Query('range') range = 'all') {
+    return ok('조회 성공', await this.spacexService.getCandles(range));
   }
 
   @Post('entries')

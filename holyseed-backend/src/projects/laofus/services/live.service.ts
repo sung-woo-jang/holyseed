@@ -9,7 +9,7 @@ const ORDERS_TTL_MS = 30_000;
 /** 무매 LOC 매수 주문이 현재가에서 이만큼(%) 벌어지면 경고로 표시 */
 const ALERT_DISTANCE_PCT = 15;
 
-const SYMBOL_LABEL: Record<string, string> = { TQQQ: 'VR', SOXL: '무매', SPCX: '스페이스X' };
+const SYMBOL_LABEL: Record<string, string> = { TQQQ: 'VR', SOXL: '무한매수법', SPCX: '스페이스X' };
 
 export interface LiveOrderDto {
   orderId: string;

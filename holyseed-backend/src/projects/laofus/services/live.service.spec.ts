@@ -106,7 +106,7 @@ describe('LaofusLiveService', () => {
 
     expect(live.symbols.map((s) => [s.symbol, s.label])).toEqual([
       ['TQQQ', 'VR'],
-      ['SOXL', '무매'],
+      ['SOXL', '무한매수법'],
       ['SPCX', '스페이스X'],
     ]);
     const tqqq = live.symbols[0];

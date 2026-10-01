@@ -18,8 +18,9 @@ export class ComparisonService {
       years.map(async (year) => {
         const yearEnd = `${year}-12-31`;
         const rows: { category: string; total_krw: string }[] = await this.assetRepo.manager.query(
+          // 부채 잔액은 양수로 저장돼 있으므로 순자산 합계에서는 차감 (대시보드와 같은 기준)
           `SELECT a.category,
-                  COALESCE(SUM(latest.value_krw), 0) AS total_krw
+                  COALESCE(SUM(CASE WHEN a.is_liability THEN -latest.value_krw ELSE latest.value_krw END), 0) AS total_krw
            FROM ad.assets a
            LEFT JOIN LATERAL (
              SELECT value_krw

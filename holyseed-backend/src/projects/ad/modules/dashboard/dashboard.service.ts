@@ -6,6 +6,18 @@ import { AssetSnapshot } from '../asset-snapshots/entities/asset-snapshot.entity
 import { Transaction } from '../transactions/entities/transaction.entity';
 import { TimeseriesRange } from './dto/request/timeseries-range.dto';
 
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
+/** 로컬 날짜 YYYY-MM-DD — toISOString()은 UTC로 바뀌어 한국시간 서버에서 하루 앞당겨지므로 쓰지 않는다 */
+export function ymd(d: Date): string {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+/** 순자산 합계에서 부채는 차감한다 (스냅샷에는 부채 잔액이 양수로 저장됨) */
+export function signedValue(isLiability: boolean, value: number): number {
+  return isLiability ? -value : value;
+}
+
 @Injectable()
 export class DashboardService {
   constructor(
@@ -18,9 +30,10 @@ export class DashboardService {
   ) {}
 
   async getDashboard(householdId: number) {
-    const [donutRaw, timeseries, recentTx] = await Promise.all([
+    const [donutRaw, timeseries, periods, recentTx] = await Promise.all([
       this.getLatestNetWorthByCategory(householdId),
-      this.getTimeseries(householdId, 60),
+      this.getTimeseries(householdId, null),
+      this.getPeriods(householdId),
       this.txRepo.find({
         where: { householdId },
         order: { date: 'DESC', createdAt: 'DESC' },
@@ -28,14 +41,14 @@ export class DashboardService {
       }),
     ]);
 
-    const netWorth = donutRaw.reduce((sum, r) => sum + Number(r.total_krw), 0);
+    const netWorth = donutRaw.reduce((sum, r) => sum + signedValue(r.is_liability, Number(r.total_krw)), 0);
     const donut = donutRaw.map((r) => ({
       category: r.category,
       isLiability: r.is_liability,
       valueKRW: Number(r.total_krw),
     }));
 
-    return { netWorth, donut, timeseries, recentTx };
+    return { netWorth, donut, timeseries, periods, recentTx };
   }
 
   /** 기준 날짜(이하) 최신 스냅샷 기준으로 그 날짜 시점의 가구 총자산을 조회 */
@@ -75,9 +88,40 @@ export class DashboardService {
       snapshotDate: r.snapshot_date,
     }));
 
-    const netWorth = byAsset.reduce((sum, a) => sum + (a.valueKRW ?? 0), 0);
+    const netWorth = byAsset.reduce((sum, a) => sum + signedValue(a.isLiability, a.valueKRW ?? 0), 0);
 
-    return { date, netWorth, byAsset };
+    const categoryMap = new Map<string, { category: string; isLiability: boolean; valueKRW: number }>();
+    for (const a of byAsset) {
+      const key = `${a.category}|${a.isLiability}`;
+      const entry = categoryMap.get(key) ?? { category: a.category, isLiability: a.isLiability, valueKRW: 0 };
+      entry.valueKRW += a.valueKRW ?? 0;
+      categoryMap.set(key, entry);
+    }
+
+    return { date, netWorth, byAsset, byCategory: [...categoryMap.values()] };
+  }
+
+  /**
+   * 기간별 비교 기준 시점의 순자산 — 30일 전 / 작년 말(올해 시작) / 1년 전.
+   * 앱이 현재 값과의 차이로 기간별 증감과 자산군별 기여를 계산한다.
+   */
+  async getPeriods(householdId: number, now: Date = new Date()) {
+    const d30 = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
+    const y1 = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+    const dates = { d30: ymd(d30), ytd: `${now.getFullYear() - 1}-12-31`, y1: ymd(y1) };
+
+    const [a, b, c] = await Promise.all([
+      this.getNetWorthAt(householdId, dates.d30),
+      this.getNetWorthAt(householdId, dates.ytd),
+      this.getNetWorthAt(householdId, dates.y1),
+    ]);
+    const slim = (r: Awaited<ReturnType<DashboardService['getNetWorthAt']>>) => ({
+      date: r.date,
+      netWorth: r.netWorth,
+      byCategory: r.byCategory,
+      byAsset: r.byAsset.map((x) => ({ assetId: x.assetId, isLiability: x.isLiability, valueKRW: x.valueKRW })),
+    });
+    return { asOf: ymd(now), d30: slim(a), ytd: slim(b), y1: slim(c) };
   }
 
   async getTimeseriesRange(householdId: number, range: TimeseriesRange) {
@@ -116,11 +160,12 @@ export class DashboardService {
   private async getTimeseries(householdId: number, months: number | null) {
     const assets = await this.assetRepo.find({
       where: { householdId, archivedAt: IsNull() },
-      select: ['id'],
+      select: ['id', 'isLiability'],
     });
     if (!assets.length) return [];
 
     const assetIds = assets.map((a) => a.id);
+    const liabilityIds = new Set(assets.filter((a) => a.isLiability).map((a) => a.id));
     const snapshots = await this.snapshotRepo
       .createQueryBuilder('s')
       .select(['s.assetId', 's.date', 's.valueKRW'])
@@ -128,13 +173,14 @@ export class DashboardService {
       .orderBy('s.date', 'ASC')
       .getMany();
 
-    return this.computeMonthly(assetIds, snapshots, months);
+    return this.computeMonthly(assetIds, snapshots, months, liabilityIds);
   }
 
   private computeMonthly(
     assetIds: number[],
     snapshots: Pick<AssetSnapshot, 'assetId' | 'date' | 'valueKRW'>[],
     months: number | null,
+    liabilityIds: Set<number> = new Set(),
   ) {
     // 자산별 스냅샷 배열 (날짜 ASC 정렬 유지)
     const byAsset = new Map<number, { date: string; valueKRW: number }[]>();
@@ -147,7 +193,7 @@ export class DashboardService {
       startDate = new Date(now.getFullYear(), now.getMonth() - months + 1, 1);
     } else if (snapshots.length > 0) {
       const earliest = snapshots[0].date;
-      startDate = new Date(earliest.slice(0, 7) + '-01');
+      startDate = new Date(Number(earliest.slice(0, 4)), Number(earliest.slice(5, 7)) - 1, 1);
     } else {
       return [];
     }
@@ -158,14 +204,14 @@ export class DashboardService {
     while (cur.getTime() <= new Date(now.getFullYear(), now.getMonth(), 1).getTime()) {
       const yr = cur.getFullYear();
       const mo = cur.getMonth();
-      const monthEnd = new Date(yr, mo + 1, 0).toISOString().split('T')[0];
+      const monthEnd = `${yr}-${pad2(mo + 1)}-${pad2(new Date(yr, mo + 1, 0).getDate())}`;
 
       let netWorth = 0;
-      for (const [, snaps] of byAsset) {
+      for (const [assetId, snaps] of byAsset) {
         // 이분탐색 없이 끝에서부터 찾기 (배열 정렬 ASC)
         for (let i = snaps.length - 1; i >= 0; i--) {
           if (snaps[i].date <= monthEnd) {
-            netWorth += snaps[i].valueKRW;
+            netWorth += signedValue(liabilityIds.has(assetId), snaps[i].valueKRW);
             break;
           }
         }

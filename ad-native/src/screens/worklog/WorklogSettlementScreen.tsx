@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import ListRow from '../../components/ui/ListRow';
 import Border from '../../components/ui/Border';
@@ -12,6 +12,7 @@ import ConfirmDialog from '../../components/common/ConfirmDialog';
 import Segmented from '../../components/common/Segmented';
 import { Icon } from '../../components/common/Icon';
 import { worklogApi, type PayStatus, type WorklogRecord } from '../../api/worklog';
+import { invalidateWorklog } from '../../queries/worklog-cache';
 import { useTheme } from '../../lib/theme';
 import { krw } from '../../lib/format';
 import { todayLocal } from '../../lib/date';
@@ -42,6 +43,7 @@ function sortByDateDesc(records: WorklogRecord[]): WorklogRecord[] {
 
 export default function WorklogSettlementScreen({ navigation }: Props) {
   const theme = useTheme();
+  const qc = useQueryClient();
   const [scope, setScope] = useState<'월별' | '미수령 전체'>('월별');
   const [ym, setYm] = useState(() => {
     const d = new Date();
@@ -121,7 +123,7 @@ export default function WorklogSettlementScreen({ navigation }: Props) {
     try {
       await Promise.all(Array.from(selectedIds).map((id) => worklogApi.update(id, { payStatus: targetStatus })));
       setToast(`${selectedIds.size}건을 ${PAY_STATUS_LABEL[targetStatus]}로 처리했어요`);
-      await dataQ.refetch();
+      await invalidateWorklog(qc);
     } catch {
       setToast('일부 처리에 실패했어요');
     } finally {

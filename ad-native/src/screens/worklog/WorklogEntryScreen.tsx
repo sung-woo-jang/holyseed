@@ -3,7 +3,7 @@ import { ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, Pressa
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Button from '../../components/ui/Button';
 import TextField from '../../components/ui/TextField';
@@ -13,7 +13,8 @@ import DatePicker from '../../components/common/DatePicker';
 import { worklogApi, type WorklogPhoto, type PayStatus } from '../../api/worklog';
 import { useTheme } from '../../lib/theme';
 import { useKeyboardScrollRegistration, KeyboardScrollProvider } from '../../lib/keyboard-scroll';
-import { todayLocal, timeStringToDate, dateToTimeString } from '../../lib/date';
+import { todayLocal, timeStringToDate, dateToTimeString, shiftDay } from '../../lib/date';
+import { invalidateWorklog } from '../../queries/worklog-cache';
 import { getErrorMessage } from '../../lib/error';
 import type { WorklogStackParamList } from '../../navigation/WorklogStack';
 
@@ -28,6 +29,24 @@ const PAY_STATUS_OPTIONS: { value: PayStatus; label: string }[] = [
   { value: 'UNPAID', label: '미수령' },
   { value: 'DAYOFF', label: '휴무' },
 ];
+
+const WEEKDAY_KO = ['일', '월', '화', '수', '목', '금', '토'];
+
+function formatDateLabel(date: string): string {
+  const [y, m, d] = date.split('-').map(Number);
+  const wd = WEEKDAY_KO[new Date(y!, m! - 1, d!).getDay()];
+  const rel = date === todayLocal() ? ' · 오늘' : date === shiftDay(todayLocal(), -1) ? ' · 어제' : '';
+  return `${y}년 ${m}월 ${d}일 (${wd})${rel}`;
+}
+
+function formatMoneyInput(raw: string): string {
+  const digits = raw.replace(/[^0-9]/g, '');
+  return digits ? Number(digits).toLocaleString() : '';
+}
+
+function parseMoney(raw: string): number {
+  return Number(raw.replace(/[^0-9]/g, ''));
+}
 
 const ICON = { fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
 
@@ -85,10 +104,11 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
   const theme = useTheme();
   const { record, defaultDate } = route.params;
   const isEdit = !!record;
+  const qc = useQueryClient();
   const { scrollRef, scrollToInput, keyboardHeight } = useKeyboardScrollRegistration();
 
   const [title, setTitle] = useState('');
-  const [workDate, setWorkDate] = useState(todayLocal());
+  const [workDate, setWorkDate] = useState(record?.workDate ?? defaultDate ?? todayLocal());
   const [category, setCategory] = useState('');
   const [payStatus, setPayStatus] = useState<PayStatus>('EXPECTED');
   const [startTime, setStartTime] = useState('');
@@ -112,6 +132,11 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
   const [previewPhoto, setPreviewPhoto] = useState<WorklogPhoto | null>(null);
   const [error, setError] = useState('');
   const memoRef = useRef<TextInput>(null);
+  const baselineRef = useRef('');
+  const leavingRef = useRef(false);
+  const pendingLeaveRef = useRef<(() => void) | null>(null);
+  const [initTick, setInitTick] = useState(0);
+  const [leaveConfirm, setLeaveConfirm] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({ title: isEdit ? '근무 기록 수정' : '근무 기록 추가' });
@@ -121,21 +146,28 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
   const categories = categoriesQ.data ?? [];
   const isDayOff = categories.find((c) => c.name === category)?.isDayOff ?? false;
 
-  function applyCategoryDefaults(categoryName: string) {
-    const opt = categories.find((c) => c.name === categoryName);
-    setStartTime(opt?.defaultStartTime ?? '');
-    setEndTime(opt?.defaultEndTime ?? '');
-    setBreakHours(opt?.defaultBreakHours != null ? String(opt.defaultBreakHours) : '');
-    setDailyWage(opt?.defaultDailyWage != null ? String(opt.defaultDailyWage) : '');
-    setWithholdingApplied(opt?.defaultWithholdingApplied ?? false);
-    setAddress(opt?.defaultAddress ?? '');
+  // 직접 입력한 값은 지키고, 비어 있거나 이전 분류의 기본값 그대로인 칸만 새 분류 기본값으로 바꾼다
+  function applyCategoryDefaults(nextName: string, prevName: string) {
+    const next = categories.find((c) => c.name === nextName);
+    const prev = categories.find((c) => c.name === prevName);
+    const swap = (cur: string, prevDef: string, nextDef: string) => (cur === '' || cur === prevDef ? nextDef : cur);
+    setStartTime((cur) => swap(cur, prev?.defaultStartTime ?? '', next?.defaultStartTime ?? ''));
+    setEndTime((cur) => swap(cur, prev?.defaultEndTime ?? '', next?.defaultEndTime ?? ''));
+    setBreakHours((cur) => swap(cur, prev?.defaultBreakHours != null ? String(prev.defaultBreakHours) : '', next?.defaultBreakHours != null ? String(next.defaultBreakHours) : ''));
+    setDailyWage((cur) =>
+      swap(cur, prev?.defaultDailyWage != null ? formatMoneyInput(String(prev.defaultDailyWage)) : '', next?.defaultDailyWage != null ? formatMoneyInput(String(next.defaultDailyWage)) : ''),
+    );
+    setAddress((cur) => swap(cur, prev?.defaultAddress ?? '', next?.defaultAddress ?? ''));
+    if (!isEdit) setWithholdingApplied(next?.defaultWithholdingApplied ?? false);
   }
 
   function handleSelectCategory(categoryName: string) {
+    if (categoryName === category) return;
+    applyCategoryDefaults(categoryName, category);
     setCategory(categoryName);
-    if (!isEdit) applyCategoryDefaults(categoryName);
     const dayOff = categories.find((c) => c.name === categoryName)?.isDayOff ?? false;
-    setPayStatus(dayOff ? 'DAYOFF' : 'EXPECTED');
+    // 이미 입력한 수령 상태(수령완료 등)는 휴무 여부가 바뀔 때만 초기화
+    setPayStatus((cur) => (dayOff ? 'DAYOFF' : cur === 'DAYOFF' ? 'EXPECTED' : cur));
   }
 
   const jobOptionsQ = useQuery({ queryKey: ['worklog-jobs'], queryFn: worklogApi.jobOptions, staleTime: 60_000 });
@@ -147,6 +179,14 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
     const d = new Date();
     return { year: d.getFullYear(), month: d.getMonth() + 1 };
   });
+  const dateYm = { year: Number(workDate.slice(0, 4)), month: Number(workDate.slice(5, 7)) };
+  const dateRecordsQ = useQuery({
+    queryKey: ['worklog', dateYm.year, dateYm.month],
+    queryFn: () => worklogApi.search(dateYm.year, dateYm.month),
+    staleTime: 60_000,
+    enabled: !!workDate,
+  });
+  const sameDayRecords = (dateRecordsQ.data?.records ?? []).filter((r) => r.workDate === workDate && r.id !== record?.id);
   const pickerRecordsQ = useQuery({
     queryKey: ['worklog', pickerYm.year, pickerYm.month],
     queryFn: () => worklogApi.search(pickerYm.year, pickerYm.month),
@@ -166,6 +206,7 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
     return map;
   }, [pickerRecordsQ.data]);
 
+  const initializedRef = useRef(false);
   useEffect(() => {
     if (record) {
       setTitle(record.title);
@@ -175,35 +216,61 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
       setStartTime(record.startTime ?? '');
       setEndTime(record.endTime ?? '');
       setBreakHours(String(record.breakHours ?? 1));
-      setDailyWage(record.dailyWage ? String(record.dailyWage) : '');
-      setAmountOverride(record.amountOverride != null ? String(record.amountOverride) : '');
+      setDailyWage(record.dailyWage ? formatMoneyInput(String(record.dailyWage)) : '');
+      setAmountOverride(record.amountOverride != null ? formatMoneyInput(String(record.amountOverride)) : '');
       setWithholdingApplied(record.withholdingApplied);
       setPayMultiplier(record.payMultiplier);
       setAddress(record.address ?? '');
       setJobs(record.jobs ?? []);
       setPhotos(record.photos ?? []);
       setMemo(record.memo ?? '');
-    } else {
-      const initialCategory = categories[0];
-      setTitle('');
-      setWorkDate(defaultDate > todayLocal() ? defaultDate : todayLocal());
-      setCategory(initialCategory?.name ?? '');
-      setPayStatus(initialCategory?.isDayOff ? 'DAYOFF' : 'EXPECTED');
-      setStartTime(initialCategory?.defaultStartTime ?? '');
-      setEndTime(initialCategory?.defaultEndTime ?? '');
-      setBreakHours(initialCategory?.defaultBreakHours != null ? String(initialCategory.defaultBreakHours) : '');
-      setDailyWage(initialCategory?.defaultDailyWage != null ? String(initialCategory.defaultDailyWage) : '');
-      setAmountOverride('');
-      setWithholdingApplied(initialCategory?.defaultWithholdingApplied ?? false);
-      setPayMultiplier(1);
-      setAddress(initialCategory?.defaultAddress ?? '');
-      setJobs([]);
-      setPhotos([]);
-      setMemo('');
+      initializedRef.current = true;
+      setInitTick((t) => t + 1);
     }
     setError('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [record]);
+
+  // 새 기록은 분류 목록이 로드된 뒤 첫 분류의 기본값으로 한 번만 채운다 (로드 전에 열면 기본값이 비어 있던 문제)
+  useEffect(() => {
+    if (record || initializedRef.current || !categoriesQ.isSuccess) return;
+    const first = categories[0];
+    initializedRef.current = true;
+    setWorkDate(defaultDate);
+    setCategory(first?.name ?? '');
+    setPayStatus(first?.isDayOff ? 'DAYOFF' : 'EXPECTED');
+    setStartTime(first?.defaultStartTime ?? '');
+    setEndTime(first?.defaultEndTime ?? '');
+    setBreakHours(first?.defaultBreakHours != null ? String(first.defaultBreakHours) : '');
+    setDailyWage(first?.defaultDailyWage != null ? formatMoneyInput(String(first.defaultDailyWage)) : '');
+    setWithholdingApplied(first?.defaultWithholdingApplied ?? false);
+    setAddress(first?.defaultAddress ?? '');
+    setInitTick((t) => t + 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoriesQ.isSuccess]);
+
+  const formSnapshot = JSON.stringify({
+    title, workDate, category, payStatus, startTime, endTime, breakHours, dailyWage, amountOverride,
+    withholdingApplied, payMultiplier, address, jobs, photos: photos.map((p) => p.filename), memo,
+  });
+  useEffect(() => {
+    baselineRef.current = formSnapshot;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initTick]);
+  const dirty = initializedRef.current && baselineRef.current !== '' && formSnapshot !== baselineRef.current;
+
+  // 입력 중 뒤로가기(제스처 포함)로 내용이 날아가지 않도록 확인
+  useEffect(() => {
+    return navigation.addListener('beforeRemove', (e) => {
+      if (leavingRef.current || !dirty) return;
+      e.preventDefault();
+      pendingLeaveRef.current = () => {
+        leavingRef.current = true;
+        navigation.dispatch(e.data.action);
+      };
+      setLeaveConfirm(true);
+    });
+  }, [navigation, dirty]);
 
   function toggleJob(name: string) {
     setJobs((prev) => (prev.includes(name) ? prev.filter((j) => j !== name) : [...prev, name]));
@@ -258,8 +325,8 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
         endTime: endTime || undefined,
         breakHours: breakHours ? Number(breakHours) : undefined,
         jobs,
-        dailyWage: dailyWage ? Number(dailyWage) : undefined,
-        amountOverride: amountOverride ? Number(amountOverride) : null,
+        dailyWage: dailyWage ? parseMoney(dailyWage) : undefined,
+        amountOverride: amountOverride ? parseMoney(amountOverride) : null,
         withholdingApplied,
         payMultiplier,
         address: address || undefined,
@@ -268,11 +335,12 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
       };
       if (isEdit && record) {
         await worklogApi.update(record.id, dto);
-        navigation.navigate('WorklogHome', { savedMode: 'edit', savedAt: Date.now() });
       } else {
         await worklogApi.create(dto);
-        navigation.navigate('WorklogHome', { savedMode: 'create', savedAt: Date.now() });
       }
+      await invalidateWorklog(qc);
+      leavingRef.current = true;
+      navigation.navigate('WorklogHome', { savedMode: isEdit ? 'edit' : 'create', savedAt: Date.now(), savedDate: workDate });
     } catch (e) {
       setError(getErrorMessage(e, '저장에 실패했어요. 다시 시도해 주세요.'));
     } finally {
@@ -286,7 +354,9 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
     try {
       await worklogApi.delete(record.id);
       setDeleteConfirm(false);
-      navigation.navigate('WorklogHome', { savedMode: 'delete', savedAt: Date.now() });
+      await invalidateWorklog(qc);
+      leavingRef.current = true;
+      navigation.navigate('WorklogHome', { savedMode: 'delete', savedAt: Date.now(), savedDate: record.workDate });
     } catch (e) {
       setError(getErrorMessage(e, '삭제에 실패했어요.'));
       setDeleteConfirm(false);
@@ -298,7 +368,7 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView ref={scrollRef} contentContainerStyle={[styles.scrollContent, { paddingBottom: 32 + keyboardHeight }]}>
+        <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.scrollContent, { paddingBottom: 32 + keyboardHeight }]}>
           <KeyboardScrollProvider value={scrollToInput}>
             <Section icon={<IconInfo color={theme.brand} />} title="기본 정보" theme={theme}>
               {isDayOff ? (
@@ -337,9 +407,22 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
                 </ScrollView>
               )}
 
-              <Pressable onPress={() => setDatePickerVisible(true)} style={[styles.box, { backgroundColor: theme.bg, marginBottom: 12 }]}>
-                <Text style={{ fontSize: 15, color: theme.text, fontWeight: '600' }}>{workDate === todayLocal() ? `오늘 (${workDate.slice(5).replace('-', '/')})` : workDate}</Text>
-              </Pressable>
+              <View style={styles.dateRow}>
+                <Pressable hitSlop={6} onPress={() => setWorkDate((d) => shiftDay(d, -1))} style={[styles.dateStep, { backgroundColor: theme.bg }]}>
+                  <Text style={{ fontSize: 18, color: theme.text }}>‹</Text>
+                </Pressable>
+                <Pressable onPress={() => setDatePickerVisible(true)} style={[styles.box, styles.dateMain, { backgroundColor: theme.bg }]}>
+                  <Text style={{ fontSize: 15, color: theme.text, fontWeight: '600' }}>{formatDateLabel(workDate)}</Text>
+                </Pressable>
+                <Pressable hitSlop={6} onPress={() => setWorkDate((d) => shiftDay(d, 1))} style={[styles.dateStep, { backgroundColor: theme.bg }]}>
+                  <Text style={{ fontSize: 18, color: theme.text }}>›</Text>
+                </Pressable>
+              </View>
+              {sameDayRecords.length > 0 && (
+                <Text style={[styles.hint, { color: theme.danger, marginBottom: 12 }]}>
+                  이 날 이미 {sameDayRecords.length}건 있어요 · {sameDayRecords.map((r) => r.title).join(', ')}
+                </Text>
+              )}
 
               {!isDayOff && (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -395,6 +478,9 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
                     }}
                   />
                 )}
+                {startTime && endTime && endTime < startTime && (
+                  <Text style={[styles.hint, { color: theme.textMuted, marginBottom: 10 }]}>종료가 시작보다 빠르면 다음 날 종료로 계산돼요</Text>
+                )}
                 <TextField variant="box" placeholder="휴게시간 (미지정 시 자동)" value={breakHours} onChangeText={setBreakHours} keyboardType="numeric" suffix="시간" />
               </Section>
             )}
@@ -402,8 +488,8 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
             {!isDayOff && (
               <Section icon={<IconWallet color={theme.brand} />} title="급여" theme={theme}>
                 <View style={styles.row2}>
-                  <TextField variant="box" placeholder="일급여 (미지정 시 자동)" value={dailyWage} onChangeText={setDailyWage} keyboardType="numeric" suffix="원" style={{ flex: 1 }} />
-                  <TextField variant="box" placeholder="실수령 직접입력 (선택)" value={amountOverride} onChangeText={setAmountOverride} keyboardType="numeric" suffix="원" style={{ flex: 1 }} />
+                  <TextField variant="box" placeholder="일급여 (미지정 시 자동)" value={dailyWage} onChangeText={(t) => setDailyWage(formatMoneyInput(t))} keyboardType="numeric" suffix="원" style={{ flex: 1 }} />
+                  <TextField variant="box" placeholder="실수령 직접입력 (선택)" value={amountOverride} onChangeText={(t) => setAmountOverride(formatMoneyInput(t))} keyboardType="numeric" suffix="원" style={{ flex: 1 }} />
                 </View>
 
                 <View style={styles.switchRow}>
@@ -504,6 +590,7 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
 
         <View style={[styles.ctaWrap, { backgroundColor: theme.card, borderTopColor: theme.border }]}>
           {error ? <Text style={{ color: theme.danger, fontSize: 12, marginBottom: 8 }}>{error}</Text> : null}
+          {!error && !isValid ? <Text style={{ color: theme.textMuted, fontSize: 12, marginBottom: 8 }}>{!workDate ? '날짜를 선택해 주세요' : '현장명을 입력해 주세요'}</Text> : null}
           <Button display="full" size="big" type="primary" disabled={!isValid} loading={saving} onPress={handleSave}>
             {isEdit ? '수정하기' : '저장하기'}
           </Button>
@@ -517,6 +604,22 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
         onClose={() => setDatePickerVisible(false)}
         markedDates={markedDates}
         onMonthChange={(year, month) => setPickerYm({ year, month })}
+      />
+
+      <ConfirmDialog
+        visible={leaveConfirm}
+        title="입력한 내용이 사라져요"
+        description="저장하지 않고 나갈까요?"
+        confirmText="나가기"
+        danger
+        onConfirm={() => {
+          setLeaveConfirm(false);
+          pendingLeaveRef.current?.();
+        }}
+        onClose={() => {
+          setLeaveConfirm(false);
+          pendingLeaveRef.current = null;
+        }}
       />
 
       <ConfirmDialog
@@ -549,6 +652,9 @@ const styles = StyleSheet.create({
   sectionIconWrap: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   sectionTitle: { fontSize: 13.5, fontWeight: '800' },
   box: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 13 },
+  dateRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  dateMain: { flex: 1 },
+  dateStep: { width: 44, height: 46, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   chipRow: { flexDirection: 'row', gap: 8, paddingBottom: 4 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
   row2: { flexDirection: 'row', gap: 10, marginBottom: 12 },

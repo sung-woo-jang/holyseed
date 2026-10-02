@@ -8,6 +8,7 @@ import Button from '../../components/ui/Button';
 import Segmented from '../../components/common/Segmented';
 import AppToast from '../../components/common/AppToast';
 import { worklogApi } from '../../api/worklog';
+import { invalidateWorklog } from '../../queries/worklog-cache';
 import { useTheme } from '../../lib/theme';
 import { toLocalDateString, todayLocal } from '../../lib/date';
 import { isKoreanHoliday } from '../../lib/koreanHolidays';
@@ -72,21 +73,32 @@ export default function WorklogScheduleScreen({ navigation }: Props) {
     setSaving(true);
     setError('');
     try {
-      await Promise.all(
-        [...selectedDates].map((workDate) =>
+      const dates = [...selectedDates].sort();
+      const results = await Promise.allSettled(
+        dates.map((workDate) =>
           worklogApi.create({
             title: mode === 'DAYOFF' ? memo.trim() || category : title.trim(),
             workDate,
             category,
             payStatus: mode,
-            dailyWage: mode === 'SCHEDULED' && dailyWage ? Number(dailyWage) : undefined,
+            dailyWage: mode === 'SCHEDULED' && dailyWage ? Number(dailyWage.replace(/[^0-9]/g, '')) : undefined,
             memo: mode === 'DAYOFF' ? memo.trim() || undefined : undefined,
           }),
         ),
       );
-      await qc.invalidateQueries({ queryKey: ['worklog', ym.year, ym.month] });
-      setToast(`${selectedDates.size}일을 ${mode === 'DAYOFF' ? '휴무' : '근무예정'}으로 등록했어요`);
-      navigation.goBack();
+      await invalidateWorklog(qc);
+      const failedDates = dates.filter((_, i) => results[i]!.status === 'rejected');
+      if (failedDates.length > 0) {
+        // 일부만 저장된 상태 — 실패한 날짜만 선택해 둔 채 남아서 다시 시도할 수 있게
+        setSelectedDates(new Set(failedDates));
+        setError(`${dates.length - failedDates.length}일은 등록했고 ${failedDates.length}일은 실패했어요. 실패한 날짜가 선택돼 있으니 다시 시도해 주세요.`);
+        return;
+      }
+      navigation.navigate('WorklogHome', {
+        savedAt: Date.now(),
+        savedDate: dates[0],
+        toast: `${dates.length}일을 ${mode === 'DAYOFF' ? '휴무' : '근무예정'}으로 등록했어요`,
+      });
     } catch (e) {
       setError(getErrorMessage(e, '등록에 실패했어요'));
     } finally {

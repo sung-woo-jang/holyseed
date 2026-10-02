@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import ListRow from '../../components/ui/ListRow';
 import Border from '../../components/ui/Border';
@@ -13,6 +13,7 @@ import Segmented from '../../components/common/Segmented';
 import { Icon } from '../../components/common/Icon';
 import SheetModal from '../../components/sheets/SheetModal';
 import { worklogApi, type WorklogRecord } from '../../api/worklog';
+import { invalidateWorklog } from '../../queries/worklog-cache';
 import { getWorklogSortPref, setWorklogSortPref, getWorklogSummaryHiddenFields, setWorklogSummaryHiddenFields } from '../../lib/prefs';
 import { useTheme } from '../../lib/theme';
 import { krw } from '../../lib/format';
@@ -52,6 +53,8 @@ function sortByDate(records: WorklogRecord[], dir: 'asc' | 'desc'): WorklogRecor
 
 export default function WorklogHomeScreen({ navigation, route }: Props) {
   const theme = useTheme();
+  const qc = useQueryClient();
+  const [highlightDate, setHighlightDate] = useState<string | null>(null);
   const [ym, setYm] = useState(() => {
     const d = new Date();
     return { year: d.getFullYear(), month: d.getMonth() + 1 };
@@ -91,14 +94,27 @@ export default function WorklogHomeScreen({ navigation, route }: Props) {
     });
   }
 
+  // 입력·수정·삭제·예정 등록 후 돌아오면: 토스트 + 저장된 날짜의 달로 이동 + 그 날짜 선택/강조
   useEffect(() => {
-    if (!route.params?.savedMode) return;
-    const label = { create: '근무 기록을 추가했어요', edit: '근무 기록을 수정했어요', delete: '근무 기록을 삭제했어요' }[route.params.savedMode];
-    setToast(label);
-    worklogQ.refetch();
-    navigation.setParams({ savedMode: undefined, savedAt: undefined });
+    const params = route.params;
+    if (!params?.savedAt) return;
+    const byMode = { create: '근무 기록을 추가했어요', edit: '근무 기록을 수정했어요', delete: '근무 기록을 삭제했어요' } as const;
+    const label = params.toast ?? (params.savedMode ? byMode[params.savedMode] : '');
+    if (label) setToast(label);
+    if (params.savedDate) {
+      setYm({ year: Number(params.savedDate.slice(0, 4)), month: Number(params.savedDate.slice(5, 7)) });
+      setCalendarSelectedDate(params.savedDate);
+      if (params.savedMode !== 'delete') setHighlightDate(params.savedDate);
+    }
+    navigation.setParams({ savedMode: undefined, savedAt: undefined, savedDate: undefined, toast: undefined });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.params?.savedAt]);
+
+  useEffect(() => {
+    if (!highlightDate) return;
+    const timer = setTimeout(() => setHighlightDate(null), 2500);
+    return () => clearTimeout(timer);
+  }, [highlightDate]);
 
   const worklogQ = useQuery({
     queryKey: ['worklog', ym.year, ym.month],
@@ -167,8 +183,16 @@ export default function WorklogHomeScreen({ navigation, route }: Props) {
     recordsByDate.set(r.workDate, list);
   });
 
-  function openAdd() {
-    navigation.navigate('WorklogEntry', { record: null, defaultDate: `${ym.year}-${String(ym.month).padStart(2, '0')}-01` });
+  // 캘린더에서 날짜를 골라둔 상태면 그 날짜, 지난·다음 달을 보고 있으면 그 달 1일, 이번 달이면 오늘
+  function defaultAddDate(): string {
+    if (view === '캘린더' && calendarSelectedDate) return calendarSelectedDate;
+    const now = new Date();
+    if (ym.year === now.getFullYear() && ym.month === now.getMonth() + 1) return todayLocal();
+    return `${ym.year}-${String(ym.month).padStart(2, '0')}-01`;
+  }
+
+  function openAdd(date?: string) {
+    navigation.navigate('WorklogEntry', { record: null, defaultDate: date ?? defaultAddDate() });
   }
 
   function openEdit(record: WorklogRecord) {
@@ -176,7 +200,7 @@ export default function WorklogHomeScreen({ navigation, route }: Props) {
       toggleSelect(record.id);
       return;
     }
-    navigation.navigate('WorklogEntry', { record, defaultDate: `${ym.year}-${String(ym.month).padStart(2, '0')}-01` });
+    navigation.navigate('WorklogEntry', { record, defaultDate: record.workDate });
   }
 
   function toggleSelect(id: number) {
@@ -202,7 +226,7 @@ export default function WorklogHomeScreen({ navigation, route }: Props) {
       setToast(`${selectedIds.size}건을 삭제했어요`);
       setSelectedIds(new Set());
       setSelectMode(false);
-      worklogQ.refetch();
+      await invalidateWorklog(qc);
     } catch {
       setToast('일부 삭제에 실패했어요');
     } finally {
@@ -214,7 +238,7 @@ export default function WorklogHomeScreen({ navigation, route }: Props) {
   function renderRecordRow(r: WorklogRecord, isLast: boolean) {
     const checked = selectedIds.has(r.id);
     return (
-      <View key={r.id}>
+      <View key={r.id} style={highlightDate === r.workDate ? { backgroundColor: theme.brandSoft } : undefined}>
         <ListRow
           left={
             selectMode ? (
@@ -269,7 +293,7 @@ export default function WorklogHomeScreen({ navigation, route }: Props) {
         <Pressable style={[styles.toolChip, { borderColor: theme.border, marginRight: 8 }]} onPress={() => navigation.navigate('WorklogSchedule')}>
           <Text style={{ color: theme.text, fontSize: 12, fontWeight: '700' }}>+ 예정</Text>
         </Pressable>
-        <Pressable style={[styles.addBtn, { backgroundColor: theme.brand }]} onPress={openAdd}>
+        <Pressable style={[styles.addBtn, { backgroundColor: theme.brand }]} onPress={() => openAdd()}>
           <Text style={styles.addBtnText}>+ 추가</Text>
         </Pressable>
       </View>
@@ -447,13 +471,21 @@ export default function WorklogHomeScreen({ navigation, route }: Props) {
 
               {calendarSelectedDate && (
                 <View style={{ marginTop: 12 }}>
+                  <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700', marginBottom: 8 }}>
+                    {Number(calendarSelectedDate.slice(5, 7))}월 {Number(calendarSelectedDate.slice(8, 10))}일 ({WEEKDAYS[new Date(calendarSelectedDate).getDay()]})
+                  </Text>
                   {selectedDayRecords.length === 0 ? (
-                    <Text style={{ color: theme.textMuted, fontSize: 12.5 }}>이 날은 기록이 없어요</Text>
+                    <Text style={{ color: theme.textMuted, fontSize: 12.5, marginBottom: 10 }}>이 날은 기록이 없어요</Text>
                   ) : (
-                    <View style={[styles.listCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    <View style={[styles.listCard, { backgroundColor: theme.card, borderColor: theme.border, marginBottom: 10 }]}>
                       {selectedDayRecords.map((r, i) => renderRecordRow(r, i === selectedDayRecords.length - 1))}
                     </View>
                   )}
+                  <Pressable style={[styles.dayAddBtn, { backgroundColor: theme.brandSoft }]} onPress={() => openAdd(calendarSelectedDate)}>
+                    <Text style={{ color: theme.brand, fontSize: 13.5, fontWeight: '700' }}>
+                      {selectedDayRecords.length === 0 ? '+ 이 날 기록 추가' : '+ 이 날 하나 더 추가'}
+                    </Text>
+                  </Pressable>
                 </View>
               )}
             </View>
@@ -547,5 +579,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 4,
   },
+  dayAddBtn: { alignItems: 'center', paddingVertical: 13, borderRadius: 12 },
   bulkDeleteBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
 });

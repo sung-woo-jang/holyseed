@@ -7,7 +7,9 @@ import WorklogScheduleScreen from '../screens/worklog/WorklogScheduleScreen';
 import type { WorklogRecord } from '../api/worklog';
 
 export type WorklogStackParamList = {
-  WorklogHome: { savedMode?: 'create' | 'edit' | 'delete'; savedAt?: number } | undefined;
+  WorklogHome:
+    | { savedMode?: 'create' | 'edit' | 'delete'; savedAt?: number; savedDate?: string; toast?: string }
+    | undefined;
   WorklogEntry: { record: WorklogRecord | null; defaultDate: string };
   WorklogSettlement: undefined;
   WorklogCategory: undefined;

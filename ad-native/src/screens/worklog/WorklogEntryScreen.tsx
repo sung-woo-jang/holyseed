@@ -19,6 +19,7 @@ import { todayLocal, timeStringToDate, dateToTimeString, shiftDay } from '../../
 import { invalidateWorklog } from '../../queries/worklog-cache';
 import { getErrorMessage } from '../../lib/error';
 import type { WorklogStackParamList } from '../../navigation/WorklogStack';
+import { popToScreen } from '../../lib/nav-return';
 
 type Props = NativeStackScreenProps<WorklogStackParamList, 'WorklogEntry'>;
 
@@ -418,7 +419,7 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
         return;
       }
       leavingRef.current = true;
-      navigation.navigate('WorklogHome', { savedMode: isEdit ? 'edit' : 'create', savedAt: Date.now(), savedDate: workDate });
+      popToScreen(navigation, 'WorklogHome', { savedMode: isEdit ? 'edit' : 'create', savedAt: Date.now(), savedDate: workDate });
     } catch (e) {
       setError(getErrorMessage(e, '저장에 실패했어요. 다시 시도해 주세요.'));
     } finally {
@@ -435,7 +436,7 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
       setDeleteConfirm(false);
       await invalidateWorklog(qc);
       leavingRef.current = true;
-      navigation.navigate('WorklogHome', { savedMode: 'delete', savedAt: Date.now(), savedDate: record.workDate });
+      popToScreen(navigation, 'WorklogHome', { savedMode: 'delete', savedAt: Date.now(), savedDate: record.workDate });
     } catch (e) {
       setError(getErrorMessage(e, '삭제에 실패했어요.'));
       setDeleteConfirm(false);

@@ -26,6 +26,7 @@ import { useCreateTx, useUpdateTx, useDeleteTx } from '../queries/mutations';
 import { todayLocal } from '../lib/date';
 import { getErrorMessage } from '../lib/error';
 import type { TransactionEditParams } from '../navigation/types';
+import { popToScreen } from '../lib/nav-return';
 
 type TxType = 'EXPENSE' | 'INCOME';
 
@@ -160,7 +161,7 @@ function TransactionForm({ navigation, route, editTx }: Props & { editTx?: House
       } else {
         await createTx.mutateAsync({ date: txDate, type, amount: rawAmount, ...(category ? { categoryId: category.id } : {}), title, memo, ...costTypeDto });
       }
-      navigation.navigate(route.params.returnTo, { savedMode: isEdit ? 'edit' : 'create', savedAt: Date.now(), savedDate: txDate });
+      popToScreen(navigation, route.params.returnTo, { savedMode: isEdit ? 'edit' : 'create', savedAt: Date.now(), savedDate: txDate });
     } catch (e) {
       setError(getErrorMessage(e, '저장에 실패했어요. 다시 시도해 주세요.'));
     }
@@ -172,7 +173,7 @@ function TransactionForm({ navigation, route, editTx }: Props & { editTx?: House
       await deleteTx.mutateAsync(Number(editTx.id));
       // 거래 상세에서 들어왔다면 지워진 거래의 상세 화면으로 돌아가지 말고 상세까지 함께 닫는다
       if (route.params.returnTo === 'TransactionDetail') (navigation as unknown as { pop: (n: number) => void }).pop(2);
-      else navigation.navigate(route.params.returnTo, { savedMode: 'delete', savedAt: Date.now() });
+      else popToScreen(navigation, route.params.returnTo, { savedMode: 'delete', savedAt: Date.now() });
     } catch {
       setDeleteConfirm(false);
       setError('삭제에 실패했어요');

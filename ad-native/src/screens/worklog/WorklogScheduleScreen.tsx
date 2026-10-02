@@ -15,6 +15,7 @@ import { krw } from '../../lib/format';
 import { isKoreanHoliday } from '../../lib/koreanHolidays';
 import { getErrorMessage } from '../../lib/error';
 import type { WorklogStackParamList } from '../../navigation/WorklogStack';
+import { popToScreen } from '../../lib/nav-return';
 
 type Props = NativeStackScreenProps<WorklogStackParamList, 'WorklogSchedule'>;
 
@@ -121,7 +122,7 @@ export default function WorklogScheduleScreen({ navigation, route }: Props) {
         setError(`${dates.length - failedDates.length}일은 등록했고 ${failedDates.length}일은 실패했어요. 실패한 날짜가 선택돼 있으니 다시 시도해 주세요.`);
         return;
       }
-      navigation.navigate('WorklogHome', {
+      popToScreen(navigation, 'WorklogHome', {
         savedAt: Date.now(),
         savedDate: dates[0],
         toast: copyFrom ? `${dates.length}일에 복사했어요` : `${dates.length}일을 ${mode === 'DAYOFF' ? '휴무' : '근무예정'}으로 등록했어요`,

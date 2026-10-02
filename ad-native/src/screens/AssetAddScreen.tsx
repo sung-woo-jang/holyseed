@@ -17,6 +17,7 @@ import { todayLocal } from '../lib/date';
 import { getErrorMessage } from '../lib/error';
 import type { AssetCategory } from '../types/api';
 import type { AssetsStackParamList } from '../navigation/types';
+import { popToScreen } from '../lib/nav-return';
 
 type Props = NativeStackScreenProps<AssetsStackParamList, 'AssetAdd'>;
 
@@ -79,7 +80,7 @@ export default function AssetAddScreen({ navigation, route }: Props) {
     setError('');
     try {
       await updateAsset.mutateAsync({ id: Number(editAsset.id), dto: { name: assetName.trim(), category: category!, ownerUserId } });
-      navigation.navigate('AssetsList', { savedMode: 'edit', savedAt: Date.now() });
+      popToScreen(navigation, 'AssetsList', { savedMode: 'edit', savedAt: Date.now() });
     } catch (e: any) {
       setError(getErrorMessage(e, '수정에 실패했어요. 다시 시도해 주세요.'));
     }
@@ -94,7 +95,7 @@ export default function AssetAddScreen({ navigation, route }: Props) {
       if (valueToSave > 0) {
         await upsertSnapshot.mutateAsync({ assetId: newAsset.id, dto: { date: today, value: valueToSave } });
       }
-      navigation.navigate('AssetsList', { savedMode: 'create', savedAt: Date.now() });
+      popToScreen(navigation, 'AssetsList', { savedMode: 'create', savedAt: Date.now() });
     } catch (e: any) {
       setError(getErrorMessage(e, '저장에 실패했어요. 다시 시도해 주세요.'));
     }

@@ -6,6 +6,7 @@ import LaofusHomeScreen from '../screens/laofus/LaofusHomeScreen';
 import LaofusSystemScreen from '../screens/laofus/LaofusSystemScreen';
 import LaofusCyclesScreen from '../screens/laofus/LaofusCyclesScreen';
 import LaofusCycleDetailScreen from '../screens/laofus/LaofusCycleDetailScreen';
+import LaofusTradeDetailScreen from '../screens/laofus/LaofusTradeDetailScreen';
 import VrOverviewScreen from '../screens/vr/VrOverviewScreen';
 import VrFillsScreen from '../screens/vr/VrFillsScreen';
 import VrLadderScreen from '../screens/vr/VrLadderScreen';
@@ -20,6 +21,7 @@ export type StrategyStackParamList = {
   LaofusHome: undefined;
   LaofusCycles: undefined;
   LaofusCycleDetail: { cycleNo: number };
+  LaofusTradeDetail: { cycleNo: number; tradeId: number };
   LaofusSystem: undefined;
   VrOverview: undefined;
   VrFills: undefined;
@@ -55,6 +57,7 @@ function StrategyHeader(props: NativeStackHeaderProps) {
   }, [route.name]);
 
   if (route.name === 'LaofusCycleDetail') return <BackHeader navigation={navigation} title="사이클 상세" />;
+  if (route.name === 'LaofusTradeDetail') return <BackHeader navigation={navigation} title="체결 상세" />;
 
   function switchTo(next: Strategy) {
     if (next === strategy) return;
@@ -100,6 +103,7 @@ export default function StrategyStack() {
       <Stack.Screen name="LaofusHome" component={LaofusHomeScreen} />
       <Stack.Screen name="LaofusCycles" component={LaofusCyclesScreen} />
       <Stack.Screen name="LaofusCycleDetail" component={LaofusCycleDetailScreen} />
+      <Stack.Screen name="LaofusTradeDetail" component={LaofusTradeDetailScreen} />
       <Stack.Screen name="LaofusSystem" component={LaofusSystemScreen} />
       <Stack.Screen name="VrOverview" component={VrOverviewScreen} />
       <Stack.Screen name="VrFills" component={VrFillsScreen} />

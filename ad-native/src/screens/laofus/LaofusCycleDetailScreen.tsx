@@ -108,7 +108,7 @@ function Tile({
   );
 }
 
-export default function LaofusCycleDetailScreen({ route }: Props) {
+export default function LaofusCycleDetailScreen({ route, navigation }: Props) {
   const theme = useTheme();
   const { cycleNo } = route.params;
   const statusQ = useQuery({ queryKey: ['laofus-status'], queryFn: laofusRestApi.status });
@@ -220,31 +220,54 @@ export default function LaofusCycleDetailScreen({ route }: Props) {
       </View>
 
       <View style={[styles.chartCard, { backgroundColor: theme.card, borderColor: theme.border }]} onLayout={onCardLayout}>
-        <Text style={[styles.chartTitle, { color: theme.textMuted }]}>체결가 · 평단 추이</Text>
+        <Text style={[styles.chartTitle, { color: theme.textMuted }]}>체결가 · 평단 추이 · 점을 누르면 체결 상세</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <CycleTradeChart trades={c.trades} width={Math.max(cardWidth, real.length * CHART_POINT_WIDTH)} />
+          <CycleTradeChart
+            trades={c.trades}
+            width={Math.max(cardWidth, real.length * CHART_POINT_WIDTH)}
+            onPick={(t) => navigation.navigate('LaofusTradeDetail', { cycleNo: c.cycleNo, tradeId: t.id })}
+          />
         </ScrollView>
       </View>
 
       <View style={[styles.listCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-        {sortedTrades.map((t, i) => (
-          <View key={t.id} style={[styles.tradeRow, i > 0 && { borderTopWidth: 1, borderColor: theme.border }]}>
-            <View style={styles.tradeTop}>
-              <View style={styles.tradeKind}>
-                <View style={[styles.dot, { backgroundColor: t.side === 'SELL' ? theme.danger : theme.brand }]} />
-                <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700' }}>
-                  {t.seq}차 {t.kind}
-                </Text>
-                <Text style={{ color: theme.textMuted, fontSize: 11.5 }}>· {kstDate(t.date)}</Text>
+        {sortedTrades.map((t, i) => {
+          const isBuy = t.side === 'BUY';
+          const sideColor = isBuy ? theme.brand : theme.danger;
+          return (
+            <Pressable
+              key={t.id}
+              onPress={() => navigation.navigate('LaofusTradeDetail', { cycleNo: c.cycleNo, tradeId: t.id })}
+              style={({ pressed }) => [styles.tradeRow, i > 0 && { borderTopWidth: 1, borderColor: theme.border }, pressed && { opacity: 0.6 }]}
+            >
+              <View style={[styles.sideBadge, { backgroundColor: isBuy ? theme.brandSoft : theme.dark ? '#3A1A1E' : '#FDECEE' }]}>
+                <Text style={{ color: sideColor, fontSize: 12, fontWeight: '800' }}>{isBuy ? '매수' : '매도'}</Text>
               </View>
-              <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700' }}>{usd(n(t.amount))}</Text>
-            </View>
-            <Text style={{ color: theme.textMuted, fontSize: 11.5, marginTop: 3 }}>
-              체결가 {usd(n(t.price))} · 수량 {n(t.quantity).toFixed(6)} · T {n(t.tBefore)}→{n(t.tAfter)} · 평단 {usd(n(t.avgAfter))} · 잔금 {usd(n(t.cashAfter))}
-            </Text>
-            {t.note && <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 3, fontStyle: 'italic' }}>{t.note}</Text>}
-          </View>
-        ))}
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ color: theme.text, fontSize: 14, fontWeight: '700' }}>
+                  {t.seq}차 {t.kind} <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '500' }}>{kstDate(t.date)}</Text>
+                </Text>
+                <Text style={{ color: theme.textMuted, fontSize: 12.5, marginTop: 2 }}>
+                  체결가 {usd(n(t.price))} · {n(t.quantity) % 1 === 0 ? n(t.quantity) : n(t.quantity).toFixed(3)}주
+                </Text>
+                <View style={styles.rowChips}>
+                  <View style={[styles.rowChip, { backgroundColor: theme.bg }]}>
+                    <Text style={{ color: theme.textMuted, fontSize: 11, fontWeight: '700' }}>
+                      T {n(t.tBefore)} → {n(t.tAfter)}
+                    </Text>
+                  </View>
+                  {n(t.qtyAfter) > 0.0001 && (
+                    <View style={[styles.rowChip, { backgroundColor: theme.bg }]}>
+                      <Text style={{ color: theme.textMuted, fontSize: 11, fontWeight: '700' }}>평단 {usd(n(t.avgAfter))}</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+              <Text style={{ color: theme.text, fontSize: 14, fontWeight: '800' }}>{usd(n(t.amount))}</Text>
+              <Text style={{ color: theme.textMuted, fontSize: 18 }}>›</Text>
+            </Pressable>
+          );
+        })}
       </View>
     </ScrollView>
   );
@@ -261,8 +284,8 @@ const styles = StyleSheet.create({
   chartCard: { borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 12 },
   chartTitle: { fontSize: 12.5, fontWeight: '700', marginBottom: 8 },
   listCard: { borderWidth: 1, borderRadius: 14, overflow: 'hidden' },
-  tradeRow: { padding: 12 },
-  tradeTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  tradeKind: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dot: { width: 7, height: 7, borderRadius: 3.5 },
+  tradeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 },
+  sideBadge: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  rowChips: { flexDirection: 'row', gap: 6, marginTop: 5, flexWrap: 'wrap' },
+  rowChip: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
 });

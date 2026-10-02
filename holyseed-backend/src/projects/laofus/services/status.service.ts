@@ -70,6 +70,48 @@ function mergeSameDayHalfBuys(trades: LaofusTrade[]): LaofusTrade[] {
   return merged.map((t, i) => ({ ...t, seq: i + 1 })); // 화면용 N차 번호 재부여(공백 없이)
 }
 
+export interface LaofusOrderLogRow {
+  id: number;
+  cycleId: number;
+  side: string;
+  kind: string;
+  /** 엔진이 주문을 낸 순서: 매수 1=별지점·2=평단, 매도 1=쿼터·2=전량 (clientOrderId의 b1/b2/s1/s2) — 옛 방식 주문은 null */
+  leg: number | null;
+  tBefore: number;
+  tAfter: number;
+  /** BUY: 주문 금액(수량×지정가, USD) */
+  requestAmount: number | null;
+  /** SELL: 주문 수량 */
+  requestQuantity: number | null;
+  status: string;
+  appliedTradeId: number | null;
+  placedAt: string;
+}
+
+/** clientOrderId 형식 `imu-YYYYMMDD-b1` / `-s2` 에서 leg 번호 추출 */
+export function legOfClientOrderId(clientOrderId: string | null | undefined): number | null {
+  const m = /^imu-\d{8}-[bs](\d)$/.exec(clientOrderId ?? '');
+  return m ? Number(m[1]) : null;
+}
+
+export function toOrderLogRow(o: LaofusPendingOrder): LaofusOrderLogRow {
+  return {
+    id: o.id,
+    cycleId: o.cycleId,
+    side: o.side,
+    kind: o.kind,
+    leg: legOfClientOrderId(o.clientOrderId),
+    tBefore: Number(o.tBefore),
+    tAfter: Number(o.tAfter),
+    requestAmount: o.requestAmount != null ? Number(o.requestAmount) : null,
+    requestQuantity: o.requestQuantity != null ? Number(o.requestQuantity) : null,
+    status: o.status,
+    appliedTradeId: o.appliedTradeId,
+    // placed_at은 UTC로 저장된 시각 (timestamp without time zone)
+    placedAt: `${o.placedAt.toISOString().slice(0, 19)}Z`,
+  };
+}
+
 export interface LaofusLastRun {
   runId: string;
   startedAt: string;
@@ -112,6 +154,12 @@ export class LaofusStatusService {
   async getPrice(): Promise<{ price: number; ts: string; at: number }> {
     const p = await this.hub.getPrice('SOXL');
     return { price: p.price, ts: p.ts, at: p.fetchedAt };
+  }
+
+  /** 엔진이 낸 주문 이력 (체결 상세 화면용) — 접수 시각 오름차순, 읽기 전용 */
+  async getOrderLog(): Promise<LaofusOrderLogRow[]> {
+    const rows = await this.pendingRepo.find({ where: { symbol: 'SOXL' }, order: { id: 'ASC' } });
+    return rows.map(toOrderLogRow);
   }
 
   async getCandles(range: string): Promise<unknown> {

@@ -194,7 +194,30 @@ export interface LiveDto {
   partial: boolean;
 }
 
+export interface CandlesDto {
+  /** 최신순 일봉 */
+  candles: { timestamp: string; openPrice: string; highPrice: string; lowPrice: string; closePrice: string; volume: string }[];
+  nextBefore: string | null;
+}
+
+export interface OrderLogDto {
+  id: number;
+  cycleId: number;
+  side: string;
+  kind: string;
+  leg: number | null;
+  tBefore: number;
+  tAfter: number;
+  requestAmount: number | null;
+  requestQuantity: number | null;
+  status: string;
+  appliedTradeId: number | null;
+  placedAt: string;
+}
+
 export const laofusRestApi = {
+  candles: (range: '1m' | '3m' | 'all' = 'all') => laofusApi.get<CandlesDto>('/candles', { params: { range } }).then((r) => r.data),
+  orderLog: () => laofusApi.get<OrderLogDto[]>('/order-log').then((r) => r.data),
   status: () => laofusApi.get<StatusDto>('/status').then((r) => r.data),
   price: () => laofusApi.get<{ price: number; ts: string }>('/price').then((r) => r.data),
   live: () => laofusApi.get<LiveDto>('/live').then((r) => r.data),

@@ -48,6 +48,12 @@ export class LaofusController {
     return ok(await this.status.getCandles(range));
   }
 
+  @Get('order-log')
+  @ApiOperation({ summary: '엔진이 낸 주문 이력 (체결 상세 화면용 — 체결/미체결/거부, 읽기 전용)' })
+  async getOrderLog() {
+    return ok(await this.status.getOrderLog());
+  }
+
   @Get('account')
   @ApiOperation({ summary: '실계좌 (보유 전체 + 예수금 + 환율, 60초 캐시)' })
   async getAccount() {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Text, View, type GestureResponderEvent } from 'react-native';
 import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 import type { TradeDto } from '../../api/laofus';
@@ -32,12 +32,15 @@ const AVG_COLOR = '#A78BFA';
 interface CycleTradeChartProps {
   trades: TradeDto[];
   width: number;
+  /** 그래프를 드래그 없이 눌러서 뗐을 때 그 지점의 체결 — 체결 상세로 이동용 */
+  onPick?: (trade: TradeDto) => void;
 }
 
 /** 사이클 내 체결가 vs 평단 라인차트 (웹 대시보드 CycleChart에서 이식 — 마우스 호버 대신 터치) */
-export default function CycleTradeChart({ trades, width }: CycleTradeChartProps) {
+export default function CycleTradeChart({ trades, width, onPick }: CycleTradeChartProps) {
   const theme = useTheme();
   const [hover, setHover] = useState<number | null>(null);
+  const touch = useRef({ startX: 0, moved: false, idx: null as number | null });
 
   const pts = trades.filter((t) => t.kind !== '이월');
   if (pts.length < 2) return null;
@@ -80,11 +83,23 @@ export default function CycleTradeChart({ trades, width }: CycleTradeChartProps)
 
   function pickIndex(locationX: number) {
     const rel = (locationX - PAD.l) / (W - PAD.l - PAD.r);
-    const idx = Math.round(rel * (pts.length - 1));
-    setHover(Math.max(0, Math.min(pts.length - 1, idx)));
+    const idx = Math.max(0, Math.min(pts.length - 1, Math.round(rel * (pts.length - 1))));
+    touch.current.idx = idx;
+    setHover(idx);
   }
-  function handleTouch(e: GestureResponderEvent) {
+  function handleGrant(e: GestureResponderEvent) {
+    touch.current = { startX: e.nativeEvent.locationX, moved: false, idx: null };
     pickIndex(e.nativeEvent.locationX);
+  }
+  function handleMove(e: GestureResponderEvent) {
+    if (Math.abs(e.nativeEvent.locationX - touch.current.startX) > 8) touch.current.moved = true;
+    pickIndex(e.nativeEvent.locationX);
+  }
+  function handleRelease() {
+    const { moved, idx } = touch.current;
+    setHover(null);
+    // 드래그로 훑어본 게 아니라 한 점을 눌렀다 뗀 경우만 상세로 이동
+    if (!moved && idx != null && pts[idx]) onPick?.(pts[idx]!);
   }
 
   const gridColor = theme.dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
@@ -107,9 +122,9 @@ export default function CycleTradeChart({ trades, width }: CycleTradeChartProps)
         style={{ width: W, height: H }}
         onStartShouldSetResponder={() => true}
         onMoveShouldSetResponder={() => true}
-        onResponderGrant={handleTouch}
-        onResponderMove={handleTouch}
-        onResponderRelease={() => setHover(null)}
+        onResponderGrant={handleGrant}
+        onResponderMove={handleMove}
+        onResponderRelease={handleRelease}
       >
         <Svg width={W} height={H}>
           {ticks.map((v) => (

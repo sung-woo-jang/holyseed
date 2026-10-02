@@ -10,6 +10,8 @@ import EmptyState from '../../components/common/EmptyState';
 import AppToast from '../../components/common/AppToast';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import Segmented from '../../components/common/Segmented';
+import ActionSheet from '../../components/common/ActionSheet';
+import DatePicker from '../../components/common/DatePicker';
 import { Icon } from '../../components/common/Icon';
 import SheetModal from '../../components/sheets/SheetModal';
 import { worklogApi, type WorklogRecord } from '../../api/worklog';
@@ -55,6 +57,8 @@ export default function WorklogHomeScreen({ navigation, route }: Props) {
   const theme = useTheme();
   const qc = useQueryClient();
   const [highlightDate, setHighlightDate] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [jumpOpen, setJumpOpen] = useState(false);
   const [ym, setYm] = useState(() => {
     const d = new Date();
     return { year: d.getFullYear(), month: d.getMonth() + 1 };
@@ -195,6 +199,25 @@ export default function WorklogHomeScreen({ navigation, route }: Props) {
     navigation.navigate('WorklogEntry', { record: null, defaultDate: date ?? defaultAddDate() });
   }
 
+  function goToday() {
+    const now = new Date();
+    setYm({ year: now.getFullYear(), month: now.getMonth() + 1 });
+    setCalendarSelectedDate(todayLocal());
+  }
+
+  function jumpTo(date: string) {
+    setYm({ year: Number(date.slice(0, 4)), month: Number(date.slice(5, 7)) });
+    setCalendarSelectedDate(date);
+    setHighlightDate(date);
+  }
+
+  function handleMenu(value: string) {
+    setMenuOpen(false);
+    if (value === 'schedule') navigation.navigate('WorklogSchedule');
+    else if (value === 'category') navigation.navigate('WorklogCategory');
+    else if (value === 'select') toggleSelectMode();
+  }
+
   function openEdit(record: WorklogRecord) {
     if (selectMode) {
       toggleSelect(record.id);
@@ -246,9 +269,11 @@ export default function WorklogHomeScreen({ navigation, route }: Props) {
                 {checked && Icon.check('#fff', 12)}
               </View>
             ) : (
-              <View style={[styles.dateBox, { backgroundColor: theme.bg }]}>
-                <Text style={{ color: theme.textMuted, fontSize: 10, fontWeight: '700' }}>{Number(r.workDate.slice(5, 7))}월</Text>
-                <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{Number(r.workDate.slice(8, 10))}</Text>
+              <View style={[styles.dateBox, { backgroundColor: r.workDate === todayLocal() ? theme.brandSoft : theme.bg }]}>
+                <Text style={{ color: r.workDate === todayLocal() ? theme.brand : theme.textMuted, fontSize: 10, fontWeight: '700' }}>
+                  {r.workDate === todayLocal() ? '오늘' : `${Number(r.workDate.slice(5, 7))}월`}
+                </Text>
+                <Text style={{ color: r.workDate === todayLocal() ? theme.brand : theme.text, fontSize: 15, fontWeight: '800' }}>{Number(r.workDate.slice(8, 10))}</Text>
               </View>
             )
           }
@@ -256,7 +281,8 @@ export default function WorklogHomeScreen({ navigation, route }: Props) {
             <View>
               <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{r.title}</Text>
               <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 2 }}>
-                {r.category} · {PAY_STATUS_LABEL[r.payStatus]}
+                {r.category}
+                {r.startTime && r.endTime && r.payStatus !== 'DAYOFF' ? ` · ${r.startTime}~${r.endTime}` : ''} · {PAY_STATUS_LABEL[r.payStatus]}
                 {r.payMultiplier !== 1 ? ` · ${r.payMultiplier}공수` : ''}
               </Text>
             </View>
@@ -275,6 +301,10 @@ export default function WorklogHomeScreen({ navigation, route }: Props) {
   const cells: (number | null)[] = [...Array(firstWeekday).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
   while (cells.length % 7 !== 0) cells.push(null);
   const today = todayLocal();
+  const nowDate = new Date();
+  const isCurrentMonth = ym.year === nowDate.getFullYear() && ym.month === nowDate.getMonth() + 1;
+  const showTodayChip = !isCurrentMonth || (view === '캘린더' && calendarSelectedDate !== today);
+  const pendingCount = records.filter((r) => r.payStatus === 'EXPECTED' || r.payStatus === 'UNPAID').length;
   const selectedDayRecords = calendarSelectedDate ? recordsByDate.get(calendarSelectedDate) ?? [] : [];
 
   return (
@@ -283,34 +313,45 @@ export default function WorklogHomeScreen({ navigation, route }: Props) {
         <Pressable hitSlop={10} onPress={() => changeMonth(-1)} style={styles.navBtn}>
           <Text style={{ color: theme.text, fontSize: 20 }}>‹</Text>
         </Pressable>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>
-          {ym.year}년 {ym.month}월
-        </Text>
+        <Pressable hitSlop={6} onPress={() => setJumpOpen(true)}>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>
+            {ym.year}년 {ym.month}월 <Text style={{ color: theme.textMuted, fontSize: 12 }}>▾</Text>
+          </Text>
+        </Pressable>
         <Pressable hitSlop={10} onPress={() => changeMonth(1)} style={styles.navBtn}>
           <Text style={{ color: theme.text, fontSize: 20 }}>›</Text>
         </Pressable>
+        {showTodayChip && (
+          <Pressable style={[styles.toolChip, { borderColor: theme.brand, marginLeft: 4 }]} onPress={goToday}>
+            <Text style={{ color: theme.brand, fontSize: 12, fontWeight: '700' }}>오늘</Text>
+          </Pressable>
+        )}
         <View style={{ flex: 1 }} />
-        <Pressable style={[styles.toolChip, { borderColor: theme.border, marginRight: 8 }]} onPress={() => navigation.navigate('WorklogSchedule')}>
-          <Text style={{ color: theme.text, fontSize: 12, fontWeight: '700' }}>+ 예정</Text>
-        </Pressable>
         <Pressable style={[styles.addBtn, { backgroundColor: theme.brand }]} onPress={() => openAdd()}>
           <Text style={styles.addBtnText}>+ 추가</Text>
         </Pressable>
+        <Pressable hitSlop={6} style={[styles.moreBtn, { borderColor: theme.border }]} onPress={() => setMenuOpen(true)}>
+          <Text style={{ color: theme.text, fontSize: 18, lineHeight: 20, fontWeight: '700' }}>⋯</Text>
+        </Pressable>
       </View>
 
-      <View style={styles.toolRow}>
-        <Segmented options={['목록', '캘린더']} value={view} onChange={(v) => setView(v as '목록' | '캘린더')} small alignment="fluid" />
-        <Pressable style={[styles.toolChip, { borderColor: theme.brand }]} onPress={() => navigation.navigate('WorklogSettlement')}>
-          <Text style={{ color: theme.brand, fontSize: 12, fontWeight: '700' }}>수령 처리</Text>
-        </Pressable>
-        <View style={{ flex: 1 }} />
-        <Pressable style={[styles.toolChip, { borderColor: theme.border }]} onPress={() => navigation.navigate('WorklogCategory')}>
-          <Text style={{ color: theme.text, fontSize: 12, fontWeight: '700' }}>관리</Text>
-        </Pressable>
-        <Pressable style={[styles.toolChip, { borderColor: selectMode ? theme.brand : theme.border }]} onPress={toggleSelectMode}>
-          <Text style={{ color: selectMode ? theme.brand : theme.text, fontSize: 12, fontWeight: '700' }}>{selectMode ? '선택 취소' : '선택'}</Text>
-        </Pressable>
-      </View>
+      {selectMode ? (
+        <View style={styles.toolRow}>
+          <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700' }}>삭제할 기록을 선택하세요</Text>
+          <View style={{ flex: 1 }} />
+          <Pressable style={[styles.toolChip, { borderColor: theme.brand }]} onPress={toggleSelectMode}>
+            <Text style={{ color: theme.brand, fontSize: 12, fontWeight: '700' }}>선택 취소</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View style={styles.toolRow}>
+          <Segmented options={['목록', '캘린더']} value={view} onChange={(v) => setView(v as '목록' | '캘린더')} small alignment="fluid" />
+          <View style={{ flex: 1 }} />
+          <Pressable style={[styles.toolChip, { borderColor: theme.brand }]} onPress={() => navigation.navigate('WorklogSettlement')}>
+            <Text style={{ color: theme.brand, fontSize: 12, fontWeight: '700' }}>수령 처리{pendingCount > 0 ? ` ${pendingCount}` : ''}</Text>
+          </Pressable>
+        </View>
+      )}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sortRow}>
         <View style={styles.chipRow}>
@@ -492,7 +533,11 @@ export default function WorklogHomeScreen({ navigation, route }: Props) {
           ) : (
             <View style={styles.sectionPad}>
               {sortedRecords.length === 0 ? (
-                <EmptyState iconCode={TE.briefcase} title="이 달 근무 기록이 없어요" desc="+ 추가로 등록해보세요" />
+                categoryFilter && records.length > 0 ? (
+                  <EmptyState iconCode={TE.briefcase} title={`이 달 '${categoryFilter}' 기록이 없어요`} desc="다른 분류를 선택하거나 '전체'를 눌러보세요" />
+                ) : (
+                  <EmptyState iconCode={TE.briefcase} title="이 달 근무 기록이 없어요" desc="+ 추가로 등록해보세요" />
+                )
               ) : (
                 <View style={[styles.listCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                   {sortedRecords.map((r, i) => renderRecordRow(r, i === sortedRecords.length - 1))}
@@ -524,6 +569,22 @@ export default function WorklogHomeScreen({ navigation, route }: Props) {
         onConfirm={handleBulkDelete}
         onClose={() => setBulkDeleteConfirm(false)}
       />
+      <ActionSheet
+        visible={menuOpen}
+        items={[
+          { iconCode: TE.calendar, label: '예정·휴무 한번에 등록', value: 'schedule' },
+          { iconCode: TE.gear, label: '분류·업무 관리', value: 'category' },
+          { iconCode: TE.trash, label: '여러 건 선택해서 삭제', value: 'select', danger: true },
+        ]}
+        onSelect={handleMenu}
+        onClose={() => setMenuOpen(false)}
+      />
+      <DatePicker
+        visible={jumpOpen}
+        value={calendarSelectedDate ?? `${ym.year}-${String(ym.month).padStart(2, '0')}-01`}
+        onSelect={jumpTo}
+        onClose={() => setJumpOpen(false)}
+      />
       <AppToast open={!!toast} text={toast} onClose={() => setToast('')} />
     </SafeAreaView>
   );
@@ -535,6 +596,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, gap: 4 },
   navBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 16, fontWeight: '700' },
+  moreBtn: { width: 36, height: 36, borderWidth: 1, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
   addBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
   addBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   toolRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8, gap: 8 },

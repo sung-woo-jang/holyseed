@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { View, Text, type GestureResponderEvent } from 'react-native';
 import Svg, { Circle, Defs, G, Line, LinearGradient, Path, Rect, Stop, Text as SvgText } from 'react-native-svg';
+import { scrubLock } from '../../lib/chart-touch';
 import { krwShort } from '../../lib/format';
 
 interface DataPoint {
@@ -101,9 +102,10 @@ export default function LineChart({
       style={{ width, height }}
       onStartShouldSetResponder={() => interactive}
       onMoveShouldSetResponder={() => interactive}
-      onResponderGrant={handleTouch}
+      {...scrubLock(handleTouch)}
       onResponderMove={handleTouch}
       onResponderRelease={() => setHoverIdx(null)}
+      onResponderTerminate={() => setHoverIdx(null)}
     >
       <Svg width={width} height={height}>
         <Defs>

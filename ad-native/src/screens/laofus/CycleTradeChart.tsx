@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Text, View, type GestureResponderEvent } from 'react-native';
 import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 import type { TradeDto } from '../../api/laofus';
+import { scrubLock } from '../../lib/chart-touch';
 import { useTheme } from '../../lib/theme';
 
 function n(v: string | number | null | undefined): number {
@@ -122,9 +123,10 @@ export default function CycleTradeChart({ trades, width, onPick }: CycleTradeCha
         style={{ width: W, height: H }}
         onStartShouldSetResponder={() => true}
         onMoveShouldSetResponder={() => true}
-        onResponderGrant={handleGrant}
+        {...scrubLock(handleGrant)}
         onResponderMove={handleMove}
         onResponderRelease={handleRelease}
+        onResponderTerminate={() => setHover(null)}
       >
         <Svg width={W} height={H}>
           {ticks.map((v) => (

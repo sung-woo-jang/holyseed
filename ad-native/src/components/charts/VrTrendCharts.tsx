@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { View, type GestureResponderEvent } from 'react-native';
 import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 import type { VrCandlesDto, VrCycle, VrFill } from '../../api/vr';
+import { scrubLock } from '../../lib/chart-touch';
 import { useTheme, type Theme } from '../../lib/theme';
 import { closesByDate, type TrendPoint } from '../../lib/vr-trend';
 
@@ -60,7 +61,7 @@ function useScrub(xs: number[], padLeft: number) {
     handlers: {
       onStartShouldSetResponder: () => true,
       onMoveShouldSetResponder: () => true,
-      onResponderGrant: pick,
+      ...scrubLock(pick),
       onResponderMove: pick,
       onResponderRelease: () => setIdx(null),
       onResponderTerminate: () => setIdx(null),

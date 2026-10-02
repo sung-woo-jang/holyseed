@@ -3,10 +3,13 @@ import * as SecureStore from 'expo-secure-store';
 import { BASE_URL } from '../lib/api';
 import { LAOFUS_BASE_URL } from '../lib/laofus-api';
 import { getTokens, saveTokens } from '../lib/storage';
-import { todayLocal } from '../lib/date';
+import { daysBetween, todayLocal } from '../lib/date';
+import { getAssetCategoryMeta } from '../lib/category-meta';
+import { levelsFor, splitsAt } from '../lib/laofus-trade-context';
+import { normalizeAssetCategory } from '../lib/net-worth';
 import type { LiveDto, StatusDto } from '../api/laofus';
-import type { VrState } from '../api/vr';
-import type { WorklogRecord, WorklogSummary } from '../api/worklog';
+import type { VrFill, VrState } from '../api/vr';
+import type { WorklogRecord } from '../api/worklog';
 
 // 위젯은 앱 UI(스토어·내비게이션) 없이 백그라운드(headless)에서 돈다. 앱의 api 인스턴스는 401 처리 시
 // 인증 스토어를 건드리므로 쓰지 않고, 토큰 저장소(SecureStore)만 공유하는 별도 클라이언트를 쓴다.
@@ -44,14 +47,40 @@ async function laofusGet<T>(path: string): Promise<T> {
   return unwrap<T>(res.data);
 }
 
+// ─── 공통 ────────────────────────────────────────────────────────────────────
+function md(date: string): string {
+  return `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`;
+}
+
+function kstParts(iso: string): Record<string, string> {
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(iso));
+  return Object.fromEntries(parts.map((p) => [p.type, p.value]));
+}
+
+function kstMd(iso: string): string {
+  const p = kstParts(iso);
+  return `${p.month}/${p.day}`;
+}
+
+function kstHm(iso: string): string {
+  const p = kstParts(iso);
+  return `${p.hour}:${p.minute}`;
+}
+
 // ─── 자산일기 ────────────────────────────────────────────────────────────────
 export interface AssetWidgetData {
   netWorth: number;
-  change30d: number | null;
-  change30dPct: number | null;
+  periods: { label: string; change: number; pct: number | null }[];
+  /** 자산(부채 제외) 카테고리별 비중, 큰 순 */
+  mix: { label: string; color: string; value: number }[];
+  assetTotal: number;
+  debtTotal: number;
   monthIncome: number;
   monthExpense: number;
   month: number;
+  recent: { date: string; title: string; amount: number; type: 'INCOME' | 'EXPENSE' }[];
+  /** 마지막 자산 스냅샷 입력 후 지난 일수 */
+  inputAgeDays: number | null;
 }
 
 export async function fetchAssetData(): Promise<AssetWidgetData> {
@@ -61,28 +90,79 @@ export async function fetchAssetData(): Promise<AssetWidgetData> {
 
   const today = todayLocal();
   const monthStart = `${today.slice(0, 7)}-01`;
-  const [dash, tx] = await Promise.all([
+  const [dash, tx, assets, cats] = await Promise.all([
     adRequest<any>({ method: 'get', url: `/households/${hid}/dashboard` }),
-    adRequest<{ data: { date: string; type: string; amount: number | string }[] }>({
+    adRequest<{ data: any[] }>({
       method: 'post',
       url: `/households/${hid}/transactions/search`,
       data: { from: monthStart, to: today, limit: 3000 },
     }),
+    adRequest<any[]>({ method: 'get', url: `/households/${hid}/assets` }).catch(() => [] as any[]),
+    adRequest<any[]>({ method: 'get', url: `/households/${hid}/categories` }).catch(() => [] as any[]),
   ]);
 
   const netWorth = Number(dash?.netWorth) || 0;
-  const base = dash?.periods?.d30?.netWorth;
-  const change30d = base != null ? netWorth - Number(base) : null;
-  const change30dPct = change30d != null && Number(base) > 0 ? (change30d / Number(base)) * 100 : null;
+  const periods = (
+    [
+      ['30일', dash?.periods?.d30],
+      ['올해', dash?.periods?.ytd],
+      ['1년', dash?.periods?.y1],
+    ] as const
+  )
+    .filter(([, p]) => p?.netWorth != null)
+    .map(([label, p]) => {
+      const base = Number(p.netWorth);
+      return { label, change: netWorth - base, pct: base > 0 ? ((netWorth - base) / base) * 100 : null };
+    });
 
+  const byCat = new Map<string, number>();
+  let debtTotal = 0;
+  for (const d of (dash?.donut ?? []) as { category: string; isLiability: boolean; valueKRW: number }[]) {
+    const v = Number(d.valueKRW) || 0;
+    if (d.isLiability) debtTotal += v;
+    else byCat.set(d.category, (byCat.get(d.category) ?? 0) + v);
+  }
+  const mix = [...byCat.entries()]
+    .map(([category, value]) => {
+      const meta = getAssetCategoryMeta(normalizeAssetCategory(category));
+      return { label: meta.label, color: meta.color, value };
+    })
+    .filter((m) => m.value > 0)
+    .sort((a, b) => b.value - a.value);
+  const assetTotal = mix.reduce((a, m) => a + m.value, 0);
+
+  const catName = new Map<number, string>((Array.isArray(cats) ? cats : []).map((c: any) => [c.id, c.name]));
   let monthIncome = 0;
   let monthExpense = 0;
+  const rows: { id: number; date: string; title: string; amount: number; type: 'INCOME' | 'EXPENSE' }[] = [];
   for (const t of Array.isArray(tx?.data) ? tx.data : []) {
     if (t.date < monthStart || t.date > today) continue;
-    if (t.type === 'INCOME') monthIncome += Number(t.amount) || 0;
-    else if (t.type === 'EXPENSE') monthExpense += Number(t.amount) || 0;
+    const amount = Number(t.amount) || 0;
+    if (t.type === 'INCOME') monthIncome += amount;
+    else if (t.type === 'EXPENSE') monthExpense += amount;
+    else continue;
+    rows.push({ id: t.id, date: t.date, title: t.title || t.memo || catName.get(t.categoryId) || '거래', amount, type: t.type });
   }
-  return { netWorth, change30d, change30dPct, monthIncome, monthExpense, month: Number(today.slice(5, 7)) };
+  rows.sort((a, b) => (a.date === b.date ? b.id - a.id : a.date < b.date ? 1 : -1));
+  const recent = rows.slice(0, 6).map((r) => ({ date: md(r.date), title: r.title, amount: r.amount, type: r.type }));
+
+  const lastInput = (Array.isArray(assets) ? assets : []).reduce<string | null>((max, a: any) => {
+    const d = a?.latestSnapshot?.date as string | undefined;
+    return d && (!max || d > max) ? d : max;
+  }, null);
+
+  return {
+    netWorth,
+    periods,
+    mix,
+    assetTotal,
+    debtTotal,
+    monthIncome,
+    monthExpense,
+    month: Number(today.slice(5, 7)),
+    recent,
+    inputAgeDays: lastInput ? daysBetween(lastInput, today) : null,
+  };
 }
 
 // ─── 라오어(SOXL 무한매수법) ──────────────────────────────────────────────────
@@ -92,23 +172,25 @@ export interface LaofusWidgetData {
   changePct: number | null;
   stale: boolean;
   t: number | null;
+  splits: number;
   cycleNo: number | null;
+  cycleDay: number | null;
   quantity: number | null;
   avgPrice: number | null;
   profitPct: number | null;
-  /** 현재가에 가장 가까운 매수·매도 주문 1건씩 */
+  marketValueUsd: number | null;
+  profitUsd: number | null;
+  cashUsd: number | null;
+  star: number | null;
+  buyStar: number | null;
+  target: number | null;
+  oneBuy: number | null;
+  totalAssetsKrw: number | null;
+  dayProfitUsd: number | null;
+  /** 현재가에서 가까운 순 */
   orders: { side: 'BUY' | 'SELL'; type: string; price: number | null; quantity: number; distancePct: number | null; alert: boolean }[];
-  orderCount: number;
-}
-
-function nearestOrders(orders: LiveDto['symbols'][number]['orders']): LaofusWidgetData['orders'] {
-  const pick = (side: 'BUY' | 'SELL') =>
-    orders
-      .filter((o) => o.side === side)
-      .sort((a, b) => Math.abs(a.distancePct ?? Infinity) - Math.abs(b.distancePct ?? Infinity))[0];
-  return [pick('BUY'), pick('SELL')]
-    .filter((o): o is NonNullable<typeof o> => !!o)
-    .map((o) => ({ side: o.side, type: o.type, price: o.price, quantity: o.quantity, distancePct: o.distancePct, alert: o.alert }));
+  trades: { date: string; side: string; kind: string; price: number; quantity: number }[];
+  nextRun: string | null;
 }
 
 export async function fetchLaofusData(): Promise<LaofusWidgetData> {
@@ -116,18 +198,49 @@ export async function fetchLaofusData(): Promise<LaofusWidgetData> {
   const soxl = live.symbols.find((s) => s.symbol === 'SOXL');
   if (!soxl) throw new Error('NO_SYMBOL');
   const st = status?.state ?? null;
+  const today = todayLocal();
+  const splits = splitsAt(today);
+
+  const t = st ? Number(st.t) : null;
+  const avg = st && Number(st.quantity) > 0 ? Number(st.avgPrice) : null;
+  const levels = st && t !== null ? levelsFor({ T: t, quantity: Number(st.quantity), avg, cash: Number(st.cash) }, splits) : null;
+
+  const cycle = st ? status?.cycles.find((c) => c.cycleNo === st.cycleNo) ?? null : null;
+  const trades = (cycle?.trades ?? [])
+    .filter((x) => x.kind !== '이월')
+    .slice(-4)
+    .reverse()
+    .map((x) => ({ date: kstMd(x.date), side: x.side, kind: x.kind, price: Number(x.price), quantity: Number(x.quantity) }));
+
+  const next = status?.engine.nextRuns?.[0] ?? null;
+  const orders = [...soxl.orders]
+    .sort((a, b) => Math.abs(a.distancePct ?? Infinity) - Math.abs(b.distancePct ?? Infinity))
+    .map((o) => ({ side: o.side, type: o.type, price: o.price, quantity: o.quantity, distancePct: o.distancePct, alert: o.alert }));
+
   return {
     sessionLabel: live.session?.shortLabel ?? null,
     price: soxl.price,
     changePct: soxl.changePct,
     stale: soxl.stale,
-    t: st ? Number(st.t) : null,
+    t,
+    splits,
     cycleNo: st?.cycleNo ?? null,
+    cycleDay: cycle ? daysBetween(cycle.startDate.slice(0, 10), today) + 1 : null,
     quantity: soxl.quantity,
     avgPrice: soxl.avgPrice,
     profitPct: soxl.profitPct,
-    orders: nearestOrders(soxl.orders),
-    orderCount: soxl.orders.length,
+    marketValueUsd: soxl.marketValueUsd,
+    profitUsd: soxl.marketValueUsd !== null && soxl.quantity !== null && soxl.avgPrice !== null ? soxl.marketValueUsd - soxl.quantity * soxl.avgPrice : null,
+    cashUsd: st ? Number(st.cash) : null,
+    star: levels?.star ?? null,
+    buyStar: levels?.buyStar ?? null,
+    target: levels?.full ?? null,
+    oneBuy: levels?.oneBuy ?? null,
+    totalAssetsKrw: live.totals?.totalAssetsKrw ?? null,
+    dayProfitUsd: live.totals?.dayProfitUsd ?? null,
+    orders,
+    trades,
+    nextRun: next ? `${kstMd(next.at)} ${kstHm(next.at)}` : null,
   };
 }
 
@@ -137,52 +250,109 @@ export interface VrWidgetData {
   changePct: number | null;
   stale: boolean;
   quantity: number;
+  avgPrice: number;
   vValue: number;
+  v2Preview: number | null;
   minBand: number;
   maxBand: number;
   pool: number;
+  usablePool: number;
   investedPrincipal: number;
+  cycleNo: number | null;
+  cycleStart: string | null;
+  cycleEnd: string | null;
+  renewalInDays: number | null;
+  fills: { date: string; kind: string; price: number; quantity: number }[];
 }
 
 export async function fetchVrData(): Promise<VrWidgetData> {
-  const [state, live] = await Promise.all([adRequest<VrState>({ method: 'get', url: '/vr/state' }), laofusGet<LiveDto>('/live')]);
+  const [state, live, fills] = await Promise.all([
+    adRequest<VrState>({ method: 'get', url: '/vr/state' }),
+    laofusGet<LiveDto>('/live'),
+    adRequest<VrFill[]>({ method: 'get', url: '/vr/fills' }).catch(() => [] as VrFill[]),
+  ]);
   const tqqq = live.symbols.find((s) => s.symbol === 'TQQQ');
+  const today = todayLocal();
+  const recent = [...fills]
+    .sort((a, b) => (a.fillDate === b.fillDate ? b.id - a.id : a.fillDate < b.fillDate ? 1 : -1))
+    .filter((f) => f.kind !== 'DEPOSIT')
+    .slice(0, 4)
+    .map((f) => ({ date: md(f.fillDate), kind: f.kind, price: f.price, quantity: f.quantity }));
   return {
     price: tqqq?.price ?? null,
     changePct: tqqq?.changePct ?? null,
     stale: tqqq?.stale ?? true,
     quantity: state.quantity,
+    avgPrice: state.avgPrice,
     vValue: state.vValue,
+    v2Preview: state.v2Preview,
     minBand: state.minBand,
     maxBand: state.maxBand,
     pool: state.pool,
+    usablePool: state.usablePool,
     investedPrincipal: state.investedPrincipal,
+    cycleNo: state.cycle?.cycleNo ?? null,
+    cycleStart: state.cycle ? md(state.cycle.startDate) : null,
+    cycleEnd: state.cycle?.endDate ? md(state.cycle.endDate) : null,
+    renewalInDays: state.nextRenewalDate ? daysBetween(today, state.nextRenewalDate) : null,
+    fills: recent,
   };
 }
 
 // ─── 근무일지 ────────────────────────────────────────────────────────────────
 export interface WorklogWidgetData {
+  year: number;
   month: number;
+  today: string;
   workDays: number;
+  laborUnits: number;
   totalNet: number;
+  totalGross: number;
   receivedNet: number;
   pendingNet: number;
-  today: { title: string; payStatus: string } | null;
+  /** 달력 표시용: W=근무(수령/예정/미수령) S=근무예정 O=휴무 */
+  days: { d: number; s: 'W' | 'S' | 'O' }[];
+  todayTitle: string | null;
+  next: { date: string; title: string } | null;
+  receivables: { date: string; title: string; net: number }[];
 }
 
 export async function fetchWorklogData(): Promise<WorklogWidgetData> {
   const today = todayLocal();
   const year = Number(today.slice(0, 4));
   const month = Number(today.slice(5, 7));
-  const res = await adRequest<{ records: WorklogRecord[]; summary: WorklogSummary }>({ method: 'post', url: '/worklog/search', data: { year, month } });
-  const todayRec = res.records.find((r) => r.workDate === today && r.payStatus !== 'DAYOFF');
+  const res = await adRequest<{ records: WorklogRecord[] }>({ method: 'post', url: '/worklog/search', data: { year, month } });
+
+  const work = res.records.filter((r) => r.payStatus !== 'DAYOFF');
+  const sum = (list: WorklogRecord[], f: (r: WorklogRecord) => number) => list.reduce((a, r) => a + f(r), 0);
+  const pending = work.filter((r) => r.payStatus === 'EXPECTED' || r.payStatus === 'UNPAID');
+
+  const days = res.records.map((r) => ({
+    d: Number(r.workDate.slice(8, 10)),
+    s: (r.payStatus === 'DAYOFF' ? 'O' : r.payStatus === 'SCHEDULED' ? 'S' : 'W') as 'W' | 'S' | 'O',
+  }));
+  const todayRec = work.find((r) => r.workDate === today);
+  const nextRec = work
+    .filter((r) => r.workDate > today)
+    .sort((a, b) => (a.workDate < b.workDate ? -1 : 1))[0];
+
   return {
+    year,
     month,
-    workDays: res.summary.workDays,
-    totalNet: res.summary.totalNet,
-    receivedNet: res.summary.receivedNet,
-    pendingNet: res.summary.pendingNet,
-    today: todayRec ? { title: todayRec.title, payStatus: todayRec.payStatus } : null,
+    today,
+    workDays: work.length,
+    laborUnits: sum(work, (r) => r.payMultiplier),
+    totalNet: sum(work, (r) => r.netAmount),
+    totalGross: sum(work, (r) => r.effectiveAmount),
+    receivedNet: sum(work.filter((r) => r.payStatus === 'RECEIVED'), (r) => r.netAmount),
+    pendingNet: sum(pending, (r) => r.netAmount),
+    days,
+    todayTitle: todayRec ? todayRec.title : null,
+    next: nextRec ? { date: md(nextRec.workDate), title: nextRec.title } : null,
+    receivables: pending
+      .sort((a, b) => (a.workDate < b.workDate ? -1 : 1))
+      .slice(0, 4)
+      .map((r) => ({ date: md(r.workDate), title: r.title, net: r.netAmount })),
   };
 }
 
@@ -194,7 +364,7 @@ export interface Cached<T> {
 
 export async function readCache<T>(name: string): Promise<Cached<T> | null> {
   try {
-    const raw = await SecureStore.getItemAsync(`widget_cache_${name}`);
+    const raw = await SecureStore.getItemAsync(`widget_cache_v2_${name}`);
     return raw ? (JSON.parse(raw) as Cached<T>) : null;
   } catch {
     return null;
@@ -203,7 +373,7 @@ export async function readCache<T>(name: string): Promise<Cached<T> | null> {
 
 export async function writeCache<T>(name: string, data: T): Promise<void> {
   try {
-    await SecureStore.setItemAsync(`widget_cache_${name}`, JSON.stringify({ data, at: Date.now() }));
+    await SecureStore.setItemAsync(`widget_cache_v2_${name}`, JSON.stringify({ data, at: Date.now() }));
   } catch {
     // 캐시 실패는 무시
   }

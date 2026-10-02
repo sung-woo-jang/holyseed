@@ -1,5 +1,5 @@
 'use no memo';
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { FlexWidget, TextWidget } from 'react-native-android-widget';
 import type { Hex, Palette } from './palette';
 import { hhmm } from './format';
@@ -126,4 +126,133 @@ export function emptyBody<T>(p: Palette, props: WidgetViewProps<T>): ReactNode |
 export function tone(p: Palette, v: number | null | undefined): Hex {
   if (v === null || v === undefined) return p.text;
   return v >= 0 ? p.brand : p.danger;
+}
+
+// ─── 크기에 맞춰 정보를 채우는 레이아웃 도우미 ─────────────────────────────────────────
+
+export interface Section {
+  key: string;
+  /** 위쪽 간격 포함 예상 높이(dp) */
+  h: number;
+  /** 작은 위젯에서 먼저 버려지는 순서 — 클수록 먼저 빠짐 */
+  prio: number;
+  el: ReactElement;
+}
+
+export const HEADER_H = 22;
+export const PAD = 14;
+
+/** 위젯 실제 크기(dp). 런처가 값을 주지 않으면(0) 5x4 기준 값으로 가정 */
+export function metrics(size: { width: number; height: number }) {
+  const width = size.width >= 120 ? size.width : 330;
+  const height = size.height >= 80 ? size.height : 290;
+  return { width, height, inner: width - PAD * 2, avail: height - PAD * 2 - HEADER_H };
+}
+
+export function totalH(list: Section[]): number {
+  return list.reduce((a, s) => a + s.h, 0);
+}
+
+/** 높이가 모자라면 우선순위가 낮은 구역부터 뺀다 (표시 순서는 유지) */
+export function pack(sections: Section[], avail: number): Section[] {
+  const list = [...sections];
+  while (list.length > 1 && totalH(list) > avail) {
+    let drop = 0;
+    list.forEach((s, i) => {
+      if (s.prio >= list[drop]!.prio) drop = i;
+    });
+    list.splice(drop, 1);
+  }
+  return list;
+}
+
+/** 남은 높이에 들어갈 목록 줄 수 (제목 한 줄 포함 계산) */
+export function rowsFit(leftover: number, rowH: number, headH = 20): number {
+  return Math.max(0, Math.floor((leftover - headH) / rowH));
+}
+
+export const ROW_H = 17;
+
+export function Body({ children }: { children?: ReactNode }) {
+  return <FlexWidget style={{ width: 'match_parent', flexDirection: 'column' }}>{children}</FlexWidget>;
+}
+
+/** 값 타일 한 줄 (회색 판 안에 N칸) */
+export function Tiles({
+  p,
+  items,
+  top = 6,
+}: {
+  p: Palette;
+  items: { label: string; value: string; color?: Hex; sub?: string; subColor?: Hex }[];
+  top?: number;
+}) {
+  return (
+    <FlexWidget
+      style={{
+        width: 'match_parent',
+        flexDirection: 'row',
+        backgroundColor: p.surface,
+        borderRadius: 12,
+        paddingVertical: 7,
+        paddingHorizontal: 10,
+        marginTop: top,
+      }}
+    >
+      {items.map((it, i) => (
+        <FlexWidget key={i} style={{ flex: 1, flexDirection: 'column' }}>
+          <TextWidget text={it.label} maxLines={1} style={{ fontSize: 10, color: p.muted }} />
+          <TextWidget text={it.value} truncate="END" maxLines={1} style={{ fontSize: 13, fontWeight: '700', color: it.color ?? p.text }} />
+          {it.sub !== undefined && <TextWidget text={it.sub} truncate="END" maxLines={1} style={{ fontSize: 10, color: it.subColor ?? p.muted }} />}
+        </FlexWidget>
+      ))}
+    </FlexWidget>
+  );
+}
+
+/** 가로 막대 — parts의 flex 비율대로 칠한다 (0 이하는 건너뜀) */
+export function StackBar({ p, parts, height = 8, top = 6 }: { p: Palette; parts: { weight: number; color: Hex }[]; height?: number; top?: number }) {
+  const used = parts.filter((x) => x.weight > 0);
+  return (
+    <FlexWidget style={{ width: 'match_parent', height, flexDirection: 'row', backgroundColor: p.surface, borderRadius: height / 2, marginTop: top, overflow: 'hidden' }}>
+      {used.map((x, i) => (
+        <FlexWidget key={i} style={{ flex: x.weight, height, backgroundColor: x.color }} />
+      ))}
+    </FlexWidget>
+  );
+}
+
+/** 왼쪽 라벨 + 오른쪽 값 한 줄 */
+export function LineRow({
+  p,
+  left,
+  right,
+  rightColor,
+  leftColor,
+}: {
+  p: Palette;
+  left: string;
+  right: string;
+  rightColor?: Hex;
+  leftColor?: Hex;
+}) {
+  return (
+    <FlexWidget style={{ width: 'match_parent', flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+      <FlexWidget style={{ flex: 1 }}>
+        <TextWidget text={left} truncate="END" maxLines={1} style={{ fontSize: 11, color: leftColor ?? p.text }} />
+      </FlexWidget>
+      <TextWidget text={right} maxLines={1} style={{ fontSize: 11, fontWeight: '600', color: rightColor ?? p.text, paddingLeft: 8 }} />
+    </FlexWidget>
+  );
+}
+
+export function ListTitle({ p, text, right }: { p: Palette; text: string; right?: string }) {
+  return (
+    <FlexWidget style={{ width: 'match_parent', flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+      <FlexWidget style={{ flex: 1 }}>
+        <TextWidget text={text} maxLines={1} style={{ fontSize: 10.5, fontWeight: '600', color: p.muted }} />
+      </FlexWidget>
+      {right !== undefined && <TextWidget text={right} maxLines={1} style={{ fontSize: 10.5, color: p.muted }} />}
+    </FlexWidget>
+  );
 }

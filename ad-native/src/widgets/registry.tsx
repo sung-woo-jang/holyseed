@@ -37,21 +37,32 @@ function view(name: string, size: Size, state: { data: unknown; at: number | nul
   return { light: mk(LIGHT), dark: mk(DARK) };
 }
 
+type State = { data: unknown; at: number | null; stale: boolean; error: string | null };
+
+/** 데이터 모양이 어긋나 위젯 트리 생성이 터져도(예: 옛 캐시) 빈 위젯 대신 안내 문구를 그린다 */
+async function safeDraw(name: string, size: Size, state: State, draw: (w: Rendered) => void | Promise<void>): Promise<void> {
+  try {
+    await draw(view(name, size, state));
+  } catch {
+    await draw(view(name, size, { data: null, at: state.at, stale: false, error: 'ERROR' }));
+  }
+}
+
 /** 이전 값이 있으면 먼저 그려 빈 화면을 피하고, 새로 조회한 값으로 다시 그린다 */
 async function renderWidget(name: string, size: Size, draw: (w: Rendered) => void | Promise<void>): Promise<void> {
   const def = DEFS[name];
   if (!def) return;
 
   const cached = await readCache<unknown>(name);
-  draw(view(name, size, { data: cached?.data ?? null, at: cached?.at ?? null, stale: false, error: null }));
+  await safeDraw(name, size, { data: cached?.data ?? null, at: cached?.at ?? null, stale: false, error: null }, draw);
 
   try {
     const data = await def.fetch();
     const at = Date.now();
     await writeCache(name, data);
-    await draw(view(name, size, { data, at, stale: false, error: null }));
+    await safeDraw(name, size, { data, at, stale: false, error: null }, draw);
   } catch (e) {
-    await draw(view(name, size, { data: cached?.data ?? null, at: cached?.at ?? null, stale: !!cached, error: errorCode(e) }));
+    await safeDraw(name, size, { data: cached?.data ?? null, at: cached?.at ?? null, stale: !!cached, error: errorCode(e) }, draw);
   }
 }
 

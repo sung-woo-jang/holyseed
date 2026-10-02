@@ -50,22 +50,22 @@ export class TransactionsController {
 
   @Get('transactions/:id')
   @ApiOperation({ summary: '거래 상세 조회' })
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    const data = await this.txService.findOne(id);
+  async findOne(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    const data = await this.txService.findOneFor(id, Number(req.user.userId));
     return { success: true, message: '조회 성공', data, timestamp: new Date().toISOString() };
   }
 
   @Post('transactions/:id/update')
   @ApiOperation({ summary: '거래 수정' })
-  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: Partial<CreateTransactionDto>) {
-    const data = await this.txService.update(id, dto);
+  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: Partial<CreateTransactionDto>, @Request() req: any) {
+    const data = await this.txService.update(id, dto, Number(req.user.userId));
     return { success: true, message: '수정 성공', data, timestamp: new Date().toISOString() };
   }
 
   @Post('transactions/:id/delete')
   @ApiOperation({ summary: '거래 삭제' })
-  async delete(@Param('id', ParseIntPipe) id: number) {
-    await this.txService.delete(id);
+  async delete(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    await this.txService.delete(id, Number(req.user.userId));
     return { success: true, message: '삭제 성공', data: null, timestamp: new Date().toISOString() };
   }
 }

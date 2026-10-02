@@ -1,15 +1,31 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Transaction } from './entities/transaction.entity';
+import { Membership, MemberRole } from '../memberships/entities/membership.entity';
 import { CreateTransactionDto } from './dto/request/create-transaction.dto';
 import { SearchTransactionsDto } from './dto/request/search-transactions.dto';
+
+const UPDATABLE_FIELDS = [
+  'date',
+  'type',
+  'amount',
+  'categoryId',
+  'fromAssetId',
+  'toAssetId',
+  'title',
+  'memo',
+  'tags',
+  'costType',
+] as const;
 
 @Injectable()
 export class TransactionsService {
   constructor(
     @InjectRepository(Transaction)
     private readonly txRepo: Repository<Transaction>,
+    @InjectRepository(Membership)
+    private readonly membershipRepo: Repository<Membership>,
   ) {}
 
   async findRecent(householdId: number, limit = 10): Promise<Transaction[]> {
@@ -49,19 +65,43 @@ export class TransactionsService {
     return tx;
   }
 
+  /** 거래가 속한 가구의 구성원인지(조회) / 편집자 이상인지(수정·삭제) 확인 — id만으로 다른 가구 거래를 보거나 바꾸지 못하게 */
+  private async assertMember(tx: Transaction, userId: number, minRole: MemberRole): Promise<void> {
+    const membership = await this.membershipRepo.findOne({ where: { householdId: tx.householdId, userId } });
+    // 남의 거래는 존재 여부도 알리지 않는다
+    if (!membership) throw new NotFoundException('거래를 찾을 수 없습니다.');
+    const weight: Record<MemberRole, number> = {
+      [MemberRole.VIEWER]: 1,
+      [MemberRole.EDITOR]: 2,
+      [MemberRole.OWNER]: 3,
+    };
+    if (weight[membership.role] < weight[minRole]) throw new ForbiddenException(`${minRole} 이상의 권한이 필요합니다.`);
+  }
+
+  async findOneFor(id: number, userId: number): Promise<Transaction> {
+    const tx = await this.findOne(id);
+    await this.assertMember(tx, userId, MemberRole.VIEWER);
+    return tx;
+  }
+
   async create(householdId: number, dto: CreateTransactionDto, userId: number): Promise<Transaction> {
     const tx = this.txRepo.create({ ...dto, householdId, createdByUserId: userId });
     return this.txRepo.save(tx);
   }
 
-  async update(id: number, dto: Partial<CreateTransactionDto>): Promise<Transaction> {
+  async update(id: number, dto: Partial<CreateTransactionDto>, userId: number): Promise<Transaction> {
     const tx = await this.findOne(id);
-    Object.assign(tx, dto);
+    await this.assertMember(tx, userId, MemberRole.EDITOR);
+    // 요청 본문을 그대로 덮어쓰면 householdId·createdByUserId 같은 내부 필드까지 바꿀 수 있어 수정 가능한 필드만 반영
+    for (const key of UPDATABLE_FIELDS) {
+      if (key in dto) (tx as unknown as Record<string, unknown>)[key] = (dto as Record<string, unknown>)[key];
+    }
     return this.txRepo.save(tx);
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: number, userId: number): Promise<void> {
     const tx = await this.findOne(id);
+    await this.assertMember(tx, userId, MemberRole.EDITOR);
     await this.txRepo.remove(tx);
   }
 }

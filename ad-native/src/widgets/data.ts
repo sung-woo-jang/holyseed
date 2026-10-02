@@ -4,7 +4,7 @@ import { BASE_URL } from '../lib/api';
 import { LAOFUS_BASE_URL } from '../lib/laofus-api';
 import { getTokens, saveTokens } from '../lib/storage';
 import { daysBetween, lastDayOfPrevMonth, shiftMonth, todayLocal } from '../lib/date';
-import { getAssetCategoryMeta } from '../lib/category-meta';
+import { getAssetCategoryMeta, resolveCategoryVisual, resolveRootCategoryId } from '../lib/category-meta';
 import { levelsFor, splitsAt } from '../lib/laofus-trade-context';
 import { normalizeAssetCategory } from '../lib/net-worth';
 import type { CandlesDto, LiveDto, StatusDto } from '../api/laofus';
@@ -202,6 +202,85 @@ export async function fetchAssetData(offset = 0): Promise<AssetWidgetData> {
     recent,
     trend,
     inputAgeDays: lastInput ? daysBetween(lastInput, today) : null,
+  };
+}
+
+// ─── 거래장부 ────────────────────────────────────────────────────────────────
+export interface LedgerWidgetData {
+  offset: number;
+  year: number;
+  month: number;
+  today: string;
+  income: number;
+  expense: number;
+  /** 일별 합계 */
+  days: { d: number; exp: number; inc: number }[];
+  /** 지출 대분류 상위 */
+  topCats: { name: string; color: string; amount: number }[];
+  /** 이 달 거래(최신순, 최대 150건) — 날짜 선택 시 해당 날 목록을 여기서 고른다 */
+  txs: { date: string; title: string; cat: string; color: string; amount: number; type: 'INCOME' | 'EXPENSE' }[];
+}
+
+export async function fetchLedgerData(offset = 0): Promise<LedgerWidgetData> {
+  const households = await adRequest<{ id: number }[]>({ method: 'get', url: '/households' });
+  const hid = households[0]?.id;
+  if (hid == null) throw new Error('NO_HOUSEHOLD');
+
+  const today = todayLocal();
+  const ym = shiftMonth(today.slice(0, 7), offset);
+  const [yy, mm] = ym.split('-').map(Number);
+  const monthStart = `${ym}-01`;
+  const monthEnd = `${ym}-${String(new Date(yy!, mm!, 0).getDate()).padStart(2, '0')}`;
+
+  const [tx, cats] = await Promise.all([
+    adRequest<{ data: any[] }>({ method: 'post', url: `/households/${hid}/transactions/search`, data: { from: monthStart, to: monthEnd, limit: 3000 } }),
+    adRequest<any[]>({ method: 'get', url: `/households/${hid}/categories` }).catch(() => [] as any[]),
+  ]);
+  const categories = (Array.isArray(cats) ? cats : []) as any[];
+  const nameOf = new Map<number, string>(categories.map((c) => [c.id, c.name]));
+
+  let income = 0;
+  let expense = 0;
+  const byDay = new Map<number, { exp: number; inc: number }>();
+  const byCat = new Map<string, { color: string; amount: number }>();
+  const rows: (LedgerWidgetData['txs'][number] & { id: number })[] = [];
+  for (const t of Array.isArray(tx?.data) ? tx.data : []) {
+    if (t.date < monthStart || t.date > monthEnd) continue;
+    if (t.type !== 'INCOME' && t.type !== 'EXPENSE') continue;
+    const amount = Number(t.amount) || 0;
+    const day = byDay.get(Number(t.date.slice(8, 10))) ?? { exp: 0, inc: 0 };
+    const catName = nameOf.get(t.categoryId) ?? '기타';
+    const visual = resolveCategoryVisual(t.categoryId, catName, categories);
+    if (t.type === 'INCOME') {
+      income += amount;
+      day.inc += amount;
+    } else {
+      expense += amount;
+      day.exp += amount;
+      const rootId = resolveRootCategoryId(t.categoryId, categories);
+      const rootName = (rootId != null ? nameOf.get(rootId) : undefined) ?? catName;
+      const cur = byCat.get(rootName) ?? { color: resolveCategoryVisual(rootId, rootName, categories).color, amount: 0 };
+      cur.amount += amount;
+      byCat.set(rootName, cur);
+    }
+    byDay.set(Number(t.date.slice(8, 10)), day);
+    rows.push({ id: t.id, date: t.date, title: t.title || t.memo || catName, cat: catName, color: visual.color, amount, type: t.type });
+  }
+  rows.sort((a, b) => (a.date === b.date ? b.id - a.id : a.date < b.date ? 1 : -1));
+
+  return {
+    offset,
+    year: yy!,
+    month: mm!,
+    today,
+    income,
+    expense,
+    days: [...byDay.entries()].map(([d, v]) => ({ d, ...v })),
+    topCats: [...byCat.entries()]
+      .map(([name, v]) => ({ name, color: v.color, amount: v.amount }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 4),
+    txs: rows.slice(0, 150).map(({ id: _id, ...r }) => r),
   };
 }
 

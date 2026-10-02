@@ -5,10 +5,11 @@ import { AssetDiaryWidget } from './AssetDiaryWidget';
 import { LaofusWidget } from './LaofusWidget';
 import { VrWidget } from './VrWidget';
 import { WorklogWidget } from './WorklogWidget';
+import { LedgerWidget } from './LedgerWidget';
 import type { WidgetViewProps } from './components';
-import { fetchAssetData, fetchLaofusData, fetchVrData, fetchWorklogData, readCache, writeCache } from './data';
+import { fetchAssetData, fetchLaofusData, fetchLedgerData, fetchVrData, fetchWorklogData, readCache, writeCache } from './data';
 import { DARK, LIGHT } from './palette';
-import { applyMonthAction, clampOffset, getSharedOffset, setSharedOffset } from './month-state';
+import { applyMonthAction, clampOffset, getLedgerDay, getSharedOffset, setLedgerDay, setSharedOffset } from './month-state';
 
 type Size = { width: number; height: number };
 type Rendered = ReactElement | { light: ReactElement; dark: ReactElement | null };
@@ -22,6 +23,7 @@ interface WidgetDef<T> {
 
 const DEFS: Record<string, WidgetDef<any>> = {
   AssetDiaryWidget: { fetch: fetchAssetData, View: AssetDiaryWidget, months: { min: -24, max: 0 } },
+  LedgerWidget: { fetch: fetchLedgerData, View: LedgerWidget, months: { min: -24, max: 0 } },
   LaofusWidget: { fetch: fetchLaofusData, View: LaofusWidget },
   VrWidget: { fetch: fetchVrData, View: VrWidget },
   WorklogWidget: { fetch: fetchWorklogData, View: WorklogWidget, months: { min: -24, max: 2 } },
@@ -34,7 +36,7 @@ function errorCode(e: unknown): string {
   return e instanceof Error ? e.message || 'ERROR' : 'ERROR';
 }
 
-type State = { data: unknown; at: number | null; stale: boolean; error: string | null; monthOffset: number };
+type State = { data: unknown; at: number | null; stale: boolean; error: string | null; monthOffset: number; ui?: { selectedDate: string | null } };
 
 function view(name: string, size: Size, state: State): Rendered {
   const { View } = DEFS[name]!;
@@ -47,7 +49,7 @@ async function safeDraw(name: string, size: Size, state: State, draw: (w: Render
   try {
     await draw(view(name, size, state));
   } catch {
-    await draw(view(name, size, { data: null, at: state.at, stale: false, error: 'ERROR', monthOffset: state.monthOffset }));
+    await draw(view(name, size, { data: null, at: state.at, stale: false, error: 'ERROR', monthOffset: state.monthOffset, ui: state.ui }));
   }
 }
 
@@ -57,17 +59,18 @@ async function renderWidget(name: string, widgetId: number, size: Size, draw: (w
   if (!def) return;
 
   const monthOffset = def.months ? clampOffset(await getSharedOffset(), def.months) : 0;
+  const ui = name === 'LedgerWidget' ? { selectedDate: await getLedgerDay() } : undefined;
   const cacheName = `${name}_${monthOffset}`;
   const cached = await readCache<unknown>(cacheName);
-  await safeDraw(name, size, { data: cached?.data ?? null, at: cached?.at ?? null, stale: false, error: null, monthOffset }, draw);
+  await safeDraw(name, size, { data: cached?.data ?? null, at: cached?.at ?? null, stale: false, error: null, monthOffset, ui }, draw);
 
   try {
     const data = await def.fetch(monthOffset);
     const at = Date.now();
     await writeCache(cacheName, data);
-    await safeDraw(name, size, { data, at, stale: false, error: null, monthOffset }, draw);
+    await safeDraw(name, size, { data, at, stale: false, error: null, monthOffset, ui }, draw);
   } catch (e) {
-    await safeDraw(name, size, { data: cached?.data ?? null, at: cached?.at ?? null, stale: !!cached, error: errorCode(e), monthOffset }, draw);
+    await safeDraw(name, size, { data: cached?.data ?? null, at: cached?.at ?? null, stale: !!cached, error: errorCode(e), monthOffset, ui }, draw);
   }
 }
 
@@ -86,7 +89,7 @@ async function refreshMonthSiblings(exceptWidgetId: number): Promise<void> {
 }
 
 export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<void> {
-  const { widgetInfo, widgetAction, clickAction, renderWidget: draw } = props;
+  const { widgetInfo, widgetAction, clickAction, clickActionData, renderWidget: draw } = props;
   if (widgetAction === 'WIDGET_DELETED') return;
   const size = { width: widgetInfo.width, height: widgetInfo.height };
   let monthChanged = false;
@@ -96,6 +99,9 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<
       const shown = clampOffset(await getSharedOffset(), def.months);
       await setSharedOffset(applyMonthAction(shown, clickAction, def.months));
       monthChanged = true;
+    } else if (clickAction === 'LEDGER_DAY') {
+      const date = typeof clickActionData?.date === 'string' ? clickActionData.date : null;
+      if (date) await setLedgerDay(date);
     } else if (clickAction !== 'REFRESH') {
       return;
     }

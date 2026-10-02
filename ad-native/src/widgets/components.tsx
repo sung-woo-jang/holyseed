@@ -16,6 +16,8 @@ export interface WidgetViewProps<T> {
   size: { width: number; height: number };
   /** 월 이동 위젯에서 보고 있는 달 (0=이번 달) */
   monthOffset: number;
+  /** 위젯 안에서만 쓰는 화면 상태 (거래장부: 달력에서 고른 날짜) */
+  ui?: { selectedDate: string | null };
 }
 
 export const WIDGET_URI = {
@@ -24,6 +26,8 @@ export const WIDGET_URI = {
   vr: 'adnative://widget/vr',
   worklog: 'adnative://widget/worklog',
   worklogAdd: 'adnative://widget/worklog-add',
+  ledger: 'adnative://widget/ledger',
+  ledgerAdd: 'adnative://widget/ledger-add',
 } as const;
 
 const BTN = 40;

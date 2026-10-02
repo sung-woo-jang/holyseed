@@ -39,3 +39,25 @@ export function applyMonthAction(shown: number, action: string, range: MonthRang
   const next = action === 'MONTH_PREV' ? shown - 1 : action === 'MONTH_NEXT' ? shown + 1 : action === 'MONTH_NOW' ? 0 : shown;
   return clampOffset(next, range);
 }
+
+// 거래장부 위젯에서 달력의 어느 날을 골랐는지 (선택은 위젯 안에서만 의미 있음, 20분 뒤 해제)
+const DAY_KEY = 'widget_ledger_day';
+
+export async function getLedgerDay(): Promise<string | null> {
+  try {
+    const raw = await SecureStore.getItemAsync(DAY_KEY);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as { date: string; at: number };
+    return Date.now() - v.at < TTL_MS ? v.date : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function setLedgerDay(date: string | null): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(DAY_KEY, JSON.stringify({ date, at: Date.now() }));
+  } catch {
+    // 저장 실패 시 기본 날짜로 보임
+  }
+}

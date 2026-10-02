@@ -3,7 +3,7 @@
     "name": "자산일기",
     "slug": "ad-native",
     "scheme": "adnative",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -20,7 +20,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "resize",
-      "versionCode": 3,
+      "versionCode": 4,
       "permissions": [
         "REQUEST_INSTALL_PACKAGES"
       ]
@@ -53,6 +53,17 @@
               "name": "AssetDiaryWidget",
               "label": "자산일기 · 순자산",
               "description": "순자산과 30일 증감, 이번 달 수입·지출",
+              "minWidth": "320dp",
+              "minHeight": "250dp",
+              "targetCellWidth": 5,
+              "targetCellHeight": 4,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "LedgerWidget",
+              "label": "거래장부",
+              "description": "월 달력(일별 지출 농도)·고른 날의 거래·지출 상위 카테고리, 탭해서 거래 입력",
               "minWidth": "320dp",
               "minHeight": "250dp",
               "targetCellWidth": 5,

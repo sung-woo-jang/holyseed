@@ -5,12 +5,14 @@ import { useAppModeStore, type AppMode } from '../stores/appMode.store';
 import { useAuthStore } from '../stores/auth.store';
 import { todayLocal } from './date';
 
-type Target = 'asset' | 'laofus' | 'vr' | 'worklog' | 'worklog-add';
+type Target = 'asset' | 'ledger' | 'ledger-add' | 'laofus' | 'vr' | 'worklog' | 'worklog-add';
 
 const PREFIX = 'adnative://widget/';
 
 const MODE_OF: Record<Target, AppMode> = {
   asset: 'assetDiary',
+  ledger: 'assetDiary',
+  'ledger-add': 'assetDiary',
   laofus: 'laofus',
   vr: 'laofus',
   worklog: 'worklog',
@@ -49,6 +51,13 @@ function navigateTo({ target, date }: Link) {
     case 'asset':
       nav.navigate('Home');
       break;
+    case 'ledger':
+      nav.navigate('Book', { screen: 'BookHome' });
+      break;
+    case 'ledger-add':
+      // initial:false — 거래장부 홈을 스택 맨 아래에 둔 채 입력 화면을 올려, 저장 후 popTo('BookHome')가 동작하게 한다
+      nav.navigate('Book', { screen: 'TransactionEdit', params: { mode: 'add', date: date ?? todayLocal(), returnTo: 'BookHome' }, initial: false });
+      break;
     case 'laofus':
       nav.navigate('Strategy', { screen: 'LaofusHome' });
       break;
@@ -59,7 +68,7 @@ function navigateTo({ target, date }: Link) {
       nav.navigate('Worklog', { screen: 'WorklogHome' });
       break;
     case 'worklog-add':
-      nav.navigate('Worklog', { screen: 'WorklogEntry', params: { record: null, defaultDate: date ?? todayLocal() } });
+      nav.navigate('Worklog', { screen: 'WorklogEntry', params: { record: null, defaultDate: date ?? todayLocal() }, initial: false });
       break;
   }
 }

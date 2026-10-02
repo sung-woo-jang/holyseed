@@ -30,3 +30,9 @@ export function hhmm(ts: number): string {
   const d = new Date(ts);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
+
+/** 10만원 미만은 1원 단위까지(14,600원), 그 이상은 만원 단위 — 일별 거래처럼 작은 금액이 1만원으로 뭉개지지 않게 */
+export function wonExact(value: number): string {
+  const abs = Math.abs(Math.round(value));
+  return abs < 100_000 ? `${abs.toLocaleString('ko-KR')}원` : wonShort(abs);
+}

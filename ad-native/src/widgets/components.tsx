@@ -348,3 +348,39 @@ export function Spark({
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${body}</svg>`;
   return <SvgWidget svg={svg} style={{ width: W, height: H, marginTop: top }} />;
 }
+
+/** 추이선 아래 범례 — 선 모양(실선/점선)과 색, 이름, 마지막 값을 한 줄로 */
+export function SparkLegend({
+  p,
+  items,
+  right,
+  rightColor,
+}: {
+  p: Palette;
+  items: { label: string; color: Hex; dashed?: boolean }[];
+  right?: string;
+  rightColor?: Hex;
+}) {
+  return (
+    <FlexWidget style={{ width: 'match_parent', flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
+      {items.map((it, i) => (
+        <FlexWidget key={i} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10 }}>
+          {it.dashed ? (
+            <FlexWidget style={{ flexDirection: 'row', alignItems: 'center', marginRight: 4 }}>
+              <FlexWidget style={{ width: 4, height: 2.5, backgroundColor: it.color }} />
+              <FlexWidget style={{ width: 2, height: 2.5 }} />
+              <FlexWidget style={{ width: 4, height: 2.5, backgroundColor: it.color }} />
+              <FlexWidget style={{ width: 2, height: 2.5 }} />
+              <FlexWidget style={{ width: 4, height: 2.5, backgroundColor: it.color }} />
+            </FlexWidget>
+          ) : (
+            <FlexWidget style={{ width: 16, height: 2.5, backgroundColor: it.color, marginRight: 4, borderRadius: 1 }} />
+          )}
+          <TextWidget text={it.label} maxLines={1} style={{ fontSize: 10, color: p.muted }} />
+        </FlexWidget>
+      ))}
+      <FlexWidget style={{ flex: 1 }} />
+      {right !== undefined && <TextWidget text={right} maxLines={1} style={{ fontSize: 10.5, fontWeight: '700', color: rightColor ?? p.text }} />}
+    </FlexWidget>
+  );
+}

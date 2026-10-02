@@ -8,6 +8,7 @@ import {
   ListTitle,
   ROW_H,
   Spark,
+  SparkLegend,
   Sub,
   Tiles,
   WIDGET_URI,
@@ -22,7 +23,7 @@ import type { Hex, Palette } from './palette';
 import { signedPct, usd } from './format';
 import { bandBoundaries, bandPosition, bandState } from '../lib/vr-trend';
 
-const STATE_LABEL = { below: '밴드 아래 · 매수 구간', inside: '밴드 안', above: '밴드 위 · 매도 구간' } as const;
+const STATE_LABEL = { below: '밴드 아래 → 매수 구간', inside: '밴드 안 → 대기', above: '밴드 위 → 매도 구간' } as const;
 const KIND_LABEL: Record<string, string> = { INITIAL_BUY: '초기매수', BUY: '매수', SELL: '매도' };
 
 const signedUsd = (v: number | null) => (v === null ? '—' : `${v >= 0 ? '+' : '-'}${usd(Math.abs(v))}`);
@@ -63,7 +64,7 @@ function VrBody({ p, data, size }: { p: Palette; data: VrWidgetData; size: Widge
             <TextWidget text="  평가금" style={{ fontSize: 11, color: p.muted, marginTop: 9 }} />
           </FlexWidget>
           <TextWidget
-            text={`${state ? STATE_LABEL[state] : '시세 조회 중'} · TQQQ ${usd(data.price)} ${signedPct(data.changePct, 2)}`}
+            text={`${state ? `● 평가금 ${STATE_LABEL[state]}` : '시세 조회 중'} · TQQQ ${usd(data.price)} ${signedPct(data.changePct, 2)}`}
             truncate="END"
             maxLines={1}
             style={{ fontSize: 12, fontWeight: '600', color: stateColor, marginTop: 1 }}
@@ -80,20 +81,20 @@ function VrBody({ p, data, size }: { p: Palette; data: VrWidgetData; size: Widge
           {value !== null && <BandBar p={p} pos={bandPosition(value, data.minBand, data.maxBand)} color={stateColor} />}
           <FlexWidget style={{ width: 'match_parent', flexDirection: 'row', marginTop: 3 }}>
             <FlexWidget style={{ flex: 1 }}>
-              <TextWidget text={`최소 ${usd(data.minBand, 0)}`} maxLines={1} style={{ fontSize: 10, color: p.muted }} />
+              <TextWidget text={`◀ 매수 기준 ${usd(data.minBand, 0)}`} maxLines={1} style={{ fontSize: 10, color: p.muted }} />
             </FlexWidget>
             <FlexWidget style={{ flex: 1 }}>
               <TextWidget text={`V ${usd(data.vValue, 0)}`} maxLines={1} style={{ fontSize: 10, color: p.muted, textAlign: 'center' }} />
             </FlexWidget>
             <FlexWidget style={{ flex: 1 }}>
-              <TextWidget text={`최대 ${usd(data.maxBand, 0)}`} maxLines={1} style={{ fontSize: 10, color: p.muted, textAlign: 'right' }} />
+              <TextWidget text={`매도 기준 ${usd(data.maxBand, 0)} ▶`} maxLines={1} style={{ fontSize: 10, color: p.muted, textAlign: 'right' }} />
             </FlexWidget>
           </FlexWidget>
           {bounds && (
             <Sub
               p={p}
               color={p.text}
-              text={`매수선 ${usd(bounds.buyPrice)} (${signedPct(bounds.buyDistancePct, 1)}) · 매도선 ${usd(bounds.sellPrice)} (${signedPct(bounds.sellDistancePct, 1)})`}
+              text={`TQQQ ${usd(bounds.buyPrice)} (${signedPct(bounds.buyDistancePct, 1)}) 이하 매수 · ${usd(bounds.sellPrice)} (${signedPct(bounds.sellDistancePct, 1)}) 이상 매도`}
             />
           )}
         </FlexWidget>
@@ -159,11 +160,11 @@ function VrBody({ p, data, size }: { p: Palette; data: VrWidgetData; size: Widge
       ? [
           {
             key: 'wealth',
-            h: 74,
+            h: 92,
             prio: 6,
             el: (
               <FlexWidget style={{ width: 'match_parent', flexDirection: 'column' }}>
-                <ListTitle p={p} text="총자산 추이" right={`점선 = 누적 원금 ${usd(data.wealth[data.wealth.length - 1]!.principal, 0)}`} />
+                <ListTitle p={p} text="내 계좌 추이" right={`${data.wealth[0]!.date} ~ ${data.wealth[data.wealth.length - 1]!.date}`} />
                 <Spark
                   p={p}
                   width={m.inner}
@@ -173,6 +174,15 @@ function VrBody({ p, data, size }: { p: Palette; data: VrWidgetData; size: Widge
                     { values: data.wealth.map((w) => w.principal), color: p.muted, dashed: true, width: 1.5 },
                   ]}
                   top={4}
+                />
+                <SparkLegend
+                  p={p}
+                  items={[
+                    { label: `총자산 ${usd(data.wealth[data.wealth.length - 1]!.total, 0)}`, color: p.brand },
+                    { label: `넣은 원금 ${usd(data.wealth[data.wealth.length - 1]!.principal, 0)}`, color: p.muted, dashed: true },
+                  ]}
+                  right={`${signedUsd(data.wealth[data.wealth.length - 1]!.total - data.wealth[data.wealth.length - 1]!.principal)}`}
+                  rightColor={tone(p, data.wealth[data.wealth.length - 1]!.total - data.wealth[data.wealth.length - 1]!.principal)}
                 />
               </FlexWidget>
             ),

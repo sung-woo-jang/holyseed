@@ -9,6 +9,7 @@ import {
   ListTitle,
   ROW_H,
   Spark,
+  SparkLegend,
   StackBar,
   Sub,
   Tiles,
@@ -151,11 +152,11 @@ function LaofusBody({ p, data, size }: { p: Palette; data: LaofusWidgetData; siz
       ? [
           {
             key: 'spark',
-            h: 74,
+            h: 92,
             prio: 6,
             el: (
               <FlexWidget style={{ width: 'match_parent', flexDirection: 'column' }}>
-                <ListTitle p={p} text="최근 1개월 종가" right={data.avgPrice !== null ? `점선 = 평단 ${usd(data.avgPrice)}` : undefined} />
+                <ListTitle p={p} text="SOXL 최근 1개월" />
                 <Spark
                   p={p}
                   width={m.inner}
@@ -163,6 +164,15 @@ function LaofusBody({ p, data, size }: { p: Palette; data: LaofusWidgetData; siz
                   series={[{ values: data.closes, color: p.brand, fill: true }]}
                   hlines={data.avgPrice !== null ? [{ value: data.avgPrice, color: '#A78BFA', dashed: true }] : []}
                   top={4}
+                />
+                <SparkLegend
+                  p={p}
+                  items={[
+                    { label: '종가', color: p.brand },
+                    ...(data.avgPrice !== null ? [{ label: `내 평단 ${usd(data.avgPrice)}`, color: '#A78BFA' as const, dashed: true }] : []),
+                  ]}
+                  right={data.avgPrice !== null && data.price !== null ? `평단 대비 ${signedPct(((data.price - data.avgPrice) / data.avgPrice) * 100, 1)}` : undefined}
+                  rightColor={data.avgPrice !== null && data.price !== null ? tone(p, data.price - data.avgPrice) : undefined}
                 />
               </FlexWidget>
             ),

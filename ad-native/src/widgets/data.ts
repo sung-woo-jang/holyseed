@@ -311,7 +311,7 @@ export interface VrWidgetData {
   renewalInDays: number | null;
   fills: { date: string; kind: string; price: number; quantity: number }[];
   /** 계좌총액(Pool+평가금)과 누적 원금 추이 */
-  wealth: { total: number; principal: number }[];
+  wealth: { date: string; total: number; principal: number }[];
 }
 
 export async function fetchVrData(): Promise<VrWidgetData> {
@@ -346,7 +346,7 @@ export async function fetchVrData(): Promise<VrWidgetData> {
     cycleEnd: state.cycle?.endDate ? md(state.cycle.endDate) : null,
     renewalInDays: state.nextRenewalDate ? daysBetween(today, state.nextRenewalDate) : null,
     fills: recent,
-    wealth: wealth.slice(-30).map((w) => ({ total: Number(w.totalAssets) || 0, principal: Number(w.cumulativePrincipal) || 0 })),
+    wealth: wealth.slice(-30).map((w) => ({ date: md(w.date), total: Number(w.totalAssets) || 0, principal: Number(w.cumulativePrincipal) || 0 })),
   };
 }
 

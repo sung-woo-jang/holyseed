@@ -1,6 +1,6 @@
 'use no memo';
 import type { ReactElement } from 'react';
-import { requestWidgetUpdate, type WidgetTaskHandlerProps } from 'react-native-android-widget';
+import { getWidgetInfo, requestWidgetUpdate, requestWidgetUpdateById, type WidgetInfo, type WidgetTaskHandlerProps } from 'react-native-android-widget';
 import { AssetDiaryWidget } from './AssetDiaryWidget';
 import { LaofusWidget } from './LaofusWidget';
 import { VrWidget } from './VrWidget';
@@ -8,7 +8,7 @@ import { WorklogWidget } from './WorklogWidget';
 import type { WidgetViewProps } from './components';
 import { fetchAssetData, fetchLaofusData, fetchVrData, fetchWorklogData, readCache, writeCache } from './data';
 import { DARK, LIGHT } from './palette';
-import { applyMonthAction, getMonthOffset, setMonthOffset } from './month-state';
+import { applyMonthAction, clampOffset, getSharedOffset, setSharedOffset } from './month-state';
 
 type Size = { width: number; height: number };
 type Rendered = ReactElement | { light: ReactElement; dark: ReactElement | null };
@@ -56,7 +56,7 @@ async function renderWidget(name: string, widgetId: number, size: Size, draw: (w
   const def = DEFS[name];
   if (!def) return;
 
-  const monthOffset = def.months ? await getMonthOffset(widgetId) : 0;
+  const monthOffset = def.months ? clampOffset(await getSharedOffset(), def.months) : 0;
   const cacheName = `${name}_${monthOffset}`;
   const cached = await readCache<unknown>(cacheName);
   await safeDraw(name, size, { data: cached?.data ?? null, at: cached?.at ?? null, stale: false, error: null, monthOffset }, draw);
@@ -71,19 +71,39 @@ async function renderWidget(name: string, widgetId: number, size: Size, draw: (w
   }
 }
 
+/** 월 이동을 공유하는 다른 위젯들을 새 달로 다시 그린다 (눌린 위젯 자신은 호출한 쪽이 그린다) */
+async function refreshMonthSiblings(exceptWidgetId: number): Promise<void> {
+  for (const name of WIDGET_NAMES) {
+    if (!DEFS[name]!.months) continue;
+    const infos: WidgetInfo[] = await getWidgetInfo(name).catch(() => []);
+    for (const info of infos) {
+      if (info.widgetId === exceptWidgetId) continue;
+      await renderWidget(name, info.widgetId, { width: info.width, height: info.height }, (w) =>
+        requestWidgetUpdateById({ widgetName: name, widgetId: info.widgetId, renderWidget: () => w }),
+      ).catch(() => undefined);
+    }
+  }
+}
+
 export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<void> {
   const { widgetInfo, widgetAction, clickAction, renderWidget: draw } = props;
   if (widgetAction === 'WIDGET_DELETED') return;
+  const size = { width: widgetInfo.width, height: widgetInfo.height };
+  let monthChanged = false;
   if (widgetAction === 'WIDGET_CLICK') {
     const def = DEFS[widgetInfo.widgetName];
     if (clickAction?.startsWith('MONTH_') && def?.months) {
-      const cur = await getMonthOffset(widgetInfo.widgetId);
-      await setMonthOffset(widgetInfo.widgetId, applyMonthAction(cur, clickAction, def.months));
+      const shown = clampOffset(await getSharedOffset(), def.months);
+      await setSharedOffset(applyMonthAction(shown, clickAction, def.months));
+      monthChanged = true;
     } else if (clickAction !== 'REFRESH') {
       return;
     }
   }
-  await renderWidget(widgetInfo.widgetName, widgetInfo.widgetId, { width: widgetInfo.width, height: widgetInfo.height }, draw);
+  await Promise.all([
+    renderWidget(widgetInfo.widgetName, widgetInfo.widgetId, size, draw),
+    monthChanged ? refreshMonthSiblings(widgetInfo.widgetId) : Promise.resolve(),
+  ]);
 }
 
 let lastRefreshAt = 0;

@@ -26,6 +26,18 @@ export const WIDGET_URI = {
   worklogAdd: 'adnative://widget/worklog-add',
 } as const;
 
+const BTN = 40;
+const HEAD_H = 42;
+
+/** 손가락으로 누르기 쉽게 박스 전체(40×48dp)를 터치 영역으로 쓰는 ‹ › 버튼 */
+function NavButton({ p, text, action }: { p: Palette; text: string; action?: string }) {
+  return (
+    <FlexWidget clickAction={action} style={{ width: 48, height: BTN, alignItems: 'center', justifyContent: 'center' }}>
+      <TextWidget text={text} style={{ fontSize: 24, fontWeight: '700', color: action ? p.text : p.muted }} />
+    </FlexWidget>
+  );
+}
+
 export interface MonthNav {
   label: string;
   canPrev: boolean;
@@ -64,34 +76,29 @@ export function Frame({
         padding: PAD,
       }}
     >
-      <FlexWidget style={{ width: 'match_parent', flexDirection: 'row', alignItems: 'center' }}>
+      <FlexWidget style={{ width: 'match_parent', height: HEAD_H, flexDirection: 'row', alignItems: 'center' }}>
         <FlexWidget style={{ flex: 1 }}>
           <TextWidget text={title} truncate="END" maxLines={1} style={{ fontSize: 12, fontWeight: '600', color: p.muted }} />
         </FlexWidget>
         {nav && (
-          <FlexWidget style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: p.surface, borderRadius: 12, marginRight: 6 }}>
-            <TextWidget
-              text="‹"
-              clickAction={nav.canPrev ? 'MONTH_PREV' : undefined}
-              style={{ fontSize: 15, fontWeight: '700', color: nav.canPrev ? p.text : p.muted, paddingHorizontal: 9, paddingVertical: 1 }}
-            />
-            <TextWidget
-              text={nav.label}
+          <FlexWidget style={{ height: BTN, flexDirection: 'row', alignItems: 'center', backgroundColor: p.surface, borderRadius: BTN / 2, marginRight: 6 }}>
+            <NavButton p={p} text="‹" action={nav.canPrev ? 'MONTH_PREV' : undefined} />
+            <FlexWidget
               clickAction={nav.isCurrent ? undefined : 'MONTH_NOW'}
-              style={{ fontSize: 12, fontWeight: '700', color: nav.isCurrent ? p.text : p.brand }}
-            />
-            <TextWidget
-              text="›"
-              clickAction={nav.canNext ? 'MONTH_NEXT' : undefined}
-              style={{ fontSize: 15, fontWeight: '700', color: nav.canNext ? p.text : p.muted, paddingHorizontal: 9, paddingVertical: 1 }}
-            />
+              style={{ height: BTN, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <TextWidget text={nav.label} style={{ fontSize: 13, fontWeight: '700', color: nav.isCurrent ? p.text : p.brand }} />
+            </FlexWidget>
+            <NavButton p={p} text="›" action={nav.canNext ? 'MONTH_NEXT' : undefined} />
           </FlexWidget>
         )}
-        <TextWidget
-          text={`${stamp} ↻`}
+        <FlexWidget
           clickAction="REFRESH"
-          style={{ fontSize: 11, color: stale ? p.danger : p.muted, paddingLeft: 6, paddingVertical: 2 }}
-        />
+          style={{ height: BTN, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+        >
+          {stamp !== '' && <TextWidget text={stamp} style={{ fontSize: 10.5, color: stale ? p.danger : p.muted, paddingRight: 4 }} />}
+          <TextWidget text="↻" style={{ fontSize: 17, fontWeight: '700', color: stale ? p.danger : p.muted }} />
+        </FlexWidget>
       </FlexWidget>
       {children}
     </FlexWidget>
@@ -167,7 +174,7 @@ export interface Section {
   grow?: { min: number; max: number; rowH: number; make: (rows: number) => ReactElement };
 }
 
-export const HEADER_H = 22;
+export const HEADER_H = 42;
 export const PAD = 14;
 
 /** 위젯 실제 크기(dp). 런처가 값을 주지 않으면(0) 5x4 기준 값으로 가정 */

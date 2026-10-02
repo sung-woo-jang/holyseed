@@ -11,6 +11,7 @@ import VrOverviewScreen from '../screens/vr/VrOverviewScreen';
 import VrFillsScreen from '../screens/vr/VrFillsScreen';
 import VrLadderScreen from '../screens/vr/VrLadderScreen';
 import VrTrendScreen from '../screens/vr/VrTrendScreen';
+import VrCycleDetailScreen from '../screens/vr/VrCycleDetailScreen';
 import VrSystemScreen from '../screens/vr/VrSystemScreen';
 import PillHeader, { BackHeader, replaceRoute, type PillTab } from './PillHeader';
 import { getLaofusLastStrategy } from '../lib/prefs';
@@ -27,6 +28,7 @@ export type StrategyStackParamList = {
   VrFills: undefined;
   VrLadder: undefined;
   VrTrend: undefined;
+  VrCycleDetail: { cycleNo: number };
   VrSystem: undefined;
 };
 
@@ -57,6 +59,7 @@ function StrategyHeader(props: NativeStackHeaderProps) {
   }, [route.name]);
 
   if (route.name === 'LaofusCycleDetail') return <BackHeader navigation={navigation} title="사이클 상세" />;
+  if (route.name === 'VrCycleDetail') return <BackHeader navigation={navigation} title="VR 사이클 상세" />;
   if (route.name === 'LaofusTradeDetail') return <BackHeader navigation={navigation} title="체결 상세" />;
 
   function switchTo(next: Strategy) {
@@ -109,6 +112,7 @@ export default function StrategyStack() {
       <Stack.Screen name="VrFills" component={VrFillsScreen} />
       <Stack.Screen name="VrLadder" component={VrLadderScreen} />
       <Stack.Screen name="VrTrend" component={VrTrendScreen} />
+      <Stack.Screen name="VrCycleDetail" component={VrCycleDetailScreen} />
       <Stack.Screen name="VrSystem" component={VrSystemScreen} />
     </Stack.Navigator>
   );

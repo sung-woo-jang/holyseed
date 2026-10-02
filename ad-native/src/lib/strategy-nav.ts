@@ -12,7 +12,7 @@ export function strategyOfRoute(routeName: string): Strategy {
 
 /** 전략 안에서 마지막으로 본 화면을 기억 — 세그먼트로 전략을 바꿨다 돌아오면 그 화면으로 이동. 사이클 상세·체결 상세 같은 하위 화면은 기억하지 않음 */
 export function rememberStrategyRoute(routeName: string): void {
-  if (routeName === 'LaofusCycleDetail' || routeName === 'LaofusTradeDetail') return;
+  if (routeName === 'LaofusCycleDetail' || routeName === 'LaofusTradeDetail' || routeName === 'VrCycleDetail') return;
   const strategy = strategyOfRoute(routeName);
   lastRoute[strategy] = routeName;
   setLaofusLastStrategy(strategy).catch(() => undefined);

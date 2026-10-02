@@ -99,7 +99,14 @@ export interface VrWealthHistoryPoint {
   totalAssets: number;
 }
 
+export interface VrCandlesDto {
+  /** 최신순 일봉 */
+  candles: { timestamp: string; openPrice: string; highPrice: string; lowPrice: string; closePrice: string; volume: string }[];
+  nextBefore: string | null;
+}
+
 export const vrApi = {
+  candles: (range: '1m' | '3m' | 'all' = 'all') => api.get<VrCandlesDto>('/vr/candles', { params: { range } }).then((r) => r.data),
   state: () => api.get<VrState>('/vr/state').then((r) => r.data),
   price: () => api.get<{ price: number; ts: string }>('/vr/price').then((r) => r.data),
   cashBalance: () => api.get<{ totalCash: number; laofusCash: number; vrCash: number }>('/vr/cash-balance').then((r) => r.data),

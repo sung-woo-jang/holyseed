@@ -15,7 +15,7 @@ export type AssetsStackParamList = {
 export type TransactionEditParams = { mode: 'add'; date?: string; returnTo: string } | { mode: 'edit'; txId: string; returnTo: string };
 
 export type BookStackParamList = {
-  BookHome: { savedMode?: 'create' | 'edit' | 'delete'; savedAt?: number } | undefined;
+  BookHome: { savedMode?: 'create' | 'edit' | 'delete'; savedAt?: number; savedDate?: string } | undefined;
   TransactionDetail: { id: string; savedMode?: 'create' | 'edit' | 'delete'; savedAt?: number };
   TransactionEdit: TransactionEditParams;
   Categories: undefined;

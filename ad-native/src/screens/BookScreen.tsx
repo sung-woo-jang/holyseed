@@ -69,7 +69,16 @@ export default function BookScreen({ navigation, route }: Props) {
     if (!route.params?.savedMode) return;
     const label = { create: '거래를 저장했어요', edit: '거래를 수정했어요', delete: '거래를 삭제했어요' }[route.params.savedMode];
     setToast(label);
-    navigation.setParams({ savedMode: undefined, savedAt: undefined });
+    // 날짜를 다른 달로 바꿔 저장했다면 그 달로 따라가서 방금 저장한 거래가 사라진 것처럼 보이지 않게 한다
+    const savedDate = route.params.savedDate;
+    if (savedDate && route.params.savedMode !== 'delete') {
+      setMonth(savedDate.slice(0, 7));
+      setSelectedDate(savedDate);
+      setTypeFilter('all');
+      setCatFilter(new Set());
+      setCostFilter(new Set());
+    }
+    navigation.setParams({ savedMode: undefined, savedAt: undefined, savedDate: undefined });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.params?.savedAt]);
 
@@ -236,8 +245,9 @@ export default function BookScreen({ navigation, route }: Props) {
     setCostFilter(new Set());
   }
 
+  // 날짜를 안 골랐으면: 이번 달을 보는 중엔 오늘, 다른 달을 보는 중엔 그 달 1일 (지난달을 보다가 추가해도 오늘로 들어가지 않게)
   function openAddForDay() {
-    if (!selectedDate) setSelectedDate(todayLocal());
+    if (!selectedDate) setSelectedDate(todayLocal().startsWith(month) ? todayLocal() : `${month}-01`);
     setAddPicker(true);
   }
   function handleAddPick(value: string) {

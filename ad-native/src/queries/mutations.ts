@@ -133,7 +133,7 @@ export function useUpdateTx() {
   return useMutation({
     mutationFn: ({ id, dto }: {
       id: number;
-      dto: Partial<{ date: string; type: 'INCOME' | 'EXPENSE'; amount: number; categoryId: number; fromAssetId: number; toAssetId: number; title: string; memo: string; costType: CostType | null }>;
+      dto: Partial<{ date: string; type: 'INCOME' | 'EXPENSE'; amount: number; categoryId: number | null; fromAssetId: number; toAssetId: number; title: string; memo: string; costType: CostType | null }>;
     }) => txApi.update(id, dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.transactions(hid!) });

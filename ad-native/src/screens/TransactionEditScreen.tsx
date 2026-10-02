@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ParamListBase } from '@react-navigation/native';
@@ -11,7 +12,12 @@ import FormRow from '../components/common/FormRow';
 import DatePicker from '../components/common/DatePicker';
 import PickerOverlay from '../components/sheets/PickerOverlay';
 import { useTheme } from '../lib/theme';
-import { useHouseholdData } from '../queries/useHouseholdData';
+import EmptyState from '../components/common/EmptyState';
+import Loader from '../components/ui/Loader';
+import { useHouseholdData, mapTransaction, type HouseholdTransaction } from '../queries/useHouseholdData';
+import { qk } from '../queries/keys';
+import { txApi } from '../api';
+import { TE } from '../lib/toss-emoji';
 import { CATEGORY_DEFS, getCategoryDef, resolveCostType, resolveCategoryVisual } from '../lib/category-meta';
 import { useKeyboardScrollRegistration, KeyboardScrollProvider } from '../lib/keyboard-scroll';
 import type { CostType } from '../types/api';
@@ -43,25 +49,58 @@ function Section({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
-export default function TransactionEditScreen({ navigation, route }: Props) {
+/**
+ * 수정 대상 거래를 먼저 확보한 뒤 폼을 연다.
+ * 거래 목록(최근 N건)에 없는 오래된 거래는 id로 따로 조회한다 — 못 찾은 채 폼을 열면 빈 폼이 뜨고 저장이 새 거래 추가로 바뀌어 중복이 생긴다.
+ */
+export default function TransactionEditScreen(props: Props) {
+  const theme = useTheme();
+  const { navigation, route } = props;
+  const data = useHouseholdData();
+  const params = route.params;
+  const isEdit = params.mode === 'edit';
+  const txId = params.mode === 'edit' ? params.txId : '';
+  const listTx = isEdit ? data.transactions.find((t) => t.id === txId) : undefined;
+  const txQ = useQuery({
+    queryKey: qk.transaction(Number(txId)),
+    queryFn: () => txApi.get(Number(txId)),
+    enabled: isEdit && !listTx && txId !== '' && !Number.isNaN(Number(txId)),
+  });
+  const fetchedTx = txQ.data && !Array.isArray(txQ.data) ? mapTransaction(txQ.data, (id) => data.categories.find((c) => c.id === id)?.name) : undefined;
+  const editTx: HouseholdTransaction | undefined = listTx ?? fetchedTx;
+
+  useEffect(() => {
+    navigation.setOptions({ title: isEdit ? '거래 수정' : '거래 추가' });
+  }, [navigation, isEdit]);
+
+  if (isEdit && !editTx) {
+    return (
+      <View style={[styles.root, styles.centerBox, { backgroundColor: theme.bg }]}>
+        {txQ.isLoading ? <Loader size="large" /> : <EmptyState iconCode={TE.search} title="거래를 찾을 수 없어요" desc="삭제되었거나 접근할 수 없는 거래예요" />}
+      </View>
+    );
+  }
+  return <TransactionForm key={editTx?.id ?? 'new'} navigation={navigation} route={route} editTx={editTx} />;
+}
+
+function TransactionForm({ navigation, route, editTx }: Props & { editTx?: HouseholdTransaction }) {
   const theme = useTheme();
   const data = useHouseholdData();
   const params = route.params;
-  const mode = params.mode;
-  const editTx = params.mode === 'edit' ? data.transactions.find((t) => t.id === params.txId) : undefined;
-  const isEdit = mode === 'edit';
+  const isEdit = params.mode === 'edit';
 
   const [type, setType] = useState<TxType>(editTx?.type === 'INCOME' ? 'INCOME' : 'EXPENSE');
-  const [amount, setAmount] = useState(editTx ? formatNum(String(editTx.amount)) : '');
+  const [amount, setAmount] = useState(editTx ? formatNum(String(Math.round(editTx.amount))) : '');
+  // 이름이 아니라 거래에 저장된 categoryId로 복원 — 같은 이름(예: 수입/지출의 '기타', 대·소분류 동명)이 있어도 다른 카테고리로 바뀌지 않게
   const [category, setCategory] = useState<{ id: number; name: string } | null>(() => {
-    if (!editTx) return null;
-    const c = data.categories.find((x) => x.name === editTx.category);
-    return { id: c?.id ?? 0, name: editTx.category };
+    if (!editTx || editTx.categoryId == null) return null;
+    return { id: editTx.categoryId, name: data.categories.find((x) => x.id === editTx.categoryId)?.name ?? editTx.category };
   });
   const [costType, setCostType] = useState<CostType | null>(editTx ? (editTx.costType ?? resolveCostType(editTx.categoryId, data.categories)) : null);
   const [title, setTitle] = useState(editTx?.rawTitle ?? '');
   const [memo, setMemo] = useState(editTx?.memo ?? '');
   const [txDate, setTxDate] = useState(editTx?.date ?? (params.mode === 'add' ? (params.date ?? todayLocal()) : todayLocal()));
+  const [typeChanged, setTypeChanged] = useState(false);
   const [catPicker, setCatPicker] = useState(false);
   const [chipParentId, setChipParentId] = useState<number | null>(null);
   const [datePicker, setDatePicker] = useState(false);
@@ -73,10 +112,6 @@ export default function TransactionEditScreen({ navigation, route }: Props) {
   const titleRef = useRef<TextInput>(null);
   const memoRef = useRef<TextInput>(null);
   const { scrollRef, scrollToInput, onScroll, keyboardHeight } = useKeyboardScrollRegistration();
-
-  useEffect(() => {
-    navigation.setOptions({ title: isEdit ? '거래 수정' : '거래 추가' });
-  }, [navigation, isEdit]);
 
   const catOptions = Object.entries(CATEGORY_DEFS)
     .filter(([, def]) => def.type === type)
@@ -115,14 +150,17 @@ export default function TransactionEditScreen({ navigation, route }: Props) {
     try {
       const costTypeDto = type === 'EXPENSE' && costType ? { costType } : {};
       if (isEdit && editTx) {
+        // 수입/지출을 바꾸고 새 카테고리를 안 고르면 이전 유형의 카테고리가 남지 않게 비운다 / 수입으로 바뀌면 고정비·변동비도 비운다
+        const categoryDto = category && category.id > 0 ? { categoryId: category.id } : editTx.categoryId != null && typeChanged ? { categoryId: null } : {};
+        const clearCost = type === 'INCOME' && editTx.costType ? { costType: null } : {};
         await updateTx.mutateAsync({
           id: Number(editTx.id),
-          dto: { date: txDate, type, amount: rawAmount, ...(category && category.id > 0 ? { categoryId: category.id } : {}), title, memo, ...costTypeDto },
+          dto: { date: txDate, type, amount: rawAmount, ...categoryDto, title, memo, ...costTypeDto, ...clearCost },
         });
       } else {
         await createTx.mutateAsync({ date: txDate, type, amount: rawAmount, ...(category ? { categoryId: category.id } : {}), title, memo, ...costTypeDto });
       }
-      navigation.navigate(route.params.returnTo, { savedMode: isEdit ? 'edit' : 'create', savedAt: Date.now() });
+      navigation.navigate(route.params.returnTo, { savedMode: isEdit ? 'edit' : 'create', savedAt: Date.now(), savedDate: txDate });
     } catch (e) {
       setError(getErrorMessage(e, '저장에 실패했어요. 다시 시도해 주세요.'));
     }
@@ -132,7 +170,9 @@ export default function TransactionEditScreen({ navigation, route }: Props) {
     if (!editTx) return;
     try {
       await deleteTx.mutateAsync(Number(editTx.id));
-      navigation.navigate(route.params.returnTo, { savedMode: 'delete', savedAt: Date.now() });
+      // 거래 상세에서 들어왔다면 지워진 거래의 상세 화면으로 돌아가지 말고 상세까지 함께 닫는다
+      if (route.params.returnTo === 'TransactionDetail') (navigation as unknown as { pop: (n: number) => void }).pop(2);
+      else navigation.navigate(route.params.returnTo, { savedMode: 'delete', savedAt: Date.now() });
     } catch {
       setDeleteConfirm(false);
       setError('삭제에 실패했어요');
@@ -158,6 +198,7 @@ export default function TransactionEditScreen({ navigation, route }: Props) {
                   value={type === 'EXPENSE' ? '지출' : '수입'}
                   onChange={(v) => {
                     setType(v === '지출' ? 'EXPENSE' : 'INCOME');
+                    setTypeChanged(true);
                     setCategory(null);
                     setCostType(null);
                     setChipParentId(null);
@@ -227,7 +268,7 @@ export default function TransactionEditScreen({ navigation, route }: Props) {
         </View>
       </KeyboardAvoidingView>
 
-      <DatePicker visible={datePicker} value={txDate} maxDate={todayLocal()} onSelect={setTxDate} onClose={() => setDatePicker(false)} />
+      <DatePicker visible={datePicker} value={txDate} maxDate={editTx && editTx.date > todayLocal() ? undefined : todayLocal()} onSelect={setTxDate} onClose={() => setDatePicker(false)} />
       <PickerOverlay visible={catPicker} title="카테고리 선택" onClose={() => setCatPicker(false)}>
         {catListSource.length > 0 ? (
           <>
@@ -342,6 +383,7 @@ export default function TransactionEditScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  centerBox: { alignItems: 'center', justifyContent: 'center' },
   hero: { alignItems: 'center', paddingTop: 20, paddingBottom: 8 },
   heroIcon: { width: 60, height: 60, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   heroSeg: { width: 160, marginTop: 14 },

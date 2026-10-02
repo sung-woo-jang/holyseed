@@ -14,3 +14,6 @@ export class UpdateWorklogDto extends PartialType(CreateWorklogDto) {
   @Transform(({ value }) => (Array.isArray(value) ? value.map((v) => Object.assign(new WorklogPhoto(), v)) : value))
   photos?: WorklogPhoto[];
 }
+
+/** 입력 화면 미리보기용 — 저장하지 않으므로 필수 항목(현장명 등)이 비어 있어도 계산할 수 있게 전부 선택값 */
+export class PreviewWorklogDto extends PartialType(CreateWorklogDto) {}

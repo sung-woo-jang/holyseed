@@ -5,6 +5,7 @@ import { Worklog, PayStatus, WorklogJobOption, WorklogCategoryOption, WorklogTit
 import {
   CreateWorklogDto,
   UpdateWorklogDto,
+  PreviewWorklogDto,
   SearchWorklogDto,
   QueryWorklogDto,
   CreateCategoryOptionDto,
@@ -74,8 +75,21 @@ export class WorklogService {
     >,
   ): number {
     if (log.payStatus === PayStatus.DAYOFF) return 0;
-    if (!log.startTime || !log.endTime) return log.dailyWage;
+    const hours = this.calcHours(log);
+    if (!hours) return log.dailyWage;
 
+    const { overtime, threshold } = hours;
+    const extraRate = log.overtimeExtraRate ?? 0.1;
+    const laborUnits = 1 + overtime / threshold;
+    const hourlyWage = log.dailyWage / threshold;
+    return Math.round(laborUnits * log.dailyWage + overtime * hourlyWage * extraRate);
+  }
+
+  /** 시작·종료가 모두 있을 때의 실근무/초과 시간 (자정을 넘기면 다음 날 종료로 계산) */
+  private calcHours(
+    log: Pick<Worklog, 'startTime' | 'endTime' | 'breakHours' | 'overtimeThresholdHours'>,
+  ): { total: number; worked: number; overtime: number; threshold: number } | null {
+    if (!log.startTime || !log.endTime) return null;
     const toHours = (t: string) => {
       const [h, m] = t.split(':').map(Number);
       return h + m / 60;
@@ -83,12 +97,9 @@ export class WorklogService {
     let total = toHours(log.endTime) - toHours(log.startTime);
     if (total < 0) total += 24; // 자정 넘김
     const threshold = log.overtimeThresholdHours ?? 8;
-    const extraRate = log.overtimeExtraRate ?? 0.1;
     const worked = Math.max(0, total - (log.breakHours ?? 1));
     const overtime = Math.max(0, worked - threshold);
-    const laborUnits = 1 + overtime / threshold;
-    const hourlyWage = log.dailyWage / threshold;
-    return Math.round(laborUnits * log.dailyWage + overtime * hourlyWage * extraRate);
+    return { total, worked, overtime, threshold };
   }
 
   private toView(log: Worklog): WorklogView {
@@ -182,7 +193,8 @@ export class WorklogService {
     };
   }
 
-  async create(dto: CreateWorklogDto): Promise<WorklogView> {
+  /** 저장 전 기본값(분류 설정·일급 이력) 적용과 금액 계산까지 끝낸 기록 — create와 미리보기가 같은 경로를 쓴다 */
+  private async buildLog(dto: CreateWorklogDto): Promise<Worklog> {
     const category = dto.category ?? DEFAULT_CATEGORY;
     const categoryOption = await this.categoryOptionRepo.findOne({ where: { name: category } });
     const dailyWage = dto.dailyWage ?? categoryOption?.defaultDailyWage ?? this.getDailyWage(dto.workDate);
@@ -204,9 +216,31 @@ export class WorklogService {
       overtimeExtraRate: categoryOption?.overtimeExtraRate ?? 0.1,
     });
     log.amount = this.calcAmount(log);
+    return log;
+  }
+
+  async create(dto: CreateWorklogDto): Promise<WorklogView> {
+    const log = await this.buildLog(dto);
     const saved = await this.worklogRepo.save(log);
     await this.touchTitleOption(saved.title, saved.category);
     return this.toView(saved);
+  }
+
+  /** 저장하지 않고 입력 중인 값 그대로의 금액을 계산해 돌려준다 (입력 화면 미리보기용) */
+  async preview(dto: PreviewWorklogDto) {
+    const workDate = dto.workDate ?? new Date().toISOString().slice(0, 10);
+    const log = await this.buildLog({ ...dto, workDate, title: dto.title ?? '' } as CreateWorklogDto);
+    const view = this.toView(log);
+    const hours = log.payStatus === PayStatus.DAYOFF ? null : this.calcHours(log);
+    return {
+      dailyWage: log.dailyWage,
+      workedHours: hours ? Math.round(hours.worked * 100) / 100 : null,
+      overtimeHours: hours ? Math.round(hours.overtime * 100) / 100 : null,
+      amount: log.amount,
+      effectiveAmount: view.effectiveAmount,
+      withholdingApplied: log.withholdingApplied,
+      netAmount: view.netAmount,
+    };
   }
 
   async update(id: number, dto: UpdateWorklogDto): Promise<WorklogView> {

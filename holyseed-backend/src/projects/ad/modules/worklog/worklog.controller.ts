@@ -16,6 +16,7 @@ import { FilesService } from '@shared/files/files.service';
 import {
   CreateWorklogDto,
   UpdateWorklogDto,
+  PreviewWorklogDto,
   SearchWorklogDto,
   QueryWorklogDto,
   CreateJobOptionDto,
@@ -64,6 +65,12 @@ export class WorklogController {
   @ApiOperation({ summary: '근무 기록 추가 (금액 서버 계산)' })
   async create(@Body() dto: CreateWorklogDto) {
     return ok('근무 기록이 추가되었습니다.', await this.worklogService.create(dto));
+  }
+
+  @Post('preview')
+  @ApiOperation({ summary: '근무 기록 금액 미리보기 (저장 없이 서버 계산식 그대로 적용)' })
+  async preview(@Body() dto: PreviewWorklogDto) {
+    return ok('계산 성공', await this.worklogService.preview(dto));
   }
 
   @Get('title-options')

@@ -12,6 +12,7 @@ import ConfirmDialog from '../../components/common/ConfirmDialog';
 import AppToast from '../../components/common/AppToast';
 import DatePicker from '../../components/common/DatePicker';
 import { worklogApi, type WorklogPhoto, type WorklogRecord, type PayStatus } from '../../api/worklog';
+import { krw } from '../../lib/format';
 import { useTheme } from '../../lib/theme';
 import { useKeyboardScrollRegistration, KeyboardScrollProvider } from '../../lib/keyboard-scroll';
 import { todayLocal, timeStringToDate, dateToTimeString, shiftDay } from '../../lib/date';
@@ -347,6 +348,33 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
     setPhotos((prev) => prev.filter((p) => p.filename !== filename));
   }
 
+  // 저장 전 예상 금액 — 서버 계산식 그대로 (입력이 멈추고 0.4초 뒤 요청)
+  const previewBody = JSON.stringify({
+    workDate,
+    category: category || undefined,
+    payStatus,
+    startTime: startTime || undefined,
+    endTime: endTime || undefined,
+    breakHours: breakHours ? Number(breakHours) : undefined,
+    dailyWage: dailyWage ? parseMoney(dailyWage) : undefined,
+    amountOverride: amountOverride ? parseMoney(amountOverride) : null,
+    withholdingApplied,
+    payMultiplier,
+  });
+  const [debouncedBody, setDebouncedBody] = useState(previewBody);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedBody(previewBody), 400);
+    return () => clearTimeout(timer);
+  }, [previewBody]);
+  const previewQ = useQuery({
+    queryKey: ['worklog-preview', debouncedBody],
+    queryFn: () => worklogApi.preview(JSON.parse(debouncedBody)),
+    enabled: !isDayOff && !!category && initializedRef.current,
+    staleTime: 30_000,
+    placeholderData: (prev) => prev,
+  });
+  const preview = isDayOff ? null : previewQ.data;
+
   const isValid = !!workDate && (isDayOff || title.trim().length > 0);
 
   async function handleSave(continueNext = false) {
@@ -359,17 +387,18 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
         workDate,
         category: category || undefined,
         payStatus,
-        startTime: startTime || undefined,
-        endTime: endTime || undefined,
+        // 수정에서 비운 칸은 null로 보내야 서버에서 실제로 지워진다
+        startTime: startTime || (isEdit ? null : undefined),
+        endTime: endTime || (isEdit ? null : undefined),
         breakHours: breakHours ? Number(breakHours) : undefined,
         jobs,
         dailyWage: dailyWage ? parseMoney(dailyWage) : undefined,
         amountOverride: amountOverride ? parseMoney(amountOverride) : null,
         withholdingApplied,
         payMultiplier,
-        address: address || undefined,
+        address: address || (isEdit ? null : undefined),
         photos,
-        memo: memo || undefined,
+        memo: memo || (isEdit ? null : undefined),
       };
       if (isEdit && record) {
         await worklogApi.update(record.id, dto);
@@ -644,6 +673,23 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
         </ScrollView>
 
         <View style={[styles.ctaWrap, { backgroundColor: theme.card, borderTopColor: theme.border }]}>
+          {preview && (
+            <View style={[styles.previewRow, { backgroundColor: theme.bg }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '700' }}>예상 금액</Text>
+                <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 2 }}>
+                  {preview.workedHours != null
+                    ? `실근무 ${preview.workedHours}시간${preview.overtimeHours ? ` · 초과 ${preview.overtimeHours}시간` : ''}`
+                    : '시간 미입력 · 일급 기준'}
+                  {preview.withholdingApplied ? ` · 세전 ${krw(preview.effectiveAmount)}` : ''}
+                </Text>
+              </View>
+              <Text style={{ color: theme.text, fontSize: 16, fontWeight: '800' }}>
+                {preview.withholdingApplied ? '실수령 ' : ''}
+                {krw(preview.netAmount)}
+              </Text>
+            </View>
+          )}
           {error ? <Text style={{ color: theme.danger, fontSize: 12, marginBottom: 8 }}>{error}</Text> : null}
           {!error && !isValid ? <Text style={{ color: theme.textMuted, fontSize: 12, marginBottom: 8 }}>{!workDate ? '날짜를 선택해 주세요' : '현장명을 입력해 주세요'}</Text> : null}
           {!isEdit && (
@@ -716,6 +762,7 @@ const styles = StyleSheet.create({
   sectionIconWrap: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   sectionTitle: { fontSize: 13.5, fontWeight: '800' },
   box: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 13 },
+  previewRow: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 10 },
   dateRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   dateMain: { flex: 1 },
   dateStep: { width: 44, height: 46, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },

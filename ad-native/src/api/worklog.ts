@@ -71,8 +71,9 @@ export interface WorklogTitleOption {
 export interface WorklogInput {
   title: string;
   workDate: string;
-  startTime?: string;
-  endTime?: string;
+  /** 수정 시 비운 값은 null로 보내야 서버에서 지워진다 (undefined는 변경 없음으로 취급) */
+  startTime?: string | null;
+  endTime?: string | null;
   breakHours?: number;
   jobs?: string[];
   payStatus?: PayStatus;
@@ -81,9 +82,19 @@ export interface WorklogInput {
   amountOverride?: number | null;
   withholdingApplied?: boolean;
   payMultiplier?: number;
-  address?: string;
-  memo?: string;
+  address?: string | null;
+  memo?: string | null;
   photos?: WorklogPhoto[];
+}
+
+export interface WorklogPreview {
+  dailyWage: number;
+  workedHours: number | null;
+  overtimeHours: number | null;
+  amount: number;
+  effectiveAmount: number;
+  withholdingApplied: boolean;
+  netAmount: number;
 }
 
 export interface CategoryOptionInput {
@@ -126,6 +137,8 @@ export const worklogApi = {
 
   query: (params: QueryParams) =>
     api.post<{ records: WorklogRecord[]; summary: WorklogSummary }>('/worklog/query', params).then((r) => r.data),
+
+  preview: (dto: Partial<WorklogInput>) => api.post<WorklogPreview>('/worklog/preview', dto).then((r) => r.data),
 
   create: (dto: WorklogInput) => api.post<WorklogRecord>('/worklog', dto).then((r) => r.data),
 

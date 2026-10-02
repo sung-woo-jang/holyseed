@@ -6,6 +6,7 @@ import ListRow from '../../components/ui/ListRow';
 import Loader from '../../components/ui/Loader';
 import EmptyState from '../../components/common/EmptyState';
 import WaterfallChart from '../../components/charts/WaterfallChart';
+import ChartLegend from '../../components/charts/ChartLegend';
 import { useTheme } from '../../lib/theme';
 import { useAuthStore } from '../../stores/auth.store';
 import { comparisonApi } from '../../api';
@@ -112,6 +113,14 @@ export default function CompareScreen() {
       <View style={[styles.section, { backgroundColor: theme.card }]}>
         <Text style={[styles.sectionTitle, { color: theme.text }]}>자산군별 증감 워터폴</Text>
         <WaterfallChart data={wfData} width={327} height={220} dark={theme.dark} />
+        <ChartLegend
+          items={[
+            { kind: 'bar', color: '#3182F6', label: '시작·끝 순자산' },
+            { kind: 'bar', color: '#0AB39C', label: '늘어난 자산군' },
+            { kind: 'bar', color: '#EF4444', label: '줄어든 자산군' },
+          ]}
+          hint="시작 순자산에서 자산군별 증감이 차례로 쌓여 끝 순자산이 돼요."
+        />
       </View>
 
       <View style={[styles.section, { backgroundColor: theme.card }]}>

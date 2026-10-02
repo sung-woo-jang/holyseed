@@ -15,7 +15,7 @@ function pct(v: number): string {
   return `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1)}%`;
 }
 
-function palette(theme: Theme) {
+export function vrPalette(theme: Theme) {
   return {
     line: theme.dark ? '#35D6BD' : '#0E8F7E',
     band: theme.dark ? '#A594FF' : '#7A5FD0',
@@ -121,7 +121,7 @@ interface BandTrendProps extends BaseProps {
 /** 평가금(선)이 사이클별 V 밴드(띠·V 점선) 안에서 움직이는 모습 — 날짜 비례 x축, 복원 구간은 점선·음영, 밴드 밖은 빨간 점 */
 export function BandTrendChart({ points, cycles, width, height = 230 }: BandTrendProps) {
   const theme = useTheme();
-  const c = palette(theme);
+  const c = vrPalette(theme);
   const pad = { t: 20, r: 44, b: 22, l: 6 };
   const w = width - pad.l - pad.r;
   const h = height - pad.t - pad.b;
@@ -238,7 +238,7 @@ interface PriceFillsProps extends BaseProps {
 
 export function PriceFillsChart({ candles, fills, from, lines, width, height = 230 }: PriceFillsProps) {
   const theme = useTheme();
-  const c = palette(theme);
+  const c = vrPalette(theme);
   const pad = { t: 14, r: 44, b: 22, l: 6 };
   const w = width - pad.l - pad.r;
   const h = height - pad.t - pad.b;
@@ -325,7 +325,7 @@ export function PriceFillsChart({ candles, fills, from, lines, width, height = 2
 
 export function MixChart({ points, width, height = 230 }: { points: TrendPoint[] } & BaseProps) {
   const theme = useTheme();
-  const c = palette(theme);
+  const c = vrPalette(theme);
   const pad = { t: 14, r: 44, b: 22, l: 6 };
   const w = width - pad.l - pad.r;
   const h = height - pad.t - pad.b;
@@ -399,7 +399,7 @@ export function MixChart({ points, width, height = 230 }: { points: TrendPoint[]
 
 export function CompareChart({ points, width, height = 120 }: { points: TrendPoint[] } & BaseProps) {
   const theme = useTheme();
-  const c = palette(theme);
+  const c = vrPalette(theme);
   const pad = { t: 12, r: 50, b: 14, l: 6 };
   const w = width - pad.l - pad.r;
   const h = height - pad.t - pad.b;

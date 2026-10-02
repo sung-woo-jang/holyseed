@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Loader from '../../components/ui/Loader';
 import EmptyState from '../../components/common/EmptyState';
 import PriceLadder from './PriceLadder';
+import ChartLegend from '../../components/charts/ChartLegend';
 import TGauge from './TGauge';
 import { laofusRestApi } from '../../api/laofus';
 import {
@@ -209,14 +210,17 @@ export default function LaofusTradeDetailScreen({ route, navigation }: Props) {
         <View onLayout={onCardLayout}>
           <Card title="가격 사다리" right={candle ? `미국 ${md(candle.date)} 장` : '시세 정보 없음'}>
             <PriceLadder width={cardWidth} levels={levels} avg={start.avg} T={start.T} splits={splits} price={n(trade.price)} candle={candle} />
-            <View style={styles.legend}>
-              <Text style={{ color: theme.textMuted, fontSize: 11 }}>▇ 매도 구간</Text>
-              {start.T < splits / 2 && <Text style={{ color: theme.textMuted, fontSize: 11 }}>▇ 절반 매수</Text>}
-              <Text style={{ color: theme.textMuted, fontSize: 11 }}>▇ 전액 매수</Text>
-            </View>
-            <Text style={{ color: theme.textMuted, fontSize: 11.5, marginTop: 6 }}>
-              점선=그날 아침 기준선 · 막대=그날 시세(시가↔종가, 세로선은 고저) · {splits}분할 기준
-            </Text>
+            <ChartLegend
+              items={[
+                { kind: 'area', color: theme.danger, alpha: '33', label: '매도 구간 (별지점 위)' },
+                ...(start.T < splits / 2 ? [{ kind: 'area' as const, color: theme.brand, alpha: '22', label: '절반 매수 구간' }] : []),
+                { kind: 'area', color: theme.brand, alpha: '44', label: '전액 매수 구간' },
+                { kind: 'dash', color: theme.danger, label: '별지점 · 전량매도선' },
+                { kind: 'dash', color: theme.brand, label: '평단' },
+                { kind: 'dot', color: theme.text, label: '이 체결가' },
+              ]}
+              hint={`점선은 그날 아침 기준선이에요. 오른쪽 막대는 그날 시세(시가→종가, 빨강=상승·파랑=하락, 세로선은 고저)이고 ${splits}분할 기준이에요.`}
+            />
             {!candle && era !== 'MIGRATED' ? (
               <Text style={{ color: theme.textMuted, fontSize: 11.5, marginTop: 4 }}>이 날의 일봉을 찾지 못해 시세는 표시하지 않았어요.</Text>
             ) : null}

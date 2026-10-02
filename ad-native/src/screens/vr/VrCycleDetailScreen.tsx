@@ -4,7 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Loader from '../../components/ui/Loader';
 import EmptyState from '../../components/common/EmptyState';
-import { BandTrendChart } from '../../components/charts/VrTrendCharts';
+import { BandTrendChart, vrPalette } from '../../components/charts/VrTrendCharts';
+import ChartLegend from '../../components/charts/ChartLegend';
 import { vrApi } from '../../api/vr';
 import { buildTrend, summarizeCycles } from '../../lib/vr-trend';
 import { BAND_STATE_LABEL, md, usd } from '../../lib/vr-format';
@@ -29,6 +30,7 @@ function Tile({ label, value, sub }: { label: string; value: string; sub?: strin
 
 export default function VrCycleDetailScreen({ route, navigation }: Props) {
   const theme = useTheme();
+  const pal = vrPalette(theme);
   const { cycleNo } = route.params;
   const cyclesQ = useQuery({ queryKey: ['vr-cycles'], queryFn: vrApi.cycles });
   const fillsQ = useQuery({ queryKey: ['vr-fills'], queryFn: vrApi.fills });
@@ -112,7 +114,18 @@ export default function VrCycleDetailScreen({ route, navigation }: Props) {
         ) : (
           <Text style={{ color: theme.textMuted, fontSize: 12.5 }}>이 사이클의 평가금 기록이 아직 없어요</Text>
         )}
-        {summary.hasEstimate ? <Text style={{ color: theme.textMuted, fontSize: 11.5, marginTop: 6 }}>점선 구간은 일봉으로 복원한 추정치예요.</Text> : null}
+        {zoomPoints.length > 1 ? (
+          <ChartLegend
+            items={[
+              { kind: 'line', color: pal.line, label: '내 평가금' },
+              { kind: 'band', color: pal.band, label: '이번 사이클 밴드 (V ±15%)' },
+              { kind: 'dash', color: pal.band, label: 'V (기준값)' },
+              { kind: 'dot', color: pal.out, label: '밴드 밖으로 나간 날' },
+              ...(summary.hasEstimate ? [{ kind: 'dash' as const, color: pal.line, label: '복원(추정) 구간' }] : []),
+            ]}
+            hint={summary.hasEstimate ? '추정 구간은 일봉(보유수량 × 종가)으로 복원한 값이에요.' : '평가금이 띠 아래면 매수, 위면 매도 신호예요.'}
+          />
+        ) : null}
       </View>
 
       <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border, paddingVertical: 4 }]}>

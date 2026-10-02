@@ -26,6 +26,7 @@ import {
   type TodayCardModel,
 } from '../../lib/spacex-insights';
 import SpacexPriceChart from './SpacexPriceChart';
+import ChartLegend from '../../components/charts/ChartLegend';
 
 type ThemeT = ReturnType<typeof useTheme>;
 
@@ -258,15 +259,25 @@ export default function SpacexOverviewScreen() {
         </View>
         <View style={{ marginTop: 8 }} onLayout={(e) => setChartWidth(e.nativeEvent.layout.width)}>
           {points.length >= 2 && chartWidth > 0 ? (
-            <SpacexPriceChart
-              points={points}
-              buys={chartBuys}
-              avgPrice={stats?.avgPrice ?? null}
-              currentPrice={price}
-              high={rangeKey === 'all' ? listing?.high : null}
-              low={rangeKey === 'all' ? listing?.low : null}
-              width={chartWidth}
-            />
+            <>
+              <SpacexPriceChart
+                points={points}
+                buys={chartBuys}
+                avgPrice={stats?.avgPrice ?? null}
+                currentPrice={price}
+                high={rangeKey === 'all' ? listing?.high : null}
+                low={rangeKey === 'all' ? listing?.low : null}
+                width={chartWidth}
+              />
+              <ChartLegend
+                items={[
+                  { kind: 'line', color: theme.dark ? '#9AA3B2' : '#4E5968', label: 'SPCX 종가' },
+                  ...(stats?.avgPrice != null ? [{ kind: 'dash' as const, color: theme.brand, label: '내 평단', value: `$${stats.avgPrice.toFixed(2)}` }] : []),
+                  { kind: 'dot', color: theme.brand, label: '내 매수 체결' },
+                  { kind: 'dot', color: '#FF3B30', label: '현재가' },
+                ]}
+              />
+            </>
           ) : (
             <View style={{ height: 120, alignItems: 'center', justifyContent: 'center' }}>
               {(rangeKey === 'all' ? allCandlesQ.isError : rangeCandlesQ.isError) ? (

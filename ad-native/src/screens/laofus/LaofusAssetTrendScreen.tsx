@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import Loader from '../../components/ui/Loader';
 import EmptyState from '../../components/common/EmptyState';
 import LineChart from '../../components/charts/LineChart';
+import ChartLegend from '../../components/charts/ChartLegend';
 import DatePicker from '../../components/common/DatePicker';
 import { laofusRestApi, type AssetTrendPoint } from '../../api/laofus';
 import { useTheme } from '../../lib/theme';
@@ -326,6 +327,13 @@ function TrendView({
           color2={theme.textMuted}
           dark={theme.dark}
           formatValue={krw}
+        />
+        <ChartLegend
+          items={[
+            { kind: 'line', color: TQQQ_COLOR, label: '평가금', value: krw(last.stockKrw) },
+            ...(showPrincipal ? [{ kind: 'dash' as const, color: theme.textMuted, label: '매입 원금', value: krw(last.principalKrw) }] : []),
+          ]}
+          hint={showPrincipal ? '점선(원금)보다 위면 이익이에요.' : undefined}
         />
       </View>
 

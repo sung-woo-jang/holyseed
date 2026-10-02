@@ -4,6 +4,7 @@ import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-
 import type { TradeDto } from '../../api/laofus';
 import { scrubLock } from '../../lib/chart-touch';
 import { useTheme } from '../../lib/theme';
+import ChartLegend from '../../components/charts/ChartLegend';
 
 function n(v: string | number | null | undefined): number {
   return Number(v ?? 0);
@@ -108,15 +109,15 @@ export default function CycleTradeChart({ trades, width, onPick }: CycleTradeCha
 
   return (
     <View>
-      <View style={{ flexDirection: 'row', gap: 16, marginBottom: 6 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-          <View style={{ width: 12, height: 3, borderRadius: 2, backgroundColor: priceColor }} />
-          <Text style={{ fontSize: 11.5, color: theme.textMuted }}>체결가</Text>
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-          <View style={{ width: 12, height: 3, borderRadius: 2, backgroundColor: AVG_COLOR }} />
-          <Text style={{ fontSize: 11.5, color: theme.textMuted }}>평단</Text>
-        </View>
+      <View style={{ marginBottom: 6 }}>
+        <ChartLegend
+          items={[
+            { kind: 'line', color: priceColor, label: '체결가', value: usd(n(last.price)) },
+            { kind: 'line', color: AVG_COLOR, label: '체결 후 평단', value: usd(n(last.avgAfter)) },
+            ...(sellLabels.length > 0 ? [{ kind: 'dash' as const, color: theme.danger, label: '매도 체결 (쿼터매도·전량매도, 손익)' }] : []),
+          ]}
+          hint={onPick ? '그래프를 짚고 좌우로 밀면 체결별 값이 보이고, 점을 눌렀다 떼면 체결 상세로 이동해요.' : undefined}
+        />
       </View>
 
       <View

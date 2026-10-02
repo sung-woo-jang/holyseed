@@ -5,7 +5,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Loader from '../../components/ui/Loader';
 import EmptyState from '../../components/common/EmptyState';
 import Segmented from '../../components/common/Segmented';
-import { BandTrendChart, CompareChart, MixChart, PriceFillsChart } from '../../components/charts/VrTrendCharts';
+import { BandTrendChart, CompareChart, MixChart, PriceFillsChart, vrPalette } from '../../components/charts/VrTrendCharts';
+import ChartLegend from '../../components/charts/ChartLegend';
 import { vrApi } from '../../api/vr';
 import {
   bandBoundaries,
@@ -40,6 +41,7 @@ function Card({ title, right, children }: { title: string; right?: string; child
 
 export default function VrTrendScreen({ navigation }: Props) {
   const theme = useTheme();
+  const pal = vrPalette(theme);
   const cyclesQ = useQuery({ queryKey: ['vr-cycles'], queryFn: vrApi.cycles });
   const fillsQ = useQuery({ queryKey: ['vr-fills'], queryFn: vrApi.fills });
   const wealthQ = useQuery({ queryKey: ['vr-wealth-history'], queryFn: vrApi.wealthHistory });
@@ -156,14 +158,13 @@ export default function VrTrendScreen({ navigation }: Props) {
             {points.length > 1 && bmRet != null && (
               <View style={{ marginTop: 8 }}>
                 <CompareChart points={points} width={chartW} height={120} />
-                <View style={styles.legend}>
-                  <Text style={{ color: theme.textMuted, fontSize: 11 }}>
-                    <Text style={{ color: theme.brand }}>●</Text> VR {pct(vrRet)}
-                  </Text>
-                  <Text style={{ color: theme.textMuted, fontSize: 11 }}>
-                    <Text>●</Text> 입금 즉시 전액 매수 {pct(bmRet)}
-                  </Text>
-                </View>
+                <ChartLegend
+                  items={[
+                    { kind: 'line', color: pal.line, label: 'VR (내 계좌)', value: pct(vrRet) },
+                    { kind: 'dash', color: pal.label, label: '입금 즉시 전액 매수했다면', value: pct(bmRet) },
+                  ]}
+                  hint="둘 다 원금 대비 수익률(%)이에요. 점선보다 위면 VR이 더 잘한 거예요."
+                />
               </View>
             )}
             <View style={styles.miniGrid}>
@@ -243,11 +244,44 @@ export default function VrTrendScreen({ navigation }: Props) {
             ))}
           {tab === '자산 구성' && <MixChart points={points} width={chartW} />}
         </View>
-        <Text style={{ color: theme.textMuted, fontSize: 11.5, marginTop: 8, lineHeight: 17 }}>
-          {tab === '평가금·밴드' && '초록선=평가금 · 띠=사이클별 밴드(±15%) · 점선=V · 빨간 점=밴드 이탈일 · 그래프를 눌러 값 보기'}
-          {tab === '가격·체결' && '회색=종가 · 보라=평단 · 파란 점=매수(크기=수량) · 점선=이번 사이클 매수/매도선'}
-          {tab === '자산 구성' && '초록=TQQQ 평가금 · 청록=Pool(현금) · 점선=누적 투자원금'}
-        </Text>
+        {tab === '평가금·밴드' && (
+          <ChartLegend
+            items={[
+              { kind: 'line', color: pal.line, label: '내 평가금 (TQQQ 보유분)' },
+              { kind: 'band', color: pal.band, label: '사이클별 밴드 (V ±15%)' },
+              { kind: 'dash', color: pal.band, label: 'V (사이클 기준값)' },
+              { kind: 'dot', color: pal.out, label: '밴드 밖으로 나간 날' },
+              ...(hasEst ? [{ kind: 'dash' as const, color: pal.line, label: '복원(추정) 구간' }] : []),
+            ]}
+            hint="띠 위 숫자는 사이클 번호예요. 평가금이 띠 아래로 가면 매수, 위로 가면 매도 신호예요. 그래프를 눌러 값을 볼 수 있어요."
+          />
+        )}
+        {tab === '가격·체결' && (
+          <ChartLegend
+            items={[
+              { kind: 'line', color: pal.label, label: 'TQQQ 종가' },
+              { kind: 'line', color: pal.avg, label: '내 평단 (체결마다 바뀜)' },
+              { kind: 'dot', color: theme.brand, label: '매수 체결 (클수록 수량 많음)' },
+              ...(linesForPrice
+                ? [
+                    { kind: 'dash' as const, color: theme.brand, label: '이번 사이클 매수선' },
+                    { kind: 'dash' as const, color: theme.danger, label: '이번 사이클 매도선' },
+                  ]
+                : []),
+            ]}
+            hint="매수선·매도선은 지금 보유수량으로 평가금이 밴드 끝에 닿는 TQQQ 가격이에요."
+          />
+        )}
+        {tab === '자산 구성' && (
+          <ChartLegend
+            items={[
+              { kind: 'area', color: pal.line, label: 'TQQQ 평가금' },
+              { kind: 'area', color: pal.pool, label: 'Pool (현금)' },
+              { kind: 'dash', color: theme.text, label: '누적 투자원금' },
+            ]}
+            hint="두 면을 합친 높이가 내 계좌 총자산이에요. 점선(원금)보다 위면 이익이에요."
+          />
+        )}
         {estimateNote ? <Text style={{ color: theme.textMuted, fontSize: 11.5, marginTop: 4 }}>{estimateNote}</Text> : null}
       </Card>
 

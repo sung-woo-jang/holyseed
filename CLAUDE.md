@@ -62,7 +62,12 @@ holyseed/
 - **⚠️ 자동 업데이트(OTA) 배포 — ad-native 코드를 수정했다면 반드시 세트로 실행할 것, 사용자에게 재확인 없이 진행**:
   1. `cd ad-native && npm run typecheck`
   2. `npm run publish-update` — `expo export`로 뽑은 JS 번들을 자체 호스팅 Expo Updates 서버(`holyseed-backend`의 `/api/ad-native/updates/manifest`)에 등록. 사용자는 앱을 완전히 껐다 켜기만 하면 재설치 없이 반영됨(핫스왑 아님, 다음 실행부터 적용)
-  - 네이티브 모듈 추가·권한 변경·`app.json`의 `scheme`/`updates`/`android.package` 등 네이티브 설정 변경처럼 OTA로 반영 안 되는 경우만 예외: `npx expo prebuild -p android --clean` → `cd android && ./gradlew assembleRelease`로 APK를 다시 빌드하고, 이 경우엔 사용자에게 새 APK 파일을 직접 전달해 재설치를 요청할 것
+  - 네이티브 모듈 추가·권한 변경·`app.json`의 `scheme`/`updates`/`android.package` 등 네이티브 설정 변경처럼 OTA로 반영 안 되는 경우만 예외 — **앱 내 자동 설치(APK 셀프 업데이트)** 절차:
+    1. `app.json`의 `expo.version`과 `expo.android.versionCode`를 둘 다 올릴 것 (runtimeVersion = version이라, 올리지 않으면 새 네이티브 모듈이 없는 구 APK가 새 JS를 받아 시작하자마자 크래시)
+    2. `npx expo prebuild -p android --clean` (끝나면 `android/local.properties`의 `sdk.dir`가 지워지므로 복원) → `cd android && ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a` (arm64 전용이라 빌드·용량이 1/3 수준. 4 ABI 풀빌드는 50분). 서명은 템플릿 debug.keystore 그대로라 기존 앱 위에 덮어 설치됨 — 바꾸지 말 것
+    3. `cd ad-native && npm run publish-apk -- --notes "변경 요약"` — APK를 `~/ad-native-updates/apk/`에 올리고 `latest.json` 갱신 (app.json과 APK 버전이 다르면 거부). 앱(≥1.2.0)은 실행/복귀 시 이를 확인해 "받아서 설치" 창을 띄우고, 설정/더보기의 "업데이트 확인"도 APK를 먼저 확인함
+    4. 자동 설치 기능이 없는 구 APK(≤1.1.0)는 한 번은 수동 설치 필요: 그때는 `~/ad-native-updates/dl/`에 임의 이름으로 복사해 `https://ad.holyseed.p-e.kr/ad-native-updates/dl/<이름>.apk` 링크를 전달하고, 설치 확인 후 삭제
+    - 백그라운드(`run_in_background`) 빌드는 턴이 끝나면 죽는 경우가 있어, 오래 걸리는 빌드는 `python3 subprocess.Popen(start_new_session=True)`로 분리 실행하고 로그를 폴링할 것
 - 백엔드 쪽 구현: `holyseed-backend/src/projects/ad-native/modules/updates/` (Expo Updates 프로토콜 v1, 코드 서명 없음). 관련 env: `AD_NATIVE_UPDATES_DIR`(업데이트 번들 저장 위치, 기본 `~/ad-native-updates` — 배포 시 git clean에 안 지워지도록 레포 밖 경로), `AD_NATIVE_UPDATES_PUBLIC_URL`(에셋 다운로드 URL 베이스, 기본 `https://ad.holyseed.p-e.kr` — 공유 `PUBLIC_BASE_URL`과 실제 라우팅 도메인이 달라 재사용하면 404 남, 절대 재사용하지 말 것)
 
 ### 2. holyseed-backend (API 서버)

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import * as Updates from 'expo-updates';
+import { checkApkUpdate, installedVersionLabel } from './apk-update';
 
 /** ON_LOAD 자동 백그라운드 확인·다운로드가 끝나 재시작 대기 상태가 되면 즉시 재시작 — 껐다 켜기 한 번만으로 최신 버전이 뜨도록 함 */
 export function useAutoOtaReload() {
@@ -12,11 +13,14 @@ export function useAutoOtaReload() {
 
 export function useOtaUpdate() {
   const [checking, setChecking] = useState(false);
-  const updateLabel = Updates.isEmbeddedLaunch ? '내장 빌드 (OTA 미적용)' : `업데이트 적용됨 · ${Updates.updateId?.slice(0, 8) ?? '?'}`;
+  const otaLabel = Updates.isEmbeddedLaunch ? '내장 빌드 (OTA 미적용)' : `업데이트 적용됨 · ${Updates.updateId?.slice(0, 8) ?? '?'}`;
+  const updateLabel = installedVersionLabel ? `${installedVersionLabel} · ${otaLabel}` : otaLabel;
 
   async function checkForUpdate() {
     setChecking(true);
     try {
+      // 새 설치 파일(APK)이 올라와 있으면 그쪽(앱 내 다운로드·설치 창)이 우선 — OTA로는 못 고치는 변경이 들어있음
+      if ((await checkApkUpdate(true)) === 'available') return;
       const result = await Updates.checkForUpdateAsync();
       if (!result.isAvailable) {
         Alert.alert('최신 버전', '이미 최신 버전을 쓰고 있어요.');

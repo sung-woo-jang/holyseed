@@ -12,6 +12,8 @@ import { navigationRef } from './src/navigation/navigationRef';
 import { useAutoOtaReload } from './src/lib/useOtaUpdate';
 import { useWidgetLinks } from './src/lib/widget-links';
 import { refreshAllWidgets } from './src/widgets';
+import { checkApkUpdate } from './src/lib/apk-update';
+import ApkUpdateModal from './src/components/common/ApkUpdateModal';
 
 // 구글 로그인 인앱 브라우저 세션이 앱 복귀 시 제대로 닫히도록 앱 시작 시 1회 호출
 WebBrowser.maybeCompleteAuthSession();
@@ -33,7 +35,10 @@ const queryClient = new QueryClient({
 function onAppStateChange(status: AppStateStatus) {
   if (Platform.OS !== 'web') {
     focusManager.setFocused(status === 'active');
-    if (status === 'active') void refreshAllWidgets();
+    if (status === 'active') {
+      void refreshAllWidgets();
+      void checkApkUpdate();
+    }
   }
 }
 
@@ -43,6 +48,7 @@ export default function App() {
 
   useEffect(() => {
     void refreshAllWidgets();
+    void checkApkUpdate();
     const sub = AppState.addEventListener('change', onAppStateChange);
     return () => sub.remove();
   }, []);
@@ -54,6 +60,7 @@ export default function App() {
           <NavigationContainer ref={navigationRef}>
             <RootNavigator />
             <StatusBar style="auto" />
+            <ApkUpdateModal />
           </NavigationContainer>
         </SafeAreaProvider>
       </QueryClientProvider>

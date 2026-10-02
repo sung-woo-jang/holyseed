@@ -17,10 +17,19 @@ const MODE_OF: Record<Target, AppMode> = {
   'worklog-add': 'worklog',
 };
 
-function parseTarget(url: string | null): Target | null {
+interface Link {
+  target: Target;
+  /** worklog-add에서 미리 채울 날짜(YYYY-MM-DD) */
+  date?: string;
+}
+
+function parseTarget(url: string | null): Link | null {
   if (!url || !url.startsWith(PREFIX)) return null;
-  const t = url.slice(PREFIX.length).split(/[?#]/)[0] as Target;
-  return t in MODE_OF ? t : null;
+  const [path, query = ''] = url.slice(PREFIX.length).split('?');
+  const target = path as Target;
+  if (!(target in MODE_OF)) return null;
+  const date = /(?:^|&)date=(\d{4}-\d{2}-\d{2})/.exec(query)?.[1];
+  return { target, date };
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -34,7 +43,7 @@ async function waitUntil(cond: () => boolean, timeoutMs: number): Promise<boolea
   return cond();
 }
 
-function navigateTo(target: Target) {
+function navigateTo({ target, date }: Link) {
   const nav = navigationRef as any;
   switch (target) {
     case 'asset':
@@ -50,7 +59,7 @@ function navigateTo(target: Target) {
       nav.navigate('Worklog', { screen: 'WorklogHome' });
       break;
     case 'worklog-add':
-      nav.navigate('Worklog', { screen: 'WorklogEntry', params: { record: null, defaultDate: todayLocal() } });
+      nav.navigate('Worklog', { screen: 'WorklogEntry', params: { record: null, defaultDate: date ?? todayLocal() } });
       break;
   }
 }
@@ -58,7 +67,8 @@ function navigateTo(target: Target) {
 let handling = false;
 
 /** 위젯 탭(adnative://widget/<대상>) → 필요한 앱 모드로 전환한 뒤 해당 화면으로 이동 */
-async function openTarget(target: Target): Promise<void> {
+async function openTarget(link: Link): Promise<void> {
+  const target = link.target;
   if (handling) return;
   handling = true;
   try {
@@ -78,7 +88,7 @@ async function openTarget(target: Target): Promise<void> {
     } else {
       await sleep(150);
     }
-    navigateTo(target);
+    navigateTo(link);
   } finally {
     handling = false;
   }

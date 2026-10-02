@@ -3,6 +3,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { FlexWidget, TextWidget } from 'react-native-android-widget';
 import type { Hex, Palette } from './palette';
 import { hhmm } from './format';
+import { SvgWidget } from 'react-native-android-widget';
 
 export interface WidgetViewProps<T> {
   p: Palette;
@@ -13,6 +14,8 @@ export interface WidgetViewProps<T> {
   stale: boolean;
   error: string | null;
   size: { width: number; height: number };
+  /** 월 이동 위젯에서 보고 있는 달 (0=이번 달) */
+  monthOffset: number;
 }
 
 export const WIDGET_URI = {
@@ -23,12 +26,20 @@ export const WIDGET_URI = {
   worklogAdd: 'adnative://widget/worklog-add',
 } as const;
 
+export interface MonthNav {
+  label: string;
+  canPrev: boolean;
+  canNext: boolean;
+  isCurrent: boolean;
+}
+
 export function Frame({
   p,
   title,
   link,
   at,
   stale,
+  nav,
   children,
 }: {
   p: Palette;
@@ -36,6 +47,7 @@ export function Frame({
   link: string;
   at: number | null;
   stale: boolean;
+  nav?: MonthNav;
   children: ReactNode;
 }) {
   const stamp = at ? `${stale ? '오래됨 ' : ''}${hhmm(at)}` : '';
@@ -49,27 +61,41 @@ export function Frame({
         flexDirection: 'column',
         backgroundColor: p.bg,
         borderRadius: 22,
-        padding: 14,
+        padding: PAD,
       }}
     >
       <FlexWidget style={{ width: 'match_parent', flexDirection: 'row', alignItems: 'center' }}>
         <FlexWidget style={{ flex: 1 }}>
-          <TextWidget text={title} style={{ fontSize: 12, fontWeight: '600', color: p.muted }} />
+          <TextWidget text={title} truncate="END" maxLines={1} style={{ fontSize: 12, fontWeight: '600', color: p.muted }} />
         </FlexWidget>
+        {nav && (
+          <FlexWidget style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: p.surface, borderRadius: 12, marginRight: 6 }}>
+            <TextWidget
+              text="‹"
+              clickAction={nav.canPrev ? 'MONTH_PREV' : undefined}
+              style={{ fontSize: 15, fontWeight: '700', color: nav.canPrev ? p.text : p.muted, paddingHorizontal: 9, paddingVertical: 1 }}
+            />
+            <TextWidget
+              text={nav.label}
+              clickAction={nav.isCurrent ? undefined : 'MONTH_NOW'}
+              style={{ fontSize: 12, fontWeight: '700', color: nav.isCurrent ? p.text : p.brand }}
+            />
+            <TextWidget
+              text="›"
+              clickAction={nav.canNext ? 'MONTH_NEXT' : undefined}
+              style={{ fontSize: 15, fontWeight: '700', color: nav.canNext ? p.text : p.muted, paddingHorizontal: 9, paddingVertical: 1 }}
+            />
+          </FlexWidget>
+        )}
         <TextWidget
           text={`${stamp} ↻`}
           clickAction="REFRESH"
-          style={{ fontSize: 11, color: (stale ? p.danger : p.muted), paddingLeft: 12, paddingVertical: 2 }}
+          style={{ fontSize: 11, color: stale ? p.danger : p.muted, paddingLeft: 6, paddingVertical: 2 }}
         />
       </FlexWidget>
       {children}
     </FlexWidget>
   );
-}
-
-/** 위젯 트리 빌더는 Fragment/배열 반환을 지원하지 않아 여러 자식은 항상 이 컨테이너로 감싼다 */
-export function Column({ children }: { children?: ReactNode }) {
-  return <FlexWidget style={{ width: 'match_parent', flexDirection: 'column' }}>{children}</FlexWidget>;
 }
 
 export function Big({ p, text, color }: { p: Palette; text: string; color?: Hex }) {
@@ -132,11 +158,13 @@ export function tone(p: Palette, v: number | null | undefined): Hex {
 
 export interface Section {
   key: string;
-  /** 위쪽 간격 포함 예상 높이(dp) */
+  /** 위쪽 간격 포함 예상 높이(dp) — grow 구역은 최소 줄 수일 때의 높이 */
   h: number;
   /** 작은 위젯에서 먼저 버려지는 순서 — 클수록 먼저 빠짐 */
   prio: number;
   el: ReactElement;
+  /** 남는 높이를 줄 수로 채울 수 있는 목록 구역 */
+  grow?: { min: number; max: number; rowH: number; make: (rows: number) => ReactElement };
 }
 
 export const HEADER_H = 22;
@@ -164,6 +192,18 @@ export function pack(sections: Section[], avail: number): Section[] {
     list.splice(drop, 1);
   }
   return list;
+}
+
+/** 구역들을 높이에 맞춰 고르고, 남는 높이는 grow 목록의 줄 수로 채운다 */
+export function layout(avail: number, sections: Section[]): ReactElement[] {
+  const kept = pack(sections, avail);
+  let left = avail - totalH(kept);
+  return kept.map((s) => {
+    if (!s.grow) return s.el;
+    const extra = Math.max(0, Math.min(s.grow.max - s.grow.min, Math.floor(left / s.grow.rowH)));
+    left -= extra * s.grow.rowH;
+    return extra > 0 ? s.grow.make(s.grow.min + extra) : s.el;
+  });
 }
 
 /** 남은 높이에 들어갈 목록 줄 수 (제목 한 줄 포함 계산) */
@@ -194,7 +234,7 @@ export function Tiles({
         flexDirection: 'row',
         backgroundColor: p.surface,
         borderRadius: 12,
-        paddingVertical: 7,
+        paddingVertical: 6,
         paddingHorizontal: 10,
         marginTop: top,
       }}
@@ -248,11 +288,63 @@ export function LineRow({
 
 export function ListTitle({ p, text, right }: { p: Palette; text: string; right?: string }) {
   return (
-    <FlexWidget style={{ width: 'match_parent', flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+    <FlexWidget style={{ width: 'match_parent', flexDirection: 'row', alignItems: 'center', marginTop: 7 }}>
       <FlexWidget style={{ flex: 1 }}>
         <TextWidget text={text} maxLines={1} style={{ fontSize: 10.5, fontWeight: '600', color: p.muted }} />
       </FlexWidget>
       {right !== undefined && <TextWidget text={right} maxLines={1} style={{ fontSize: 10.5, color: p.muted }} />}
     </FlexWidget>
   );
+}
+
+export interface SparkSeries {
+  values: number[];
+  color: Hex;
+  dashed?: boolean;
+  fill?: boolean;
+  width?: number;
+}
+
+/** 간단한 추이선 — 시리즈들을 같은 눈금에 그리고 마지막 점을 강조 (SVG 문자열 → SvgWidget) */
+export function Spark({
+  p,
+  width,
+  height,
+  series,
+  hlines = [],
+  top = 6,
+}: {
+  p: Palette;
+  width: number;
+  height: number;
+  series: SparkSeries[];
+  hlines?: { value: number; color: Hex; dashed?: boolean }[];
+  top?: number;
+}) {
+  const W = Math.round(width);
+  const H = height;
+  const all = [...series.flatMap((s) => s.values), ...hlines.map((h) => h.value)].filter((v) => Number.isFinite(v));
+  if (all.length < 2 || series.every((s) => s.values.length < 2)) return <FlexWidget style={{ height: 1 }} />;
+  const lo = Math.min(...all);
+  const hi = Math.max(...all);
+  const pad = (hi - lo || Math.abs(hi) || 1) * 0.08;
+  const min = lo - pad;
+  const max = hi + pad;
+  const y = (v: number) => (H - 3 - ((v - min) / (max - min)) * (H - 6)).toFixed(1);
+  const x = (i: number, n: number) => (3 + (i / (n - 1)) * (W - 6)).toFixed(1);
+
+  let body = '';
+  for (const h of hlines) {
+    body += `<line x1="0" y1="${y(h.value)}" x2="${W}" y2="${y(h.value)}" stroke="${h.color}" stroke-width="1" ${h.dashed ? 'stroke-dasharray="3,3"' : ''}/>`;
+  }
+  for (const s of series) {
+    const n = s.values.length;
+    if (n < 2) continue;
+    const pts = s.values.map((v, i) => `${x(i, n)},${y(v)}`).join(' ');
+    if (s.fill) body += `<polygon points="${pts} ${x(n - 1, n)},${H} ${x(0, n)},${H}" fill="${s.color}" fill-opacity="0.14"/>`;
+    body += `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="${s.width ?? 2}" stroke-linejoin="round" stroke-linecap="round" ${s.dashed ? 'stroke-dasharray="4,3"' : ''}/>`;
+    body += `<circle cx="${x(n - 1, n)}" cy="${y(s.values[n - 1]!)}" r="3" fill="${s.color}"/>`;
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${body}</svg>`;
+  return <SvgWidget svg={svg} style={{ width: W, height: H, marginTop: top }} />;
 }

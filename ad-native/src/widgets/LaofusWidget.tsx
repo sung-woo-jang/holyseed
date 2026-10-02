@@ -8,23 +8,59 @@ import {
   LineRow,
   ListTitle,
   ROW_H,
+  Spark,
   StackBar,
   Sub,
   Tiles,
   WIDGET_URI,
   emptyBody,
+  layout,
   metrics,
-  pack,
-  rowsFit,
   tone,
-  totalH,
   type Section,
   type WidgetViewProps,
 } from './components';
 import type { Palette } from './palette';
 import { signedPct, usd, wonShort } from './format';
+import { orderSideLabel } from '../lib/laofus-order-label';
 
 const signedUsd = (v: number | null) => (v === null ? '—' : `${v >= 0 ? '+' : '-'}${usd(Math.abs(v))}`);
+
+function OrdersList({ p, data, rows }: { p: Palette; data: LaofusWidgetData; rows: number }) {
+  return (
+    <FlexWidget style={{ width: 'match_parent', flexDirection: 'column' }}>
+      <ListTitle p={p} text={`걸린 주문 ${data.orders.length}건`} right={data.nextRun ? `다음 실행 ${data.nextRun}` : undefined} />
+      {data.orders.length === 0 && <LineRow p={p} left="걸린 주문 없음" right="" leftColor={p.muted} />}
+      {data.orders.slice(0, rows).map((o, i) => (
+        <LineRow
+          key={i}
+          p={p}
+          left={`${orderSideLabel('SOXL', o)} ${o.type} ${usd(o.price)} · ${o.quantity}주`}
+          leftColor={o.alert ? p.danger : p.text}
+          right={`현재가 ${signedPct(o.distancePct)}`}
+          rightColor={o.alert ? p.danger : p.muted}
+        />
+      ))}
+    </FlexWidget>
+  );
+}
+
+function TradesList({ p, data, rows }: { p: Palette; data: LaofusWidgetData; rows: number }) {
+  return (
+    <FlexWidget style={{ width: 'match_parent', flexDirection: 'column' }}>
+      <ListTitle p={p} text="최근 체결" />
+      {data.trades.slice(0, rows).map((x, i) => (
+        <LineRow
+          key={i}
+          p={p}
+          left={`${x.date}  ${x.side === 'BUY' ? `매수 ${x.kind}` : x.kind}`}
+          right={`${usd(x.price)} × ${Math.round(x.quantity * 100) / 100}`}
+          rightColor={x.side === 'BUY' ? p.brand : p.danger}
+        />
+      ))}
+    </FlexWidget>
+  );
+}
 
 function LaofusBody({ p, data, size }: { p: Palette; data: LaofusWidgetData; size: WidgetViewProps<LaofusWidgetData>['size'] }) {
   const m = metrics(size);
@@ -35,11 +71,14 @@ function LaofusBody({ p, data, size }: { p: Palette; data: LaofusWidgetData; siz
   const tilesA = [
     { label: '평단', value: usd(data.avgPrice) },
     { label: '별지점', value: usd(data.star) },
-    { label: '목표가 +20%', value: usd(data.target) },
+    { label: '전량매도 +20%', value: usd(data.target) },
     ...(wide ? [{ label: '1회 매수', value: usd(data.oneBuy, 0) }] : []),
   ];
 
-  const fixed: Section[] = [
+  const nOrders = Math.max(1, data.orders.length);
+  const nTrades = data.trades.length;
+
+  const sections: Section[] = [
     {
       key: 'hero',
       h: 58,
@@ -57,7 +96,7 @@ function LaofusBody({ p, data, size }: { p: Palette; data: LaofusWidgetData; siz
     {
       key: 'gauge',
       h: 36,
-      prio: 1,
+      prio: 2,
       el: (
         <FlexWidget style={{ width: 'match_parent', flexDirection: 'column' }}>
           <ListTitle
@@ -69,10 +108,10 @@ function LaofusBody({ p, data, size }: { p: Palette; data: LaofusWidgetData; siz
         </FlexWidget>
       ),
     },
-    { key: 'levels', h: 52, prio: 2, el: <Tiles p={p} items={tilesA} /> },
+    { key: 'levels', h: 50, prio: 1, el: <Tiles p={p} items={tilesA} /> },
     {
       key: 'pnl',
-      h: 66,
+      h: 64,
       prio: 3,
       el: (
         <Tiles
@@ -90,65 +129,49 @@ function LaofusBody({ p, data, size }: { p: Palette; data: LaofusWidgetData; siz
         />
       ),
     },
+    {
+      key: 'orders',
+      h: 20 + 1 * ROW_H,
+      prio: 1,
+      el: <OrdersList p={p} data={data} rows={1} />,
+      grow: { min: 1, max: nOrders, rowH: ROW_H, make: (rows: number) => <OrdersList p={p} data={data} rows={rows} /> },
+    },
+    ...(nTrades > 0
+      ? [
+          {
+            key: 'trades',
+            h: 20 + ROW_H,
+            prio: 5,
+            el: <TradesList p={p} data={data} rows={1} />,
+            grow: { min: 1, max: nTrades, rowH: ROW_H, make: (rows: number) => <TradesList p={p} data={data} rows={rows} /> },
+          } satisfies Section,
+        ]
+      : []),
+    ...(data.closes.length >= 5
+      ? [
+          {
+            key: 'spark',
+            h: 74,
+            prio: 6,
+            el: (
+              <FlexWidget style={{ width: 'match_parent', flexDirection: 'column' }}>
+                <ListTitle p={p} text="최근 1개월 종가" right={data.avgPrice !== null ? `점선 = 평단 ${usd(data.avgPrice)}` : undefined} />
+                <Spark
+                  p={p}
+                  width={m.inner}
+                  height={46}
+                  series={[{ values: data.closes, color: p.brand, fill: true }]}
+                  hlines={data.avgPrice !== null ? [{ value: data.avgPrice, color: '#A78BFA', dashed: true }] : []}
+                  top={4}
+                />
+              </FlexWidget>
+            ),
+          } satisfies Section,
+        ]
+      : []),
   ];
 
-  const kept = pack(fixed, m.avail);
-  let leftover = m.avail - totalH(kept);
-  const list: Section[] = [];
-
-  const orderRows = Math.min(data.orders.length, rowsFit(leftover, ROW_H));
-  if (orderRows > 0 || data.orders.length === 0) {
-    const rows = data.orders.length === 0 ? 1 : orderRows;
-    if (leftover >= 20 + rows * ROW_H) {
-      list.push({
-        key: 'orders',
-        h: 20 + rows * ROW_H,
-        prio: 8,
-        el: (
-          <FlexWidget style={{ width: 'match_parent', flexDirection: 'column' }}>
-            <ListTitle p={p} text={`걸린 주문 ${data.orders.length}건`} right={data.nextRun ? `다음 실행 ${data.nextRun}` : undefined} />
-            {data.orders.length === 0 && <LineRow p={p} left="걸린 주문 없음" right="" leftColor={p.muted} />}
-            {data.orders.slice(0, rows).map((o, i) => (
-              <LineRow
-                key={i}
-                p={p}
-                left={`${o.side === 'BUY' ? '매수' : '매도'} ${o.type} ${usd(o.price)} · ${o.quantity}주`}
-                leftColor={o.alert ? p.danger : p.text}
-                right={`현재가 ${signedPct(o.distancePct)}`}
-                rightColor={o.alert ? p.danger : p.muted}
-              />
-            ))}
-          </FlexWidget>
-        ),
-      });
-      leftover -= 20 + rows * ROW_H;
-    }
-  }
-
-  const tradeRows = Math.min(data.trades.length, rowsFit(leftover, ROW_H));
-  if (tradeRows > 0) {
-    list.push({
-      key: 'trades',
-      h: 20 + tradeRows * ROW_H,
-      prio: 9,
-      el: (
-        <FlexWidget style={{ width: 'match_parent', flexDirection: 'column' }}>
-          <ListTitle p={p} text="최근 체결" />
-          {data.trades.slice(0, tradeRows).map((x, i) => (
-            <LineRow
-              key={i}
-              p={p}
-              left={`${x.date}  ${x.side === 'BUY' ? '매수' : '매도'} ${x.kind}`}
-              right={`${usd(x.price)} × ${Math.round(x.quantity * 100) / 100}`}
-              rightColor={x.side === 'BUY' ? p.brand : p.danger}
-            />
-          ))}
-        </FlexWidget>
-      ),
-    });
-  }
-
-  return <Body>{[...kept, ...list].map((s) => s.el)}</Body>;
+  return <Body>{layout(m.avail, sections)}</Body>;
 }
 
 export function LaofusWidget(props: WidgetViewProps<LaofusWidgetData>) {

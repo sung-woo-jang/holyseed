@@ -241,11 +241,11 @@ export default function LaofusCycleDetailScreen({ route, navigation }: Props) {
               style={({ pressed }) => [styles.tradeRow, i > 0 && { borderTopWidth: 1, borderColor: theme.border }, pressed && { opacity: 0.6 }]}
             >
               <View style={[styles.sideBadge, { backgroundColor: isBuy ? theme.brandSoft : theme.dark ? '#3A1A1E' : '#FDECEE' }]}>
-                <Text style={{ color: sideColor, fontSize: 12, fontWeight: '800' }}>{isBuy ? '매수' : '매도'}</Text>
+                <Text style={{ color: sideColor, fontSize: 12, fontWeight: '800' }}>{isBuy ? '매수' : t.kind}</Text>
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={{ color: theme.text, fontSize: 14, fontWeight: '700' }}>
-                  {t.seq}차 {t.kind} <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '500' }}>{kstDate(t.date)}</Text>
+                  {t.seq}차{isBuy ? ` ${t.kind}` : ''} <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '500' }}>{kstDate(t.date)}</Text>
                 </Text>
                 <Text style={{ color: theme.textMuted, fontSize: 12.5, marginTop: 2 }}>
                   체결가 {usd(n(t.price))} · {n(t.quantity) % 1 === 0 ? n(t.quantity) : n(t.quantity).toFixed(3)}주
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
   chartTitle: { fontSize: 12.5, fontWeight: '700', marginBottom: 8 },
   listCard: { borderWidth: 1, borderRadius: 14, overflow: 'hidden' },
   tradeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 },
-  sideBadge: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  sideBadge: { width: 56, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   rowChips: { flexDirection: 'row', gap: 6, marginTop: 5, flexWrap: 'wrap' },
   rowChip: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
 });

@@ -7,6 +7,7 @@ import Loader from '../../components/ui/Loader';
 import { laofusRestApi, type LiveDto, type LiveOrderDto, type LiveSessionDto, type LiveSymbolDto } from '../../api/laofus';
 import { useTheme } from '../../lib/theme';
 import { useLiveInterval, useNowTick } from '../../lib/use-live-interval';
+import { orderSideLabel } from '../../lib/laofus-order-label';
 import { freshnessTag, krw, sessionHint, signedPct, usd } from '../../lib/live-format';
 import type { LaofusHomeStackParamList } from '../../navigation/LaofusHomeStack';
 import type { LaofusTabParamList } from '../../navigation/LaofusRootTabNavigator';
@@ -28,11 +29,12 @@ function tone(v: number | null | undefined, theme: ThemeT): string {
   return v > 0 ? theme.brand : theme.danger;
 }
 
-function OrderRow({ o, theme }: { o: LiveOrderDto; theme: ThemeT }) {
+function OrderRow({ o, symbol, theme }: { o: LiveOrderDto; symbol: string; theme: ThemeT }) {
   const buy = o.side === 'BUY';
+  const sideText = orderSideLabel(symbol, o);
   return (
     <View style={[styles.orderRow, { borderColor: theme.border }, o.alert && { backgroundColor: WARN + '26' }]}>
-      <Text style={{ color: buy ? theme.brand : theme.danger, fontSize: 12, fontWeight: '800', width: 34 }}>{buy ? '매수' : '매도'}</Text>
+      <Text style={{ color: buy ? theme.brand : theme.danger, fontSize: 12, fontWeight: '800', width: sideText.length > 2 ? 54 : 34 }}>{sideText}</Text>
       <Text style={{ color: theme.text, fontSize: 13, fontWeight: '600', flex: 1 }}>
         {o.amount !== null ? `${usd(o.amount)} · 약 ${o.quantity}주` : `${o.quantity}주${o.price !== null ? ` @ ${usd(o.price)}` : ''}`}
       </Text>
@@ -67,7 +69,7 @@ function SymbolCard({ s, theme, onPress }: { s: LiveSymbolDto; theme: ThemeT; on
         {s.orders.length === 0 ? (
           <Text style={{ color: theme.textMuted, fontSize: 12, borderTopWidth: 1, borderColor: theme.border, paddingTop: 9 }}>걸려 있는 주문 없음</Text>
         ) : (
-          s.orders.map((o) => <OrderRow key={o.orderId} o={o} theme={theme} />)
+          s.orders.map((o) => <OrderRow key={o.orderId} o={o} symbol={s.symbol} theme={theme} />)
         )}
       </View>
     </Pressable>

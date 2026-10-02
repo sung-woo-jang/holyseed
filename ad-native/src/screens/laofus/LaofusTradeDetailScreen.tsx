@@ -179,7 +179,7 @@ export default function LaofusTradeDetailScreen({ route, navigation }: Props) {
 
       <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <View style={styles.chipRow}>
-          <Chip text={isBuy ? '매수' : '매도'} color={sideColor} bg={sideSoft} />
+          <Chip text={isBuy ? '매수' : trade.kind} color={sideColor} bg={sideSoft} />
           <Chip text={ERA_LABEL[era]} color={theme.textMuted} bg={theme.bg} />
         </View>
         <Text style={{ color: theme.textMuted, fontSize: 13, fontWeight: '700', marginTop: 8 }}>{heroKind}</Text>

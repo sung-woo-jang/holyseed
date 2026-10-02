@@ -7,15 +7,14 @@ import {
   LineRow,
   ListTitle,
   ROW_H,
+  Spark,
   Sub,
   Tiles,
   WIDGET_URI,
   emptyBody,
+  layout,
   metrics,
-  pack,
-  rowsFit,
   tone,
-  totalH,
   type Section,
   type WidgetViewProps,
 } from './components';
@@ -102,7 +101,7 @@ function VrBody({ p, data, size }: { p: Palette; data: VrWidgetData; size: Widge
     },
     {
       key: 'assets',
-      h: 66,
+      h: 64,
       prio: 2,
       el: (
         <Tiles
@@ -117,7 +116,7 @@ function VrBody({ p, data, size }: { p: Palette; data: VrWidgetData; size: Widge
     },
     {
       key: 'pool',
-      h: 66,
+      h: 64,
       prio: 3,
       el: (
         <Tiles
@@ -132,36 +131,57 @@ function VrBody({ p, data, size }: { p: Palette; data: VrWidgetData; size: Widge
     },
   ];
 
-  const kept = pack(fixed, m.avail);
-  const rows = Math.min(data.fills.length, rowsFit(m.avail - totalH(kept), ROW_H));
   const cycleText =
     data.cycleNo !== null ? `사이클 ${data.cycleNo}${data.cycleStart ? ` · ${data.cycleStart}${data.cycleEnd ? `~${data.cycleEnd}` : ''}` : ''}` : '최근 체결';
-  const list: Section[] =
-    rows > 0
+  const FillsList = ({ rows }: { rows: number }) => (
+    <FlexWidget style={{ width: 'match_parent', flexDirection: 'column' }}>
+      <ListTitle p={p} text={cycleText} right={data.renewalInDays !== null ? `V 갱신 ${data.renewalInDays <= 0 ? '오늘' : `D-${data.renewalInDays}`}` : undefined} />
+      {data.fills.slice(0, rows).map((f, i) => (
+        <LineRow key={i} p={p} left={`${f.date}  ${KIND_LABEL[f.kind] ?? f.kind}`} right={`${usd(f.price)} × ${f.quantity}`} rightColor={f.kind === 'SELL' ? p.danger : p.brand} />
+      ))}
+    </FlexWidget>
+  );
+
+  const sections: Section[] = [
+    ...fixed,
+    ...(data.fills.length > 0
       ? [
           {
             key: 'fills',
-            h: 20 + rows * ROW_H,
-            prio: 9,
+            h: 20 + ROW_H,
+            prio: 5,
+            el: <FillsList rows={1} />,
+            grow: { min: 1, max: data.fills.length, rowH: ROW_H, make: (rows: number) => <FillsList rows={rows} /> },
+          } satisfies Section,
+        ]
+      : []),
+    ...(data.wealth.length >= 4
+      ? [
+          {
+            key: 'wealth',
+            h: 74,
+            prio: 6,
             el: (
               <FlexWidget style={{ width: 'match_parent', flexDirection: 'column' }}>
-                <ListTitle p={p} text={cycleText} right={data.renewalInDays !== null ? `V 갱신 ${data.renewalInDays <= 0 ? '오늘' : `D-${data.renewalInDays}`}` : undefined} />
-                {data.fills.slice(0, rows).map((f, i) => (
-                  <LineRow
-                    key={i}
-                    p={p}
-                    left={`${f.date}  ${KIND_LABEL[f.kind] ?? f.kind}`}
-                    right={`${usd(f.price)} × ${f.quantity}`}
-                    rightColor={f.kind === 'SELL' ? p.danger : p.brand}
-                  />
-                ))}
+                <ListTitle p={p} text="총자산 추이" right={`점선 = 누적 원금 ${usd(data.wealth[data.wealth.length - 1]!.principal, 0)}`} />
+                <Spark
+                  p={p}
+                  width={m.inner}
+                  height={46}
+                  series={[
+                    { values: data.wealth.map((w) => w.total), color: p.brand, fill: true },
+                    { values: data.wealth.map((w) => w.principal), color: p.muted, dashed: true, width: 1.5 },
+                  ]}
+                  top={4}
+                />
               </FlexWidget>
             ),
-          },
+          } satisfies Section,
         ]
-      : [];
+      : []),
+  ];
 
-  return <Body>{[...kept, ...list].map((s) => s.el)}</Body>;
+  return <Body>{layout(m.avail, sections)}</Body>;
 }
 
 export function VrWidget(props: WidgetViewProps<VrWidgetData>) {

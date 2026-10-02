@@ -53,7 +53,7 @@ function LegsCard({ s, price, theme }: { s: ImuState; price: number | null; them
     <View style={{ gap: 8 }}>
       {buyLegs.map((leg, i) => (
         <View key={`b${i}`} style={styles.legRow}>
-          <Text style={{ color: theme.brand, fontSize: 12, fontWeight: '800', width: 34 }}>매수</Text>
+          <Text style={{ color: theme.brand, fontSize: 12, fontWeight: '800', width: 54 }}>매수</Text>
           <Text style={{ color: theme.text, fontSize: 13, fontWeight: '600', flex: 1 }}>
             {leg.quantity}주 @ {usd(leg.price)}
           </Text>
@@ -63,11 +63,10 @@ function LegsCard({ s, price, theme }: { s: ImuState; price: number | null; them
       ))}
       {sellLegs.map((leg, i) => (
         <View key={`s${i}`} style={styles.legRow}>
-          <Text style={{ color: theme.danger, fontSize: 12, fontWeight: '800', width: 34 }}>매도</Text>
+          <Text style={{ color: theme.danger, fontSize: 12, fontWeight: '800', width: 54 }}>{leg.kind}</Text>
           <Text style={{ color: theme.text, fontSize: 13, fontWeight: '600', flex: 1 }}>
             {leg.quantity}주 @ {usd(leg.price)}
           </Text>
-          <Text style={{ color: theme.textMuted, fontSize: 11.5 }}>{leg.kind}</Text>
           <Text style={[styles.legDistance, { color: theme.text }]}>{distance(leg.price)}</Text>
         </View>
       ))}

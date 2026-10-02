@@ -3,7 +3,7 @@
     "name": "자산일기",
     "slug": "ad-native",
     "scheme": "adnative",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -19,7 +19,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "resize",
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -40,7 +41,58 @@
       "expo-secure-store",
       "expo-web-browser",
       "@react-native-community/datetimepicker",
-      "expo-updates"
+      "expo-updates",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "AssetDiaryWidget",
+              "label": "자산일기 · 순자산",
+              "description": "순자산과 30일 증감, 이번 달 수입·지출",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "LaofusWidget",
+              "label": "라오어 · SOXL",
+              "description": "SOXL 현재가, 걸린 LOC 주문과 현재가 괴리, T·평단·수익률",
+              "minWidth": "250dp",
+              "minHeight": "160dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 3,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "VrWidget",
+              "label": "VR · TQQQ",
+              "description": "TQQQ 평가금의 밴드 위치와 Pool·수익률",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "WorklogWidget",
+              "label": "근무일지",
+              "description": "이번 달 실수령·근무일수와 오늘 근무 빠른 입력",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            }
+          ]
+        }
+      ]
     ]
   }
 }

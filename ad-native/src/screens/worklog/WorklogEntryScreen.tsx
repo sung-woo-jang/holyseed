@@ -9,8 +9,9 @@ import Button from '../../components/ui/Button';
 import TextField from '../../components/ui/TextField';
 import Switch from '../../components/ui/Switch';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import AppToast from '../../components/common/AppToast';
 import DatePicker from '../../components/common/DatePicker';
-import { worklogApi, type WorklogPhoto, type PayStatus } from '../../api/worklog';
+import { worklogApi, type WorklogPhoto, type WorklogRecord, type PayStatus } from '../../api/worklog';
 import { useTheme } from '../../lib/theme';
 import { useKeyboardScrollRegistration, KeyboardScrollProvider } from '../../lib/keyboard-scroll';
 import { todayLocal, timeStringToDate, dateToTimeString, shiftDay } from '../../lib/date';
@@ -127,6 +128,9 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
   const [endPickerVisible, setEndPickerVisible] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [savingNext, setSavingNext] = useState(false);
+  const [toast, setToast] = useState('');
+  const autoFilledRef = useRef<Record<string, string>>({});
   const [deleting, setDeleting] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [previewPhoto, setPreviewPhoto] = useState<WorklogPhoto | null>(null);
@@ -272,6 +276,39 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
     });
   }, [navigation, dirty]);
 
+  // 현장명 칩을 고르면 그 현장의 가장 최근 기록(최근 6개월)에서 시간·일급여·주소·업무를 채운다 — 직접 입력한 값은 건드리지 않음
+  async function handlePickTitle(name: string) {
+    setTitle(name);
+    if (isEdit) return;
+    try {
+      const res = await worklogApi.query({ from: shiftDay(todayLocal(), -180), to: todayLocal(), category, titleContains: name });
+      const last = res.records
+        .filter((r: WorklogRecord) => r.title === name && r.payStatus !== 'DAYOFF')
+        .sort((a: WorklogRecord, b: WorklogRecord) => b.workDate.localeCompare(a.workDate))[0];
+      if (!last) return;
+      const opt = categories.find((c) => c.name === category);
+      const auto = autoFilledRef.current;
+      const fill = (field: string, cur: string, def: string, next: string) => {
+        if (!next) return cur;
+        const replaceable = cur === '' || cur === def || cur === auto[field];
+        if (!replaceable) return cur;
+        auto[field] = next;
+        return next;
+      };
+      setStartTime((cur) => fill('start', cur, opt?.defaultStartTime ?? '', last.startTime ?? ''));
+      setEndTime((cur) => fill('end', cur, opt?.defaultEndTime ?? '', last.endTime ?? ''));
+      setBreakHours((cur) => fill('break', cur, opt?.defaultBreakHours != null ? String(opt.defaultBreakHours) : '', String(last.breakHours ?? '')));
+      setDailyWage((cur) =>
+        fill('wage', cur, opt?.defaultDailyWage != null ? formatMoneyInput(String(opt.defaultDailyWage)) : '', last.dailyWage ? formatMoneyInput(String(last.dailyWage)) : ''),
+      );
+      setAddress((cur) => fill('address', cur, opt?.defaultAddress ?? '', last.address ?? ''));
+      setJobs((cur) => (cur.length > 0 ? cur : last.jobs ?? []));
+      setToast(`${name}의 최근 기록(${Number(last.workDate.slice(5, 7))}/${Number(last.workDate.slice(8, 10))}) 값을 채웠어요`);
+    } catch {
+      // 자동 채움은 편의 기능 — 실패해도 입력 흐름은 막지 않는다
+    }
+  }
+
   function toggleJob(name: string) {
     setJobs((prev) => (prev.includes(name) ? prev.filter((j) => j !== name) : [...prev, name]));
   }
@@ -312,9 +349,10 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
 
   const isValid = !!workDate && (isDayOff || title.trim().length > 0);
 
-  async function handleSave() {
+  async function handleSave(continueNext = false) {
     setError('');
-    setSaving(true);
+    if (continueNext) setSavingNext(true);
+    else setSaving(true);
     try {
       const dto = {
         title: isDayOff ? title.trim() || category : title.trim(),
@@ -339,12 +377,24 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
         await worklogApi.create(dto);
       }
       await invalidateWorklog(qc);
+      if (continueNext && !isEdit) {
+        // 같은 현장·시간·일급여 그대로 다음 날로 넘어가 연속 입력 (메모·사진·직접입력 금액은 비움)
+        setToast(`${Number(workDate.slice(5, 7))}/${Number(workDate.slice(8, 10))} 저장했어요 · 다음 날을 입력해 주세요`);
+        setWorkDate(shiftDay(workDate, 1));
+        setMemo('');
+        setPhotos([]);
+        setAmountOverride('');
+        setInitTick((t) => t + 1);
+        scrollRef.current?.scrollTo({ y: 0, animated: true });
+        return;
+      }
       leavingRef.current = true;
       navigation.navigate('WorklogHome', { savedMode: isEdit ? 'edit' : 'create', savedAt: Date.now(), savedDate: workDate });
     } catch (e) {
       setError(getErrorMessage(e, '저장에 실패했어요. 다시 시도해 주세요.'));
     } finally {
       setSaving(false);
+      setSavingNext(false);
     }
   }
 
@@ -380,7 +430,7 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled style={{ marginBottom: 12 }}>
                   <View style={styles.chipRow}>
                     {titleSuggestions.map((s) => (
-                      <Pressable key={s.id} onPress={() => setTitle(s.name)} style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.bg }]}>
+                      <Pressable key={s.id} onPress={() => handlePickTitle(s.name)} style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.bg }]}>
                         <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text }}>{s.name}</Text>
                       </Pressable>
                     ))}
@@ -580,6 +630,11 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
               />
             </Section>
 
+            {isEdit && record && (
+              <Pressable style={styles.deleteRow} onPress={() => navigation.navigate('WorklogSchedule', { copyFrom: record })}>
+                <Text style={{ color: theme.brand, fontSize: 13, fontWeight: '700' }}>다른 날짜로 복사하기</Text>
+              </Pressable>
+            )}
             {isEdit && (
               <Pressable style={styles.deleteRow} onPress={() => setDeleteConfirm(true)}>
                 <Text style={{ color: theme.danger, fontSize: 13, fontWeight: '700' }}>이 기록 삭제하기</Text>
@@ -591,7 +646,14 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
         <View style={[styles.ctaWrap, { backgroundColor: theme.card, borderTopColor: theme.border }]}>
           {error ? <Text style={{ color: theme.danger, fontSize: 12, marginBottom: 8 }}>{error}</Text> : null}
           {!error && !isValid ? <Text style={{ color: theme.textMuted, fontSize: 12, marginBottom: 8 }}>{!workDate ? '날짜를 선택해 주세요' : '현장명을 입력해 주세요'}</Text> : null}
-          <Button display="full" size="big" type="primary" disabled={!isValid} loading={saving} onPress={handleSave}>
+          {!isEdit && (
+            <View style={{ marginBottom: 8 }}>
+              <Button display="full" size="medium" type="primary" style="weak" disabled={!isValid || saving} loading={savingNext} onPress={() => handleSave(true)}>
+                저장하고 다음 날 입력
+              </Button>
+            </View>
+          )}
+          <Button display="full" size="big" type="primary" disabled={!isValid || savingNext} loading={saving} onPress={() => handleSave(false)}>
             {isEdit ? '수정하기' : '저장하기'}
           </Button>
         </View>
@@ -631,6 +693,8 @@ export default function WorklogEntryScreen({ navigation, route }: Props) {
         onConfirm={handleDelete}
         onClose={() => setDeleteConfirm(false)}
       />
+
+      <AppToast open={!!toast} text={toast} onClose={() => setToast('')} />
 
       <Modal visible={!!previewPhoto} transparent animationType="fade" onRequestClose={() => setPreviewPhoto(null)}>
         <Pressable style={styles.photoPreviewBackdrop} onPress={() => setPreviewPhoto(null)}>

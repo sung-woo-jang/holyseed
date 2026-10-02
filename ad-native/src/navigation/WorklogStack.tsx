@@ -13,7 +13,7 @@ export type WorklogStackParamList = {
   WorklogEntry: { record: WorklogRecord | null; defaultDate: string };
   WorklogSettlement: undefined;
   WorklogCategory: undefined;
-  WorklogSchedule: undefined;
+  WorklogSchedule: { copyFrom?: WorklogRecord } | undefined;
 };
 
 const Stack = createNativeStackNavigator<WorklogStackParamList>();

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -7,10 +7,11 @@ import TextField from '../../components/ui/TextField';
 import Button from '../../components/ui/Button';
 import Segmented from '../../components/common/Segmented';
 import AppToast from '../../components/common/AppToast';
-import { worklogApi } from '../../api/worklog';
+import { worklogApi, type WorklogInput } from '../../api/worklog';
 import { invalidateWorklog } from '../../queries/worklog-cache';
 import { useTheme } from '../../lib/theme';
 import { toLocalDateString, todayLocal } from '../../lib/date';
+import { krw } from '../../lib/format';
 import { isKoreanHoliday } from '../../lib/koreanHolidays';
 import { getErrorMessage } from '../../lib/error';
 import type { WorklogStackParamList } from '../../navigation/WorklogStack';
@@ -19,13 +20,18 @@ type Props = NativeStackScreenProps<WorklogStackParamList, 'WorklogSchedule'>;
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
-export default function WorklogScheduleScreen({ navigation }: Props) {
+export default function WorklogScheduleScreen({ navigation, route }: Props) {
+  const copyFrom = route.params?.copyFrom;
   const theme = useTheme();
   const qc = useQueryClient();
   const [ym, setYm] = useState(() => {
-    const d = new Date();
+    const d = copyFrom ? new Date(Number(copyFrom.workDate.slice(0, 4)), Number(copyFrom.workDate.slice(5, 7)) - 1, 1) : new Date();
     return { year: d.getFullYear(), month: d.getMonth() + 1 };
   });
+
+  useLayoutEffect(() => {
+    if (copyFrom) navigation.setOptions({ title: '다른 날짜로 복사' });
+  }, [navigation, copyFrom]);
   const [mode, setMode] = useState<'SCHEDULED' | 'DAYOFF'>('SCHEDULED');
   const [title, setTitle] = useState('');
   const [memo, setMemo] = useState('');
@@ -66,7 +72,37 @@ export default function WorklogScheduleScreen({ navigation }: Props) {
     });
   }
 
-  const isValid = !!category && selectedDates.size > 0 && (mode === 'DAYOFF' || title.trim().length > 0);
+  const isValid = selectedDates.size > 0 && (!!copyFrom || (!!category && (mode === 'DAYOFF' || title.trim().length > 0)));
+
+  // 복사: 시간·일급여·원천징수·공수·주소·업무는 그대로, 사진·메모·직접입력 실수령액은 제외, 수령 상태는 날짜에 맞게 새로 정함
+  function buildDto(workDate: string): WorklogInput {
+    if (copyFrom) {
+      const isDayOff = copyFrom.payStatus === 'DAYOFF';
+      return {
+        title: copyFrom.title,
+        workDate,
+        category: copyFrom.category,
+        payStatus: isDayOff ? 'DAYOFF' : workDate > todayLocal() ? 'SCHEDULED' : 'EXPECTED',
+        startTime: copyFrom.startTime ?? undefined,
+        endTime: copyFrom.endTime ?? undefined,
+        breakHours: copyFrom.breakHours,
+        jobs: copyFrom.jobs,
+        dailyWage: copyFrom.dailyWage || undefined,
+        withholdingApplied: copyFrom.withholdingApplied,
+        payMultiplier: copyFrom.payMultiplier,
+        address: copyFrom.address ?? undefined,
+        memo: isDayOff ? copyFrom.memo ?? undefined : undefined,
+      };
+    }
+    return {
+      title: mode === 'DAYOFF' ? memo.trim() || category : title.trim(),
+      workDate,
+      category,
+      payStatus: mode,
+      dailyWage: mode === 'SCHEDULED' && dailyWage ? Number(dailyWage.replace(/[^0-9]/g, '')) : undefined,
+      memo: mode === 'DAYOFF' ? memo.trim() || undefined : undefined,
+    };
+  }
 
   async function handleRegister() {
     if (!isValid) return;
@@ -75,16 +111,7 @@ export default function WorklogScheduleScreen({ navigation }: Props) {
     try {
       const dates = [...selectedDates].sort();
       const results = await Promise.allSettled(
-        dates.map((workDate) =>
-          worklogApi.create({
-            title: mode === 'DAYOFF' ? memo.trim() || category : title.trim(),
-            workDate,
-            category,
-            payStatus: mode,
-            dailyWage: mode === 'SCHEDULED' && dailyWage ? Number(dailyWage.replace(/[^0-9]/g, '')) : undefined,
-            memo: mode === 'DAYOFF' ? memo.trim() || undefined : undefined,
-          }),
-        ),
+        dates.map((workDate) => worklogApi.create(buildDto(workDate))),
       );
       await invalidateWorklog(qc);
       const failedDates = dates.filter((_, i) => results[i]!.status === 'rejected');
@@ -97,7 +124,7 @@ export default function WorklogScheduleScreen({ navigation }: Props) {
       navigation.navigate('WorklogHome', {
         savedAt: Date.now(),
         savedDate: dates[0],
-        toast: `${dates.length}일을 ${mode === 'DAYOFF' ? '휴무' : '근무예정'}으로 등록했어요`,
+        toast: copyFrom ? `${dates.length}일에 복사했어요` : `${dates.length}일을 ${mode === 'DAYOFF' ? '휴무' : '근무예정'}으로 등록했어요`,
       });
     } catch (e) {
       setError(getErrorMessage(e, '등록에 실패했어요'));
@@ -116,6 +143,24 @@ export default function WorklogScheduleScreen({ navigation }: Props) {
     <SafeAreaView edges={['bottom']} style={[styles.root, { backgroundColor: theme.bg }]}>
       <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        {copyFrom ? (
+          <>
+        <View style={[styles.copyCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{copyFrom?.title}</Text>
+          <Text style={{ color: theme.textMuted, fontSize: 12.5, marginTop: 4 }}>
+            {copyFrom?.category}
+            {copyFrom?.startTime && copyFrom?.endTime ? ` · ${copyFrom.startTime}~${copyFrom.endTime}` : ''}
+            {copyFrom && copyFrom.payStatus !== 'DAYOFF' ? ` · ${krw(copyFrom.dailyWage)}` : ''}
+            {copyFrom && copyFrom.payMultiplier !== 1 ? ` · ${copyFrom.payMultiplier}공수` : ''}
+          </Text>
+          <Text style={{ color: theme.textMuted, fontSize: 12, marginTop: 8 }}>
+            저장된 내용 기준으로 복사해요. 사진·메모·직접 입력한 실수령액은 빼고, 수령 상태는 날짜에 맞게 정해져요. 이미 기록이 있는 날짜는 선택할 수 없어요.
+          </Text>
+        </View>
+
+          </>
+        ) : (
+          <>
         <Segmented
           options={['근무예정', '휴무']}
           value={mode === 'DAYOFF' ? '휴무' : '근무예정'}
@@ -174,6 +219,9 @@ export default function WorklogScheduleScreen({ navigation }: Props) {
           />
         )}
 
+          </>
+        )}
+
         <View style={[styles.calCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <View style={styles.monthNav}>
             <Pressable hitSlop={10} onPress={() => changeMonth(-1)}>
@@ -227,7 +275,7 @@ export default function WorklogScheduleScreen({ navigation }: Props) {
 
         <View style={{ marginTop: 16 }}>
           <Button display="full" size="big" type="primary" disabled={!isValid} loading={saving} onPress={handleRegister}>
-            선택한 {selectedDates.size}일 {mode === 'DAYOFF' ? '휴무' : '근무예정'}으로 등록
+            {copyFrom ? `선택한 ${selectedDates.size}일에 복사` : `선택한 ${selectedDates.size}일 ${mode === 'DAYOFF' ? '휴무' : '근무예정'}으로 등록`}
           </Button>
         </View>
       </ScrollView>
@@ -243,6 +291,7 @@ const styles = StyleSheet.create({
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
   calCard: { borderRadius: 14, borderWidth: 1, padding: 12 },
+  copyCard: { borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 16 },
   monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20, paddingBottom: 10 },
   weekRow: { flexDirection: 'row', marginBottom: 4 },
   weekLabel: { flex: 1, textAlign: 'center', fontSize: 11, fontWeight: '600' },

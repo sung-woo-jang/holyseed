@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { VrSetting, VrCycle, VrFill, VrFillKind } from './entities';
+import { VrSetting, VrCycle, VrFill, VrFillKind, VrEvent } from './entities';
 import { CreateFillDto, CreateCycleDto, RolloverCycleDto, UpdateSettingsDto } from './dto/request';
-import { computeBand, computeV2, nextMonday, fridayAfterTwoWeeks } from './core';
+import { buildVCalc, computeBand, computeV2, nextMonday, fridayAfterTwoWeeks, type VCalc } from './core';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const round4 = (n: number) => Math.round(n * 10000) / 10000;
@@ -17,6 +17,8 @@ export class VrService {
     private readonly cycleRepo: Repository<VrCycle>,
     @InjectRepository(VrFill)
     private readonly fillRepo: Repository<VrFill>,
+    @InjectRepository(VrEvent)
+    private readonly eventRepo: Repository<VrEvent>,
   ) {}
 
   // ==================== Settings ====================
@@ -208,7 +210,9 @@ export class VrService {
 
   // ==================== Cycles ====================
 
-  async findAllCycles(): Promise<Array<VrCycle & { minBand: number; maxBand: number; tradeAmount: number }>> {
+  async findAllCycles(): Promise<
+    Array<VrCycle & { minBand: number; maxBand: number; tradeAmount: number; vCalc: VCalc }>
+  > {
     const [settings, cycles, tradeAmounts] = await Promise.all([
       this.getSettings(),
       this.cycleRepo.find({ order: { cycleNo: 'DESC' } }),
@@ -227,6 +231,7 @@ export class VrService {
       ...cycle,
       ...computeBand(cycle.vValue, settings.bandPct),
       tradeAmount: tradeAmountByCycle.get(cycle.cycleNo) ?? 0,
+      vCalc: buildVCalc(cycle),
     }));
   }
 
@@ -242,6 +247,7 @@ export class VrService {
       ...dto,
       depositAmount: dto.depositAmount ?? settings.depositAmount,
       isClosed: false,
+      calcSource: 'MANUAL',
     });
     return this.cycleRepo.save(cycle);
   }
@@ -270,6 +276,12 @@ export class VrService {
       poolStart: round2(state.pool + deposit),
       depositAmount: deposit,
       isClosed: false,
+      prevVValue: current.vValue,
+      poolInput: state.pool,
+      gFactor: settings.gFactor,
+      bandPct: settings.bandPct,
+      calcSource: 'ROLLOVER',
+      rolledAt: new Date(),
     });
     const saved = await this.cycleRepo.save(newCycle);
 
@@ -284,6 +296,19 @@ export class VrService {
       });
     }
 
+    await this.logRollover(
+      `V 갱신: 사이클 ${current.cycleNo}→${saved.cycleNo}, V ${current.vValue} + Pool ${state.pool} ÷ G ${settings.gFactor} + 적립금 ${deposit} = ${v2}`,
+    );
+
     return { closedCycle: current, newCycle: saved };
+  }
+
+  /** 갱신 기록 실패가 V 갱신 자체를 막지 않도록 삼킨다 */
+  private async logRollover(message: string) {
+    try {
+      await this.eventRepo.save(this.eventRepo.create({ level: 'info', source: 'rollover', message }));
+    } catch {
+      // 로그 전용
+    }
   }
 }

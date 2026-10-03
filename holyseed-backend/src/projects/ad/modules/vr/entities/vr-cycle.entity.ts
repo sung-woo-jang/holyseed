@@ -36,4 +36,28 @@ export class VrCycle extends BaseEntity {
   @ApiProperty({ description: '종료 여부', example: false })
   @Column({ name: 'is_closed', default: false })
   isClosed: boolean;
+
+  @ApiPropertyOptional({ description: 'V 산출 입력: 직전 사이클 V(V₁)' })
+  @Column({ name: 'prev_v_value', type: 'decimal', precision: 14, scale: 2, nullable: true, transformer: numeric })
+  prevVValue: number | null;
+
+  @ApiPropertyOptional({ description: 'V 산출 입력: 갱신 시점 Pool (적립 전)' })
+  @Column({ name: 'pool_input', type: 'decimal', precision: 14, scale: 2, nullable: true, transformer: numeric })
+  poolInput: number | null;
+
+  @ApiPropertyOptional({ description: 'V 산출에 적용한 G' })
+  @Column({ name: 'g_factor', type: 'decimal', precision: 8, scale: 2, nullable: true, transformer: numeric })
+  gFactor: number | null;
+
+  @ApiPropertyOptional({ description: 'V 산출 시점 밴드 % (기록용)' })
+  @Column({ name: 'band_pct', type: 'decimal', precision: 6, scale: 2, nullable: true, transformer: numeric })
+  bandPct: number | null;
+
+  @ApiPropertyOptional({ description: 'V 출처: ROLLOVER(갱신) | MANUAL(직접 입력) | BACKFILL(역산 추정)' })
+  @Column({ name: 'calc_source', type: 'varchar', length: 12, nullable: true })
+  calcSource: 'ROLLOVER' | 'MANUAL' | 'BACKFILL' | null;
+
+  @ApiPropertyOptional({ description: 'V 갱신 실행 시각' })
+  @Column({ name: 'rolled_at', type: 'timestamptz', nullable: true })
+  rolledAt: Date | null;
 }

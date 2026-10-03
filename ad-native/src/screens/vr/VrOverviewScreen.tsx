@@ -11,6 +11,8 @@ import { useTheme } from '../../lib/theme';
 import { getErrorMessage } from '../../lib/error';
 import { nextVSubstitution } from '../../lib/vr-format';
 import QueryError from '../../components/common/QueryError';
+import VrTileGuideSheet from './VrTileGuideSheet';
+import type { GuideCtx } from '../../lib/vr-tile-guide';
 
 function usd(v: number | null | undefined): string {
   if (v === null || v === undefined) return '—';
@@ -28,7 +30,7 @@ interface CardDef {
 const ALL_CARD_IDS = [
   'initialCapital', 'investedPrincipal', 'costBasis', 'marketValue', 'unrealizedProfit', 'totalAssets',
   'profit', 'profitRate', 'pool', 'poolUsageRate', 'cashBalance', 'cashRatio', 'quantity', 'vValue',
-  'growthRate', 'minBand', 'maxBand', 'avgPrice', 'depositAmount', 'gFactor',
+  'growthRate', 'riseRate', 'minBand', 'maxBand', 'avgPrice', 'depositAmount', 'gFactor',
 ];
 
 export default function VrOverviewScreen() {
@@ -38,6 +40,7 @@ export default function VrOverviewScreen() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [toast, setToast] = useState('');
+  const [guideId, setGuideId] = useState<string | null>(null);
 
   const qc = useQueryClient();
   const stateQ = useQuery({ queryKey: ['vr-state'], queryFn: vrApi.state, refetchInterval: 30_000 });
@@ -66,6 +69,8 @@ export default function VrOverviewScreen() {
   const profit = state && totalAssets !== null ? totalAssets - state.investedPrincipal : null;
   const profitRate = profit !== null && state && state.investedPrincipal > 0 ? (profit / state.investedPrincipal) * 100 : null;
   const cashRatio = state && totalAssets !== null && totalAssets > 0 ? (state.pool / totalAssets) * 100 : null;
+  // VR 5.0 문서의 상승률 = (Pool ÷ V) ÷ G — 적립금은 빠져 있다
+  const riseRate = state && state.vValue > 0 && state.settings.gFactor > 0 ? (state.pool / state.vValue / state.settings.gFactor) * 100 : null;
   const poolUsageRate = state?.cycle && state.cycle.poolStart > 0 ? ((state.cycle.poolStart - state.pool) / state.cycle.poolStart) * 100 : null;
 
   const cards = useMemo<Record<string, CardDef>>(() => {
@@ -99,8 +104,13 @@ export default function VrOverviewScreen() {
       cashRatio: { id: 'cashRatio', label: '현금 비중', value: cashRatio !== null ? `${cashRatio.toFixed(1)}%` : '조회 중…' },
       quantity: { id: 'quantity', label: '보유수량', value: `${state.quantity}주` },
       vValue: { id: 'vValue', label: 'V', value: usd(state.vValue), hint: `V₂ 예정 ${usd(state.v2Preview)}` },
+      riseRate: {
+        id: 'riseRate', label: '상승률', value: riseRate !== null ? `${riseRate >= 0 ? '+' : ''}${riseRate.toFixed(2)}%` : '—',
+        hint: riseRate !== null ? `${(1 + riseRate / 100).toFixed(4)}배 (적립금 제외)` : undefined,
+        tone: riseRate === null ? undefined : riseRate >= 0 ? 'positive' : 'negative',
+      },
       growthRate: {
-        id: 'growthRate', label: '상승률', value: growthRate !== null ? `${growthRate >= 0 ? '+' : ''}${growthRate.toFixed(2)}%` : '—',
+        id: 'growthRate', label: 'V 증가율', hint: '적립금 포함', value: growthRate !== null ? `${growthRate >= 0 ? '+' : ''}${growthRate.toFixed(2)}%` : '—',
         tone: growthRate === null ? undefined : growthRate >= 0 ? 'positive' : 'negative',
       },
       minBand: { id: 'minBand', label: '최소 밴드', value: usd(state.minBand) },
@@ -109,7 +119,18 @@ export default function VrOverviewScreen() {
       depositAmount: { id: 'depositAmount', label: '적립금 / 사이클', value: usd(state.settings.depositAmount) },
       gFactor: { id: 'gFactor', label: 'G (기울기)', value: String(state.settings.gFactor) },
     };
-  }, [state, price, vrCash, cashDiff, growthRate, marketValue, costBasis, unrealizedProfit, totalAssets, profit, profitRate, cashRatio, poolUsageRate]);
+  }, [state, price, vrCash, cashDiff, growthRate, riseRate, marketValue, costBasis, unrealizedProfit, totalAssets, profit, profitRate, cashRatio, poolUsageRate]);
+
+  const guideCtx = useMemo<GuideCtx | null>(() => {
+    if (!state) return null;
+    return {
+      v: state.vValue, v2: state.v2Preview, pool: state.pool, poolStart: state.cycle?.poolStart ?? null, usablePool: state.usablePool,
+      limitPct: state.settings.poolLimitPct, g: state.settings.gFactor, deposit: state.settings.depositAmount, bandPct: state.settings.bandPct,
+      minBand: state.minBand, maxBand: state.maxBand, quantity: state.quantity, avgPrice: state.avgPrice, price,
+      marketValue, costBasis, unrealized: unrealizedProfit, totalAssets, invested: state.investedPrincipal, initial: state.initialCapital,
+      profit, profitRate, cashRatio, cashDiff, poolUsage: poolUsageRate, growthRate, riseRate,
+    };
+  }, [state, price, marketValue, costBasis, unrealizedProfit, totalAssets, profit, profitRate, cashRatio, cashDiff, poolUsageRate, growthRate, riseRate]);
 
   async function handleRollover() {
     setRolling(true);
@@ -178,8 +199,15 @@ export default function VrOverviewScreen() {
         {visibleOrder.map((id) => {
           const c = cards[id];
           return (
-            <View key={id} style={[styles.tile, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <Text style={{ color: theme.textMuted, fontSize: 11 }}>{c.label}</Text>
+            <Pressable
+              key={id}
+              onPress={() => setGuideId(id)}
+              style={({ pressed }) => [styles.tile, { backgroundColor: theme.card, borderColor: theme.border }, pressed && { opacity: 0.6 }]}
+            >
+              <View style={[styles.infoDot, { borderColor: theme.textMuted }]}>
+                <Text style={{ color: theme.textMuted, fontSize: 9, fontWeight: '700' }}>i</Text>
+              </View>
+              <Text style={{ color: theme.textMuted, fontSize: 11, paddingRight: 16 }}>{c.label}</Text>
               <Text style={{ color: c.tone === 'positive' ? theme.brand : c.tone === 'negative' ? theme.danger : theme.text, fontSize: 15, fontWeight: '800', marginTop: 2 }}>
                 {c.value}
               </Text>
@@ -188,7 +216,7 @@ export default function VrOverviewScreen() {
                   {c.hint}
                 </Text>
               )}
-            </View>
+            </Pressable>
           );
         })}
       </View>
@@ -221,6 +249,16 @@ export default function VrOverviewScreen() {
         </View>
       </SheetModal>
 
+      {guideCtx ? (
+        <VrTileGuideSheet
+          id={guideId}
+          ctx={guideCtx}
+          tiles={Object.fromEntries(Object.values(cards).map((c) => [c.id, { label: c.label, value: c.value }]))}
+          onSelect={setGuideId}
+          onClose={() => setGuideId(null)}
+        />
+      ) : null}
+
       <AppToast open={!!toast} text={toast} onClose={() => setToast('')} />
     </ScrollView>
   );
@@ -234,4 +272,5 @@ const styles = StyleSheet.create({
   rolloverBtn: { borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginBottom: 12 },
   tileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tile: { width: '48%', borderWidth: 1, borderRadius: 12, padding: 12 },
+  infoDot: { position: 'absolute', top: 9, right: 9, width: 14, height: 14, borderRadius: 7, borderWidth: 1, alignItems: 'center', justifyContent: 'center', opacity: 0.8 },
 });

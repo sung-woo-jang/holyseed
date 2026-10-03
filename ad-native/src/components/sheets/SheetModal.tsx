@@ -19,6 +19,8 @@ interface SheetModalProps {
   bodyPaddingTop?: number;
   /** 본문 좌우 여백(기본 20) — 행을 화면 끝까지 붙이고 싶을 때 0으로 줄일 때 사용 */
   bodyPaddingHorizontal?: number;
+  /** 값이 바뀌면 본문 스크롤을 맨 위로 되돌림 (시트를 닫지 않고 내용만 바꿀 때) */
+  scrollResetKey?: string | number | null;
 }
 
 /**
@@ -57,7 +59,7 @@ const DISMISS_DISTANCE = 120;
 const DISMISS_VELOCITY = 0.8; // PanResponder의 vy는 px/ms 단위
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export default function SheetModal({ visible, onClose, header, headerRight, cta, children, overlay, bodyPaddingTop, bodyPaddingHorizontal }: SheetModalProps) {
+export default function SheetModal({ visible, onClose, header, headerRight, cta, children, overlay, bodyPaddingTop, bodyPaddingHorizontal, scrollResetKey }: SheetModalProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const dragY = useRef(new Animated.Value(0)).current;
@@ -67,6 +69,10 @@ export default function SheetModal({ visible, onClose, header, headerRight, cta,
   useEffect(() => {
     if (visible) dragY.setValue(0);
   }, [visible, dragY]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [scrollResetKey, scrollRef]);
 
   useEffect(() => {
     if (!visible) return;

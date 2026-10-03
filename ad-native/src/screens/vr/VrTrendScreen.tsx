@@ -228,7 +228,7 @@ export default function VrTrendScreen({ navigation }: Props) {
                 <View style={{ width: `${Math.max(0, Math.min(100, cashPct))}%`, height: '100%', backgroundColor: theme.dark ? '#35D6BD' : '#18A999' }} />
               </View>
               <Text style={{ color: theme.textMuted, fontSize: 11.5, marginTop: 6 }}>
-                현금(Pool) <Text style={{ color: theme.text, fontWeight: '800' }}>{cashPct.toFixed(0)}%</Text> · {usd(state.pool, 0)} — 사용 가능 한도(Pool의 {state.settings.poolLimitPct}%) 약 {usd(state.usablePool, 0)}
+                현금(Pool) <Text style={{ color: theme.text, fontWeight: '800' }}>{cashPct.toFixed(0)}%</Text> · {usd(state.pool, 0)} — 사용 가능 한도(사이클 시작 Pool의 {state.settings.poolLimitPct}% 중 남은 금액) 약 {usd(state.usablePool, 0)}
               </Text>
             </View>
           )}

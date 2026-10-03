@@ -240,7 +240,16 @@ export class VrService {
     if (existing) throw new BadRequestException('이미 존재하는 사이클 번호입니다.');
 
     const settings = await this.getSettings();
+    const open = await this.cycleRepo.findOne({ where: { isClosed: false }, order: { cycleNo: 'DESC' } });
+    // 열린 사이클이 있으면 그 종료 Pool과 V를 새 사이클의 산출 입력으로 남긴다 (V는 직접 입력이라 공식 대비 대조용)
+    const pool = open ? (await this.getState()).pool : null;
+
     // 새 사이클 등록 시 기존 열린 사이클은 닫음
+    if (open) {
+      open.poolEnd = open.poolEnd ?? pool;
+      open.isClosed = true;
+      await this.cycleRepo.save(open);
+    }
     await this.cycleRepo.update({ isClosed: false }, { isClosed: true });
 
     const cycle = this.cycleRepo.create({
@@ -248,6 +257,9 @@ export class VrService {
       depositAmount: dto.depositAmount ?? settings.depositAmount,
       isClosed: false,
       calcSource: 'MANUAL',
+      ...(open
+        ? { prevVValue: open.vValue, poolInput: pool, gFactor: settings.gFactor, bandPct: settings.bandPct }
+        : {}),
     });
     return this.cycleRepo.save(cycle);
   }

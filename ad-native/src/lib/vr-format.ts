@@ -15,7 +15,7 @@ export function md(s: string): string {
 
 export const BAND_STATE_LABEL: Record<BandState, string> = { below: '밴드 아래', inside: '밴드 안', above: '밴드 위' };
 
-export const V_SOURCE_LABEL: Record<VrCalcSource, string> = { ROLLOVER: '자동 갱신', MANUAL: '최초 입력', BACKFILL: '역산(추정)' };
+export const V_SOURCE_LABEL: Record<VrCalcSource, string> = { ROLLOVER: '자동 갱신', MANUAL: '직접 입력', BACKFILL: '역산(추정)' };
 
 function plain(v: number, d = 2): string {
   return v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });

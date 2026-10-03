@@ -18,6 +18,11 @@ export type VrCalcSource = 'ROLLOVER' | 'MANUAL' | 'BACKFILL';
 /** V₂ = V₁ + Pool ÷ G + 적립금 — 저장된 입력으로 서버가 다시 계산한 대조 결과 */
 export interface VrVCalc {
   source: VrCalcSource | null;
+  /** 평가금 E가 기록돼 있으면 실력공식, 없으면 기본공식 */
+  formula?: 'BASIC' | 'SKILL' | null;
+  evaluation?: number | null;
+  /** (E − V₁) ÷ 2√G */
+  evalTerm?: number | null;
   prevV: number | null;
   poolInput: number | null;
   g: number | null;
@@ -29,6 +34,24 @@ export interface VrVCalc {
   matches: boolean | null;
   growth: number | null;
   growthPct: number | null;
+}
+
+/** 지금 갱신하면 나올 다음 V (실력공식) */
+export interface VrNextV {
+  formula: 'SKILL';
+  v1: number;
+  pool: number;
+  g: number;
+  deposit: number;
+  evaluation: number;
+  eSource: 'AUTO' | 'MANUAL';
+  quantity: number;
+  price: number | null;
+  priceDate: string | null;
+  priceSource: 'CLOSE' | 'LIVE' | null;
+  poolTerm: number;
+  evalTerm: number;
+  v2: number;
 }
 
 export interface VrCycle {
@@ -78,6 +101,8 @@ export interface VrState {
   maxBand: number;
   usablePool: number;
   v2Preview: number | null;
+  /** 다음 V 계산 내역 — 가격을 못 구했으면 null */
+  nextV?: VrNextV | null;
   initialCapital: number;
   investedPrincipal: number;
 }

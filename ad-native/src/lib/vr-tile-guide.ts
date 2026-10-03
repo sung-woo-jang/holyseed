@@ -29,7 +29,10 @@ export interface GuideCtx {
   cashDiff: number | null;
   poolUsage: number | null;
   growthRate: number | null;
-  riseRate: number | null;
+  /** (E − V) ÷ 2√G — 실력공식의 평가금 보정 */
+  evalTerm: number | null;
+  evaluation: number | null;
+  poolTerm: number | null;
 }
 
 type Txt = string | ((c: GuideCtx) => string);
@@ -61,39 +64,39 @@ export const TILE_GUIDE: Record<string, TileGuide> = {
   vValue: {
     focus: 'v',
     sum: '평가금이 따라가야 할 목표값이에요.',
-    formal: '2주(사이클)마다 한 번 갱신하는 목표 평가금이에요. 최대·최소 밴드의 기준이기도 해요.',
-    eq: 'V₂ = V₁ + Pool ÷ G ± 적립금',
-    lake: '저수지의 목표 수위예요. 정확히는 "목표 크기"이고, 사이클마다 조금씩 키워 가요.',
+    formal: '2주(사이클)마다 한 번 갱신하는 목표 평가금이에요. 실력공식으로 정해서, 연못(Pool)이 클수록 크게 오르고 평가금이 V보다 낮았으면 덜 올라요. 최대·최소 밴드의 기준이기도 해요.',
+    eq: 'V₂ = V₁ + Pool ÷ G + (E − V₁) ÷ 2√G + 적립금',
+    lake: '저수지의 목표 수위예요. 연못 물을 반영해 키우되, 실제 물 높이(평가금)가 목표보다 낮았으면 그만큼 덜 키워요. 정확히는 "목표 크기"예요.',
     mine: (c) =>
-      c.v2 === null
+      c.v2 === null || c.poolTerm === null || c.evalTerm === null
         ? null
-        : `Pool ${b(usd(c.pool))}, G ${b(String(c.g))}, 적립금 ${b(usd(c.deposit, 0))}이면 다음 V는 ${usd(c.v)} + ${usd(c.pool / c.g)} + ${usd(c.deposit)} = ${b(usd(c.v2))}${ieyo(usd(c.v2))}.`,
-    rel: ['minBand', 'maxBand', 'pool', 'gFactor'],
+        : `${usd(c.v)} + Pool÷G ${b(usd(c.poolTerm))} ${c.evalTerm >= 0 ? '+' : '−'} 평가금 보정 ${b(usd(Math.abs(c.evalTerm)))} + 적립금 ${b(usd(c.deposit, 0))} = ${b(usd(c.v2))}${ieyo(usd(c.v2))}.`,
+    rel: ['evalAdj', 'minBand', 'maxBand', 'pool', 'gFactor'],
   },
-  riseRate: {
+  evalAdj: {
     focus: 'v',
-    sum: '연못이 든든할수록 V가 더 크게 오르는 비율이에요.',
-    formal: 'VR 5.0의 상승률은 1 + (Pool ÷ V) ÷ G예요. 적립금은 포함하지 않아요.',
-    eq: '상승률 = 1 + (Pool ÷ V) ÷ G',
-    lake: '저수지를 한 번에 얼마나 키울지예요. 목표 크기에 비해 연못 물이 많을수록 과감하게, 적을수록 조금만 키워요.',
+    sum: '평가금이 목표(V)보다 높았는지 낮았는지를 V에 반영한 금액이에요.',
+    formal: '실력공식의 (E − V₁) ÷ 2√G 항이에요. E는 사이클이 끝났을 때의 마지막 평가금이에요. V₁보다 높으면 V가 더 오르고, 낮으면 덜 오르거나 오히려 깎여요.',
+    eq: '(E − V₁) ÷ 2√G',
+    lake: '목표 수위보다 실제 물 높이가 높았으면 목표도 그만큼 높이고, 낮았으면 덜 올려요. 하락장에서 목표 수위가 같이 내려오는 이유예요.',
     mine: (c) =>
-      c.riseRate === null
+      c.evalTerm === null || c.evaluation === null
         ? null
-        : `Pool ${usd(c.pool)} ÷ V ${usd(c.v)} ÷ G ${c.g} = ${b(pc(c.riseRate))}, 즉 ${b(`${(1 + c.riseRate / 100).toFixed(4)}배`)}예요. 여기에 적립금 ${usd(c.deposit, 0)}${eul(usd(c.deposit, 0))} 더해 다음 V가 정해져요.`,
-    rel: ['growthRate', 'vValue', 'pool', 'gFactor'],
+        : `마지막 평가금 E ${usd(c.evaluation)}${iga(usd(c.evaluation))} V ${usd(c.v)}보다 ${c.evaluation >= c.v ? '높아서' : '낮아서'} ${b(sgn(c.evalTerm))}${eul(sgn(c.evalTerm))} 더해요.`,
+    warn: 'E는 사이클 종료일 종가 기준 평가금이에요. 월요일에 갱신해도 현재가가 아니라 직전 금요일 종가를 써요.',
+    rel: ['vValue', 'gFactor', 'marketValue', 'growthRate'],
   },
   growthRate: {
     focus: 'v',
     sum: '다음 V가 지금 V보다 몇 % 커지는지예요. 적립금도 포함해요.',
-    formal: '(V₂ 예정 − V) ÷ V예요. 문서의 "상승률"은 적립금을 뺀 값이라 이 타일보다 작게 나와요.',
+    formal: '(V₂ 예정 − V) ÷ V예요. Pool 반영분, 평가금 보정, 적립금이 모두 들어 있어요.',
     eq: '(V₂ 예정 − V) ÷ V',
-    lake: '이번에 저수지 목표 수위가 올라가는 폭 전체예요. 연못 물을 반영한 만큼과 새로 부어 넣는 물을 합친 거예요.',
+    lake: '이번에 저수지 목표 수위가 올라가는 폭 전체예요. 연못 물 반영분, 실제 수위와의 차이 보정, 새로 붓는 물을 합친 거예요.',
     mine: (c) =>
       c.growthRate === null || c.v2 === null
         ? null
-        : `V가 ${usd(c.v)} → ${usd(c.v2)}, 즉 ${b(pc(c.growthRate))} 올라가요.${c.riseRate !== null ? ` 적립금을 뺀 상승률은 ${pc(c.riseRate)}${ieyo(pc(c.riseRate))}.` : ''}`,
-    warn: '문서에서 말하는 "상승률"은 바로 옆 "상승률" 타일이에요. 이 타일에는 적립금이 들어 있어서 더 크게 보여요.',
-    rel: ['riseRate', 'vValue', 'depositAmount'],
+        : `V가 ${usd(c.v)} → ${usd(c.v2)}, 즉 ${b(pc(c.growthRate))} 올라가요.${c.poolTerm !== null && c.evalTerm !== null ? ` 구성은 Pool÷G ${usd(c.poolTerm)}, 평가금 보정 ${sgn(c.evalTerm)}, 적립금 ${usd(c.deposit, 0)}${ieyo(usd(c.deposit, 0))}.` : ''}`,
+    rel: ['evalAdj', 'vValue', 'depositAmount'],
   },
   minBand: {
     focus: 'min',
@@ -184,7 +187,7 @@ export const TILE_GUIDE: Record<string, TileGuide> = {
     focus: 'pool',
     sum: '2주마다 Pool에 넣는 금액이에요.',
     formal: '적립식 VR은 사이클마다 일정 금액을 넣어요. Pool에 들어가고, V 갱신 때 V에도 같은 금액이 더해져요.',
-    eq: 'V₂ = V₁ + Pool ÷ G + 적립금',
+    eq: 'V₂ = V₁ + Pool ÷ G + (E − V₁) ÷ 2√G + 적립금',
     lake: '2주마다 연못에 물을 붓고, 저수지 목표 수위도 그만큼 올려요.',
     mine: (c) => `다음 V 갱신에 ${b(usd(c.deposit))}${iga(usd(c.deposit))} 반영돼요. 지금까지 넣은 돈은 모두 ${usd(c.invested)}${ieyo(usd(c.invested))}.`,
     rel: ['vValue', 'pool', 'investedPrincipal'],
@@ -192,11 +195,12 @@ export const TILE_GUIDE: Record<string, TileGuide> = {
   gFactor: {
     focus: 'valve',
     sum: 'V가 얼마나 빨리 커질지를 정하는 숫자예요.',
-    formal: '상승률 = 1 + (Pool ÷ V) ÷ G예요. 클수록 V가 천천히 커져서 더 보수적이에요. 적립식은 G=10으로 시작하는 것이 가이드예요.',
-    eq: 'G가 클수록 V 상승이 느림',
-    lake: '연못 물을 저수지 목표 수위에 얼마나 반영할지 정하는 조절 밸브예요. 크게 돌릴수록 신중하게 키워요.',
-    mine: (c) => `G가 ${b(String(c.g))}이면 Pool의 1/${c.g}이 V에 더해져요. 지금은 ${b(usd(c.pool / c.g))}${ieyo(usd(c.pool / c.g))}.`,
-    rel: ['vValue', 'riseRate', 'pool'],
+    formal: 'Pool ÷ G와 (E − V₁) ÷ 2√G, 두 항의 분모에 들어가요. 클수록 V가 천천히 움직여서 더 보수적이에요. 적립식은 G=10으로 시작하는 것이 가이드예요. 라오어 1기 거치식은 G=16까지 올려 쓰고 있어요(6개월마다 1씩).',
+    eq: 'Pool ÷ G + (E − V₁) ÷ 2√G',
+    lake: '연못 물과 수위 차이를 저수지 목표 수위에 얼마나 반영할지 정하는 조절 밸브예요. 크게 돌릴수록 신중하게 키워요.',
+    mine: (c) =>
+      `G가 ${b(String(c.g))}이면 Pool의 1/${c.g}${c.poolTerm !== null ? `(${b(usd(c.poolTerm))})` : ''}이 더해지고, 평가금과 V의 차이는 2√${c.g} = ${(2 * Math.sqrt(c.g)).toFixed(2)}로 나눠서 반영해요.`,
+    rel: ['vValue', 'evalAdj', 'pool'],
   },
   marketValue: {
     focus: 'water',

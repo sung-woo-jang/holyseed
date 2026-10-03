@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import type { VrCycle, VrState, VrVCalc } from '../../api/vr';
 import { useTheme } from '../../lib/theme';
-import { V_SOURCE_LABEL, md, nextVSubstitution, pct, usd, vCalcSubstitution } from '../../lib/vr-format';
+import { V_FORMULA_BASIC, V_FORMULA_SKILL, V_SOURCE_LABEL, evaluationNote, md, nextVSubstitution, pct, usd, vCalcSubstitution } from '../../lib/vr-format';
 
 export function VCalcBadges({ calc }: { calc: VrVCalc | undefined }) {
   const theme = useTheme();
@@ -54,10 +54,8 @@ export default function VCalcCard({ cycle, prevCycleNo, state }: Props) {
   const theme = useTheme();
   const calc = cycle.vCalc;
   const subst = calc ? vCalcSubstitution(calc) : null;
-  const next =
-    !cycle.isClosed && state?.cycle?.cycleNo === cycle.cycleNo
-      ? nextVSubstitution(state.vValue, state.pool, state.settings.gFactor, state.settings.depositAmount, state.v2Preview)
-      : null;
+  const nextV = !cycle.isClosed && state?.cycle?.cycleNo === cycle.cycleNo ? state.nextV ?? null : null;
+  const skill = calc?.formula === 'SKILL';
 
   return (
     <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -72,12 +70,15 @@ export default function VCalcCard({ cycle, prevCycleNo, state }: Props) {
         <Text style={{ color: theme.textMuted, fontSize: 12.5, lineHeight: 18 }}>이 사이클은 V 산출 기록이 없어요.</Text>
       ) : (
         <>
-          <Formula text="V₂ = V₁ + Pool ÷ G + 적립금" />
+          <Formula text={skill ? V_FORMULA_SKILL : V_FORMULA_BASIC} />
           {subst ? <Formula text={subst} /> : null}
           {calc.prevV != null && calc.poolInput != null && calc.g != null ? (
             <View>
               <Row first label={`직전 V${prevCycleNo != null ? ` (사이클 ${prevCycleNo})` : ''}`} value={usd(calc.prevV)} />
               <Row label={`Pool ÷ G (Pool ${usd(calc.poolInput)}, G ${calc.g})`} value={`+${usd(calc.poolTerm ?? 0)}`} />
+              {skill && calc.evaluation != null && calc.evalTerm != null ? (
+                <Row label={`평가금 보정 (E ${usd(calc.evaluation)})`} value={`${calc.evalTerm >= 0 ? '+' : '−'}${usd(Math.abs(calc.evalTerm))}`} />
+              ) : null}
               <Row label="적립금" value={`+${usd(calc.deposit)}`} />
               {calc.growth != null ? <Row label="증가" value={`${calc.growth >= 0 ? '+' : ''}${usd(calc.growth)}${calc.growthPct != null ? ` (${pct(calc.growthPct)})` : ''}`} /> : null}
             </View>
@@ -95,10 +96,11 @@ export default function VCalcCard({ cycle, prevCycleNo, state }: Props) {
         </>
       )}
 
-      {next ? (
+      {nextV ? (
         <View style={{ marginTop: 12 }}>
           <Text style={{ color: theme.textMuted, fontSize: 11.5, fontWeight: '700', marginBottom: 6 }}>다음 V 예정 (지금 Pool 기준)</Text>
-          <Formula text={next} />
+          <Formula text={nextVSubstitution(nextV)} />
+          <Text style={{ color: theme.textMuted, fontSize: 11.5, lineHeight: 16 }}>{evaluationNote(nextV)}</Text>
         </View>
       ) : null}
     </View>

@@ -288,7 +288,7 @@ export default function VrTrendScreen({ navigation }: Props) {
         {estimateNote ? <Text style={{ color: theme.textMuted, fontSize: 11.5, marginTop: 4 }}>{estimateNote}</Text> : null}
       </Card>
 
-      <Card title="V 이력" right="V₂ = V₁ + Pool ÷ G + 적립금">
+      <Card title="V 이력" right="눌러서 상세">
         {[...cycles].sort((a, b) => b.cycleNo - a.cycleNo).map((cycle, i) => {
           const c = cycle.vCalc;
           return (
@@ -302,7 +302,7 @@ export default function VrTrendScreen({ navigation }: Props) {
                 <Text style={{ color: theme.text, fontSize: 13.5, fontWeight: '800' }}>{usd(cycle.vValue)}</Text>
                 <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 2 }}>
                   {c?.growth != null
-                    ? `${c.growth >= 0 ? '+' : ''}${usd(c.growth, 0)}${c.growthPct != null ? ` (${pct(c.growthPct)})` : ''} · Pool÷G ${usd(c.poolTerm ?? 0, 0)} · 적립 ${usd(c.deposit, 0)}`
+                    ? `${c.growth >= 0 ? '+' : ''}${usd(c.growth, 0)}${c.growthPct != null ? ` (${pct(c.growthPct)})` : ''} · Pool÷G ${usd(c.poolTerm ?? 0, 0)}${c.formula === 'SKILL' && c.evalTerm != null ? ` · 보정 ${c.evalTerm >= 0 ? '+' : '−'}${usd(Math.abs(c.evalTerm), 0)}` : ''} · 적립 ${usd(c.deposit, 0)}`
                     : `적립 ${usd(cycle.depositAmount, 0)}`}
                 </Text>
               </View>

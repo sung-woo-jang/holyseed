@@ -9,7 +9,7 @@ import AppToast from '../../components/common/AppToast';
 import { vrApi } from '../../api/vr';
 import { useTheme } from '../../lib/theme';
 import { getErrorMessage } from '../../lib/error';
-import { nextVSubstitution } from '../../lib/vr-format';
+import { evaluationNote, nextVSubstitution } from '../../lib/vr-format';
 import QueryError from '../../components/common/QueryError';
 import VrTileGuideSheet from './VrTileGuideSheet';
 import type { GuideCtx } from '../../lib/vr-tile-guide';
@@ -30,7 +30,7 @@ interface CardDef {
 const ALL_CARD_IDS = [
   'initialCapital', 'investedPrincipal', 'costBasis', 'marketValue', 'unrealizedProfit', 'totalAssets',
   'profit', 'profitRate', 'pool', 'poolUsageRate', 'cashBalance', 'cashRatio', 'quantity', 'vValue',
-  'growthRate', 'riseRate', 'minBand', 'maxBand', 'avgPrice', 'depositAmount', 'gFactor',
+  'growthRate', 'evalAdj', 'minBand', 'maxBand', 'avgPrice', 'depositAmount', 'gFactor',
 ];
 
 export default function VrOverviewScreen() {
@@ -69,8 +69,7 @@ export default function VrOverviewScreen() {
   const profit = state && totalAssets !== null ? totalAssets - state.investedPrincipal : null;
   const profitRate = profit !== null && state && state.investedPrincipal > 0 ? (profit / state.investedPrincipal) * 100 : null;
   const cashRatio = state && totalAssets !== null && totalAssets > 0 ? (state.pool / totalAssets) * 100 : null;
-  // VR 5.0 문서의 상승률 = (Pool ÷ V) ÷ G — 적립금은 빠져 있다
-  const riseRate = state && state.vValue > 0 && state.settings.gFactor > 0 ? (state.pool / state.vValue / state.settings.gFactor) * 100 : null;
+  const nextV = state?.nextV ?? null;
   const poolUsageRate = state?.cycle && state.cycle.poolStart > 0 ? ((state.cycle.poolStart - state.pool) / state.cycle.poolStart) * 100 : null;
 
   const cards = useMemo<Record<string, CardDef>>(() => {
@@ -104,10 +103,11 @@ export default function VrOverviewScreen() {
       cashRatio: { id: 'cashRatio', label: '현금 비중', value: cashRatio !== null ? `${cashRatio.toFixed(1)}%` : '조회 중…' },
       quantity: { id: 'quantity', label: '보유수량', value: `${state.quantity}주` },
       vValue: { id: 'vValue', label: 'V', value: usd(state.vValue), hint: `V₂ 예정 ${usd(state.v2Preview)}` },
-      riseRate: {
-        id: 'riseRate', label: '상승률', value: riseRate !== null ? `${riseRate >= 0 ? '+' : ''}${riseRate.toFixed(2)}%` : '—',
-        hint: riseRate !== null ? `${(1 + riseRate / 100).toFixed(4)}배 (적립금 제외)` : undefined,
-        tone: riseRate === null ? undefined : riseRate >= 0 ? 'positive' : 'negative',
+      evalAdj: {
+        id: 'evalAdj', label: '평가금 보정',
+        value: nextV ? `${nextV.evalTerm >= 0 ? '+' : '−'}${usd(Math.abs(nextV.evalTerm))}` : '—',
+        hint: nextV ? `E ${usd(nextV.evaluation)}` : undefined,
+        tone: nextV ? (nextV.evalTerm >= 0 ? 'positive' : 'negative') : undefined,
       },
       growthRate: {
         id: 'growthRate', label: 'V 증가율', hint: '적립금 포함', value: growthRate !== null ? `${growthRate >= 0 ? '+' : ''}${growthRate.toFixed(2)}%` : '—',
@@ -119,7 +119,7 @@ export default function VrOverviewScreen() {
       depositAmount: { id: 'depositAmount', label: '적립금 / 사이클', value: usd(state.settings.depositAmount) },
       gFactor: { id: 'gFactor', label: 'G (기울기)', value: String(state.settings.gFactor) },
     };
-  }, [state, price, vrCash, cashDiff, growthRate, riseRate, marketValue, costBasis, unrealizedProfit, totalAssets, profit, profitRate, cashRatio, poolUsageRate]);
+  }, [state, price, vrCash, cashDiff, growthRate, nextV, marketValue, costBasis, unrealizedProfit, totalAssets, profit, profitRate, cashRatio, poolUsageRate]);
 
   const guideCtx = useMemo<GuideCtx | null>(() => {
     if (!state) return null;
@@ -128,9 +128,9 @@ export default function VrOverviewScreen() {
       limitPct: state.settings.poolLimitPct, g: state.settings.gFactor, deposit: state.settings.depositAmount, bandPct: state.settings.bandPct,
       minBand: state.minBand, maxBand: state.maxBand, quantity: state.quantity, avgPrice: state.avgPrice, price,
       marketValue, costBasis, unrealized: unrealizedProfit, totalAssets, invested: state.investedPrincipal, initial: state.initialCapital,
-      profit, profitRate, cashRatio, cashDiff, poolUsage: poolUsageRate, growthRate, riseRate,
+      profit, profitRate, cashRatio, cashDiff, poolUsage: poolUsageRate, growthRate, evalTerm: nextV?.evalTerm ?? null, evaluation: nextV?.evaluation ?? null, poolTerm: nextV?.poolTerm ?? null,
     };
-  }, [state, price, marketValue, costBasis, unrealizedProfit, totalAssets, profit, profitRate, cashRatio, cashDiff, poolUsageRate, growthRate, riseRate]);
+  }, [state, price, marketValue, costBasis, unrealizedProfit, totalAssets, profit, profitRate, cashRatio, cashDiff, poolUsageRate, growthRate, nextV]);
 
   async function handleRollover() {
     setRolling(true);
@@ -190,7 +190,7 @@ export default function VrOverviewScreen() {
       )}
 
       {state?.cycle && (
-        <Pressable style={[styles.rolloverBtn, { backgroundColor: theme.brand }]} onPress={() => setRolloverConfirm(true)}>
+        <Pressable style={[styles.rolloverBtn, { backgroundColor: theme.brand }]} onPress={() => (nextV ? setRolloverConfirm(true) : setToast('다음 V에 쓸 TQQQ 가격을 불러오지 못했어요. 잠시 후 다시 시도해 주세요'))}>
           <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>V 갱신 실행</Text>
         </Pressable>
       )}
@@ -225,8 +225,8 @@ export default function VrOverviewScreen() {
         visible={rolloverConfirm}
         title="V 갱신을 실행할까요?"
         description={
-          state?.cycle
-            ? `현재 사이클 ${state.cycle.cycleNo}을 종료하고 V₂ = ${usd(state.v2Preview)}로 새 사이클을 시작해요.\n\n${nextVSubstitution(state.vValue, state.pool, state.settings.gFactor, state.settings.depositAmount, state.v2Preview)}\n(V₁ + Pool ÷ G + 적립금)`
+          state?.cycle && nextV
+            ? `현재 사이클 ${state.cycle.cycleNo}을 종료하고 V₂ = ${usd(nextV.v2)}로 새 사이클을 시작해요.\n\n${nextVSubstitution(nextV)}\n(V₁ + Pool ÷ G + (E − V₁) ÷ 2√G + 적립금)\n\n${evaluationNote(nextV)}`
             : undefined
         }
         confirmText="갱신 실행"

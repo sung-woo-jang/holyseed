@@ -94,6 +94,11 @@ holyseed/
   - 경로 `/api/ad/vr·worklog·expense·spacex`, DB `ad` 스키마(마이그레이션 `MergeLabIntoAd`로 이동), 인증은 AD JWT 하나. `/api/lab/*`·`lab.holyseed.p-e.kr`은 제거됨
   - MCP: `/api/ad/mcp/:token`에 소유자 계정(`MCP_OWNER_EMAIL`)일 때만 VR·근무일지·지출 도구가 추가로 노출 (`ad/modules/mcp/owner-tools.service.ts`)
   - **nginx(ad 도메인)**: `/api/ad/vr`·`/api/laofus`는 :8001(실주문 프로세스), 나머지 `/api`는 :8000
+- **소유자 전용 영역 (2026-10-03)**: AD는 이메일·구글 첫 로그인으로 **누구나 가입**할 수 있어서, 개인 영역(VR·근무일지·지출·스페이스X REST, 라오어 조회 `/api/laofus/*`)은 `@OwnerOnly()` 가드(`common/guards/jwt-auth.guard.ts`, 판별 `common/utils/owner.ts`)로 소유자 계정만 허용(그 외 403)
+  - 소유자 = `OWNER_USER_ID`(계정 번호, 쉼표로 여러 개). 비어 있으면 `MCP_OWNER_EMAIL` 이메일로 폴백, 둘 다 비면 전부 거부. 이메일은 인증 없이 가입돼 선점 위험이 있어 번호가 기본
+  - `OWNER_ONLY=false`면 검사 해제(롤아웃·비상용) — 라오어는 이때만 예전처럼 익명 조회 허용. **운영은 true(또는 미설정)**. 값을 바꾸면 `holyseed-backend` + `laofus-backend`(delete+start 절차) 둘 다 재시작
+  - `/vr/run`은 소유자 + `X-Laofus-Key`, `/laofus/run`은 서버 키만. JWT는 `aud=ad`만 인정(`/api/laofus` 포함). `/users/me`·로그인 응답의 `isOwner`로 앱이 라오어·근무일지 모드를 숨김
+  - id로 직접 수정하는 경로(정기 항목·카테고리·초대 취소·스냅샷 조회·자산 상세)는 서비스에서 가구 멤버십/권한 확인
 - **FRIDGE 프로젝트**: `src/projects/fridge/` - 냉장고 대시보드 (`fridge` 스키마, `/api/fridge/*`)
   - AD와 **완전 독립**: 자체 DB 스키마·구글 로그인(서버 리다이렉트)·가구(household) 모델·JWT `aud='fridge'`. AD 계정/토큰과 섞이지 않음
   - 가구 단위 격리(`HouseholdGuard`가 모든 리소스 컨트롤러에 기본 적용), 초대 코드로 가족 합류, 1인 1가구

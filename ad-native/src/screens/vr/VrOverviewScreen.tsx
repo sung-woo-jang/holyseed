@@ -9,6 +9,7 @@ import AppToast from '../../components/common/AppToast';
 import { vrApi } from '../../api/vr';
 import { useTheme } from '../../lib/theme';
 import { getErrorMessage } from '../../lib/error';
+import { nextVSubstitution } from '../../lib/vr-format';
 import QueryError from '../../components/common/QueryError';
 
 function usd(v: number | null | undefined): string {
@@ -195,7 +196,11 @@ export default function VrOverviewScreen() {
       <ConfirmDialog
         visible={rolloverConfirm}
         title="V 갱신을 실행할까요?"
-        description={state?.cycle ? `현재 사이클 ${state.cycle.cycleNo}을 종료하고 V₂ = ${usd(state.v2Preview)}로 새 사이클을 시작해요.` : undefined}
+        description={
+          state?.cycle
+            ? `현재 사이클 ${state.cycle.cycleNo}을 종료하고 V₂ = ${usd(state.v2Preview)}로 새 사이클을 시작해요.\n\n${nextVSubstitution(state.vValue, state.pool, state.settings.gFactor, state.settings.depositAmount, state.v2Preview)}\n(V₁ + Pool ÷ G + 적립금)`
+            : undefined
+        }
         confirmText="갱신 실행"
         loading={rolling}
         onConfirm={handleRollover}

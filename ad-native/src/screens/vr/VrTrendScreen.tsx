@@ -21,6 +21,7 @@ import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
 import type { StrategyStackParamList } from '../../navigation/StrategyStack';
 import QueryError from '../../components/common/QueryError';
+import { VCalcBadges } from './VCalcCard';
 
 type Props = NativeStackScreenProps<StrategyStackParamList, 'VrTrend'>;
 
@@ -285,6 +286,31 @@ export default function VrTrendScreen({ navigation }: Props) {
           />
         )}
         {estimateNote ? <Text style={{ color: theme.textMuted, fontSize: 11.5, marginTop: 4 }}>{estimateNote}</Text> : null}
+      </Card>
+
+      <Card title="V 이력" right="V₂ = V₁ + Pool ÷ G + 적립금">
+        {[...cycles].sort((a, b) => b.cycleNo - a.cycleNo).map((cycle, i) => {
+          const c = cycle.vCalc;
+          return (
+            <Pressable
+              key={cycle.id}
+              onPress={() => navigation.navigate('VrCycleDetail', { cycleNo: cycle.cycleNo })}
+              style={({ pressed }) => [styles.cycleRow, i > 0 && { borderTopWidth: 1, borderColor: theme.border }, pressed && { opacity: 0.6 }]}
+            >
+              <Text style={{ width: 24, color: theme.text, fontSize: 13, fontWeight: '800' }}>{cycle.cycleNo}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: theme.text, fontSize: 13.5, fontWeight: '800' }}>{usd(cycle.vValue)}</Text>
+                <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 2 }}>
+                  {c?.growth != null
+                    ? `${c.growth >= 0 ? '+' : ''}${usd(c.growth, 0)}${c.growthPct != null ? ` (${pct(c.growthPct)})` : ''} · Pool÷G ${usd(c.poolTerm ?? 0, 0)} · 적립 ${usd(c.deposit, 0)}`
+                    : `적립 ${usd(cycle.depositAmount, 0)}`}
+                </Text>
+              </View>
+              <VCalcBadges calc={c} />
+              <Text style={{ color: theme.textMuted, fontSize: 18 }}>›</Text>
+            </Pressable>
+          );
+        })}
       </Card>
 
       <Card title="사이클" right="눌러서 상세">

@@ -13,6 +13,7 @@ import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
 import type { StrategyStackParamList } from '../../navigation/StrategyStack';
 import QueryError from '../../components/common/QueryError';
+import VCalcCard from './VCalcCard';
 
 type Props = NativeStackScreenProps<StrategyStackParamList, 'VrCycleDetail'>;
 
@@ -35,6 +36,7 @@ export default function VrCycleDetailScreen({ route, navigation }: Props) {
   const { cycleNo } = route.params;
   const cyclesQ = useQuery({ queryKey: ['vr-cycles'], queryFn: vrApi.cycles });
   const fillsQ = useQuery({ queryKey: ['vr-fills'], queryFn: vrApi.fills });
+  const stateQ = useQuery({ queryKey: ['vr-state'], queryFn: vrApi.state });
   const wealthQ = useQuery({ queryKey: ['vr-wealth-history'], queryFn: vrApi.wealthHistory });
   const candlesQ = useQuery({ queryKey: ['vr-candles', 'all'], queryFn: () => vrApi.candles('all'), staleTime: 10 * 60_000 });
   const [cardWidth, setCardWidth] = useState(Dimensions.get('window').width - 32 - 28);
@@ -108,6 +110,8 @@ export default function VrCycleDetailScreen({ route, navigation }: Props) {
         <Tile label="Pool" value={`${usd(cycle.poolStart, 0)} → ${summary.endPool != null ? usd(summary.endPool, 0) : '—'}`} sub={`적립금 ${usd(cycle.depositAmount, 0)}`} />
         <Tile label="체결" value={`매수 ${summary.buyCount}건`} sub={`거래액 ${usd(cycle.tradeAmount, 0)}`} />
       </View>
+
+      <VCalcCard cycle={cycle} prevCycleNo={idx > 0 ? cycles[idx - 1]!.cycleNo : null} state={stateQ.data} />
 
       <View onLayout={onLayout} style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <Text style={{ color: theme.textMuted, fontSize: 12.5, fontWeight: '700', marginBottom: 10 }}>평가금 vs 밴드</Text>

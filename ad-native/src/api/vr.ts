@@ -13,6 +13,24 @@ export interface VrSettings {
   hiddenCards: string[];
 }
 
+export type VrCalcSource = 'ROLLOVER' | 'MANUAL' | 'BACKFILL';
+
+/** V₂ = V₁ + Pool ÷ G + 적립금 — 저장된 입력으로 서버가 다시 계산한 대조 결과 */
+export interface VrVCalc {
+  source: VrCalcSource | null;
+  prevV: number | null;
+  poolInput: number | null;
+  g: number | null;
+  deposit: number;
+  poolTerm: number | null;
+  result: number;
+  recomputed: number | null;
+  delta: number | null;
+  matches: boolean | null;
+  growth: number | null;
+  growthPct: number | null;
+}
+
 export interface VrCycle {
   id: number;
   cycleNo: number;
@@ -27,6 +45,10 @@ export interface VrCycle {
   maxBand: number;
   /** 이 사이클에서 체결한 매수·매도 금액 합 */
   tradeAmount: number;
+  bandPct?: number | null;
+  rolledAt?: string | null;
+  /** 구 서버 응답에는 없을 수 있음 */
+  vCalc?: VrVCalc;
 }
 
 export interface VrFill {

@@ -11,4 +11,12 @@ export class RolloverCycleDto {
   @IsOptional()
   @IsNumber()
   deposit?: number;
+
+  @ApiPropertyOptional({
+    description: '마지막 평가금 E (기본: 보유수량 × 사이클 종료일 종가 — 종료 전이면 현재가)',
+    example: 4924.8,
+  })
+  @IsOptional()
+  @IsNumber()
+  lastEvaluation?: number;
 }

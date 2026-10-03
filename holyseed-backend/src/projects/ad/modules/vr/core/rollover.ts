@@ -10,6 +10,11 @@ export function computeV2(v1: number, pool: number, gFactor: number, deposit: nu
   return round2(v1 + pool / gFactor + deposit);
 }
 
+/** 실력공식: V₂ = V₁ + Pool/G + (E − V₁)/(2√G) + 적립금 (E = 마지막 평가금) */
+export function computeV2Skill(v1: number, pool: number, gFactor: number, evaluation: number, deposit: number): number {
+  return round2(v1 + pool / gFactor + (evaluation - v1) / (2 * Math.sqrt(gFactor)) + deposit);
+}
+
 /** 주어진 날짜(YYYY-MM-DD) 다음 월요일 */
 export function nextMonday(dateStr: string): string {
   const d = new Date(`${dateStr}T00:00:00Z`);

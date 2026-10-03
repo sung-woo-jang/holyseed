@@ -45,6 +45,10 @@ export class VrCycle extends BaseEntity {
   @Column({ name: 'pool_input', type: 'decimal', precision: 14, scale: 2, nullable: true, transformer: numeric })
   poolInput: number | null;
 
+  @ApiPropertyOptional({ description: 'V 산출 입력: 마지막 평가금 E (실력공식). 없으면 기본공식으로 계산한 사이클' })
+  @Column({ name: 'evaluation_input', type: 'decimal', precision: 14, scale: 2, nullable: true, transformer: numeric })
+  evaluationInput: number | null;
+
   @ApiPropertyOptional({ description: 'V 산출에 적용한 G' })
   @Column({ name: 'g_factor', type: 'decimal', precision: 8, scale: 2, nullable: true, transformer: numeric })
   gFactor: number | null;

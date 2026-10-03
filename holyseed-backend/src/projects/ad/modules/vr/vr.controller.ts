@@ -30,7 +30,8 @@ export class VrController {
   @Get('state')
   @ApiOperation({ summary: 'VR 종합 상태 (V/밴드/Pool/보유/평단/파생값)' })
   async getState() {
-    return ok('조회 성공', await this.vrService.getState());
+    const [state, nextV] = await Promise.all([this.vrService.getState(), this.vrService.getNextV()]);
+    return ok('조회 성공', { ...state, v2Preview: nextV?.v2 ?? null, nextV });
   }
 
   @Get('price')
@@ -147,7 +148,7 @@ export class VrController {
   }
 
   @Post('cycles/rollover')
-  @ApiOperation({ summary: 'V 갱신 실행 (현 사이클 종료 → V₂ → 새 사이클)' })
+  @ApiOperation({ summary: 'V 갱신 실행 (현 사이클 종료 → 실력공식 V₂ → 새 사이클)' })
   async rollover(@Body() dto: RolloverCycleDto) {
     return ok('V 갱신이 완료되었습니다.', await this.vrService.rollover(dto));
   }

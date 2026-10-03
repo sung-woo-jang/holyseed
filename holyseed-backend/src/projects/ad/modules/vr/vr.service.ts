@@ -3,9 +3,28 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VrSetting, VrCycle, VrFill, VrFillKind, VrEvent } from './entities';
 import { CreateFillDto, CreateCycleDto, RolloverCycleDto, UpdateSettingsDto } from './dto/request';
-import { buildVCalc, computeBand, computeV2, nextMonday, fridayAfterTwoWeeks, type VCalc } from './core';
+import { buildVCalc, computeBand, computeV2Skill, nextMonday, fridayAfterTwoWeeks, type VCalc } from './core';
+import { VrEvaluationService } from './services/vr-evaluation.service';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
+
+export interface NextV {
+  formula: 'SKILL';
+  v1: number;
+  pool: number;
+  g: number;
+  deposit: number;
+  /** 마지막 평가금 E */
+  evaluation: number;
+  eSource: 'AUTO' | 'MANUAL';
+  quantity: number;
+  price: number | null;
+  priceDate: string | null;
+  priceSource: 'CLOSE' | 'LIVE' | null;
+  poolTerm: number;
+  evalTerm: number;
+  v2: number;
+}
 const round4 = (n: number) => Math.round(n * 10000) / 10000;
 
 @Injectable()
@@ -19,6 +38,7 @@ export class VrService {
     private readonly fillRepo: Repository<VrFill>,
     @InjectRepository(VrEvent)
     private readonly eventRepo: Repository<VrEvent>,
+    private readonly evaluation: VrEvaluationService,
   ) {}
 
   // ==================== Settings ====================
@@ -71,7 +91,6 @@ export class VrService {
       usablePool: currentCycle
         ? round2(pool - (currentCycle.poolStart * (100 - settings.poolLimitPct)) / 100)
         : round2(pool * (settings.poolLimitPct / 100)),
-      v2Preview: currentCycle ? computeV2(v, pool, settings.gFactor, settings.depositAmount) : null,
       ...(await this.getPrincipalSummary()),
     };
   }
@@ -264,6 +283,63 @@ export class VrService {
     return this.cycleRepo.save(cycle);
   }
 
+  /** 실력공식으로 다음 V를 계산 — E는 직접 입력값, 없으면 보유수량 × (종료일 종가 | 현재가) */
+  private async calcNextV(
+    cycle: VrCycle,
+    state: { pool: number; quantity: number },
+    settings: VrSetting,
+    deposit: number,
+    lastEvaluation?: number,
+  ): Promise<NextV> {
+    let price: number | null = null;
+    let priceDate: string | null = null;
+    let priceSource: 'CLOSE' | 'LIVE' | null = null;
+    let evaluation = lastEvaluation;
+    if (evaluation === undefined) {
+      try {
+        const p = await this.evaluation.resolvePrice(cycle.endDate);
+        price = p.price;
+        priceDate = p.date;
+        priceSource = p.source;
+        evaluation = round2(state.quantity * p.price);
+      } catch {
+        throw new BadRequestException(
+          '마지막 평가금(E)에 쓸 TQQQ 가격을 불러오지 못했어요. 잠시 후 다시 시도하거나 평가금을 직접 입력해 주세요.',
+        );
+      }
+    }
+    const v1 = cycle.vValue;
+    const g = settings.gFactor;
+    return {
+      formula: 'SKILL',
+      v1,
+      pool: state.pool,
+      g,
+      deposit,
+      evaluation,
+      eSource: lastEvaluation === undefined ? 'AUTO' : 'MANUAL',
+      quantity: state.quantity,
+      price,
+      priceDate,
+      priceSource,
+      poolTerm: round2(state.pool / g),
+      evalTerm: round2((evaluation - v1) / (2 * Math.sqrt(g))),
+      v2: computeV2Skill(v1, state.pool, g, evaluation, deposit),
+    };
+  }
+
+  /** 지금 갱신하면 나올 다음 V (화면 미리보기용) — 진행 중 사이클이 없거나 가격을 못 구하면 null */
+  async getNextV(): Promise<NextV | null> {
+    const cycle = await this.cycleRepo.findOne({ where: { isClosed: false }, order: { cycleNo: 'DESC' } });
+    if (!cycle) return null;
+    const [settings, state] = await Promise.all([this.getSettings(), this.getState()]);
+    try {
+      return await this.calcNextV(cycle, state, settings, settings.depositAmount);
+    } catch {
+      return null;
+    }
+  }
+
   /** V 갱신일 처리: 현 사이클 종료 → V₂ 계산 → 새 사이클 시작 */
   async rollover(dto: RolloverCycleDto) {
     const current = await this.cycleRepo.findOne({ where: { isClosed: false }, order: { cycleNo: 'DESC' } });
@@ -273,7 +349,9 @@ export class VrService {
     const state = await this.getState();
     const deposit = dto.deposit ?? settings.depositAmount;
 
-    const v2 = computeV2(current.vValue, state.pool, settings.gFactor, deposit);
+    // 평가금(E)을 못 구하면 아무것도 바꾸지 않고 중단 — 기본공식으로 몰래 대체하지 않는다
+    const next = await this.calcNextV(current, state, settings, deposit, dto.lastEvaluation);
+    const v2 = next.v2;
 
     current.poolEnd = state.pool;
     current.isClosed = true;
@@ -290,6 +368,7 @@ export class VrService {
       isClosed: false,
       prevVValue: current.vValue,
       poolInput: state.pool,
+      evaluationInput: next.evaluation,
       gFactor: settings.gFactor,
       bandPct: settings.bandPct,
       calcSource: 'ROLLOVER',
@@ -309,7 +388,7 @@ export class VrService {
     }
 
     await this.logRollover(
-      `V 갱신: 사이클 ${current.cycleNo}→${saved.cycleNo}, V ${current.vValue} + Pool ${state.pool} ÷ G ${settings.gFactor} + 적립금 ${deposit} = ${v2}`,
+      `V 갱신(실력공식): 사이클 ${current.cycleNo}→${saved.cycleNo}, V ${current.vValue} + Pool ${state.pool} ÷ G ${settings.gFactor} + (E ${next.evaluation} − V) ÷ 2√G + 적립금 ${deposit} = ${v2} (E=${next.eSource === 'MANUAL' ? '직접 입력' : `${state.quantity}주 × $${next.price}${next.priceDate ? ` ${next.priceDate} 종가` : ' 현재가'}`})`,
     );
 
     return { closedCycle: current, newCycle: saved };

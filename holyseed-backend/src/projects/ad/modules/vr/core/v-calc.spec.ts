@@ -1,4 +1,5 @@
 import { buildVCalc } from './v-calc';
+import { computeV2Skill } from './rollover';
 
 const base = {
   vValue: 1917.13,
@@ -51,5 +52,48 @@ describe('buildVCalc', () => {
       calcSource: 'ROLLOVER',
     });
     expect(r.matches).toBe(true);
+  });
+});
+
+describe('computeV2Skill (실력공식)', () => {
+  it('라오어 VR 1기 거치식 282주차: E 71067.34, V₁ 69818.35, Pool 16205.33, G 16 → 70987.31', () => {
+    expect(computeV2Skill(69818.35, 16205.33, 16, 71067.34, 0)).toBe(70987.31);
+  });
+
+  it('284주차: E 71332.48, V₁ 70987.31 → 72043.29', () => {
+    expect(computeV2Skill(70987.31, 16205.33, 16, 71332.48, 0)).toBe(72043.29);
+  });
+
+  it('적립금은 그대로 더한다', () => {
+    expect(computeV2Skill(70987.31, 16205.33, 16, 71332.48, 250)).toBe(72293.29);
+  });
+
+  it('E가 V보다 낮으면 보정항이 음수가 돼 V가 덜 오른다', () => {
+    const basic = 1917.13 + 3410.92 / 10 + 200;
+    const skill = computeV2Skill(1917.13, 3410.92, 10, 1755.77, 200);
+    expect(skill).toBeLessThan(basic);
+    expect(skill).toBe(2432.71);
+  });
+});
+
+describe('buildVCalc 실력공식', () => {
+  it('평가금이 저장돼 있으면 실력공식으로 재계산해 대조한다', () => {
+    const r = buildVCalc({
+      vValue: 72043.29,
+      depositAmount: 0,
+      prevVValue: 70987.31,
+      poolInput: 16205.33,
+      gFactor: 16,
+      evaluationInput: 71332.48,
+      calcSource: 'ROLLOVER',
+    });
+    expect(r.formula).toBe('SKILL');
+    expect(r.evalTerm).toBe(43.15);
+    expect(r.poolTerm).toBe(1012.83);
+    expect(r.matches).toBe(true);
+  });
+
+  it('평가금이 없으면 기본공식으로 재계산한다', () => {
+    expect(buildVCalc(base).formula).toBe('BASIC');
   });
 });

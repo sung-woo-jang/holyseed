@@ -10,6 +10,7 @@ import { VrEngineService } from './services/vr-engine.service';
 import { VrSchedulerService } from './services/vr-scheduler.service';
 import { VrStatusService } from './services/vr-status.service';
 import { VrPerformanceService } from './services/vr-performance.service';
+import { VrEvaluationService } from './services/vr-evaluation.service';
 
 @Module({
   imports: [
@@ -25,6 +26,13 @@ import { VrPerformanceService } from './services/vr-performance.service';
     TossModule,
   ],
   controllers: [VrController],
-  providers: [VrService, VrEngineService, VrSchedulerService, VrStatusService, VrPerformanceService],
+  providers: [
+    VrService,
+    VrEngineService,
+    VrSchedulerService,
+    VrStatusService,
+    VrPerformanceService,
+    VrEvaluationService,
+  ],
 })
 export class VrModule {}

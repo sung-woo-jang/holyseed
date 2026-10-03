@@ -157,13 +157,14 @@ export class OwnerToolsMcpService {
       {
         title: 'VR V 갱신 실행',
         description:
-          'V 갱신일 처리: 현 사이클 종료 → V₂ = V₁ + Pool/G + 적립금 → 새 사이클 시작(적립금 DEPOSIT 자동 기록). 사이클 종료 다음 월요일에 실행하는 작업입니다. 실행 전 사용자에게 확인하세요.',
+          'V 갱신일 처리(실력공식): 현 사이클 종료 → V₂ = V₁ + Pool/G + (E − V₁)/(2√G) + 적립금 → 새 사이클 시작(적립금 DEPOSIT 자동 기록). E(마지막 평가금)는 보유수량 × 사이클 종료일 종가로 자동 계산하며 lastEvaluation으로 직접 줄 수도 있습니다. 사이클 종료 다음 월요일에 실행하는 작업입니다. 실행 전 사용자에게 확인하세요.',
         inputSchema: {
           newStartDate: z.string().optional().describe('새 사이클 시작일 YYYY-MM-DD (생략 시 종료 다음 월요일)'),
+          lastEvaluation: z.number().optional().describe('마지막 평가금 E ($) — 생략 시 보유수량 × 종료일 종가'),
         },
       },
-      ({ newStartDate }) =>
-        this.call(async (api) => this.unwrap(await api.post('/vr/cycles/rollover', { newStartDate }))),
+      ({ newStartDate, lastEvaluation }) =>
+        this.call(async (api) => this.unwrap(await api.post('/vr/cycles/rollover', { newStartDate, lastEvaluation }))),
     );
 
     registerTool(

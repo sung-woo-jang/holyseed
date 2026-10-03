@@ -1,4 +1,10 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Invitation } from './entities/invitation.entity';
@@ -73,9 +79,14 @@ export class InvitationsService {
     return membership;
   }
 
-  async revoke(invitationId: number): Promise<void> {
+  async revoke(invitationId: number, userId: number): Promise<void> {
     const invitation = await this.invitationRepo.findOne({ where: { id: invitationId } });
     if (!invitation) throw new NotFoundException('초대를 찾을 수 없습니다.');
+    // 만든 사람이거나 그 가구의 소유자만 취소할 수 있다
+    if (invitation.createdByUserId !== userId) {
+      const m = await this.membershipRepo.findOne({ where: { householdId: invitation.householdId, userId } });
+      if (!m || m.role !== MemberRole.OWNER) throw new ForbiddenException('이 초대를 취소할 권한이 없습니다.');
+    }
     await this.invitationRepo.remove(invitation);
   }
 

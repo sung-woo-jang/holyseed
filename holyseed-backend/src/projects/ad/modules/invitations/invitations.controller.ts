@@ -51,8 +51,8 @@ export class InvitationsController {
 
   @Post('invitations/:invitationId/revoke')
   @ApiOperation({ summary: '초대 취소' })
-  async revoke(@Param('invitationId', ParseIntPipe) invitationId: number) {
-    await this.invitationsService.revoke(invitationId);
+  async revoke(@Param('invitationId', ParseIntPipe) invitationId: number, @Request() req: any) {
+    await this.invitationsService.revoke(invitationId, Number(req.user.userId));
     return { success: true, message: '초대 취소 성공', data: null, timestamp: new Date().toISOString() };
   }
 }

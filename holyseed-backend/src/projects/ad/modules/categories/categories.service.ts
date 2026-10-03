@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Not, Repository } from 'typeorm';
 import { Category, CategoryType } from './entities/category.entity';
@@ -6,6 +6,7 @@ import { CategoryIconAsset } from './entities/category-icon-asset.entity';
 import { Transaction } from '../transactions/entities/transaction.entity';
 import { RecurringTransaction } from '../recurring-transactions/entities/recurring-transaction.entity';
 import { CreateCategoryDto } from './dto/request/create-category.dto';
+import { Membership, MemberRole } from '../memberships/entities/membership.entity';
 
 const FALLBACK_CATEGORY_NAME: Record<CategoryType, string> = {
   [CategoryType.EXPENSE]: '기타지출',
@@ -23,7 +24,17 @@ export class CategoriesService {
     private readonly recurringRepo: Repository<RecurringTransaction>,
     @InjectRepository(CategoryIconAsset)
     private readonly iconAssetRepo: Repository<CategoryIconAsset>,
+    @InjectRepository(Membership)
+    private readonly membershipRepo: Repository<Membership>,
   ) {}
+
+  /** id로 직접 수정·삭제하는 경로 — 가구 카테고리는 그 가구의 편집 권한, 기본 카테고리는 어느 가구든 편집 권한이 있는 사용자만 */
+  private async assertCanModify(category: Category, userId: number): Promise<void> {
+    const where = category.householdId != null ? { householdId: category.householdId, userId } : { userId };
+    const memberships = await this.membershipRepo.find({ where });
+    if (!memberships.some((m) => m.role !== MemberRole.VIEWER))
+      throw new ForbiddenException('이 카테고리를 수정할 권한이 없습니다.');
+  }
 
   async findIconLibrary(householdId: number): Promise<CategoryIconAsset[]> {
     return this.iconAssetRepo.find({ where: { householdId }, order: { createdAt: 'DESC' }, take: 60 });
@@ -46,17 +57,20 @@ export class CategoriesService {
     return this.categoryRepo.save(category);
   }
 
-  async update(id: number, dto: Partial<CreateCategoryDto>): Promise<Category> {
+  async update(id: number, dto: Partial<CreateCategoryDto>, userId: number): Promise<Category> {
     const category = await this.categoryRepo.findOne({ where: { id } });
     if (!category) throw new NotFoundException('카테고리를 찾을 수 없습니다.');
+    await this.assertCanModify(category, userId);
     if (dto.parentId) await this.assertValidParent(dto.parentId);
-    Object.assign(category, dto);
+    // 기본 카테고리는 전 가구가 공유하므로 이름·아이콘·색은 못 바꾸고 기본 분류(고정비/변동비)만 바꿀 수 있다
+    Object.assign(category, category.isBuiltin ? { defaultCostType: dto.defaultCostType } : dto);
     return this.categoryRepo.save(category);
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: number, userId: number): Promise<void> {
     const category = await this.categoryRepo.findOne({ where: { id } });
     if (!category) throw new NotFoundException('카테고리를 찾을 수 없습니다.');
+    await this.assertCanModify(category, userId);
     if (category.isBuiltin) throw new NotFoundException('기본 카테고리는 삭제할 수 없습니다.');
 
     const children = await this.categoryRepo.find({ where: { parentId: id } });
@@ -69,7 +83,8 @@ export class CategoriesService {
     if (txCount > 0 || recurringCount > 0) {
       const fallback = await this.getOrCreateFallbackCategory(category.householdId, category.type, deletedIds);
       if (txCount > 0) await this.txRepo.update({ categoryId: In(deletedIds) }, { categoryId: fallback.id });
-      if (recurringCount > 0) await this.recurringRepo.update({ categoryId: In(deletedIds) }, { categoryId: fallback.id });
+      if (recurringCount > 0)
+        await this.recurringRepo.update({ categoryId: In(deletedIds) }, { categoryId: fallback.id });
     }
 
     await this.categoryRepo.delete({ parentId: id });
@@ -77,7 +92,11 @@ export class CategoriesService {
   }
 
   /** 삭제되는 카테고리를 참조하던 거래를 재배정할 "기타" 카테고리 — 가구에 이미 있으면 재사용, 없으면 새로 생성 */
-  private async getOrCreateFallbackCategory(householdId: number, type: CategoryType, excludeIds: number[]): Promise<Category> {
+  private async getOrCreateFallbackCategory(
+    householdId: number,
+    type: CategoryType,
+    excludeIds: number[],
+  ): Promise<Category> {
     const name = FALLBACK_CATEGORY_NAME[type];
     const existing = await this.categoryRepo.findOne({
       where: [
@@ -87,7 +106,15 @@ export class CategoriesService {
     });
     if (existing) return existing;
     return this.categoryRepo.save(
-      this.categoryRepo.create({ householdId, type, name, icon: '📦', color: '#8E8E93', isBuiltin: false, sortOrder: 999 }),
+      this.categoryRepo.create({
+        householdId,
+        type,
+        name,
+        icon: '📦',
+        color: '#8E8E93',
+        isBuiltin: false,
+        sortOrder: 999,
+      }),
     );
   }
 

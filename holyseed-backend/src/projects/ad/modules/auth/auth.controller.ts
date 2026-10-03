@@ -6,6 +6,13 @@ import { Public } from '@common/decorators';
 import { AuthService, type OAuthProvider } from './auth.service';
 import { RefreshTokenDto } from './dto/request/refresh-token.dto';
 import { RegisterDto } from './dto/request/register.dto';
+import { isOwner } from '@common/utils/owner';
+
+/** 앱이 모드(라오어·근무일지) 노출 여부를 정할 수 있게 로그인 응답의 user에 소유자 여부를 덧붙인다 */
+function withOwnerFlag<T extends { user?: any }>(result: T): T {
+  const u = result.user;
+  return u ? { ...result, user: { ...u, isOwner: isOwner({ userId: u.id, email: u.email, aud: 'ad' }) } } : result;
+}
 import { LoginDto } from './dto/request/login.dto';
 
 @ApiTags('AD 인증')
@@ -20,7 +27,7 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: '이메일 회원가입' })
   async register(@Body() dto: RegisterDto) {
-    const result = await this.authService.register(dto);
+    const result = withOwnerFlag(await this.authService.register(dto));
     return { success: true, message: '회원가입 성공', data: result, timestamp: new Date().toISOString() };
   }
 
@@ -29,7 +36,7 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: '이메일 로그인' })
   async login(@Body() dto: LoginDto) {
-    const result = await this.authService.emailLogin(dto);
+    const result = withOwnerFlag(await this.authService.emailLogin(dto));
     return { success: true, message: '로그인 성공', data: result, timestamp: new Date().toISOString() };
   }
 

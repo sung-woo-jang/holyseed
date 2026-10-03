@@ -9,6 +9,7 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  Request,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -70,15 +71,15 @@ export class CategoriesController {
 
   @Post('categories/:id/update')
   @ApiOperation({ summary: '카테고리 수정' })
-  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: Partial<CreateCategoryDto>) {
-    const data = await this.categoriesService.update(id, dto);
+  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: Partial<CreateCategoryDto>, @Request() req: any) {
+    const data = await this.categoriesService.update(id, dto, Number(req.user.userId));
     return { success: true, message: '수정 성공', data, timestamp: new Date().toISOString() };
   }
 
   @Post('categories/:id/delete')
   @ApiOperation({ summary: '카테고리 삭제' })
-  async delete(@Param('id', ParseIntPipe) id: number) {
-    await this.categoriesService.delete(id);
+  async delete(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    await this.categoriesService.delete(id, Number(req.user.userId));
     return { success: true, message: '삭제 성공', data: null, timestamp: new Date().toISOString() };
   }
 }

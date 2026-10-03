@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, UseGuards, Request } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RecurringTransactionsService } from './recurring-transactions.service';
 import { MembershipGuard } from '../../common/guards/membership.guard';
@@ -30,22 +30,22 @@ export class RecurringTransactionsController {
 
   @Post('recurring/:id/update')
   @ApiOperation({ summary: '정기거래 수정' })
-  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: Partial<CreateRecurringDto>) {
-    const data = await this.recurringService.update(id, dto);
+  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: Partial<CreateRecurringDto>, @Request() req: any) {
+    const data = await this.recurringService.update(id, dto, Number(req.user.userId));
     return { success: true, message: '수정 성공', data, timestamp: new Date().toISOString() };
   }
 
   @Post('recurring/:id/toggle')
   @ApiOperation({ summary: '정기거래 활성/비활성 전환' })
-  async toggle(@Param('id', ParseIntPipe) id: number) {
-    const data = await this.recurringService.toggle(id);
+  async toggle(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    const data = await this.recurringService.toggle(id, Number(req.user.userId));
     return { success: true, message: '상태 변경 성공', data, timestamp: new Date().toISOString() };
   }
 
   @Post('recurring/:id/delete')
   @ApiOperation({ summary: '정기거래 삭제' })
-  async delete(@Param('id', ParseIntPipe) id: number) {
-    await this.recurringService.delete(id);
+  async delete(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    await this.recurringService.delete(id, Number(req.user.userId));
     return { success: true, message: '삭제 성공', data: null, timestamp: new Date().toISOString() };
   }
 }

@@ -32,7 +32,12 @@ export class AssetSnapshotsService {
     }
   }
 
-  async findByAsset(assetId: number): Promise<AssetSnapshot[]> {
+  async findByAsset(assetId: number, userId: number): Promise<AssetSnapshot[]> {
+    // 다른 가구 자산의 기록을 id만으로 읽지 못하게 — 그 가구 멤버(조회자 포함)만
+    const asset = await this.assetRepo.findOne({ where: { id: assetId } });
+    if (!asset) throw new NotFoundException('자산을 찾을 수 없습니다.');
+    const m = await this.membershipRepo.findOne({ where: { householdId: asset.householdId, userId } });
+    if (!m) throw new ForbiddenException('이 자산을 볼 권한이 없습니다.');
     return this.snapshotRepo.find({
       where: { assetId },
       order: { date: 'DESC' },

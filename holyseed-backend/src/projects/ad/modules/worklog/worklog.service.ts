@@ -372,8 +372,24 @@ export class WorklogService {
     const option = await this.categoryOptionRepo.findOne({ where: { id: dto.id } });
     if (!option) throw new NotFoundException('분류를 찾을 수 없습니다.');
     const { id: _id, ...rest } = dto;
+    const oldName = option.name;
+    const newName = typeof rest.name === 'string' ? rest.name.trim() : undefined;
+    if (newName && newName !== oldName) {
+      const dup = await this.categoryOptionRepo.findOne({ where: { name: newName } });
+      if (dup && dup.id !== option.id) throw new BadRequestException('이미 같은 이름의 분류가 있습니다.');
+    }
     Object.assign(option, rest);
-    return this.categoryOptionRepo.save(option);
+    if (newName) option.name = newName;
+    // 분류 이름이 업무·현장 후보와 과거 근무 기록에 문자열 키로 들어 있어서, 이름만 바꾸면 하위 항목이 사라져 보인다 — 같이 갱신
+    return this.categoryOptionRepo.manager.transaction(async (m) => {
+      const saved = await m.getRepository(WorklogCategoryOption).save(option);
+      if (newName && newName !== oldName) {
+        await m.getRepository(WorklogJobOption).update({ category: oldName }, { category: newName });
+        await m.getRepository(WorklogTitleOption).update({ category: oldName }, { category: newName });
+        await m.getRepository(Worklog).update({ category: oldName }, { category: newName });
+      }
+      return saved;
+    });
   }
 
   /** 분류 팔레트에서 삭제 — 과거 근무 기록의 category는 단순 문자열이라 영향 없음 */

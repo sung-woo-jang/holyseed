@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, In, Repository } from 'typeorm';
 import { RecurringTransaction, RecurringFrequency } from './entities/recurring-transaction.entity';
 import { Transaction, TransactionType } from '../transactions/entities/transaction.entity';
 import { CreateRecurringDto } from './dto/request/create-recurring.dto';
+import { Membership, MemberRole } from '../memberships/entities/membership.entity';
 
 export interface MissedOccurrence {
   recurringId: number;
@@ -29,7 +30,15 @@ export class RecurringTransactionsService {
     private readonly recurringRepo: Repository<RecurringTransaction>,
     @InjectRepository(Transaction)
     private readonly txRepo: Repository<Transaction>,
+    @InjectRepository(Membership)
+    private readonly membershipRepo: Repository<Membership>,
   ) {}
+
+  /** id로 직접 수정·삭제하는 경로라 그 정기거래가 속한 가구의 편집 권한(EDITOR 이상)을 서비스에서 확인한다 */
+  private async assertCanModify(r: RecurringTransaction, userId: number): Promise<void> {
+    const m = await this.membershipRepo.findOne({ where: { householdId: r.householdId, userId } });
+    if (!m || m.role === MemberRole.VIEWER) throw new ForbiddenException('이 정기 항목을 수정할 권한이 없습니다.');
+  }
 
   async findByHousehold(householdId: number): Promise<RecurringTransaction[]> {
     return this.recurringRepo.find({ where: { householdId }, order: { createdAt: 'ASC' } });
@@ -46,20 +55,23 @@ export class RecurringTransactionsService {
     return this.recurringRepo.save(r);
   }
 
-  async update(id: number, dto: Partial<CreateRecurringDto>): Promise<RecurringTransaction> {
+  async update(id: number, dto: Partial<CreateRecurringDto>, userId: number): Promise<RecurringTransaction> {
     const r = await this.findOne(id);
+    await this.assertCanModify(r, userId);
     Object.assign(r, dto);
     return this.recurringRepo.save(r);
   }
 
-  async toggle(id: number): Promise<RecurringTransaction> {
+  async toggle(id: number, userId: number): Promise<RecurringTransaction> {
     const r = await this.findOne(id);
+    await this.assertCanModify(r, userId);
     r.active = !r.active;
     return this.recurringRepo.save(r);
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: number, userId: number): Promise<void> {
     const r = await this.findOne(id);
+    await this.assertCanModify(r, userId);
     await this.recurringRepo.remove(r);
   }
 

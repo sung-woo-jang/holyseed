@@ -1,3 +1,4 @@
+import { OwnerOnly } from '@common/decorators';
 import { Body, Controller, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ExpenseService } from './expense.service';
@@ -11,6 +12,7 @@ const ok = (message: string, data: unknown) => ({
 });
 
 @ApiTags('지출내역')
+@OwnerOnly()
 @Controller('ad/expense')
 export class ExpenseController {
   constructor(private readonly expenseService: ExpenseService) {}

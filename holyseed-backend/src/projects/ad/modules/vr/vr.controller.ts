@@ -1,4 +1,6 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, Sse } from '@nestjs/common';
+import { OwnerOnly } from '@common/decorators';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, Sse, UseGuards } from '@nestjs/common';
+import { LaofusKeyGuard } from '../../../laofus/laofus-key.guard';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Observable } from 'rxjs';
 import { VrService } from './vr.service';
@@ -15,6 +17,7 @@ const ok = (message: string, data: unknown) => ({
 });
 
 @ApiTags('VR')
+@OwnerOnly()
 @Controller('ad/vr')
 export class VrController {
   constructor(
@@ -61,7 +64,10 @@ export class VrController {
   }
 
   @Post('run')
-  @ApiOperation({ summary: '엔진 수동 실행 (live=false면 dry-run, 시간창 항상 생략)' })
+  @UseGuards(LaofusKeyGuard)
+  @ApiOperation({
+    summary: '엔진 수동 실행 (live=false면 dry-run, 시간창 항상 생략) — 소유자 + X-Laofus-Key 둘 다 필요',
+  })
   async run(@Body() dto: VrRunRequestDto) {
     const lines = await this.engine.run({ live: dto.live === true, force: true });
     return ok('실행 완료', { lines });

@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Like, Repository } from 'typeorm';
-import { Asset } from './entities/asset.entity';
+import { Asset, AssetCategory } from './entities/asset.entity';
 import { CreateAssetDto } from './dto/request/create-asset.dto';
 import { SearchAssetsDto } from './dto/request/search-assets.dto';
 import { Membership, MemberRole } from '../memberships/entities/membership.entity';
@@ -77,9 +77,23 @@ export class AssetsService {
     return asset;
   }
 
+  /** 자산 상세 조회 — 그 가구의 멤버만 */
+  async findOneForMember(id: number, userId: number): Promise<Asset> {
+    const asset = await this.findOne(id);
+    const m = await this.membershipRepo.findOne({ where: { householdId: asset.householdId, userId } });
+    if (!m) throw new ForbiddenException('이 자산을 볼 권한이 없습니다.');
+    return asset;
+  }
+
   async create(householdId: number, dto: CreateAssetDto, userId: number): Promise<Asset> {
     const ownerUserId = dto.ownerUserId !== undefined ? dto.ownerUserId : userId;
-    const asset = this.assetRepo.create({ ...dto, householdId, ownerUserId });
+    // 부채 여부는 카테고리에서 파생 — 클라이언트가 보낸 값과 어긋나면 순자산 부호가 틀어진다
+    const asset = this.assetRepo.create({
+      ...dto,
+      householdId,
+      ownerUserId,
+      isLiability: dto.category === AssetCategory.DEBT,
+    });
     return this.assetRepo.save(asset);
   }
 
@@ -87,6 +101,7 @@ export class AssetsService {
     const asset = await this.findOne(id);
     await this.assertCanModify(asset, userId);
     Object.assign(asset, dto);
+    if (dto.category !== undefined) asset.isLiability = dto.category === AssetCategory.DEBT;
     return this.assetRepo.save(asset);
   }
 

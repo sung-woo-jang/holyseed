@@ -1,3 +1,4 @@
+import { OwnerOnly } from '@common/decorators';
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SpacexService } from './spacex.service';
@@ -11,6 +12,7 @@ const ok = (message: string, data: unknown) => ({
 });
 
 @ApiTags('스페이스X')
+@OwnerOnly()
 @Controller('ad/spacex')
 export class SpacexController {
   constructor(private readonly spacexService: SpacexService) {}

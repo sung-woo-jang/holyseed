@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Query, Sse, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Observable } from 'rxjs';
-import { Public } from '@common/decorators';
+import { OwnerOnly, Public } from '@common/decorators';
 import { LaofusKeyGuard } from './laofus-key.guard';
 import { LaofusStatusService } from './services/status.service';
 import { LaofusLiveService } from './services/live.service';
@@ -13,7 +13,7 @@ function ok<T>(data: T, message = '조회 성공') {
 }
 
 @ApiTags('LAOFUS 무한매수법')
-@Public()
+@OwnerOnly({ legacyPublic: true })
 @Controller('laofus')
 export class LaofusController {
   constructor(
@@ -79,7 +79,7 @@ export class LaofusController {
   }
 
   @Post('account-snapshot/run')
-  @ApiOperation({ summary: '오늘자 실계좌 스냅샷 즉시 기록/재기록 (조회만 — 주문 없음, 인증 불필요)' })
+  @ApiOperation({ summary: '오늘자 실계좌 스냅샷 즉시 기록/재기록 (조회만 — 주문 없음, 소유자 로그인 필요)' })
   async runAccountSnapshot() {
     return ok(await this.engine.captureAccountSnapshot(), '스냅샷 기록 완료');
   }
@@ -97,6 +97,7 @@ export class LaofusController {
   }
 
   @Post('run')
+  @Public() // 서버 키(X-Laofus-Key)만으로 호출 — 운영 스크립트용
   @UseGuards(LaofusKeyGuard)
   @ApiOperation({ summary: '엔진 수동 실행 (live=false면 dry-run, force로 시간창 생략)' })
   async run(@Body() dto: LaofusRunRequestDto) {

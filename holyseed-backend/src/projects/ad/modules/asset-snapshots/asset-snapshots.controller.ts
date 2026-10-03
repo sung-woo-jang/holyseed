@@ -15,8 +15,8 @@ export class AssetSnapshotsController {
 
   @Get('assets/:assetId/snapshots')
   @ApiOperation({ summary: '자산 스냅샷 목록 조회' })
-  async findByAsset(@Param('assetId', ParseIntPipe) assetId: number) {
-    const data = await this.snapshotsService.findByAsset(assetId);
+  async findByAsset(@Param('assetId', ParseIntPipe) assetId: number, @Request() req: any) {
+    const data = await this.snapshotsService.findByAsset(assetId, Number(req.user.userId));
     return { success: true, message: '조회 성공', data, timestamp: new Date().toISOString() };
   }
 

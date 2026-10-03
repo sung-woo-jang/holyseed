@@ -43,8 +43,8 @@ export class AssetsController {
 
   @Get('assets/:id')
   @ApiOperation({ summary: '자산 상세 조회' })
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    const data = await this.assetsService.findOne(id);
+  async findOne(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    const data = await this.assetsService.findOneForMember(id, Number(req.user.userId));
     return { success: true, message: '조회 성공', data, timestamp: new Date().toISOString() };
   }
 

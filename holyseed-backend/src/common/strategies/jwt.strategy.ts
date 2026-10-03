@@ -16,6 +16,7 @@ export interface JwtPayload {
 
 const PROJECT_PREFIXES: Record<string, string> = {
   '/api/ad': 'ad',
+  '/api/laofus': 'ad',
   '/api/wedding': 'wedding',
   '/api/fridge': 'fridge',
 };
@@ -37,6 +38,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (allowedAud && !allowedAud.includes(payload.aud ?? '')) {
       throw new UnauthorizedException('다른 프로젝트에서 발급된 토큰입니다.');
     }
-    return { userId: payload.sub, email: payload.email, role: payload.role, coupleId: payload.coupleId };
+    return {
+      userId: payload.sub,
+      email: payload.email,
+      role: payload.role,
+      coupleId: payload.coupleId,
+      aud: payload.aud,
+    };
   }
 }

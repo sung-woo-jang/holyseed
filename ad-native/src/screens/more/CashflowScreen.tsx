@@ -11,7 +11,7 @@ import { useHouseholdData, type HouseholdTransaction } from '../../queries/useHo
 import { krwShort } from '../../lib/format';
 import { resolveCategoryVisual, resolveRootCategoryId } from '../../lib/category-meta';
 import { TE } from '../../lib/toss-emoji';
-import { periodToRange } from '../../lib/date';
+import { periodToRange, todayLocal } from '../../lib/date';
 import type { MoreStackParamList } from '../../navigation/types';
 
 type Period = '이번달' | '올해' | '작년' | '3년' | '전체';
@@ -38,11 +38,13 @@ export default function CashflowScreen({ navigation }: Props) {
   }
 
   const range = useMemo(() => periodToRange(period), [period]);
-  const filtered = useMemo(() => filterByRange(data.transactions, range), [data.transactions, range]);
+  // 아직 오지 않은 예정 거래(미리 생성된 정기 항목)는 제외 — 홈의 수입·지출과 같은 기준
+  const today = todayLocal();
+  const filtered = useMemo(() => filterByRange(data.transactions, range).filter((t) => t.date <= today), [data.transactions, range, today]);
 
   const income = filtered.filter((t) => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
   const expense = filtered.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
-  const savingsRate = income > 0 ? ((income - expense) / income) * 100 : 0;
+  const savingsRate = income > 0 ? ((income - expense) / income) * 100 : null;
 
   const expenseTx = filtered.filter((t) => t.type === 'EXPENSE');
   const fixedTotal = expenseTx.filter((t) => t.costType === 'FIXED').reduce((s, t) => s + t.amount, 0);
@@ -105,7 +107,7 @@ export default function CashflowScreen({ navigation }: Props) {
               <View style={[styles.divider, { backgroundColor: theme.border }]} />
               <View style={styles.summaryItem}>
                 <Text style={{ color: theme.textMuted, fontSize: 12 }}>저축률</Text>
-                <Text style={{ color: savingsRate >= 0 ? theme.brand : theme.danger, fontSize: 16, fontWeight: '800' }}>{savingsRate.toFixed(1)}%</Text>
+                <Text style={{ color: savingsRate === null || savingsRate >= 0 ? theme.brand : theme.danger, fontSize: 16, fontWeight: '800' }}>{savingsRate === null ? '—' : `${savingsRate.toFixed(1)}%`}</Text>
               </View>
             </View>
             {income > 0 && (

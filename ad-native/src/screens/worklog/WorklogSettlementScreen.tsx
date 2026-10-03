@@ -75,7 +75,7 @@ export default function WorklogSettlementScreen({ navigation }: Props) {
 
   const candidates = useMemo(() => sortByDateDesc(allRecords.filter((r) => r.payStatus === 'EXPECTED' || r.payStatus === 'UNPAID')), [dataQ.data]);
   const receivedRecords = useMemo(() => sortByDateDesc(allRecords.filter((r) => r.payStatus === 'RECEIVED')), [dataQ.data]);
-  const receivedTotal = receivedRecords.reduce((sum, r) => sum + r.effectiveAmount, 0);
+  const receivedTotal = receivedRecords.reduce((sum, r) => sum + r.netAmount, 0);
 
   // "월별" 스코프에서만 보기 필터 적용 — "미수령 전체" 스코프는 원래부터 미수령만 다루는 화면이라 필터 없이 candidates 그대로
   const displayRecords =
@@ -115,8 +115,8 @@ export default function WorklogSettlementScreen({ navigation }: Props) {
   }
 
   const selectedRecords = candidates.filter((r) => selectedIds.has(r.id));
-  const selectedTotal = selectedRecords.reduce((sum, r) => sum + r.effectiveAmount, 0);
-  const candidateTotal = candidates.reduce((sum, r) => sum + r.effectiveAmount, 0);
+  const selectedTotal = selectedRecords.reduce((sum, r) => sum + r.netAmount, 0);
+  const candidateTotal = candidates.reduce((sum, r) => sum + r.netAmount, 0);
 
   async function handleConfirm() {
     setSubmitting(true);
@@ -125,7 +125,8 @@ export default function WorklogSettlementScreen({ navigation }: Props) {
       setToast(`${selectedIds.size}건을 ${PAY_STATUS_LABEL[targetStatus]}로 처리했어요`);
       await invalidateWorklog(qc);
     } catch {
-      setToast('일부 처리에 실패했어요');
+      setToast('일부 처리에 실패했어요 — 목록을 새로 불러왔어요');
+      await invalidateWorklog(qc); // 성공한 건은 이미 반영돼 있으니 어떤 건이 남았는지 다시 보여준다
     } finally {
       setConfirmVisible(false);
       setSubmitting(false);
@@ -176,7 +177,7 @@ export default function WorklogSettlementScreen({ navigation }: Props) {
             <Text style={{ color: theme.text, fontSize: 16, fontWeight: '800' }}>{candidates.length}건</Text>
           </View>
           <View style={styles.summaryItem}>
-            <Text style={{ color: theme.textMuted, fontSize: 12 }}>미수령 합계</Text>
+            <Text style={{ color: theme.textMuted, fontSize: 12 }}>미수령 합계 (실수령)</Text>
             <Text style={{ color: theme.danger, fontSize: 16, fontWeight: '800' }}>{krw(candidateTotal)}</Text>
           </View>
         </View>
@@ -187,7 +188,7 @@ export default function WorklogSettlementScreen({ navigation }: Props) {
               <Text style={{ color: theme.text, fontSize: 16, fontWeight: '800' }}>{receivedRecords.length}건</Text>
             </View>
             <View style={styles.summaryItem}>
-              <Text style={{ color: theme.textMuted, fontSize: 12 }}>수령완료 합계</Text>
+              <Text style={{ color: theme.textMuted, fontSize: 12 }}>수령완료 합계 (실수령)</Text>
               <Text style={{ color: theme.brand, fontSize: 16, fontWeight: '800' }}>{krw(receivedTotal)}</Text>
             </View>
           </View>
@@ -224,7 +225,7 @@ export default function WorklogSettlementScreen({ navigation }: Props) {
                     }
                     right={
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                        <Text style={{ color: isCandidate ? theme.text : theme.textMuted, fontSize: 13.5, fontWeight: '700' }}>{krw(r.effectiveAmount)}</Text>
+                        <Text style={{ color: isCandidate ? theme.text : theme.textMuted, fontSize: 13.5, fontWeight: '700' }}>{krw(r.netAmount)}</Text>
                         {isCandidate ? (
                           <View
                             style={[

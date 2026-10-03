@@ -7,6 +7,7 @@ import { vrApi } from '../../api/vr';
 import { buildBuyLadder, buildSellLadder, type LadderRow } from '../../lib/vr-ladder';
 import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
+import QueryError from '../../components/common/QueryError';
 
 function usd(v: number): string {
   return `$${v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -91,6 +92,7 @@ export default function VrLadderScreen() {
       </View>
     );
   }
+  if ((stateQ.isError && !stateQ.data)) return <QueryError onRetry={() => { void stateQ.refetch(); }} />;
 
   if (!state) {
     return (

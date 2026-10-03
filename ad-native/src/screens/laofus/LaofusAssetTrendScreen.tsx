@@ -22,6 +22,7 @@ import {
 } from '../../lib/laofus-trend';
 import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
+import QueryError from '../../components/common/QueryError';
 
 type ThemeT = ReturnType<typeof useTheme>;
 type Mode = 'val' | 'ret';
@@ -107,6 +108,7 @@ export default function LaofusAssetTrendScreen() {
       </View>
     );
   }
+  if ((trendQ.isError && !trendQ.data)) return <QueryError onRetry={() => { void trendQ.refetch(); }} />;
   if (series.length === 0) {
     return (
       <View style={[styles.center, { backgroundColor: theme.bg }]}>

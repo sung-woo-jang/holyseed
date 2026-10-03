@@ -10,6 +10,7 @@ import { SPLITS } from '../../lib/laofus-core';
 import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
 import type { StrategyStackParamList } from '../../navigation/StrategyStack';
+import QueryError from '../../components/common/QueryError';
 
 type Props = NativeStackScreenProps<StrategyStackParamList, 'LaofusCycleDetail'>;
 
@@ -126,6 +127,7 @@ export default function LaofusCycleDetailScreen({ route, navigation }: Props) {
       </View>
     );
   }
+  if ((statusQ.isError && !statusQ.data)) return <QueryError onRetry={() => { void statusQ.refetch(); }} />;
 
   const c = statusQ.data?.cycles.find((x) => x.cycleNo === cycleNo);
   if (!c) {

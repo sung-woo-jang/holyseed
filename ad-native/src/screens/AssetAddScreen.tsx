@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Button from '../components/ui/Button';
@@ -49,6 +49,8 @@ export default function AssetAddScreen({ navigation, route }: Props) {
   const [ownerUserId, setOwnerUserId] = useState<number | null>(null);
   const [amount, setAmount] = useState('');
   const [error, setError] = useState('');
+  // 자산은 만들어졌는데 스냅샷 저장만 실패했을 때, 다시 저장해도 자산이 또 생기지 않게 만든 id를 기억해 둔다
+  const createdAssetId = useRef<number | null>(null);
   const { scrollRef, scrollToInput, onScroll, keyboardHeight } = useKeyboardScrollRegistration();
   const createAsset = useCreateAsset();
   const updateAsset = useUpdateAsset();
@@ -90,14 +92,17 @@ export default function AssetAddScreen({ navigation, route }: Props) {
     setError('');
     const today = todayLocal();
     try {
-      const newAsset = await createAsset.mutateAsync({ name: assetName.trim(), category: category!, currency: 'KRW', isLiability, ownerUserId });
+      if (createdAssetId.current == null) {
+        const newAsset = await createAsset.mutateAsync({ name: assetName.trim(), category: category!, currency: 'KRW', isLiability, ownerUserId });
+        createdAssetId.current = newAsset.id;
+      }
       const valueToSave = skipAmount ? 0 : amtNum;
       if (valueToSave > 0) {
-        await upsertSnapshot.mutateAsync({ assetId: newAsset.id, dto: { date: today, value: valueToSave } });
+        await upsertSnapshot.mutateAsync({ assetId: createdAssetId.current, dto: { date: today, value: valueToSave } });
       }
       popToScreen(navigation, 'AssetsList', { savedMode: 'create', savedAt: Date.now() });
     } catch (e: any) {
-      setError(getErrorMessage(e, '저장에 실패했어요. 다시 시도해 주세요.'));
+      setError(createdAssetId.current != null ? '자산은 만들었지만 금액 저장에 실패했어요. 다시 저장하면 금액만 다시 시도해요.' : getErrorMessage(e, '저장에 실패했어요. 다시 시도해 주세요.'));
     }
   }
 
@@ -189,6 +194,11 @@ export default function AssetAddScreen({ navigation, route }: Props) {
               <Pressable onPress={() => handleSave(true)} disabled={isPending} style={styles.skipBtn}>
                 <Text style={{ color: theme.textMuted, fontSize: 13 }}>건너뛰기 (나중에 입력)</Text>
               </Pressable>
+              {createdAssetId.current == null && (
+                <Pressable onPress={() => setStep(1)} disabled={isPending} style={styles.skipBtn}>
+                  <Text style={{ color: theme.brand, fontSize: 13, fontWeight: '600' }}>‹ 이름·카테고리 다시 고르기</Text>
+                </Pressable>
+              )}
             </>
           )}
           </KeyboardScrollProvider>

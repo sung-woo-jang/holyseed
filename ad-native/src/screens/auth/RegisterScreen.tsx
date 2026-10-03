@@ -30,7 +30,7 @@ export default function RegisterScreen({ navigation }: Props) {
     setError(null);
     try {
       const { data: res } = await api.post('/auth/register', {
-        email,
+        email: email.trim(),
         password,
         name: name || undefined,
       });

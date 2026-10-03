@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Loader from '../../components/ui/Loader';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import SheetModal from '../../components/sheets/SheetModal';
@@ -9,6 +9,7 @@ import AppToast from '../../components/common/AppToast';
 import { vrApi } from '../../api/vr';
 import { useTheme } from '../../lib/theme';
 import { getErrorMessage } from '../../lib/error';
+import QueryError from '../../components/common/QueryError';
 
 function usd(v: number | null | undefined): string {
   if (v === null || v === undefined) return '—';
@@ -37,6 +38,7 @@ export default function VrOverviewScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [toast, setToast] = useState('');
 
+  const qc = useQueryClient();
   const stateQ = useQuery({ queryKey: ['vr-state'], queryFn: vrApi.state, refetchInterval: 30_000 });
   const priceQ = useQuery({ queryKey: ['vr-price'], queryFn: vrApi.price, refetchInterval: 60_000 });
   const cashQ = useQuery({ queryKey: ['vr-cash'], queryFn: vrApi.cashBalance, refetchInterval: 60_000 });
@@ -114,7 +116,7 @@ export default function VrOverviewScreen() {
       await vrApi.rollover({});
       setRolloverConfirm(false);
       setToast('V 갱신이 완료됐어요');
-      stateQ.refetch();
+      void Promise.all(['vr-state', 'vr-cycles', 'vr-fills', 'vr-wealth-history'].map((k) => qc.invalidateQueries({ queryKey: [k] })));
     } catch (e) {
       setToast(getErrorMessage(e, 'V 갱신에 실패했어요'));
       setRolloverConfirm(false);
@@ -139,6 +141,7 @@ export default function VrOverviewScreen() {
       </View>
     );
   }
+  if ((stateQ.isError && !stateQ.data)) return <QueryError onRetry={() => { void stateQ.refetch(); }} />;
 
   const order = state?.settings.cardOrder?.length ? [...state.settings.cardOrder, ...ALL_CARD_IDS.filter((id) => !state.settings.cardOrder.includes(id))] : ALL_CARD_IDS;
   const hidden = new Set(state?.settings.hiddenCards ?? []);

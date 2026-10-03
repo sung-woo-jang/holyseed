@@ -65,7 +65,7 @@ export default function LoginScreen({ navigation, route }: Props) {
     setLogging(true);
     setError(null);
     try {
-      const { data: res } = await api.post('/auth/login', { email, password });
+      const { data: res } = await api.post('/auth/login', { email: email.trim(), password });
       const payload = res.data ?? res;
 
       await saveTokens(payload.accessToken, payload.refreshToken);

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useQuery } from '@tanstack/react-query';
@@ -62,6 +62,9 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
   const [hiddenIconIds, setHiddenIconIdsState] = useState<string[]>([]);
   const [subModal, setSubModal] = useState<{ index: number; value: string; icon: string | null } | null>(null);
   const [saving, setSaving] = useState(false);
+  // 저장 도중 실패해 다시 저장해도 이미 만든 부모/하위 카테고리가 또 생기지 않도록 진행 상태를 기억한다
+  const createdParentId = useRef<number | null>(null);
+  const createdSubKeys = useRef<Set<number>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [toast, setToast] = useState('');
   const { scrollRef, scrollToInput, onScroll, keyboardHeight } = useKeyboardScrollRegistration();
@@ -166,8 +169,11 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
       let parentId = categoryId;
       const costTypeDto = type === 'EXPENSE' ? { defaultCostType: costType } : {};
       if (mode === 'add') {
-        const created = await createCategory.mutateAsync({ type, name: name.trim(), icon, color, ...costTypeDto });
-        parentId = created.id;
+        if (createdParentId.current == null) {
+          const created = await createCategory.mutateAsync({ type, name: name.trim(), icon, color, ...costTypeDto });
+          createdParentId.current = created.id;
+        }
+        parentId = createdParentId.current;
       } else if (!isBuiltin) {
         await updateCategory.mutateAsync({ id: categoryId!, dto: { name: name.trim(), icon, color, ...costTypeDto } });
       } else if (existing?.defaultCostType !== costType) {
@@ -177,7 +183,9 @@ export default function CategoryEditScreen({ navigation, route }: Props) {
 
       for (const s of subs) {
         if (s.isNew) {
+          if (createdSubKeys.current.has(s.id)) continue;
           await createCategory.mutateAsync({ type, name: s.name.trim(), icon: s.icon ?? undefined, color, parentId: parentId! });
+          createdSubKeys.current.add(s.id);
         } else {
           const orig = originalSubs.find((o) => o.id === s.id);
           if (orig && (orig.name !== s.name.trim() || orig.icon !== s.icon)) {

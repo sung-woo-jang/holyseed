@@ -6,13 +6,16 @@ import TossEmoji from './TossEmoji';
 import { useAppModeStore } from '../../stores/appMode.store';
 import { APP_CATALOG } from '../../lib/appCatalog';
 import { useTheme } from '../../lib/theme';
+import { useAuthStore } from '../../stores/auth.store';
 
 /** 더보기 화면 공용 "다른 앱으로 전환" 섹션 — 현재 앱은 목록에서 제외 */
 export default function AppSwitchSection() {
   const theme = useTheme();
   const mode = useAppModeStore((s) => s.mode);
   const switchMode = useAppModeStore((s) => s.switchMode);
-  const others = APP_CATALOG.filter((app) => app.mode !== mode);
+  const isOwner = useAuthStore((s) => s.user?.isOwner !== false);
+  // 라오어·근무일지는 소유자 계정 전용
+  const others = APP_CATALOG.filter((app) => app.mode !== mode && (isOwner || app.mode === 'assetDiary'));
 
   if (others.length === 0) return null;
 

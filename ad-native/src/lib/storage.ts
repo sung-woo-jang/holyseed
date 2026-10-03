@@ -38,3 +38,24 @@ export async function saveTokens(accessToken: string, refreshToken: string) {
 export async function clearTokens() {
   await Promise.all([deleteItem(KEY_ACCESS), deleteItem(KEY_REFRESH)]);
 }
+
+const KEY_HOUSEHOLD = 'ad_currentHouseholdId';
+
+/** 가구가 여러 개일 때 마지막으로 고른 가구 — 앱 재시작·위젯이 같은 가구를 보게 */
+export async function getStoredHouseholdId(): Promise<number | null> {
+  try {
+    const raw = await getItem(KEY_HOUSEHOLD);
+    const n = Number(raw);
+    return raw && Number.isFinite(n) ? n : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function setStoredHouseholdId(id: number): Promise<void> {
+  try {
+    await setItem(KEY_HOUSEHOLD, String(id));
+  } catch {
+    // 저장 실패 시 첫 번째 가구로 열림
+  }
+}

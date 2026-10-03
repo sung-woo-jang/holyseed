@@ -251,7 +251,9 @@ export default function WorklogHomeScreen({ navigation, route }: Props) {
       setSelectMode(false);
       await invalidateWorklog(qc);
     } catch {
-      setToast('일부 삭제에 실패했어요');
+      setToast('일부 삭제에 실패했어요 — 목록을 새로 불러왔어요');
+      setSelectedIds(new Set());
+      await invalidateWorklog(qc);
     } finally {
       setBulkDeleteConfirm(false);
       setBulkDeleting(false);
@@ -287,7 +289,12 @@ export default function WorklogHomeScreen({ navigation, route }: Props) {
               </Text>
             </View>
           }
-          right={<Text style={{ color: theme.text, fontSize: 14, fontWeight: '700' }}>{krw(r.effectiveAmount)}</Text>}
+          right={
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={{ color: theme.text, fontSize: 14, fontWeight: '700' }}>{krw(r.netAmount)}</Text>
+              {r.netAmount !== r.effectiveAmount && <Text style={{ color: theme.textMuted, fontSize: 10.5, marginTop: 1 }}>세전 {krw(r.effectiveAmount)}</Text>}
+            </View>
+          }
           onPress={() => openEdit(r)}
           verticalPadding="small"
         />

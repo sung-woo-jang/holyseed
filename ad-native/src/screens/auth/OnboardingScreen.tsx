@@ -5,6 +5,8 @@ import { useAuthStore } from '../../stores/auth.store';
 import { useTheme } from '../../lib/theme';
 import Loader from '../../components/ui/Loader';
 import JoinSheet from '../../components/sheets/JoinSheet';
+import { getErrorMessage } from '../../lib/error';
+import { setStoredHouseholdId } from '../../lib/storage';
 
 export default function OnboardingScreen() {
   const theme = useTheme();
@@ -12,14 +14,19 @@ export default function OnboardingScreen() {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
+  const [error, setError] = useState('');
 
   async function createHousehold() {
-    if (!name.trim()) return;
+    if (!name.trim() || loading) return;
     setLoading(true);
+    setError('');
     try {
       const { data } = await api.post('/households', { name: name.trim(), icon: '🏠' });
       const h = data.data ?? data;
       setHouseholds([{ id: h.id, name: h.name, icon: h.icon, role: 'OWNER' }]);
+      void setStoredHouseholdId(h.id);
+    } catch (e) {
+      setError(getErrorMessage(e, '가구를 만들지 못했어요. 잠시 후 다시 시도해 주세요.'));
     } finally {
       setLoading(false);
     }
@@ -42,6 +49,7 @@ export default function OnboardingScreen() {
           value={name}
           onChangeText={setName}
         />
+        {error ? <Text style={{ color: theme.danger, fontSize: 12.5, marginBottom: 10 }}>{error}</Text> : null}
         <Pressable
           style={[styles.submitBtn, { backgroundColor: theme.brand, opacity: !name.trim() || loading ? 0.5 : 1 }]}
           onPress={createHousehold}

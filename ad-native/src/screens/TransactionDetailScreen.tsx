@@ -17,6 +17,7 @@ import { qk } from '../queries/keys';
 import { txApi } from '../api';
 import { resolveCategoryVisual } from '../lib/category-meta';
 import { krw } from '../lib/format';
+import { getErrorMessage } from '../lib/error';
 import { TE } from '../lib/toss-emoji';
 import type { Transaction } from '../types/api';
 
@@ -80,8 +81,13 @@ export default function TransactionDetailScreen({ navigation, route }: Props) {
 
   async function handleDelete() {
     if (!tx) return;
-    await deleteTx.mutateAsync(Number(tx.id));
-    navigation.goBack();
+    try {
+      await deleteTx.mutateAsync(Number(tx.id));
+      navigation.goBack();
+    } catch (e) {
+      setConfirmDelete(false);
+      setToast(getErrorMessage(e, '삭제하지 못했어요'));
+    }
   }
 
   if (txQ.isLoading) {

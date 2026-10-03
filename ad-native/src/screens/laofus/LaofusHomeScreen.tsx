@@ -11,6 +11,7 @@ import { freshnessTag, signedPct } from '../../lib/live-format';
 import { useKeyboardScrollRegistration, KeyboardScrollProvider } from '../../lib/keyboard-scroll';
 import { getLaofusDismissedErrorId, setLaofusDismissedErrorId } from '../../lib/prefs';
 import type { StrategyStackParamList } from '../../navigation/StrategyStack';
+import QueryError from '../../components/common/QueryError';
 
 type Props = NativeStackScreenProps<StrategyStackParamList, 'LaofusHome'>;
 
@@ -130,6 +131,7 @@ export default function LaofusHomeScreen({ navigation }: Props) {
       </View>
     );
   }
+  if ((statusQ.isError && !statusQ.data)) return <QueryError onRetry={() => { void statusQ.refetch(); }} />;
 
   const ind = s ? computeIndicators(s) : null;
   const pnl = s && price ? (price.price - s.avgPrice) * s.quantity : null;

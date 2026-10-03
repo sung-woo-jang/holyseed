@@ -116,7 +116,11 @@ export default function WorklogCategoryScreen() {
   }
 
   async function handleReorder(data: WorklogCategoryOption[]) {
-    await worklogApi.reorderCategoryOptions(data.map((c) => c.id));
+    try {
+      await worklogApi.reorderCategoryOptions(data.map((c) => c.id));
+    } catch (e) {
+      setError(getErrorMessage(e, '순서를 바꾸지 못했어요'));
+    }
     refetchAll();
   }
 
@@ -165,7 +169,11 @@ export default function WorklogCategoryScreen() {
   }
 
   async function handleDeleteJob(id: number) {
-    await worklogApi.deleteJobOption(id);
+    try {
+      await worklogApi.deleteJobOption(id);
+    } catch (e) {
+      setError(getErrorMessage(e, '업무를 삭제하지 못했어요'));
+    }
     jobsQ.refetch();
   }
 
@@ -202,7 +210,11 @@ export default function WorklogCategoryScreen() {
   }
 
   async function handleDeleteTitle(id: number) {
-    await worklogApi.deleteTitleOption(id);
+    try {
+      await worklogApi.deleteTitleOption(id);
+    } catch (e) {
+      setError(getErrorMessage(e, '현장명을 삭제하지 못했어요'));
+    }
     titleOptionsQ.refetch();
   }
 

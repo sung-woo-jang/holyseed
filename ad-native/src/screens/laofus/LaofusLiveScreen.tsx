@@ -11,6 +11,7 @@ import { orderSideLabel } from '../../lib/laofus-order-label';
 import { freshnessTag, krw, sessionHint, signedPct, usd } from '../../lib/live-format';
 import type { LaofusHomeStackParamList } from '../../navigation/LaofusHomeStack';
 import type { LaofusTabParamList } from '../../navigation/LaofusRootTabNavigator';
+import QueryError from '../../components/common/QueryError';
 
 type Props = NativeStackScreenProps<LaofusHomeStackParamList, 'LaofusLive'>;
 
@@ -161,6 +162,7 @@ export default function LaofusLiveScreen({ navigation }: Props) {
       </View>
     );
   }
+  if ((liveQ.isError && !liveQ.data)) return <QueryError onRetry={() => { void liveQ.refetch(); }} />;
 
   if (!live) {
     return (

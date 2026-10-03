@@ -7,6 +7,7 @@ import EmptyState from '../../components/common/EmptyState';
 import { laofusRestApi } from '../../api/laofus';
 import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
+import QueryError from '../../components/common/QueryError';
 
 const LEVEL_OPTIONS = ['전체', 'info', 'warn', 'error'];
 const LEVEL_MAP: Record<string, string> = { 전체: 'all', info: 'info', warn: 'warn', error: 'error' };
@@ -43,7 +44,9 @@ export default function LaofusSystemScreen() {
         <Segmented options={LEVEL_OPTIONS} value={level} onChange={changeLevel} small />
       </View>
 
-      {eventsQ.isLoading ? (
+      {eventsQ.isError && !eventsQ.data ? (
+        <QueryError onRetry={() => void eventsQ.refetch()} />
+      ) : eventsQ.isLoading ? (
         <View style={styles.center}>
           <Loader size="large" />
         </View>

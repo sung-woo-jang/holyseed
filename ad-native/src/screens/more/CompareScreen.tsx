@@ -30,6 +30,7 @@ export default function CompareScreen() {
   const { yearlyContrib: apiYearlyContrib, netWorthByYear } = useMemo(() => adaptYearlyComparison(compareQ.data), [compareQ.data]);
   const years = Object.keys(netWorthByYear).map(Number).sort((a, b) => a - b);
   const [pickedYear, setPickedYear] = useState<number | null>(null);
+  const [wfWidth, setWfWidth] = useState(0);
   const currentYear = new Date().getFullYear();
   const selectedYear = pickedYear != null && years.includes(pickedYear) ? pickedYear : (years[years.length - 1] ?? currentYear);
   const prevYear = selectedYear - 1;
@@ -88,7 +89,7 @@ export default function CompareScreen() {
           {change >= 0 ? '+' : ''}
           {krw(change)} {change >= 0 ? '늘었어요' : '줄었어요'}
         </Text>
-        <View style={[styles.pctChip, { backgroundColor: change >= 0 ? theme.brandSoft : '#FEE2E2' }]}>
+        <View style={[styles.pctChip, { backgroundColor: change >= 0 ? theme.brandSoft : (theme.dark ? '#3A1A1E' : '#FEE2E2') }]}>
           <Text style={{ color: change >= 0 ? theme.brand : theme.danger, fontSize: 12, fontWeight: '700' }}>{summarizeChange(prevNetWorth, currentNetWorth).rateText ?? '—'}</Text>
         </View>
       </View>
@@ -112,7 +113,9 @@ export default function CompareScreen() {
 
       <View style={[styles.section, { backgroundColor: theme.card }]}>
         <Text style={[styles.sectionTitle, { color: theme.text }]}>자산군별 증감 워터폴</Text>
-        <WaterfallChart data={wfData} width={327} height={220} dark={theme.dark} />
+        <View onLayout={(e) => setWfWidth(Math.floor(e.nativeEvent.layout.width))}>
+          {wfWidth > 0 && <WaterfallChart data={wfData} width={wfWidth} height={220} dark={theme.dark} />}
+        </View>
         <ChartLegend
           items={[
             { kind: 'bar', color: '#3182F6', label: '시작·끝 순자산' },

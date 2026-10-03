@@ -174,6 +174,8 @@ export default function BookScreen({ navigation, route }: Props) {
 
   const monthIncome = monthTx.filter((t) => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
   const monthExpense = monthTx.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
+  // 이번 달에 아직 오지 않은 예정 지출(미리 생성된 정기 항목)이 합계에 섞여 있으면 따로 알려준다
+  const upcomingExpense = monthTx.filter((t) => t.type === 'EXPENSE' && t.date > todayLocal()).reduce((s, t) => s + t.amount, 0);
 
   const hasActiveFilter = typeFilter !== 'all' || catFilter.size > 0 || costFilter.size > 0;
   const filteredIncome = filteredTx.filter((t) => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
@@ -208,19 +210,19 @@ export default function BookScreen({ navigation, route }: Props) {
   }, [filteredTx]);
 
   const calLogs: CalLog[] = useMemo(
-    () => monthTx.map((t) => ({ id: `t${t.id}`, date: t.date, colorLabel: resolveCategoryVisual(t.categoryId, t.category, data.categories).color, settled: true })),
-    [monthTx, data.categories],
+    () => filteredTx.map((t) => ({ id: `t${t.id}`, date: t.date, colorLabel: resolveCategoryVisual(t.categoryId, t.category, data.categories).color, settled: true })),
+    [filteredTx, data.categories],
   );
 
   const dayItems: DayItem[] = useMemo(() => {
     if (!selectedDate) return [];
-    return monthTx
+    return filteredTx
       .filter((t) => t.date === selectedDate)
       .map((t) => {
         const from = data.assets.find((a) => a.id === t.from);
         return { kind: 'tx' as const, id: t.id, title: t.title, amount: t.amount, type: t.type === 'INCOME' ? ('INCOME' as const) : ('EXPENSE' as const), category: t.category, categoryId: t.categoryId, sub: from ? from.name : undefined };
       });
-  }, [selectedDate, monthTx, data.assets]);
+  }, [selectedDate, filteredTx, data.assets]);
 
   const incomeRec = recurring.filter((r) => r.type === 'INCOME');
   const expenseRec = recurring.filter((r) => r.type !== 'INCOME');
@@ -247,7 +249,9 @@ export default function BookScreen({ navigation, route }: Props) {
 
   // 날짜를 안 골랐으면: 이번 달을 보는 중엔 오늘, 다른 달을 보는 중엔 그 달 1일 (지난달을 보다가 추가해도 오늘로 들어가지 않게)
   function openAddForDay() {
-    if (!selectedDate) setSelectedDate(todayLocal().startsWith(month) ? todayLocal() : `${month}-01`);
+    // 달력에서 고른 날짜가 있어도 목록 보기에서는 그 날짜가 안 보이므로 쓰지 않는다(숨은 상태로 날짜가 정해지는 것 방지)
+    if (viewMode === 'list') setSelectedDate(todayLocal().startsWith(month) ? todayLocal() : `${month}-01`);
+    else if (!selectedDate) setSelectedDate(todayLocal().startsWith(month) ? todayLocal() : `${month}-01`);
     setAddPicker(true);
   }
   function handleAddPick(value: string) {
@@ -391,7 +395,7 @@ export default function BookScreen({ navigation, route }: Props) {
               </Text>
               {!isViewer ? (
                 <>
-                  <Switch checked={r.active} onCheckedChange={() => toggleRecurring.mutate(Number(r.id))} disabled={toggleRecurring.isPending} />
+                  <Switch checked={r.active} onCheckedChange={() => toggleRecurring.mutate(Number(r.id), { onError: () => setToast('변경하지 못했어요. 다시 시도해 주세요') })} disabled={toggleRecurring.isPending} />
                   <Pressable hitSlop={8} onPress={() => setActionRec(r)}>
                     <Text style={{ color: theme.textMuted, fontSize: 18, fontWeight: '700' }}>⋯</Text>
                   </Pressable>
@@ -465,6 +469,7 @@ export default function BookScreen({ navigation, route }: Props) {
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={{ color: theme.textMuted, fontSize: 12 }}>지출</Text>
                 <Text style={{ color: theme.danger, fontSize: 16, fontWeight: '800' }}>-{krw(monthExpense)}</Text>
+                {upcomingExpense > 0 && <Text style={{ color: theme.textMuted, fontSize: 10.5, marginTop: 1 }}>예정 {krw(upcomingExpense)} 포함</Text>}
               </View>
             </View>
           )}

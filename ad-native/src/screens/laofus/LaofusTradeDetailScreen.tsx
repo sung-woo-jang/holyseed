@@ -27,6 +27,7 @@ import {
 import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
 import type { StrategyStackParamList } from '../../navigation/StrategyStack';
+import QueryError from '../../components/common/QueryError';
 
 type Props = NativeStackScreenProps<StrategyStackParamList, 'LaofusTradeDetail'>;
 
@@ -117,6 +118,7 @@ export default function LaofusTradeDetailScreen({ route, navigation }: Props) {
       </View>
     );
   }
+  if ((statusQ.isError && !statusQ.data)) return <QueryError onRetry={() => { void statusQ.refetch(); }} />;
   if (!trade || !view) {
     return (
       <View style={[styles.center, { backgroundColor: theme.bg }]}>

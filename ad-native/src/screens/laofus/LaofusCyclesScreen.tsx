@@ -9,6 +9,7 @@ import { SPLITS } from '../../lib/laofus-core';
 import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
 import type { StrategyStackParamList } from '../../navigation/StrategyStack';
+import QueryError from '../../components/common/QueryError';
 
 type Props = NativeStackScreenProps<StrategyStackParamList, 'LaofusCycles'>;
 type StatusFilter = '전체' | '진행중' | '종료';
@@ -36,6 +37,7 @@ export default function LaofusCyclesScreen({ navigation }: Props) {
       </View>
     );
   }
+  if ((statusQ.isError && !statusQ.data)) return <QueryError onRetry={() => { void statusQ.refetch(); }} />;
 
   const cycles = [...(statusQ.data?.cycles ?? [])]
     .filter((c) => {

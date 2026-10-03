@@ -52,6 +52,8 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
   const [dayOfWeek, setDayOfWeek] = useState(1);
   const [hasEnd, setHasEnd] = useState(false);
   const [endMonths, setEndMonths] = useState(12);
+  // 수정 중 종료일을 건드리지 않았으면 서버에 있는 값을 그대로 둔다(저장할 때 '오늘+N개월'로 재계산해 바꿔버리지 않게)
+  const [endDirty, setEndDirty] = useState(false);
   const [catPicker, setCatPicker] = useState(false);
   const [expandedCatId, setExpandedCatId] = useState<number | null>(null);
   const [dayPicker, setDayPicker] = useState(false);
@@ -66,12 +68,13 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
     setType(editRec.type === 'INCOME' ? 'INCOME' : 'EXPENSE');
     setAmount(formatNum(String(editRec.amount)));
     setName(editRec.title);
-    const c = data.categories.find((x) => x.name === editRec.category);
+    const c = (editRec.categoryId != null ? data.categories.find((x) => x.id === editRec.categoryId) : undefined) ?? data.categories.find((x) => x.name === editRec.category);
     setCategory(c ? { id: c.id, name: c.name } : { id: 0, name: editRec.category });
     setFrequency(editRec.frequency === 'WEEKLY' ? 'WEEKLY' : 'MONTHLY');
     setDayOfMonth(editRec.dayOfMonth ?? 25);
     setDayOfWeek(editRec.dayOfWeek ?? 1);
     setHasEnd(!!editRec.endDate);
+    setEndDirty(false);
     setError('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, editRec]);
@@ -101,7 +104,7 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
     const d = new Date(today.getFullYear(), today.getMonth() + endMonths, baseDay);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
-  const endDateLabel = `${endMonths}개월 후 (~${computeEndDate().slice(0, 7)})`;
+  const endDateLabel = isEdit && editRec?.endDate && !endDirty ? `~${editRec.endDate.slice(0, 7)} (그대로)` : `${endMonths}개월 후 (~${computeEndDate().slice(0, 7)})`;
 
   function reset() {
     setType('EXPENSE');
@@ -113,6 +116,7 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
     setDayOfWeek(1);
     setHasEnd(false);
     setEndMonths(12);
+    setEndDirty(false);
     setError('');
   }
 
@@ -131,7 +135,8 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
             frequency,
             ...scheduleFields,
             ...(category && category.id > 0 ? { categoryId: category.id } : {}),
-            ...(hasEnd ? { endDate: computeEndDate() } : {}),
+            // 종료일: 끄면 null(해제), 건드렸으면 새 값, 그대로면 보내지 않음
+            ...(!hasEnd ? (editRec.endDate ? { endDate: null as unknown as string } : {}) : endDirty || !editRec.endDate ? { endDate: computeEndDate() } : {}),
           },
         });
         onClose();
@@ -282,6 +287,7 @@ export default function AddRecurringSheet({ visible, onClose, editRec, onSaved }
                 right={endMonths === mo ? Icon.check(theme.brand, 16) : undefined}
                 onPress={() => {
                   setEndMonths(mo);
+                  setEndDirty(true);
                   setEndPicker(false);
                 }}
                 verticalPadding="small"

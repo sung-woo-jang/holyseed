@@ -8,6 +8,10 @@ import Border from '../components/ui/Border';
 import TossEmoji from '../components/common/TossEmoji';
 import { useOtaUpdate } from '../lib/useOtaUpdate';
 import { useTheme } from '../lib/theme';
+import { useState } from 'react';
+import ConfirmDialog from '../components/common/ConfirmDialog';
+import { performLogout } from '../lib/logout';
+import { APP_VERSION_LABEL } from '../lib/app-version';
 
 interface AppMoreMenuItem {
   emojiCode: string;
@@ -28,6 +32,7 @@ interface AppMoreScreenProps {
 export default function AppMoreScreen({ appName, menuItems }: AppMoreScreenProps) {
   const theme = useTheme();
   const { updateLabel, checking, checkForUpdate } = useOtaUpdate();
+  const [logoutConfirm, setLogoutConfirm] = useState(false);
 
   return (
     <SafeAreaView edges={['top']} style={[styles.root, { backgroundColor: theme.bg }]}>
@@ -73,8 +78,16 @@ export default function AppMoreScreen({ appName, menuItems }: AppMoreScreenProps
           </View>
         </Section>
 
-        <Text style={{ textAlign: 'center', fontSize: 12, marginTop: 22, color: theme.textMuted }}>ad-native v1.0</Text>
+        <View style={styles.updateBody}>
+          <Button display="full" size="big" type="danger" style="weak" onPress={() => setLogoutConfirm(true)}>
+            로그아웃
+          </Button>
+        </View>
+
+        <Text style={{ textAlign: 'center', fontSize: 12, marginTop: 6, color: theme.textMuted }}>{APP_VERSION_LABEL}</Text>
       </ScrollView>
+
+      <ConfirmDialog visible={logoutConfirm} title="로그아웃" description="로그아웃 하시겠어요?" confirmText="로그아웃" danger onConfirm={() => void performLogout()} onClose={() => setLogoutConfirm(false)} />
     </SafeAreaView>
   );
 }

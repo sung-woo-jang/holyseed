@@ -26,6 +26,9 @@ import { snapshotsApi } from '../api';
 import { qk } from '../queries/keys';
 import { useUpdateAsset, useDeleteAsset } from '../queries/mutations';
 import { useAuthStore } from '../stores/auth.store';
+import CategoryIcon from '../components/common/CategoryIcon';
+import { resolveCategoryVisual } from '../lib/category-meta';
+import { getErrorMessage } from '../lib/error';
 import type { AssetsStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<AssetsStackParamList, 'AssetDetail'>;
@@ -35,7 +38,8 @@ const chartWidth = Dimensions.get('window').width - 40;
 export default function AssetDetailScreen({ navigation, route }: Props) {
   const theme = useTheme();
   const data = useHouseholdData();
-  const isViewer = useAuthStore((s) => s.currentHousehold?.role) === 'VIEWER';
+  const role = useAuthStore((s) => s.currentHousehold?.role);
+  const myId = useAuthStore((s) => (s.user ? Number(s.user.id) : null));
   const [menuOpen, setMenuOpen] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
@@ -50,6 +54,8 @@ export default function AssetDetailScreen({ navigation, route }: Props) {
 
   const assetId = route.params.id;
   const asset = data.assets.find((a) => String(a.id) === assetId);
+  // 편집자라도 다른 멤버 개인 자산은 서버가 거부한다(공동·본인 소유만 수정 가능) — 버튼을 아예 숨긴다
+  const isViewer = role === 'VIEWER' || (!!asset && asset.ownerUserId != null && asset.ownerUserId !== myId);
 
   const snapshotsQ = useQuery({
     queryKey: qk.assetSnapshots(Number(assetId)),
@@ -103,15 +109,25 @@ export default function AssetDetailScreen({ navigation, route }: Props) {
 
   async function handleRename() {
     if (!asset || !nameInput.trim()) return;
-    await updateAsset.mutateAsync({ id: Number(asset.id), dto: { name: nameInput.trim() } });
-    setEditingName(false);
-    setNameInput('');
+    try {
+      await updateAsset.mutateAsync({ id: Number(asset.id), dto: { name: nameInput.trim() } });
+      setEditingName(false);
+      setNameInput('');
+      setToast('자산명을 수정했어요');
+    } catch (e) {
+      setToast(getErrorMessage(e, '이름을 바꾸지 못했어요'));
+    }
   }
 
   async function handleDelete() {
     if (!asset) return;
-    await deleteAsset.mutateAsync(Number(asset.id));
-    navigation.goBack();
+    try {
+      await deleteAsset.mutateAsync(Number(asset.id));
+      navigation.goBack();
+    } catch (e) {
+      setConfirmDelete(false);
+      setToast(getErrorMessage(e, '삭제하지 못했어요'));
+    }
   }
 
   return (
@@ -146,7 +162,7 @@ export default function AssetDetailScreen({ navigation, route }: Props) {
           </View>
           <Text style={[styles.valueText, { color: asset.isLiability ? theme.danger : theme.text }]}>{krw(asset.value)}</Text>
           {asset.delta != null && (
-            <View style={[styles.deltaChip, { backgroundColor: asset.delta >= 0 ? theme.brandSoft : '#FEE2E2' }]}>
+            <View style={[styles.deltaChip, { backgroundColor: asset.delta >= 0 ? theme.brandSoft : (theme.dark ? '#3A1A1E' : '#FEE2E2') }]}>
               {Icon.arrowUp(asset.delta >= 0 ? theme.brand : theme.danger, 12)}
               <Text style={{ color: asset.delta >= 0 ? theme.brand : theme.danger, fontSize: 12, fontWeight: '700', marginLeft: 4 }}>
                 {krwShort(Math.abs(asset.delta))} ({pct(asset.deltaPct ?? 0)})
@@ -210,7 +226,7 @@ export default function AssetDetailScreen({ navigation, route }: Props) {
                   <ListRow
                     left={
                       <View style={[styles.txIcon, { backgroundColor: theme.bg }]}>
-                        <Text style={{ fontSize: 16 }}>{tx.category.slice(0, 1)}</Text>
+                        <CategoryIcon icon={resolveCategoryVisual(tx.categoryId, tx.category, data.categories).icon} size={18} />
                       </View>
                     }
                     contents={
@@ -238,7 +254,7 @@ export default function AssetDetailScreen({ navigation, route }: Props) {
       </KeyboardAvoidingView>
 
       <SnapshotSheet visible={snapshotOpen} focusAssetId={asset.id} onClose={() => setSnapshotOpen(false)} onSaved={() => setToast('스냅샷을 저장했어요')} />
-      <EditSnapshotSheet visible={!!editSnap} assetId={Number(asset.id)} snapshot={editSnap} onClose={() => setEditSnap(null)} onDone={setToast} />
+      <EditSnapshotSheet visible={!!editSnap} assetId={Number(asset.id)} snapshot={editSnap} existingDates={snapshots.map((x) => x.date)} onClose={() => setEditSnap(null)} onDone={setToast} />
 
       <ActionSheet
         visible={menuOpen}

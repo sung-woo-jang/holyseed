@@ -8,6 +8,7 @@ import Button from '../components/ui/Button';
 import ListRow from '../components/ui/ListRow';
 import TextButton from '../components/ui/TextButton';
 import { useHouseholdData } from '../queries/useHouseholdData';
+import { useAuthStore } from '../stores/auth.store';
 import { useTheme } from '../lib/theme';
 import { krw, krwShort, pct } from '../lib/format';
 import { TE } from '../lib/toss-emoji';
@@ -39,11 +40,13 @@ type Props = BottomTabScreenProps<MainTabParamList, 'Home'>;
 export default function HomeScreen({ navigation }: Props) {
   const theme = useTheme();
   const data = useHouseholdData();
+  const currentHousehold = useAuthStore((s) => s.currentHousehold);
   const [chartRange, setChartRange] = useState('1년');
   const [periodLabel, setPeriodLabel] = useState(PERIOD_LABELS.d30);
   const [snapshotVisible, setSnapshotVisible] = useState(false);
   const [staleSheetVisible, setStaleSheetVisible] = useState(false);
   const [toast, setToast] = useState('');
+  const [chartWidth, setChartWidth] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
 
   async function onRefresh() {
@@ -144,7 +147,7 @@ export default function HomeScreen({ navigation }: Props) {
         {/* Net worth hero */}
         <View style={styles.heroBlock}>
           <View style={styles.periodRow}>
-            <Text style={[styles.heroLabel, { color: theme.textMuted }]}>우리집 순자산</Text>
+            <Text style={[styles.heroLabel, { color: theme.textMuted }]}>{currentHousehold?.name ?? '우리집'} 순자산</Text>
             <Text style={[styles.periodText, { color: theme.textMuted }]}>{data.periods?.asOf ?? nw.snapshotDate} 기준</Text>
           </View>
           <Text style={[styles.heroValue, { color: theme.text }]}>{krw(nw.current)}</Text>
@@ -265,7 +268,9 @@ export default function HomeScreen({ navigation }: Props) {
                 {krwShort(chartChange.change)}원{chartChange.rateText ? ` (${chartChange.rateText})` : ''}
               </Text>
             </Text>
-            <LineChart data={sliced} width={295} height={180} color={theme.brand} dark={theme.dark} />
+            <View onLayout={(e) => setChartWidth(Math.floor(e.nativeEvent.layout.width))}>
+              {chartWidth > 0 && <LineChart data={sliced} width={chartWidth} height={180} color={theme.brand} dark={theme.dark} />}
+            </View>
             <Text style={[styles.chartHint, { color: theme.textMuted }]}>그래프를 눌러서 그 시점의 금액을 볼 수 있어요</Text>
           </View>
         </View>

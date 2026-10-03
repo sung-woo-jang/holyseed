@@ -10,10 +10,13 @@ import ListRow from '../../components/ui/ListRow';
 import Section from '../../components/common/Section';
 import AppSwitchSection from '../../components/common/AppSwitchSection';
 import { useHouseholdData } from '../../queries/useHouseholdData';
-import { clearTokens } from '../../lib/storage';
+import { performLogout } from '../../lib/logout';
+import { APP_VERSION_LABEL } from '../../lib/app-version';
 import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
 import { useAuthStore } from '../../stores/auth.store';
+import { selectHousehold } from '../../lib/auth-bootstrap';
+import { Icon } from '../../components/common/Icon';
 import type { MoreStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<MoreStackParamList, 'MoreHome'>;
@@ -22,12 +25,12 @@ export default function MoreHomeScreen({ navigation }: Props) {
   const theme = useTheme();
   const data = useHouseholdData();
   const role = useAuthStore((s) => s.currentHousehold?.role);
-  const logout = useAuthStore((s) => s.logout);
+  const currentHousehold = useAuthStore((s) => s.currentHousehold);
+  const households = useAuthStore((s) => s.households);
   const [logoutConfirm, setLogoutConfirm] = useState(false);
 
   async function handleLogout() {
-    await clearTokens();
-    logout();
+    await performLogout();
   }
 
   const owner = data.members.find((m) => m.role === 'OWNER');
@@ -46,7 +49,7 @@ export default function MoreHomeScreen({ navigation }: Props) {
         <View style={styles.headerWrap}>
           <View style={[styles.headerCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View>
-              <Text style={[styles.headerTitle, { color: theme.text }]}>우리집</Text>
+              <Text style={[styles.headerTitle, { color: theme.text }]}>{currentHousehold?.name ?? '우리집'}</Text>
               <Text style={[styles.headerSub, { color: theme.textMuted }]}>{memberCount}명 · {owner?.name ?? '-'} 님이 소유</Text>
             </View>
             <View style={[styles.bannerIcon, { backgroundColor: theme.brandSoft }]}>
@@ -59,6 +62,22 @@ export default function MoreHomeScreen({ navigation }: Props) {
           <View style={[styles.roleNotice, { backgroundColor: theme.brandSoft }]}>
             <Text style={{ color: theme.brand, fontSize: 13, fontWeight: '600' }}>{role === 'EDITOR' ? '편집자' : '조회자'} 권한으로 접속 중이에요</Text>
           </View>
+        )}
+
+        {households.length > 1 && (
+          <Section label="가구 전환">
+            {households.map((h, idx) => (
+              <View key={h.id}>
+                <ListRow
+                  contents={<Text style={{ color: theme.text, fontSize: 14.5, fontWeight: '600' }}>{h.name}</Text>}
+                  right={currentHousehold?.id === h.id ? Icon.check(theme.brand, 16) : undefined}
+                  onPress={() => void selectHousehold(h.id)}
+                  verticalPadding="small"
+                />
+                {idx < households.length - 1 && <Border type="full" />}
+              </View>
+            ))}
+          </Section>
         )}
 
         <Section label="메뉴">
@@ -91,7 +110,7 @@ export default function MoreHomeScreen({ navigation }: Props) {
           <Button display="full" size="big" type="danger" style="weak" onPress={() => setLogoutConfirm(true)}>
             로그아웃
           </Button>
-          <Text style={{ color: theme.textMuted, fontSize: 12, textAlign: 'center', marginTop: 12 }}>자산일기 v1.0</Text>
+          <Text style={{ color: theme.textMuted, fontSize: 12, textAlign: 'center', marginTop: 12 }}>{APP_VERSION_LABEL}</Text>
         </View>
       </ScrollView>
 

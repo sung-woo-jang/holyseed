@@ -2,7 +2,7 @@ import axios, { type AxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { BASE_URL } from '../lib/api';
 import { LAOFUS_BASE_URL } from '../lib/laofus-api';
-import { getTokens, saveTokens } from '../lib/storage';
+import { getStoredHouseholdId, getTokens, saveTokens } from '../lib/storage';
 import { daysBetween, lastDayOfPrevMonth, shiftMonth, todayLocal } from '../lib/date';
 import { getAssetCategoryMeta, resolveCategoryVisual, resolveRootCategoryId } from '../lib/category-meta';
 import { levelsFor, splitsAt } from '../lib/laofus-trade-context';
@@ -28,10 +28,10 @@ async function refreshTokens(): Promise<string | null> {
   return payload.accessToken;
 }
 
-async function adRequest<T>(config: AxiosRequestConfig): Promise<T> {
+async function adRequest<T>(config: AxiosRequestConfig, baseURL: string = BASE_URL): Promise<T> {
   const { accessToken } = await getTokens();
   if (!accessToken) throw new Error('NO_AUTH');
-  const call = (token: string) => http.request({ ...config, baseURL: BASE_URL, headers: { ...config.headers, Authorization: `Bearer ${token}` } });
+  const call = (token: string) => http.request({ ...config, baseURL, headers: { ...config.headers, Authorization: `Bearer ${token}` } });
   try {
     return unwrap<T>((await call(accessToken)).data);
   } catch (e: any) {
@@ -42,9 +42,15 @@ async function adRequest<T>(config: AxiosRequestConfig): Promise<T> {
   }
 }
 
+/** 라오어 조회도 소유자 로그인 토큰이 필요하다 — 토큰이 없으면 NO_AUTH("앱에서 로그인해 주세요") */
 async function laofusGet<T>(path: string): Promise<T> {
-  const res = await http.get(path, { baseURL: LAOFUS_BASE_URL });
-  return unwrap<T>(res.data);
+  return adRequest<T>({ method: 'get', url: path }, LAOFUS_BASE_URL);
+}
+
+/** 앱에서 마지막으로 고른 가구(없으면 첫 번째) */
+async function pickHouseholdId(households: { id: number }[]): Promise<number | undefined> {
+  const stored = await getStoredHouseholdId();
+  return households.find((h) => h.id === stored)?.id ?? households[0]?.id;
 }
 
 // ─── 공통 ────────────────────────────────────────────────────────────────────
@@ -93,7 +99,7 @@ export interface AssetWidgetData {
 
 export async function fetchAssetData(offset = 0): Promise<AssetWidgetData> {
   const households = await adRequest<{ id: number }[]>({ method: 'get', url: '/households' });
-  const hid = households[0]?.id;
+  const hid = await pickHouseholdId(households);
   if (hid == null) throw new Error('NO_HOUSEHOLD');
 
   const today = todayLocal();
@@ -223,7 +229,7 @@ export interface LedgerWidgetData {
 
 export async function fetchLedgerData(offset = 0): Promise<LedgerWidgetData> {
   const households = await adRequest<{ id: number }[]>({ method: 'get', url: '/households' });
-  const hid = households[0]?.id;
+  const hid = await pickHouseholdId(households);
   if (hid == null) throw new Error('NO_HOUSEHOLD');
 
   const today = todayLocal();

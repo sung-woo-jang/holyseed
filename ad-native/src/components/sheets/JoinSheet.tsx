@@ -11,6 +11,7 @@ import TossEmoji from '../common/TossEmoji';
 import { TE } from '../../lib/toss-emoji';
 import { qk } from '../../queries/keys';
 import { getErrorMessage } from '../../lib/error';
+import { loadHouseholds } from '../../lib/auth-bootstrap';
 
 interface JoinSheetProps {
   visible: boolean;
@@ -21,7 +22,7 @@ interface JoinSheetProps {
 export default function JoinSheet({ visible, onClose, initialCode }: JoinSheetProps) {
   const theme = useTheme();
   const qc = useQueryClient();
-  const { setHouseholds, currentHousehold } = useAuthStore();
+  const { households, currentHousehold } = useAuthStore();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [code, setCode] = useState(initialCode ?? '');
   const [preview, setPreview] = useState<{ householdName: string; role: string; memberCount?: number } | null>(null);
@@ -37,8 +38,10 @@ export default function JoinSheet({ visible, onClose, initialCode }: JoinSheetPr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialCode]);
 
+  const clean = (v: string) => v.replace(/\s+/g, '').toUpperCase();
+
   async function handlePreview(inviteCode?: string) {
-    const c = inviteCode ?? code;
+    const c = clean(inviteCode ?? code);
     setError('');
     setLoading(true);
     try {
@@ -56,9 +59,9 @@ export default function JoinSheet({ visible, onClose, initialCode }: JoinSheetPr
     setError('');
     setJoining(true);
     try {
-      await api.post(`/invitations/${code}/accept`);
-      const { data } = await api.get('/households');
-      setHouseholds(data.data ?? data);
+      await api.post(`/invitations/${clean(code)}/accept`);
+      // 이미 가구가 있어도 방금 합류한 가구로 바로 전환한다
+      await loadHouseholds({ preferNewOver: households.map((h) => h.id) });
       if (currentHousehold?.id) {
         qc.invalidateQueries({ queryKey: qk.members(currentHousehold.id) });
         qc.invalidateQueries({ queryKey: qk.invitations(currentHousehold.id) });
@@ -90,10 +93,10 @@ export default function JoinSheet({ visible, onClose, initialCode }: JoinSheetPr
       {step === 1 && (
         <View>
           <Text style={{ color: theme.textMuted, fontSize: 13, marginBottom: 16 }}>초대받은 코드를 입력하면 가구에 합류할 수 있어요</Text>
-          <TextField variant="line" placeholder="TOSS-XXXXXX" value={code} onChangeText={setCode} />
+          <TextField variant="line" placeholder="초대 코드 8자리" value={code} onChangeText={setCode} />
           {error ? <Text style={{ color: theme.danger, fontSize: 12, marginTop: 8 }}>{error}</Text> : null}
           <View style={{ marginTop: 16 }}>
-            <Button display="full" size="big" type="primary" disabled={code.length < 8} loading={loading} onPress={() => handlePreview()}>
+            <Button display="full" size="big" type="primary" disabled={clean(code).length < 8} loading={loading} onPress={() => handlePreview()}>
               확인
             </Button>
           </View>

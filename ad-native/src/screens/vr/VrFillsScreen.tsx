@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import ListRow from '../../components/ui/ListRow';
 import Border from '../../components/ui/Border';
 import Loader from '../../components/ui/Loader';
@@ -13,6 +13,7 @@ import { useTheme } from '../../lib/theme';
 import { getErrorMessage } from '../../lib/error';
 import { TE } from '../../lib/toss-emoji';
 import { getVrFillsSortDir, setVrFillsSortDir } from '../../lib/prefs';
+import QueryError from '../../components/common/QueryError';
 
 const KIND_LABEL: Record<VrFill['kind'], string> = {
   INITIAL_BUY: '초기매수',
@@ -39,7 +40,10 @@ export default function VrFillsScreen() {
     });
   }, []);
 
+  const qc = useQueryClient();
   const fillsQ = useQuery({ queryKey: ['vr-fills'], queryFn: vrApi.fills });
+  // 체결을 등록·삭제하면 보유수량·Pool·평가금 추이·사이클 요약이 전부 달라진다 — 다른 VR 화면 캐시도 같이 갱신
+  const invalidateVr = () => Promise.all(['vr-fills', 'vr-state', 'vr-wealth-history', 'vr-cycles'].map((k) => qc.invalidateQueries({ queryKey: [k] })));
   const fills = sortDir === 'asc' ? [...(fillsQ.data ?? [])].reverse() : (fillsQ.data ?? []);
 
   function changeSortDir() {
@@ -55,7 +59,7 @@ export default function VrFillsScreen() {
       await vrApi.deleteFill(deleteTarget.id);
       setDeleteTarget(null);
       setToast('체결을 삭제했어요');
-      fillsQ.refetch();
+      void invalidateVr();
     } catch (e) {
       setToast(getErrorMessage(e, '삭제에 실패했어요'));
       setDeleteTarget(null);
@@ -80,7 +84,9 @@ export default function VrFillsScreen() {
         </Pressable>
       </View>
 
-      {fillsQ.isLoading ? (
+      {fillsQ.isError && !fillsQ.data ? (
+        <QueryError onRetry={() => void fillsQ.refetch()} />
+      ) : fillsQ.isLoading ? (
         <View style={styles.center}>
           <Loader size="large" />
         </View>
@@ -126,7 +132,7 @@ export default function VrFillsScreen() {
         </ScrollView>
       )}
 
-      <VrFillForm visible={formVisible} onClose={() => setFormVisible(false)} onSaved={() => { setFormVisible(false); setToast('체결을 등록했어요'); fillsQ.refetch(); }} />
+      <VrFillForm visible={formVisible} onClose={() => setFormVisible(false)} onSaved={() => { setFormVisible(false); setToast('체결을 등록했어요'); void invalidateVr(); }} />
 
       <ConfirmDialog
         visible={!!deleteTarget}

@@ -11,6 +11,7 @@ import { useLiveInterval } from '../../lib/use-live-interval';
 import { signedPct } from '../../lib/live-format';
 import { todayLocal } from '../../lib/date';
 import { weekdayLabel } from '../../lib/spacex-insights';
+import QueryError from '../../components/common/QueryError';
 
 type ThemeT = ReturnType<typeof useTheme>;
 
@@ -77,6 +78,7 @@ export default function SpacexEntriesScreen() {
   const statusQ = useQuery({ queryKey: ['spacex-status'], queryFn: spacexApi.status, refetchInterval: interval });
   const [filter, setFilter] = useState<Filter>('전체');
 
+  if (statusQ.isError && !statusQ.data) return <QueryError onRetry={() => void statusQ.refetch()} />;
   if (statusQ.isLoading || !statusQ.data) {
     return (
       <View style={[styles.center, { backgroundColor: theme.bg }]}>

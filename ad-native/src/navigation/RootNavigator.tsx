@@ -1,8 +1,6 @@
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { api } from '../lib/api';
-import { getTokens } from '../lib/storage';
-import { loadHouseholds } from '../lib/auth-bootstrap';
+import { restoreSession } from '../lib/auth-bootstrap';
 import { useAuthStore } from '../stores/auth.store';
 import { useAppModeStore } from '../stores/appMode.store';
 import { useTheme } from '../lib/theme';
@@ -12,32 +10,24 @@ import MainTabNavigator from './MainTabNavigator';
 import LaofusRootTabNavigator from './LaofusRootTabNavigator';
 import WorklogRootTabNavigator from './WorklogRootTabNavigator';
 import OnboardingScreen from '../screens/auth/OnboardingScreen';
+import BootErrorScreen from '../screens/auth/BootErrorScreen';
 import { navigationRef } from './navigationRef';
-
-async function restoreSession() {
-  try {
-    const { accessToken, refreshToken } = await getTokens();
-    if (accessToken && refreshToken) {
-      const { data: res } = await api.get('/users/me', { headers: { Authorization: `Bearer ${accessToken}` } });
-      useAuthStore.getState().setAuth({ accessToken, refreshToken }, res.data ?? res);
-      await loadHouseholds();
-    }
-  } catch {
-    // 토큰 만료 등 → 로그인 화면으로
-  } finally {
-    useAuthStore.getState().setReady();
-  }
-}
 
 export default function RootNavigator() {
   const theme = useTheme();
-  const { isReady, isAuthenticated, currentHousehold } = useAuthStore();
-  const { isReady: modeReady, mode, restore: restoreAppMode } = useAppModeStore();
+  const { isReady, isAuthenticated, currentHousehold, bootError, user } = useAuthStore();
+  const { isReady: modeReady, mode, restore: restoreAppMode, switchMode } = useAppModeStore();
 
   useEffect(() => {
     restoreSession();
     restoreAppMode();
   }, []);
+
+  // 소유자가 아닌 계정(가족)에게는 라오어·근무일지가 없다 — 마지막으로 쓰던 모드가 그쪽이어도 자산일기로 돌려보낸다
+  const notOwner = isAuthenticated && user?.isOwner === false;
+  useEffect(() => {
+    if (notOwner && modeReady && mode !== 'assetDiary') void switchMode('assetDiary');
+  }, [notOwner, modeReady, mode, switchMode]);
 
   // 앱 모드 전환 = 완전히 다른 최상위 탭 내비게이터로 리마운트되는 구조인데, 리마운트 시 항상
   // 그 탭바의 첫 탭(메인 화면)에 포커스되어야 한다는 기대와 달리 기기에서 다른 탭에 머무는 경우가
@@ -64,10 +54,12 @@ export default function RootNavigator() {
     );
   }
 
-  if (mode === 'laofus') return <LaofusRootTabNavigator />;
-  if (mode === 'worklog') return <WorklogRootTabNavigator />;
+  if (bootError) return <BootErrorScreen />;
 
+  // 라오어·근무일지도 소유자 로그인이 필요하다 — 로그인 전/만료 상태면 로그인 화면부터
   if (!isAuthenticated) return <AuthNavigator />;
+  if (mode === 'laofus' && !notOwner) return <LaofusRootTabNavigator />;
+  if (mode === 'worklog' && !notOwner) return <WorklogRootTabNavigator />;
   if (!currentHousehold) return <OnboardingScreen />;
   return <MainTabNavigator />;
 }

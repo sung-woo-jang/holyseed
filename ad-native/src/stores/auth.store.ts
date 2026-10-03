@@ -7,6 +7,8 @@ interface AdUser {
   name: string;
   avatarColor: string;
   initial: string;
+  /** 서버가 내려주는 소유자 여부 — false면 라오어·근무일지 모드를 숨긴다(없으면 소유자로 간주) */
+  isOwner?: boolean;
 }
 
 interface Household {
@@ -24,6 +26,9 @@ interface AuthState {
   user: AdUser | null;
   households: Household[];
   currentHousehold: Household | null;
+  /** 서버에 닿지 못해 세션/가구를 못 불러온 상태 — 로그인·온보딩 대신 '다시 시도' 화면을 보여준다 */
+  bootError: boolean;
+  setBootError: (v: boolean) => void;
   setReady: () => void;
   setAuth: (tokens: { accessToken: string; refreshToken: string }, user: AdUser) => void;
   setUser: (user: AdUser) => void;
@@ -40,6 +45,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   households: [],
   currentHousehold: null,
+  bootError: false,
+
+  setBootError: (bootError) => set({ bootError }),
 
   setReady: () => set({ isReady: true }),
 
@@ -69,5 +77,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       user: null,
       households: [],
       currentHousehold: null,
+      bootError: false,
     }),
 }));

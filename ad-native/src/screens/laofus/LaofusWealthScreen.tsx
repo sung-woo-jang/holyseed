@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Loader from '../../components/ui/Loader';
 import Button from '../../components/ui/Button';
 import AppToast from '../../components/common/AppToast';
@@ -16,6 +16,7 @@ import { useTheme } from '../../lib/theme';
 import { getErrorMessage } from '../../lib/error';
 import { todayLocal } from '../../lib/date';
 import { getLaofusWealthSortPref, setLaofusWealthSortPref, getLaofusLastCopyDate, setLaofusLastCopyDate } from '../../lib/prefs';
+import QueryError from '../../components/common/QueryError';
 
 function todayMonth(): string {
   return todayLocal().slice(0, 7);
@@ -157,6 +158,7 @@ export default function LaofusWealthScreen() {
     }
   }
 
+  const qc = useQueryClient();
   const accountQ = useQuery({ queryKey: ['laofus-account'], queryFn: laofusRestApi.account });
   const snapshotsQ = useQuery({ queryKey: ['laofus-account-snapshots'], queryFn: laofusRestApi.accountSnapshots });
 
@@ -174,6 +176,7 @@ export default function LaofusWealthScreen() {
     try {
       await laofusRestApi.recordAccountSnapshot();
       await snapshotsQ.refetch();
+      void qc.invalidateQueries({ queryKey: ['laofus-asset-trend'] });
       setToast('오늘 스냅샷을 기록했어요');
     } catch (e) {
       setToast(getErrorMessage(e, '스냅샷 기록에 실패했어요'));
@@ -189,6 +192,7 @@ export default function LaofusWealthScreen() {
       </View>
     );
   }
+  if ((accountQ.isError && !accountQ.data) || (snapshotsQ.isError && !snapshotsQ.data)) return <QueryError onRetry={() => { void accountQ.refetch(); void snapshotsQ.refetch(); }} />;
 
   const account = accountQ.data;
   const snapshots = [...(snapshotsQ.data ?? [])].reverse();

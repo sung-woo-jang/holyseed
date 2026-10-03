@@ -4,13 +4,16 @@ import { AppState, Platform, type AppStateStatus } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
-import { QueryClient, QueryClientProvider, focusManager } from '@tanstack/react-query';
+import { QueryClientProvider, focusManager } from '@tanstack/react-query';
+import { queryClient } from './src/lib/query-client';
 import { StatusBar } from 'expo-status-bar';
 import * as WebBrowser from 'expo-web-browser';
 import RootNavigator from './src/navigation/RootNavigator';
 import { navigationRef } from './src/navigation/navigationRef';
 import { useAutoOtaReload } from './src/lib/useOtaUpdate';
 import { useWidgetLinks } from './src/lib/widget-links';
+import { loadHouseholds } from './src/lib/auth-bootstrap';
+import { useAuthStore } from './src/stores/auth.store';
 import { refreshAllWidgets } from './src/widgets';
 import { checkApkUpdate } from './src/lib/apk-update';
 import ApkUpdateModal from './src/components/common/ApkUpdateModal';
@@ -26,10 +29,6 @@ if (Platform.OS === 'web') {
   document.head.appendChild(style);
 }
 
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { staleTime: 10_000, retry: 1 } },
-});
-
 // react-query의 refetchOnWindowFocus(기본 활성)는 RN엔 window 포커스 이벤트가 없어 그냥 죽어있음 —
 // AppState를 focusManager에 연결해줘야 백그라운드→포그라운드 복귀 시 자동 재조회가 실제로 동작함
 function onAppStateChange(status: AppStateStatus) {
@@ -38,6 +37,8 @@ function onAppStateChange(status: AppStateStatus) {
     if (status === 'active') {
       void refreshAllWidgets();
       void checkApkUpdate();
+      // 소유자가 내 역할을 바꿨거나 가구에서 내보냈을 수 있다 — 돌아올 때 최신 역할로 갱신
+      if (useAuthStore.getState().isAuthenticated) void loadHouseholds({ silent: true });
     }
   }
 }

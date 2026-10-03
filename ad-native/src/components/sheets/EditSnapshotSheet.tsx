@@ -21,6 +21,8 @@ interface EditSnapshotSheetProps {
   visible: boolean;
   assetId: number;
   snapshot: EditableSnapshot | null;
+  /** 이 자산에 이미 기록이 있는 날짜들 — 그 날짜로 옮기면 덮어쓰이므로 확인을 받는다 */
+  existingDates?: string[];
   onClose: () => void;
   onDone?: (message: string) => void;
 }
@@ -31,12 +33,13 @@ function formatNum(raw: string): string {
 }
 
 /** 스냅샷 히스토리 항목 수정 — 금액·날짜 변경, 삭제 */
-export default function EditSnapshotSheet({ visible, assetId, snapshot, onClose, onDone }: EditSnapshotSheetProps) {
+export default function EditSnapshotSheet({ visible, assetId, snapshot, existingDates, onClose, onDone }: EditSnapshotSheetProps) {
   const theme = useTheme();
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState('');
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmOverwrite, setConfirmOverwrite] = useState(false);
   const [error, setError] = useState('');
   const upsert = useUpsertSnapshot();
   const del = useDeleteSnapshot();
@@ -47,6 +50,7 @@ export default function EditSnapshotSheet({ visible, assetId, snapshot, onClose,
       setDate(snapshot.date);
       setDatePickerOpen(false);
       setConfirmDelete(false);
+      setConfirmOverwrite(false);
       setError('');
     }
   }, [visible, snapshot]);
@@ -56,8 +60,15 @@ export default function EditSnapshotSheet({ visible, assetId, snapshot, onClose,
   const dateChanged = !!snapshot && date !== snapshot.date;
   const isPending = upsert.isPending || del.isPending;
 
+  function requestSave() {
+    // 이미 기록이 있는 날짜로 옮기면 그 날짜의 기존 값이 사라진다 — 확인부터
+    if (dateChanged && existingDates?.includes(date)) setConfirmOverwrite(true);
+    else void handleSave();
+  }
+
   async function handleSave() {
     if (!snapshot) return;
+    setConfirmOverwrite(false);
     setError('');
     try {
       await upsert.mutateAsync({ assetId, dto: { date, value: amtNum } });
@@ -94,7 +105,7 @@ export default function EditSnapshotSheet({ visible, assetId, snapshot, onClose,
         cta={
           <>
             {error ? <Text style={{ color: theme.danger, fontSize: 12 }}>{error}</Text> : null}
-            <Button display="full" size="big" type="primary" disabled={!isValid} loading={isPending} onPress={handleSave}>
+            <Button display="full" size="big" type="primary" disabled={!isValid} loading={isPending} onPress={requestSave}>
               {dateChanged ? '날짜 이동하고 저장' : '저장하기'}
             </Button>
             <Pressable style={styles.deleteBtn} onPress={() => setConfirmDelete(true)}>
@@ -118,6 +129,16 @@ export default function EditSnapshotSheet({ visible, assetId, snapshot, onClose,
           </Text>
         )}
       </SheetModal>
+
+      <ConfirmDialog
+        visible={confirmOverwrite}
+        title="이미 기록이 있는 날짜예요"
+        description={`${date}에 입력된 기록이 이 금액으로 덮어써져요. 계속할까요?`}
+        confirmText="덮어쓰기"
+        danger
+        onConfirm={() => void handleSave()}
+        onClose={() => setConfirmOverwrite(false)}
+      />
 
       <ConfirmDialog
         visible={confirmDelete}

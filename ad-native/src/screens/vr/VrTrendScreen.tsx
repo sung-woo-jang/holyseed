@@ -20,6 +20,7 @@ import { BAND_STATE_LABEL, md, pct, usd } from '../../lib/vr-format';
 import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
 import type { StrategyStackParamList } from '../../navigation/StrategyStack';
+import QueryError from '../../components/common/QueryError';
 
 type Props = NativeStackScreenProps<StrategyStackParamList, 'VrTrend'>;
 
@@ -79,6 +80,7 @@ export default function VrTrendScreen({ navigation }: Props) {
       </View>
     );
   }
+  if ((cyclesQ.isError && !cyclesQ.data) || (fillsQ.isError && !fillsQ.data)) return <QueryError onRetry={() => { void cyclesQ.refetch(); void fillsQ.refetch(); }} />;
   if (cycles.length === 0) {
     return (
       <View style={[styles.center, { backgroundColor: theme.bg }]}>

@@ -12,6 +12,7 @@ import { BAND_STATE_LABEL, md, usd } from '../../lib/vr-format';
 import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
 import type { StrategyStackParamList } from '../../navigation/StrategyStack';
+import QueryError from '../../components/common/QueryError';
 
 type Props = NativeStackScreenProps<StrategyStackParamList, 'VrCycleDetail'>;
 
@@ -54,6 +55,7 @@ export default function VrCycleDetailScreen({ route, navigation }: Props) {
       </View>
     );
   }
+  if ((cyclesQ.isError && !cyclesQ.data) || (fillsQ.isError && !fillsQ.data)) return <QueryError onRetry={() => { void cyclesQ.refetch(); void fillsQ.refetch(); }} />;
   const idx = cycles.findIndex((c) => c.cycleNo === cycleNo);
   const cycle = idx >= 0 ? cycles[idx]! : null;
   const summary = summaries.find((s) => s.cycle.cycleNo === cycleNo);

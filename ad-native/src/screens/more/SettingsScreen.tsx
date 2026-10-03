@@ -11,6 +11,7 @@ import AppToast from '../../components/common/AppToast';
 import McpTokenSheet from '../../components/sheets/McpTokenSheet';
 import { useTheme } from '../../lib/theme';
 import { useOtaUpdate } from '../../lib/useOtaUpdate';
+import { APP_VERSION_LABEL } from '../../lib/app-version';
 import { useMcpTokens, useDeleteMcpToken } from '../../queries/mutations';
 
 export default function SettingsScreen() {
@@ -94,7 +95,7 @@ export default function SettingsScreen() {
           </View>
         </Section>
 
-        <Text style={{ textAlign: 'center', fontSize: 12, marginTop: 22, color: theme.textMuted }}>자산일기 v1.0</Text>
+        <Text style={{ textAlign: 'center', fontSize: 12, marginTop: 22, color: theme.textMuted }}>{APP_VERSION_LABEL}</Text>
       </ScrollView>
 
       <McpTokenSheet visible={tokenSheetVisible} onClose={() => setTokenSheetVisible(false)} />

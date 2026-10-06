@@ -5,6 +5,7 @@ import type { SortPref } from '../api/worklog';
 // 저장 키의 lab_ 접두사는 기존 값을 그대로 둔다 — 바꾸면 이미 저장된 정렬·숨김 설정이 초기화됨
 const KEY_WORKLOG_SORT = 'lab_worklogSortPref';
 const KEY_WORKLOG_SUMMARY_HIDDEN_FIELDS = 'lab_worklogSummaryHiddenFields';
+const KEY_WORKLOG_VIEW = 'worklogViewMode';
 const KEY_VR_FILLS_SORT = 'lab_vrFillsSortPref';
 const KEY_LAOFUS_WEALTH_SORT = 'lab_laofusWealthSortPref';
 const KEY_LAOFUS_LAST_COPY = 'lab_laofusWealthLastCopyDate';
@@ -57,6 +58,16 @@ export async function getWorklogSummaryHiddenFields(): Promise<string[] | null> 
 
 export async function setWorklogSummaryHiddenFields(fields: string[]): Promise<void> {
   return setPref(KEY_WORKLOG_SUMMARY_HIDDEN_FIELDS, fields);
+}
+
+/** 근무일지 홈의 목록/캘린더 보기 — 마지막으로 고른 걸 기억 */
+export async function getWorklogViewMode(): Promise<'목록' | '캘린더' | null> {
+  const v = await getPref<string>(KEY_WORKLOG_VIEW);
+  return v === '목록' || v === '캘린더' ? v : null;
+}
+
+export async function setWorklogViewMode(view: '목록' | '캘린더'): Promise<void> {
+  return setPref(KEY_WORKLOG_VIEW, view);
 }
 
 export async function getVrFillsSortDir(): Promise<'asc' | 'desc' | null> {

@@ -16,7 +16,7 @@ import { Icon } from '../../components/common/Icon';
 import SheetModal from '../../components/sheets/SheetModal';
 import { worklogApi, type WorklogRecord } from '../../api/worklog';
 import { invalidateWorklog } from '../../queries/worklog-cache';
-import { getWorklogSortPref, setWorklogSortPref, getWorklogSummaryHiddenFields, setWorklogSummaryHiddenFields } from '../../lib/prefs';
+import { getWorklogSortPref, setWorklogSortPref, getWorklogSummaryHiddenFields, setWorklogSummaryHiddenFields, getWorklogViewMode, setWorklogViewMode } from '../../lib/prefs';
 import { useTheme } from '../../lib/theme';
 import { krw } from '../../lib/format';
 import { toLocalDateString, todayLocal } from '../../lib/date';
@@ -84,7 +84,15 @@ export default function WorklogHomeScreen({ navigation, route }: Props) {
     getWorklogSummaryHiddenFields().then((fields) => {
       if (fields) setHiddenSummaryFields(new Set(fields as SummaryFieldId[]));
     });
+    getWorklogViewMode().then((saved) => {
+      if (saved) setView(saved);
+    });
   }, []);
+
+  function changeView(next: '목록' | '캘린더') {
+    setView(next);
+    void setWorklogViewMode(next);
+  }
 
   function toggleSummaryField(id: SummaryFieldId) {
     setHiddenSummaryFields((prev) => {
@@ -352,7 +360,7 @@ export default function WorklogHomeScreen({ navigation, route }: Props) {
         </View>
       ) : (
         <View style={styles.toolRow}>
-          <Segmented options={['목록', '캘린더']} value={view} onChange={(v) => setView(v as '목록' | '캘린더')} small alignment="fluid" />
+          <Segmented options={['목록', '캘린더']} value={view} onChange={(v) => changeView(v as '목록' | '캘린더')} small alignment="fluid" />
           <View style={{ flex: 1 }} />
           <Pressable style={[styles.toolChip, { borderColor: theme.brand }]} onPress={() => navigation.navigate('WorklogSettlement')}>
             <Text style={{ color: theme.brand, fontSize: 12, fontWeight: '700' }}>수령 처리{pendingCount > 0 ? ` ${pendingCount}` : ''}</Text>

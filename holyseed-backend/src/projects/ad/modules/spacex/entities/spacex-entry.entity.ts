@@ -37,4 +37,20 @@ export class SpacexEntry extends BaseEntity {
   })
   @Column({ name: 'order_id', type: 'varchar', length: 255, nullable: true, unique: true })
   orderId: string | null;
+
+  @ApiPropertyOptional({ description: '기록 날짜의 일봉 시가 ($) — 토스 일봉으로 자동 채움(완결된 날만)' })
+  @Column({ name: 'day_open', type: 'decimal', precision: 12, scale: 4, transformer: numeric, nullable: true })
+  dayOpen: number | null;
+
+  @ApiPropertyOptional({ description: '기록 날짜의 일봉 고가 ($)' })
+  @Column({ name: 'day_high', type: 'decimal', precision: 12, scale: 4, transformer: numeric, nullable: true })
+  dayHigh: number | null;
+
+  @ApiPropertyOptional({ description: '기록 날짜의 일봉 저가 ($)' })
+  @Column({ name: 'day_low', type: 'decimal', precision: 12, scale: 4, transformer: numeric, nullable: true })
+  dayLow: number | null;
+
+  @ApiPropertyOptional({ description: '기록 날짜의 일봉 종가 ($)' })
+  @Column({ name: 'day_close', type: 'decimal', precision: 12, scale: 4, transformer: numeric, nullable: true })
+  dayClose: number | null;
 }

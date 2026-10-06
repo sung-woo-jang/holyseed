@@ -8,6 +8,11 @@ export interface SpacexEntryDto {
   quantity: number | null;
   isRebalance: boolean;
   note: string | null;
+  /** 기록 날짜의 일봉 — 완결된 날만 자동으로 채워짐 (오늘 기록은 다음 날) */
+  dayOpen?: number | null;
+  dayHigh?: number | null;
+  dayLow?: number | null;
+  dayClose?: number | null;
 }
 
 export interface SpacexLatestOrderDto {

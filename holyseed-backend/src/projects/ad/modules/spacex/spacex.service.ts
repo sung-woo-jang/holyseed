@@ -101,6 +101,7 @@ export class SpacexService {
       synced++;
     }
     if (synced > 0) this.logger.log(`토스 SPCX 체결 ${synced}건 동기화`);
+    await this.fillDayCandles(await this.entryRepo.find());
     return { synced };
   }
 
@@ -127,6 +128,29 @@ export class SpacexService {
     const candles = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
     this.candleCache = { candles, at: Date.now() };
     return candles;
+  }
+
+  /** 완결된 날(오늘 이전)의 일봉이 있으면 그 시가·고가·저가·종가를 기록에 채운다 — 이미 채워졌거나 일봉이 없으면 그대로 */
+  private async fillDayCandles(entries: SpacexEntry[]): Promise<void> {
+    const today = kstDate();
+    const missing = entries.filter((e) => e.dayClose === null && e.date < today);
+    if (missing.length === 0) return;
+    try {
+      const byDate = new Map((await this.loadDailyCandles()).map((c) => [c.date, c]));
+      const toSave: SpacexEntry[] = [];
+      for (const e of missing) {
+        const c = byDate.get(e.date);
+        if (!c) continue;
+        e.dayOpen = c.open;
+        e.dayHigh = c.high;
+        e.dayLow = c.low;
+        e.dayClose = c.close;
+        toSave.push(e);
+      }
+      if (toSave.length > 0) await this.entryRepo.save(toSave);
+    } catch (e) {
+      this.logger.warn(`일봉 채우기 실패: ${(e as Error).message}`);
+    }
   }
 
   async getCandles(range: string): Promise<SpacexCandlesResult> {
@@ -201,7 +225,7 @@ export class SpacexService {
 
   async createEntry(dto: CreateSpacexEntryDto): Promise<SpacexEntry> {
     const quantity = dto.quantity ?? (dto.price ? dto.amount / dto.price : null);
-    return this.entryRepo.save(
+    const entry = await this.entryRepo.save(
       this.entryRepo.create({
         date: dto.date,
         amount: dto.amount,
@@ -211,6 +235,8 @@ export class SpacexService {
         note: dto.note ?? null,
       }),
     );
+    await this.fillDayCandles([entry]);
+    return entry;
   }
 
   async close(date?: string): Promise<SpacexState> {
@@ -225,6 +251,8 @@ export class SpacexService {
       this.getOrCreateState(),
       this.getLatestOrder(),
     ]);
+    // 일봉이 비어 있는 지난 기록은 조회 때 한 번 채워 둔다 (이미 채워졌으면 아무 일도 안 함)
+    await this.fillDayCandles(entries);
 
     const startDate = entries.length > 0 ? entries[0].date : null;
     const totalPrincipal = entries.reduce((sum, e) => sum + Number(e.amount), 0);

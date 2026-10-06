@@ -48,7 +48,7 @@ function order(
 describe('SpacexService', () => {
   let toss: { getCandles: jest.Mock; getOrders: jest.Mock };
   let hub: { getPrice: jest.Mock };
-  let entryRepo: { find: jest.Mock; count: jest.Mock };
+  let entryRepo: { find: jest.Mock; count: jest.Mock; save: jest.Mock };
   let stateRepo: { find: jest.Mock; create: jest.Mock; save: jest.Mock };
   let service: SpacexService;
 
@@ -74,7 +74,11 @@ describe('SpacexService', () => {
         .fn()
         .mockResolvedValue({ symbol: 'SPCX', price: 152.25, ts: 'x', fetchedAt: Date.now(), stale: false }),
     };
-    entryRepo = { find: jest.fn().mockResolvedValue([]), count: jest.fn().mockResolvedValue(0) };
+    entryRepo = {
+      find: jest.fn().mockResolvedValue([]),
+      count: jest.fn().mockResolvedValue(0),
+      save: jest.fn().mockImplementation(async (x: unknown) => x),
+    };
     stateRepo = { find: jest.fn().mockResolvedValue([{ closedAt: null }]), create: jest.fn(), save: jest.fn() };
     service = new SpacexService(
       entryRepo as unknown as Repository<SpacexEntry>,
@@ -267,6 +271,97 @@ describe('SpacexService', () => {
       await service.getStatus();
 
       expect(toss.getOrders).toHaveBeenCalledTimes(2); // OPEN + CLOSED 한 번씩
+    });
+  });
+
+  describe('기록의 일봉(시가·고가·저가·종가) 채우기', () => {
+    const blank = { dayOpen: null, dayHigh: null, dayLow: null, dayClose: null };
+
+    it('완결된 지난 날의 기록에 그날 일봉을 채워 저장한다', async () => {
+      const past = {
+        id: 1,
+        date: '2026-09-30',
+        amount: 2,
+        price: 150,
+        quantity: 0.01,
+        isRebalance: false,
+        note: null,
+        orderId: null,
+        ...blank,
+      };
+      entryRepo.find.mockResolvedValue([past]);
+      await service.getStatus();
+      expect(entryRepo.save).toHaveBeenCalledTimes(1);
+      expect(past).toMatchObject({ dayOpen: 149, dayHigh: 151, dayLow: 148.5, dayClose: 150.86 });
+    });
+
+    it('오늘 기록은 일봉이 아직 진행 중이라 채우지 않는다', async () => {
+      const today = {
+        id: 2,
+        date: '2026-10-01',
+        amount: 2,
+        price: 151,
+        quantity: 0.01,
+        isRebalance: false,
+        note: null,
+        orderId: null,
+        ...blank,
+      };
+      entryRepo.find.mockResolvedValue([today]);
+      await service.getStatus();
+      expect(entryRepo.save).not.toHaveBeenCalled();
+      expect(today.dayClose).toBeNull();
+    });
+
+    it('이미 채워진 기록은 일봉을 다시 받지 않고, 해당 날짜 일봉이 없으면 비워 둔다', async () => {
+      const filled = {
+        id: 3,
+        date: '2026-09-30',
+        amount: 2,
+        price: 150,
+        quantity: 0.01,
+        isRebalance: false,
+        note: null,
+        orderId: null,
+        dayOpen: 1,
+        dayHigh: 2,
+        dayLow: 0.5,
+        dayClose: 1.5,
+      };
+      const noCandle = {
+        id: 4,
+        date: '2026-09-29',
+        amount: 2,
+        price: 150,
+        quantity: 0.01,
+        isRebalance: false,
+        note: null,
+        orderId: null,
+        ...blank,
+      };
+      entryRepo.find.mockResolvedValue([filled, noCandle]);
+      await service.getStatus();
+      expect(entryRepo.save).not.toHaveBeenCalled();
+      expect(filled.dayClose).toBe(1.5);
+      expect(noCandle.dayClose).toBeNull();
+    });
+
+    it('일봉 조회가 실패해도 상태 조회는 정상 반환한다', async () => {
+      toss.getCandles.mockRejectedValue(new Error('toss down'));
+      entryRepo.find.mockResolvedValue([
+        {
+          id: 5,
+          date: '2026-09-30',
+          amount: 2,
+          price: 150,
+          quantity: 0.01,
+          isRebalance: false,
+          note: null,
+          orderId: null,
+          ...blank,
+        },
+      ]);
+      await expect(service.getStatus()).resolves.toMatchObject({ daysCount: 1 });
     });
   });
 });

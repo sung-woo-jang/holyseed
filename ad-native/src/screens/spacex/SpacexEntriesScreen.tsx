@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import Loader from '../../components/ui/Loader';
 import EmptyState from '../../components/common/EmptyState';
 import Segmented from '../../components/common/Segmented';
+import SheetModal from '../../components/sheets/SheetModal';
 import { spacexApi, type SpacexEntryDto, type SpacexLatestOrderDto } from '../../api/spacex';
 import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
@@ -72,11 +73,68 @@ function PendingRow({ o, today, theme }: { o: SpacexLatestOrderDto; today: strin
   );
 }
 
+function DetailTile({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  const theme = useTheme();
+  return (
+    <View style={[styles.detailTile, { backgroundColor: theme.card, borderColor: theme.border }]}>
+      <Text style={{ color: theme.textMuted, fontSize: 11 }}>{label}</Text>
+      <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800', marginTop: 2 }}>{value}</Text>
+      {sub ? <Text style={{ color: theme.textMuted, fontSize: 10.5, marginTop: 2 }}>{sub}</Text> : null}
+    </View>
+  );
+}
+
+/** 기록 상세 — 기록 내용과 그날 일봉(시가·고가·저가·종가) */
+function EntrySheet({ entry, onClose }: { entry: SpacexEntryDto | null; onClose: () => void }) {
+  const theme = useTheme();
+  const e = entry;
+  const hasDay = !!e && e.dayOpen != null && e.dayHigh != null && e.dayLow != null && e.dayClose != null;
+  const pos = e && hasDay && e.price !== null && e.dayHigh! > e.dayLow! ? ((e.price - e.dayLow!) / (e.dayHigh! - e.dayLow!)) * 100 : null;
+
+  return (
+    <SheetModal visible={!!e} onClose={onClose} header={e ? dateLabel(e.date) : undefined}>
+      {e ? (
+        <View style={{ gap: 16 }}>
+          <View style={styles.detailGrid}>
+            <DetailTile label={e.isRebalance ? '금액 (리밸런싱)' : '매수 금액'} value={`${e.amount >= 0 ? '' : '-'}${usdTrunc(Math.abs(e.amount))}`} />
+            <DetailTile label="체결가" value={e.price !== null ? usd(e.price) : '—'} sub={e.quantity !== null ? `${Number(e.quantity).toFixed(4)}주` : undefined} />
+          </View>
+          {e.note ? <Text style={{ color: theme.textMuted, fontSize: 12.5, lineHeight: 18 }}>{e.note}</Text> : null}
+
+          <View>
+            <Text style={{ color: theme.textMuted, fontSize: 12.5, fontWeight: '700', marginBottom: 8 }}>그날 일봉</Text>
+            {hasDay ? (
+              <>
+                <View style={styles.detailGrid}>
+                  <DetailTile label="시가" value={usd(e.dayOpen!)} />
+                  <DetailTile label="종가" value={usd(e.dayClose!)} />
+                  <DetailTile label="고가" value={usd(e.dayHigh!)} />
+                  <DetailTile label="저가" value={usd(e.dayLow!)} />
+                </View>
+                {pos !== null ? (
+                  <Text style={{ color: theme.textMuted, fontSize: 12, marginTop: 8 }}>
+                    체결가 {usd(e.price!)}는 그날 저가~고가 범위의 {Math.round(pos)}% 지점이에요
+                  </Text>
+                ) : null}
+              </>
+            ) : (
+              <Text style={{ color: theme.textMuted, fontSize: 12.5, lineHeight: 18 }}>
+                아직 일봉이 없어요. 그날 장이 끝난 뒤(기록은 보통 다음 날) 자동으로 채워져요.
+              </Text>
+            )}
+          </View>
+        </View>
+      ) : null}
+    </SheetModal>
+  );
+}
+
 export default function SpacexEntriesScreen() {
   const theme = useTheme();
   const interval = useLiveInterval(5_000);
   const statusQ = useQuery({ queryKey: ['spacex-status'], queryFn: spacexApi.status, refetchInterval: interval });
   const [filter, setFilter] = useState<Filter>('전체');
+  const [detail, setDetail] = useState<SpacexEntryDto | null>(null);
 
   if (statusQ.isError && !statusQ.data) return <QueryError onRetry={() => void statusQ.refetch()} />;
   if (statusQ.isLoading || !statusQ.data) {
@@ -129,7 +187,11 @@ export default function SpacexEntriesScreen() {
             const price = priceLine(e);
             const vs = !e.isRebalance && e.price !== null && s.currentPrice !== null ? (s.currentPrice / e.price - 1) * 100 : null;
             return (
-              <View key={e.id} style={[styles.row, (i > 0 || showPending) && { borderTopWidth: 1, borderColor: theme.border }]}>
+              <Pressable
+                key={e.id}
+                onPress={() => setDetail(e)}
+                style={({ pressed }) => [styles.row, (i > 0 || showPending) && { borderTopWidth: 1, borderColor: theme.border }, pressed && { opacity: 0.6 }]}
+              >
                 <View style={styles.rowTop}>
                   <View style={styles.rowLeft}>
                     <View style={[styles.dot, { backgroundColor: e.isRebalance ? theme.danger : theme.brand }]} />
@@ -154,7 +216,7 @@ export default function SpacexEntriesScreen() {
                     </Text>
                   )}
                 </View>
-              </View>
+              </Pressable>
             );
           })}
         </View>
@@ -163,11 +225,14 @@ export default function SpacexEntriesScreen() {
       {s.currentPrice !== null && filter !== '리밸런싱' && (
         <Text style={{ color: theme.textMuted, fontSize: 11, textAlign: 'center' }}>"현재가 대비"는 그 가격에 산 것이 지금 얼마나 올랐는지예요</Text>
       )}
+      <EntrySheet entry={detail ? entries.find((x) => x.id === detail.id) ?? detail : null} onClose={() => setDetail(null)} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  detailGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  detailTile: { width: '48%', borderWidth: 1, borderRadius: 12, padding: 12 },
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   sumBar: { flexDirection: 'row', justifyContent: 'space-between' },

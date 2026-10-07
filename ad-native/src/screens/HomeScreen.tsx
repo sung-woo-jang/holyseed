@@ -30,6 +30,7 @@ import {
   findStaleAssets,
   hasFlowCoverage,
   sumFlows,
+  newAssetsSince,
   summarizeChange,
   type PeriodKey,
 } from '../lib/net-worth';
@@ -74,7 +75,9 @@ export default function HomeScreen({ navigation }: Props) {
   const nw = data.netWorth;
   const periodKey = (Object.keys(PERIOD_LABELS) as PeriodKey[]).find((k) => PERIOD_LABELS[k] === periodLabel) ?? 'd30';
   const base = data.periods?.[periodKey] ?? null;
-  const summary = base ? summarizeChange(base.netWorth, nw.current) : null;
+  // 기준 시점엔 기록이 없던 자산 — 처음 기록한 잔액은 늘어난 돈이 아니라 증가율·자산군별 변화에서 뺀다
+  const newSplit = useMemo(() => newAssetsSince(data.assets, base), [data.assets, base]);
+  const summary = base ? summarizeChange(base.netWorth, nw.current, newSplit.total) : null;
   const up = (summary?.change ?? 0) >= 0;
 
   // 수입·지출로 설명되는 변화(모은 돈)와 나머지(평가손익·입력 차이)로 분해 — 거래 기록이 기준일 이전부터 있을 때만
@@ -82,10 +85,13 @@ export default function HomeScreen({ navigation }: Props) {
     if (!base || !summary || !hasFlowCoverage(data.transactions, base.date)) return null;
     const f = sumFlows(data.transactions, base.date, today);
     const saved = f.income - f.expense;
-    return { ...f, saved, other: summary.change - saved };
+    return { ...f, saved, other: summary.growth - saved };
   }, [base, summary, data.transactions, today]);
 
-  const contribs = useMemo(() => (base ? categoryContributions(data.donut, base.byCategory) : []), [base, data.donut]);
+  const contribs = useMemo(
+    () => (base ? categoryContributions(data.donut, base.byCategory, newSplit.byCategory) : []),
+    [base, data.donut, newSplit],
+  );
   const maxContrib = Math.max(...contribs.map((c) => Math.abs(c.value)), 1);
 
   const staleAssets = useMemo(() => findStaleAssets(data.assets, today), [data.assets, today]);
@@ -168,6 +174,11 @@ export default function HomeScreen({ navigation }: Props) {
               <Text style={[styles.baseLine, { color: theme.textMuted }]}>
                 {base.date} {krwShort(base.netWorth)}원 → 지금 {krwShort(nw.current)}원
               </Text>
+              {newSplit.total !== 0 && (
+                <Text style={[styles.baseLine, { color: theme.textMuted, marginTop: 2 }]}>
+                  새로 기록한 자산 {krwShort(newSplit.total)}원은 증가율에서 뺐어요
+                </Text>
+              )}
             </>
           )}
           <View style={styles.periodSeg}>
@@ -242,6 +253,15 @@ export default function HomeScreen({ navigation }: Props) {
                   {krwShort(flows.other)}원
                 </Text>
               </View>
+              {newSplit.total !== 0 && (
+                <View style={styles.whyRow}>
+                  <Text style={[styles.whyLabel, { color: theme.text, flex: 1 }]}>새로 기록한 자산</Text>
+                  <Text style={[styles.whyValue, { color: theme.textMuted }]}>
+                    {newSplit.total >= 0 ? '+' : ''}
+                    {krwShort(newSplit.total)}원
+                  </Text>
+                </View>
+              )}
               <Border type="full" />
               <View style={styles.whyRow}>
                 <Text style={[styles.whyLabel, { color: theme.text, flex: 1 }]}>순자산 변화</Text>
@@ -314,6 +334,12 @@ export default function HomeScreen({ navigation }: Props) {
                   </View>
                 </View>
               ))
+            )}
+            {newSplit.total !== 0 && (
+              <Text style={[styles.txMeta, { color: theme.textMuted, marginTop: 8 }]}>
+                새로 기록한 자산({newSplit.names.join(', ')}) {newSplit.total >= 0 ? '+' : ''}
+                {krwShort(newSplit.total)}원은 위 변화에서 뺐어요
+              </Text>
             )}
           </View>
         </View>

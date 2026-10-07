@@ -367,7 +367,8 @@ export class McpService {
       'get_yearly_comparison',
       {
         title: '연간 비교',
-        description: '연도별 순자산과 자산군별 증감 기여를 조회합니다.',
+        description:
+          '연도별 순자산과 전년 말 대비 증감을 조회합니다 (올해는 오늘 기준). growthRate(%)가 증가율이며, 그해 처음 기록한 자산(newAssets, newAssetsKRW)은 증가가 아닌 신규 편입으로 보고 제외한 값입니다. change = growth + newAssetsKRW. contributions는 신규 편입을 뺀 자산군별 증감, staleAssets는 기준일보다 31일 넘게 오래된 기록으로 계산된 자산, flows는 가계부 수입·지출로 모은 돈(saved)과 나머지(other)입니다.',
         inputSchema: {},
       },
       () => this.call(user, async (api, hid) => this.unwrap(await api.get(`/households/${hid}/comparison/yearly`))),

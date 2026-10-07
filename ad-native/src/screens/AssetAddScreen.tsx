@@ -48,6 +48,9 @@ export default function AssetAddScreen({ navigation, route }: Props) {
   const [category, setCategory] = useState<AssetCategory | null>(null);
   const [ownerUserId, setOwnerUserId] = useState<number | null>(null);
   const [amount, setAmount] = useState('');
+  // 작년 말 잔액 — 없으면 연도별 비교에서 이 자산이 '올해 새로 생긴 돈'으로만 보여 증가율에서 빠진다
+  const [showPrevYearEnd, setShowPrevYearEnd] = useState(false);
+  const [prevYearEndAmount, setPrevYearEndAmount] = useState('');
   const [error, setError] = useState('');
   // 자산은 만들어졌는데 스냅샷 저장만 실패했을 때, 다시 저장해도 자산이 또 생기지 않게 만든 id를 기억해 둔다
   const createdAssetId = useRef<number | null>(null);
@@ -74,6 +77,8 @@ export default function AssetAddScreen({ navigation, route }: Props) {
 
   const isLiability = category === 'LIABILITY';
   const amtNum = Number(amount.replace(/[^0-9]/g, ''));
+  const prevYearEnd = `${Number(todayLocal().slice(0, 4)) - 1}-12-31`;
+  const prevYearEndNum = Number(prevYearEndAmount.replace(/[^0-9]/g, ''));
   const step1Valid = assetName.trim().length > 0 && category !== null;
   const isPending = createAsset.isPending || updateAsset.isPending || upsertSnapshot.isPending;
 
@@ -99,6 +104,10 @@ export default function AssetAddScreen({ navigation, route }: Props) {
       const valueToSave = skipAmount ? 0 : amtNum;
       if (valueToSave > 0) {
         await upsertSnapshot.mutateAsync({ assetId: createdAssetId.current, dto: { date: today, value: valueToSave } });
+      }
+      // 같은 날짜는 덮어쓰는 upsert라, 이 단계만 실패해 다시 저장해도 중복이 생기지 않는다
+      if (!skipAmount && showPrevYearEnd && prevYearEndNum > 0) {
+        await upsertSnapshot.mutateAsync({ assetId: createdAssetId.current, dto: { date: prevYearEnd, value: prevYearEndNum } });
       }
       popToScreen(navigation, 'AssetsList', { savedMode: 'create', savedAt: Date.now() });
     } catch (e: any) {
@@ -190,6 +199,29 @@ export default function AssetAddScreen({ navigation, route }: Props) {
                 />
                 <Text style={[styles.amountUnit, { color: theme.textMuted }]}>원</Text>
               </View>
+
+              {showPrevYearEnd ? (
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>
+                    {prevYearEnd} {isLiability ? '부채 잔액' : '잔액'} (선택)
+                  </Text>
+                  <TextField
+                    variant="line"
+                    keyboardType="numeric"
+                    placeholder="0"
+                    suffix="원"
+                    value={prevYearEndAmount}
+                    onChangeText={(t) => setPrevYearEndAmount(formatNum(t))}
+                  />
+                  <Text style={{ color: theme.textMuted, fontSize: 12, marginTop: 6 }}>
+                    입력하면 연도별 비교에서 이 자산이 작년부터 있던 돈으로 계산돼요
+                  </Text>
+                </View>
+              ) : (
+                <Pressable onPress={() => setShowPrevYearEnd(true)} disabled={isPending} style={styles.skipBtn}>
+                  <Text style={{ color: theme.brand, fontSize: 13, fontWeight: '600' }}>+ 작년 말 잔액도 입력하기</Text>
+                </Pressable>
+              )}
 
               <Pressable onPress={() => handleSave(true)} disabled={isPending} style={styles.skipBtn}>
                 <Text style={{ color: theme.textMuted, fontSize: 13 }}>건너뛰기 (나중에 입력)</Text>

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Asset } from '../assets/entities/asset.entity';
 import { AssetSnapshot } from '../asset-snapshots/entities/asset-snapshot.entity';
 import { Transaction } from '../transactions/entities/transaction.entity';
@@ -16,6 +16,14 @@ export function ymd(d: Date): string {
 /** 순자산 합계에서 부채는 차감한다 (스냅샷에는 부채 잔액이 양수로 저장됨) */
 export function signedValue(isLiability: boolean, value: number): number {
   return isLiability ? -value : value;
+}
+
+/**
+ * 그 날짜에 보유 중이던 자산인지 — 보관(archived)한 날부터 빠진다.
+ * 보관 자산을 과거 시점에서도 빼버리면 과거 순자산이 소급해서 줄고, 판 돈이 옮겨간 현금만 늘어난 것처럼 보인다.
+ */
+export function isHeldOn(asset: { archivedAt?: Date | null }, date: string): boolean {
+  return !asset.archivedAt || ymd(new Date(asset.archivedAt)) > date;
 }
 
 @Injectable()
@@ -73,7 +81,8 @@ export class DashboardService {
          LIMIT 1
        ) latest ON true
        WHERE a.household_id = $1
-         AND a.archived_at IS NULL
+         -- 그 날짜 이후에 보관한 자산은 그 시점엔 갖고 있던 자산이다 (isHeldOn과 같은 기준)
+         AND (a.archived_at IS NULL OR a.archived_at >= $2::date + 1)
        ORDER BY a.category, a.name`,
       [householdId, date],
     );
@@ -158,34 +167,33 @@ export class DashboardService {
   }
 
   private async getTimeseries(householdId: number, months: number | null) {
+    // 보관한 자산도 보관 전 달까지는 순자산에 들어가야 해서 전부 가져온다
     const assets = await this.assetRepo.find({
-      where: { householdId, archivedAt: IsNull() },
-      select: ['id', 'isLiability'],
+      where: { householdId },
+      select: ['id', 'isLiability', 'archivedAt'],
     });
     if (!assets.length) return [];
 
-    const assetIds = assets.map((a) => a.id);
-    const liabilityIds = new Set(assets.filter((a) => a.isLiability).map((a) => a.id));
     const snapshots = await this.snapshotRepo
       .createQueryBuilder('s')
       .select(['s.assetId', 's.date', 's.valueKRW'])
-      .where('s.assetId IN (:...ids)', { ids: assetIds })
+      .where('s.assetId IN (:...ids)', { ids: assets.map((a) => a.id) })
       .orderBy('s.date', 'ASC')
       .getMany();
 
-    return this.computeMonthly(assetIds, snapshots, months, liabilityIds);
+    return this.computeMonthly(assets, snapshots, months);
   }
 
   private computeMonthly(
-    assetIds: number[],
+    assets: Pick<Asset, 'id' | 'isLiability' | 'archivedAt'>[],
     snapshots: Pick<AssetSnapshot, 'assetId' | 'date' | 'valueKRW'>[],
     months: number | null,
-    liabilityIds: Set<number> = new Set(),
   ) {
     // 자산별 스냅샷 배열 (날짜 ASC 정렬 유지)
     const byAsset = new Map<number, { date: string; valueKRW: number }[]>();
-    for (const id of assetIds) byAsset.set(id, []);
+    for (const a of assets) byAsset.set(a.id, []);
     for (const s of snapshots) byAsset.get(s.assetId)?.push({ date: s.date, valueKRW: Number(s.valueKRW) });
+    const assetById = new Map(assets.map((a) => [a.id, a]));
 
     const now = new Date();
     let startDate: Date;
@@ -208,10 +216,12 @@ export class DashboardService {
 
       let netWorth = 0;
       for (const [assetId, snaps] of byAsset) {
+        const asset = assetById.get(assetId)!;
+        if (!isHeldOn(asset, monthEnd)) continue;
         // 이분탐색 없이 끝에서부터 찾기 (배열 정렬 ASC)
         for (let i = snaps.length - 1; i >= 0; i--) {
           if (snaps[i].date <= monthEnd) {
-            netWorth += signedValue(liabilityIds.has(assetId), snaps[i].valueKRW);
+            netWorth += signedValue(asset.isLiability, snaps[i].valueKRW);
             break;
           }
         }

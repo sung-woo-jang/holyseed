@@ -4,6 +4,8 @@ import { krwShort } from '../../lib/format';
 interface WaterfallItem {
   label: string;
   value: number;
+  /** 증감 막대 색을 직접 지정 (예: 신규 편입) — 없으면 늘면 초록·줄면 빨강 */
+  color?: string;
 }
 
 interface WaterfallChartProps {
@@ -38,9 +40,9 @@ export default function WaterfallChart({ data, width = 327, height = 240, dark =
     const v = d.value;
     const barH = (Math.abs(v) / maxContrib) * contribMaxH;
     if (v >= 0) {
-      return { x, w: barW, yTop: baselineY - barH, yBot: baselineY, value: v, label: d.label, type: 'pos' as const };
+      return { x, w: barW, yTop: baselineY - barH, yBot: baselineY, value: v, label: d.label, type: 'pos' as const, color: d.color };
     }
-    return { x, w: barW, yTop: baselineY, yBot: baselineY + barH, value: v, label: d.label, type: 'neg' as const };
+    return { x, w: barW, yTop: baselineY, yBot: baselineY + barH, value: v, label: d.label, type: 'neg' as const, color: d.color };
   });
 
   return (
@@ -48,7 +50,7 @@ export default function WaterfallChart({ data, width = 327, height = 240, dark =
       <Line x1={padding.left} x2={padding.left + w} y1={baselineY} y2={baselineY} stroke={dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'} strokeWidth={1} />
 
       {cells.map((c, i) => {
-        const color = c.type === 'total' ? '#3182F6' : c.type === 'pos' ? '#0AB39C' : '#EF4444';
+        const color = c.type === 'total' ? '#3182F6' : (c.color ?? (c.type === 'pos' ? '#0AB39C' : '#EF4444'));
         const barH = Math.max(3, c.yBot - c.yTop);
         const isTotal = c.type === 'total';
         const valLabel = isTotal ? krwShort(c.value) : (c.value > 0 ? '+' : '') + krwShort(c.value);

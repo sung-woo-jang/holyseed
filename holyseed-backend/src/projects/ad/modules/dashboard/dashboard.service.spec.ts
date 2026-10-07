@@ -91,6 +91,20 @@ describe('DashboardService', () => {
       expect(ts).toHaveLength(93);
     });
 
+    it('보관한 자산은 보관한 달부터 빠지고, 그 전 달까지는 들어간다', async () => {
+      assetFind.mockResolvedValue([
+        { id: 1, isLiability: false, archivedAt: null },
+        { id: 2, isLiability: false, archivedAt: new Date(2026, 8, 10, 15) },
+      ]);
+      snapshots = [snap(1, '2026-07-31', 100), snap(2, '2026-07-31', 1000), snap(1, '2026-09-10', 1100)];
+
+      const ts = await service.getTimeseriesRange(1, TimeseriesRange.ONE_YEAR);
+
+      const byMonth = Object.fromEntries(ts.map((t) => [t.month, t.netWorth]));
+      expect(byMonth['2026-08']).toBe(1100);
+      expect(byMonth['2026-09']).toBe(1100);
+    });
+
     it('자산이 없으면 빈 배열', async () => {
       assetFind.mockResolvedValue([]);
       expect(await service.getTimeseriesRange(1, TimeseriesRange.ONE_YEAR)).toEqual([]);

@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Like, Repository } from 'typeorm';
 import { Asset, AssetCategory } from './entities/asset.entity';
+import { AssetSnapshot } from '../asset-snapshots/entities/asset-snapshot.entity';
 import { CreateAssetDto } from './dto/request/create-asset.dto';
 import { SearchAssetsDto } from './dto/request/search-assets.dto';
 import { Membership, MemberRole } from '../memberships/entities/membership.entity';
@@ -115,6 +116,10 @@ export class AssetsService {
   async delete(id: number, userId: number): Promise<void> {
     const asset = await this.findOne(id);
     await this.assertCanModify(asset, userId);
-    await this.assetRepo.remove(asset);
+    // 스냅샷엔 외래키가 없어 자산만 지우면 고아 행으로 남는다 — 앱 확인창 안내대로 기록도 함께 지운다
+    await this.assetRepo.manager.transaction(async (m) => {
+      await m.delete(AssetSnapshot, { assetId: asset.id });
+      await m.remove(asset);
+    });
   }
 }

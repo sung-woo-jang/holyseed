@@ -53,18 +53,55 @@ export function parsePeriods(raw: any): Periods | null {
 }
 
 export interface ChangeSummary {
+  /** 전체 순자산 변화 (신규 편입 포함) */
   change: number;
+  /** 신규 편입을 뺀 실제 증가분 — 증가율의 분자 */
+  growth: number;
   /** 기준값이 0 이하면 null — 비율이 의미 없음 */
   rateText: string | null;
 }
 
-/** 기준 대비 증감과 비율 표기 — 3배 이상이면 +1,700% 대신 "17.6배"로 */
-export function summarizeChange(base: number, now: number): ChangeSummary {
+/** 증가율(%) 표기 — 3배 이상이면 +1,700% 대신 "17.6배"로 */
+export function formatRate(ratePct: number | null): string | null {
+  if (ratePct == null) return null;
+  const multiple = 1 + ratePct / 100;
+  if (multiple >= 3) return `${multiple.toFixed(1)}배`;
+  return pct(ratePct);
+}
+
+/**
+ * 기준 대비 증감과 비율 표기. newAssets = 기준 시점엔 기록이 없던 자산의 현재 합계 —
+ * 처음 기록한 잔액은 늘어난 돈이 아니라 새로 편입된 돈이라 증가율에서 뺀다 (연도별 비교 API와 같은 기준)
+ */
+export function summarizeChange(base: number, now: number, newAssets = 0): ChangeSummary {
   const change = now - base;
-  if (base <= 0) return { change, rateText: null };
-  const multiple = now / base;
-  if (multiple >= 3) return { change, rateText: `${multiple.toFixed(1)}배` };
-  return { change, rateText: pct((change / base) * 100) };
+  const growth = change - newAssets;
+  if (base <= 0) return { change, growth, rateText: null };
+  return { change, growth, rateText: formatRate((growth / base) * 100) };
+}
+
+export interface NewAssetSplit {
+  /** 순자산 기준 합계 (부채는 음수) */
+  total: number;
+  byCategory: Map<AssetCategory, number>;
+  names: string[];
+}
+
+/** 기준 시점엔 스냅샷이 없던 자산 — 증가율·자산군별 변화에서 따로 떼어낸다 */
+export function newAssetsSince(
+  assets: { id: string; name: string; category: AssetCategory; value: number; isLiability: boolean }[],
+  base: PeriodSnapshot | null,
+): NewAssetSplit {
+  const split: NewAssetSplit = { total: 0, byCategory: new Map(), names: [] };
+  if (!base) return split;
+  for (const a of assets) {
+    if (!assetChangeSince(a, base)?.isNew) continue;
+    const v = signedValue(a.isLiability, a.value);
+    split.total += v;
+    split.byCategory.set(a.category, (split.byCategory.get(a.category) ?? 0) + v);
+    split.names.push(a.name);
+  }
+  return split;
 }
 
 export interface CategoryContribution {
@@ -83,17 +120,18 @@ function signedByCategory(rows: { category: string; isLiability: boolean; valueK
   return m;
 }
 
-/** 현재 자산군별 순자산 − 기준 시점 자산군별 순자산 (부채는 줄면 +) */
+/** 현재 자산군별 순자산 − 기준 시점 자산군별 순자산 (부채는 줄면 +). exclude = 자산군별로 빼둘 신규 편입분 */
 export function categoryContributions(
   nowRows: { category: string; isLiability: boolean; valueKRW: number }[],
   baseRows: { category: string; isLiability: boolean; valueKRW: number }[],
+  exclude?: Map<AssetCategory, number>,
 ): CategoryContribution[] {
   const now = signedByCategory(nowRows);
   const base = signedByCategory(baseRows);
   const keys = new Set<AssetCategory>([...now.keys(), ...base.keys()]);
   const out: CategoryContribution[] = [];
   for (const key of keys) {
-    const value = (now.get(key) ?? 0) - (base.get(key) ?? 0);
+    const value = (now.get(key) ?? 0) - (base.get(key) ?? 0) - (exclude?.get(key) ?? 0);
     if (Math.abs(value) < 1) continue;
     const meta = ASSET_CATEGORY_META[key];
     out.push({ category: key, label: meta?.label ?? key, color: meta?.color ?? '#8B95A1', value });
@@ -162,35 +200,64 @@ export function hasFlowCoverage(txs: { date: string }[], baseDate: string): bool
   return earliest <= baseDate;
 }
 
-/** 연도별 비교 API(연말 순자산 배열)를 CompareScreen이 쓰는 연도별 기여/순자산 맵으로 변환 */
-export function adaptYearlyComparison(rows: unknown): {
-  yearlyContrib: Record<number, { category: string; value: number; color: string }[]>;
-  netWorthByYear: Record<number, number>;
-} {
-  const list: any[] = Array.isArray(rows) ? rows : [];
-  const netWorthByYear: Record<number, number> = {};
-  const yearlyContrib: Record<number, { category: string; value: number; color: string }[]> = {};
-  const byYear = list.map((r) => ({
+export interface YearlyRow {
+  year: number;
+  /** 그해 비교 기준일 — 지난 연도는 12-31, 올해는 오늘 */
+  asOf: string;
+  isCurrentYear: boolean;
+  netWorth: number;
+  /** 작년 말 순자산 — 기록 시작 연도면 null */
+  prevNetWorth: number | null;
+  change: number | null;
+  growth: number | null;
+  /** 신규 편입을 뺀 증가율(%) — API가 계산한 값 그대로 */
+  growthRate: number | null;
+  newAssetsKRW: number;
+  newAssets: { assetId: string; name: string; valueKRW: number; firstSnapshotDate: string }[];
+  contributions: CategoryContribution[];
+  staleAssets: { assetId: string; name: string; snapshotDate: string; daysBefore: number }[];
+  flows: { income: number; expense: number; saved: number; other: number } | null;
+}
+
+const numOrNull = (v: any): number | null => (v == null ? null : Number(v) || 0);
+
+/** 연도별 비교 API 응답 파싱 — 증감·증가율 계산은 서버가 하고 앱은 표시만 한다 */
+export function parseYearlyComparison(raw: unknown): YearlyRow[] {
+  const list: any[] = Array.isArray(raw) ? raw : [];
+  return list.map((r) => ({
     year: Number(r.year),
+    asOf: String(r.asOf ?? `${r.year}-12-31`),
+    isCurrentYear: !!r.isCurrentYear,
     netWorth: Number(r.netWorth) || 0,
-    // 연도별 비교 API의 자산군 합계는 이미 부채가 음수로 반영된 값
-    cats: new Map<AssetCategory, number>(
-      (r.byCategory ?? []).map((c: any) => [normalizeAssetCategory(c.category), Number(c.valueKRW) || 0] as const),
-    ),
-  }));
-  byYear.forEach((cur, i) => {
-    netWorthByYear[cur.year] = cur.netWorth;
-    const prev = byYear[i - 1];
-    if (!prev) return;
-    const keys = new Set<AssetCategory>([...cur.cats.keys(), ...prev.cats.keys()]);
-    const items: { category: string; value: number; color: string }[] = [];
-    for (const key of keys) {
-      const value = (cur.cats.get(key) ?? 0) - (prev.cats.get(key) ?? 0);
-      if (Math.abs(value) < 1) continue;
+    prevNetWorth: numOrNull(r.prevNetWorth),
+    change: numOrNull(r.change),
+    growth: numOrNull(r.growth),
+    growthRate: numOrNull(r.growthRate),
+    newAssetsKRW: Number(r.newAssetsKRW) || 0,
+    newAssets: (r.newAssets ?? []).map((a: any) => ({
+      assetId: String(a.assetId),
+      name: String(a.name ?? ''),
+      valueKRW: Number(a.valueKRW) || 0,
+      firstSnapshotDate: String(a.firstSnapshotDate ?? ''),
+    })),
+    contributions: (r.contributions ?? []).map((c: any) => {
+      const key = normalizeAssetCategory(c.category);
       const meta = ASSET_CATEGORY_META[key];
-      items.push({ category: meta?.label ?? key, value, color: meta?.color ?? '#8B95A1' });
-    }
-    yearlyContrib[cur.year] = items;
-  });
-  return { yearlyContrib, netWorthByYear };
+      return { category: key, label: meta?.label ?? key, color: meta?.color ?? '#8B95A1', value: Number(c.valueKRW) || 0 };
+    }),
+    staleAssets: (r.staleAssets ?? []).map((a: any) => ({
+      assetId: String(a.assetId),
+      name: String(a.name ?? ''),
+      snapshotDate: String(a.snapshotDate ?? ''),
+      daysBefore: Number(a.daysBefore) || 0,
+    })),
+    flows: r.flows
+      ? {
+          income: Number(r.flows.income) || 0,
+          expense: Number(r.flows.expense) || 0,
+          saved: Number(r.flows.saved) || 0,
+          other: Number(r.flows.other) || 0,
+        }
+      : null,
+  }));
 }

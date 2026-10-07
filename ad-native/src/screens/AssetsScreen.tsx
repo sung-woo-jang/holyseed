@@ -17,7 +17,7 @@ import { useHouseholdData, type HouseholdAsset } from '../queries/useHouseholdDa
 import { krw, krwShort, pct } from '../lib/format';
 import { useTheme } from '../lib/theme';
 import { todayLocal } from '../lib/date';
-import { assetChangeSince, findStaleAssets, signedValue, summarizeChange } from '../lib/net-worth';
+import { assetChangeSince, findStaleAssets, newAssetsSince, signedValue, summarizeChange } from '../lib/net-worth';
 import { TE } from '../lib/toss-emoji';
 import { useAuthStore } from '../stores/auth.store';
 import { useDeleteAsset } from '../queries/mutations';
@@ -104,14 +104,15 @@ export default function AssetsScreen({ navigation, route }: Props) {
   const total = filteredAssets.reduce((s, a) => s + signedValue(a.isLiability, a.value), 0);
   const totalAssets = filteredAssets.reduce((s, a) => s + (a.isLiability ? 0 : a.value), 0);
   const totalLiabilities = filteredAssets.reduce((s, a) => s + (a.isLiability ? a.value : 0), 0);
-  // 30일 전 대비 — 그때 없던 자산은 전액을 증가로 계산 (홈 순자산 변화와 같은 기준)
+  // 30일 전 대비 — 그때 없던 자산은 늘어난 돈이 아니라 새로 편입된 돈이라 증감·증가율에서 뺀다 (홈·연도별 비교와 같은 기준)
+  const newTotal = base30 ? newAssetsSince(filteredAssets, base30).total : 0;
   const totalEffect = base30
     ? filteredAssets.reduce((s, a) => {
         const c = assetChangeSince(a, base30);
-        return s + (c ? (c.isNew ? signedValue(a.isLiability, a.value) : c.effect) : 0);
+        return s + (c && !c.isNew ? c.effect : 0);
       }, 0)
     : 0;
-  const totalChange = base30 ? summarizeChange(total - totalEffect, total) : null;
+  const totalChange = base30 ? summarizeChange(total - totalEffect - newTotal, total, newTotal) : null;
   const staleAssets = useMemo(() => findStaleAssets(filteredAssets, today), [filteredAssets, today]);
 
   const grossAssetsTotal = totalAssets || 1;

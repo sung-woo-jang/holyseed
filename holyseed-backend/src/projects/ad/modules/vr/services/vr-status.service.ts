@@ -4,12 +4,22 @@ import { IsNull, Not, Repository } from 'typeorm';
 import { TossClientService } from '@shared/toss/toss-client.service';
 import { TossPriceHubService } from '@shared/toss/toss-price-hub.service';
 import { LaofusEngineState } from '@/projects/laofus/entities/engine-state.entity';
+import { SpacexEntry } from '@ad/modules/spacex/entities/spacex-entry.entity';
 import { VrService } from '../vr.service';
 import { VrEngineService } from './vr-engine.service';
 import { VrSchedulerService } from './vr-scheduler.service';
 import { VrEvent } from '../entities/vr-event.entity';
 import { activeSession } from '../core';
 import type { UsMarketCalendar } from '../core';
+
+export interface VrCashBalance {
+  totalCash: number;
+  laofusCash: number;
+  /** 모으기(스페이스X·UPRO 등)로 달러 예수금에서 나간 누적 매수액 */
+  dcaSpent: number;
+  vrCash: number;
+  ts: string;
+}
 
 export interface VrLastRun {
   runId: string;
@@ -24,7 +34,7 @@ export interface VrLastRun {
 export class VrStatusService {
   private calendarCache: { data: UsMarketCalendar; at: number } | null = null;
   private candleCache = new Map<string, { data: unknown; at: number }>();
-  private cashCache: { totalCash: number; laofusCash: number; vrCash: number; ts: string; at: number } | null = null;
+  private cashCache: (VrCashBalance & { at: number }) | null = null;
 
   constructor(
     private readonly toss: TossClientService,
@@ -34,6 +44,7 @@ export class VrStatusService {
     private readonly scheduler: VrSchedulerService,
     @InjectRepository(VrEvent) private readonly eventRepo: Repository<VrEvent>,
     @InjectRepository(LaofusEngineState) private readonly laofusEngineRepo: Repository<LaofusEngineState>,
+    @InjectRepository(SpacexEntry) private readonly dcaEntryRepo: Repository<SpacexEntry>,
   ) {}
 
   private async getCalendar(): Promise<UsMarketCalendar> {
@@ -51,18 +62,25 @@ export class VrStatusService {
 
   /**
    * VR 몫 실제현금 = 계좌 전체 실제 예수금 − 라오어 몫(engine_state.cash 합계, 같은 계좌를 라오어와 공유).
+   * 모으기도 같은 달러 예수금에서 결제되므로 그 누적 매수액(dcaSpent)을 따로 내려준다 — vrCash는 실제 돈 그대로 두고,
+   * 장부(Pool)와 비교할 때만 dcaSpent를 더해 모으기 지출을 차이에서 뺀다.
    * 체결 시에만 바뀌는 값이라 가격보다 긴 5분 캐시로 토스 API 호출 절약.
    */
-  async getCashBalance(): Promise<{ totalCash: number; laofusCash: number; vrCash: number; ts: string }> {
+  async getCashBalance(): Promise<VrCashBalance> {
     if (this.cashCache && Date.now() - this.cashCache.at < 5 * 60_000) return this.cashCache;
-    const [totalCashStr, laofusStates] = await Promise.all([
+    const [totalCashStr, laofusStates, dca] = await Promise.all([
       this.toss.getBuyingPower('USD'),
       this.laofusEngineRepo.find(),
+      this.dcaEntryRepo
+        .createQueryBuilder('e')
+        .select('COALESCE(SUM(e.amount), 0)', 'spent')
+        .getRawOne<{ spent: string }>(),
     ]);
     const totalCash = Number(totalCashStr);
     const laofusCash = laofusStates.reduce((sum, s) => sum + Number(s.cash), 0);
+    const dcaSpent = Math.round(Number(dca?.spent ?? 0) * 100) / 100;
     const vrCash = totalCash - laofusCash;
-    this.cashCache = { totalCash, laofusCash, vrCash, ts: new Date().toISOString(), at: Date.now() };
+    this.cashCache = { totalCash, laofusCash, dcaSpent, vrCash, ts: new Date().toISOString(), at: Date.now() };
     return this.cashCache;
   }
 

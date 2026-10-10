@@ -156,7 +156,7 @@ export const vrApi = {
   candles: (range: '1m' | '3m' | 'all' = 'all') => api.get<VrCandlesDto>('/vr/candles', { params: { range } }).then((r) => r.data),
   state: () => api.get<VrState>('/vr/state').then((r) => r.data),
   price: () => api.get<{ price: number; ts: string }>('/vr/price').then((r) => r.data),
-  cashBalance: () => api.get<{ totalCash: number; laofusCash: number; vrCash: number }>('/vr/cash-balance').then((r) => r.data),
+  cashBalance: () => api.get<{ totalCash: number; laofusCash: number; dcaSpent?: number; vrCash: number }>('/vr/cash-balance').then((r) => r.data),
   events: (cursor?: number, level?: string) =>
     api.get<{ events: VrEventDto[]; nextCursor: number | null }>('/vr/events', { params: { cursor, level } }).then((r) => r.data),
   status: () => api.get<VrStatusDto>('/vr/status').then((r) => r.data),

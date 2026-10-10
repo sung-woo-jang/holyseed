@@ -59,8 +59,10 @@ export default function VrOverviewScreen() {
   const state = stateQ.data;
   const price = priceQ.data?.price ?? null;
   const vrCash = cashQ.data?.vrCash ?? null;
+  // 모으기도 같은 달러 예수금에서 결제돼서, 그 누적 매수액은 장부와의 차이에서 뺀다
+  const dcaSpent = cashQ.data?.dcaSpent ?? 0;
 
-  const cashDiff = state && vrCash !== null ? vrCash - state.pool : null;
+  const cashDiff = state && vrCash !== null ? vrCash + dcaSpent - state.pool : null;
   const growthRate = state && state.v2Preview !== null && state.vValue > 0 ? ((state.v2Preview - state.vValue) / state.vValue) * 100 : null;
   const marketValue = state && price !== null ? state.quantity * price : null;
   const costBasis = state ? state.avgPrice * state.quantity : null;
@@ -97,7 +99,9 @@ export default function VrOverviewScreen() {
       poolUsageRate: { id: 'poolUsageRate', label: 'Pool 소진율', value: poolUsageRate !== null ? `${poolUsageRate.toFixed(1)}%` : '—' },
       cashBalance: {
         id: 'cashBalance', label: '예수금 차이', value: cashDiff !== null ? `${cashDiff >= 0 ? '+' : ''}${usd(cashDiff)}` : vrCash === null ? '조회 중…' : '—',
-        hint: vrCash !== null ? `실제 ${usd(vrCash)} / 있어야 할 ${usd(state.pool)}` : undefined,
+        hint: vrCash !== null
+          ? `실제 ${usd(vrCash)}${dcaSpent > 0 ? ` + 모으기 ${usd(dcaSpent)}` : ''} / 있어야 할 ${usd(state.pool)}`
+          : undefined,
         tone: cashDiff === null ? undefined : cashDiff >= 0 ? 'positive' : 'negative',
       },
       cashRatio: { id: 'cashRatio', label: '현금 비중', value: cashRatio !== null ? `${cashRatio.toFixed(1)}%` : '조회 중…' },
@@ -119,7 +123,7 @@ export default function VrOverviewScreen() {
       depositAmount: { id: 'depositAmount', label: '적립금 / 사이클', value: usd(state.settings.depositAmount) },
       gFactor: { id: 'gFactor', label: 'G (기울기)', value: String(state.settings.gFactor) },
     };
-  }, [state, price, vrCash, cashDiff, growthRate, nextV, marketValue, costBasis, unrealizedProfit, totalAssets, profit, profitRate, cashRatio, poolUsageRate]);
+  }, [state, price, vrCash, dcaSpent, cashDiff, growthRate, nextV, marketValue, costBasis, unrealizedProfit, totalAssets, profit, profitRate, cashRatio, poolUsageRate]);
 
   const guideCtx = useMemo<GuideCtx | null>(() => {
     if (!state) return null;

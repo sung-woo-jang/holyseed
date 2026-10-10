@@ -182,7 +182,7 @@ export class OwnerToolsMcpService {
       {
         title: 'VR 실계좌 예수금',
         description:
-          '토스증권 실계좌 예수금 중 VR(TQQQ) 몫만 조회합니다(무매/SOXL 몫은 제외, 5분 캐시). vr_get_state의 Pool은 내부 장부상 잔고이고 이건 실제 증권사 예수금이라 서로 다른 값일 수 있습니다.',
+          '토스증권 실계좌 예수금 중 VR(TQQQ) 몫만 조회합니다(무매/SOXL 몫은 제외, 5분 캐시). vr_get_state의 Pool은 내부 장부상 잔고이고 이건 실제 증권사 예수금이라 서로 다른 값일 수 있습니다. dcaSpent는 같은 달러 예수금에서 결제된 모으기(스페이스X·UPRO) 누적 매수액으로, Pool과 비교할 때는 vrCash + dcaSpent를 쓰세요.',
         inputSchema: {},
       },
       () => this.call(async (api) => this.unwrap(await api.get('/vr/cash-balance'))),

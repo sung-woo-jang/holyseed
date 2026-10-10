@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TossModule } from '@shared/toss/toss.module';
 import { LaofusEngineState } from '@/projects/laofus/entities/engine-state.entity';
 import { LaofusAccountSnapshot } from '@/projects/laofus/entities/account-snapshot.entity';
+import { SpacexEntry } from '@ad/modules/spacex/entities/spacex-entry.entity';
 import { VrSetting, VrCycle, VrFill, VrEvent, VrPendingOrder } from './entities';
 import { VrService } from './vr.service';
 import { VrController } from './vr.controller';
@@ -22,6 +23,7 @@ import { VrEvaluationService } from './services/vr-evaluation.service';
       VrPendingOrder,
       LaofusEngineState,
       LaofusAccountSnapshot,
+      SpacexEntry,
     ]),
     TossModule,
   ],

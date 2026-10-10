@@ -169,8 +169,8 @@ export const TILE_GUIDE: Record<string, TileGuide> = {
   cashBalance: {
     focus: 'pool',
     sum: '증권 계좌의 실제 현금과 앱 기록 Pool이 맞는지 점검해요.',
-    formal: '증권사 예수금에서 라오어 엔진 몫을 뺀 VR 현금과, 앱이 기록한 Pool의 차이예요. 0에 가까워야 해요.',
-    eq: '차이 = 실제 VR 현금 − 앱 Pool',
+    formal: '증권사 예수금에서 라오어 엔진 몫을 뺀 VR 현금과, 앱이 기록한 Pool의 차이예요. 같은 예수금에서 나간 모으기 매수액은 VR 몫이 아니라서 다시 더해 비교해요. 0에 가까워야 해요.',
+    eq: '차이 = 실제 VR 현금 + 모으기 누적 매수액 − 앱 Pool',
     lake: '연못에 달아 둔 수위계 눈금과 실제 물의 양을 비교하는 거예요.',
     mine: (c) =>
       c.cashDiff === null

@@ -7,6 +7,7 @@ import ChartLegend from '../../components/charts/ChartLegend';
 import SheetModal from '../../components/sheets/SheetModal';
 import { ReturnChart, StackedValueChart, trendColors } from '../../components/charts/TrendCharts';
 import { laofusRestApi, type AssetTrendPoint } from '../../api/laofus';
+import { dcaColor } from '../../lib/dca';
 import {
   availablePeriods,
   compositionOf,
@@ -357,6 +358,17 @@ function Snapshot({ r, ccy, theme }: { r: AssetTrendPoint; ccy: Ccy; theme: Them
       </Text>
       <Holding name="TQQQ · VR" color={colors.tqqq} qty={r.tqqqQty} v={r.tqqqValueUsd} p={r.tqqqPrincipalUsd} pc={rets.tqqq} />
       <Holding name="SOXL · 무한매수법" color={colors.soxl} qty={r.soxlQty} v={r.soxlValueUsd} p={r.soxlPrincipalUsd} pc={rets.soxl} />
+      {/* 모으기(스페이스X·UPRO)는 계좌총액엔 들어가지만 위 전략 평가금·수익률엔 넣지 않는다 */}
+      {(r.dcaValueUsd ?? 0) > 0 && (
+        <View style={[styles.holdRow, { borderColor: theme.border }]}>
+          <Badge color={dcaColor('UPRO')} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text }}>모으기 · 스페이스X·UPRO</Text>
+            <Text style={{ fontSize: 11, color: theme.textMuted }}>전략 수익률엔 포함하지 않아요</Text>
+          </View>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text }}>{fmt(r.dcaValueUsd! * f, ccy)}</Text>
+        </View>
+      )}
 
       <View style={[styles.cashCard, { borderColor: '#C8930A', backgroundColor: theme.dark ? '#332708' : '#FFF7E6' }]}>
         <View style={styles.rowBetween}>

@@ -72,7 +72,7 @@ function hubPrice(symbol: string, price: number, stale = false): HubPrice {
 }
 
 describe('LaofusLiveService', () => {
-  const prices: Record<string, number> = { TQQQ: 79.53, SOXL: 151.2, SPCX: 151.49 };
+  const prices: Record<string, number> = { TQQQ: 79.53, SOXL: 151.2, SPCX: 151.49, UPRO: 98.4 };
   let toss: { getHoldingsAll: jest.Mock; getExchangeRate: jest.Mock; getOrders: jest.Mock; getBuyingPower: jest.Mock };
   let hub: { getPrice: jest.Mock };
   let status: { getCalendar: jest.Mock };
@@ -101,13 +101,14 @@ describe('LaofusLiveService', () => {
     jest.useRealTimers();
   });
 
-  it('3종목을 VR·무매·스페이스X 순서로 현재가·보유·손익과 함께 내려준다', async () => {
+  it('4종목을 VR·무매·스페이스X·UPRO 모으기 순서로 현재가·보유·손익과 함께 내려준다', async () => {
     const live = await service.getLive();
 
     expect(live.symbols.map((s) => [s.symbol, s.label])).toEqual([
       ['TQQQ', 'VR'],
       ['SOXL', '무한매수법'],
       ['SPCX', '스페이스X'],
+      ['UPRO', '모으기'],
     ]);
     const tqqq = live.symbols[0];
     expect(tqqq.price).toBe(79.53);

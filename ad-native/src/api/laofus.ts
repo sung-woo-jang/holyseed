@@ -123,6 +123,8 @@ export interface AssetTrendPoint {
   soxlQty: number;
   soxlValueUsd: number;
   soxlPrincipalUsd: number;
+  /** 전략(TQQQ·SOXL) 밖 보유분 = 모으기(SPCX·UPRO 등) 평가금 — stockUsd·수익률엔 포함 안 됨. 옛 서버 응답엔 없음 */
+  dcaValueUsd?: number;
   stockUsd: number;
   principalUsd: number;
   stockKrw: number;

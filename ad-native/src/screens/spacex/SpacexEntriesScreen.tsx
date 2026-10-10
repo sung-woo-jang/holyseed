@@ -6,6 +6,7 @@ import EmptyState from '../../components/common/EmptyState';
 import Segmented from '../../components/common/Segmented';
 import SheetModal from '../../components/sheets/SheetModal';
 import { spacexApi, type SpacexEntryDto, type SpacexLatestOrderDto } from '../../api/spacex';
+import { dcaColor, dcaLabel } from '../../lib/dca';
 import { useTheme } from '../../lib/theme';
 import { TE } from '../../lib/toss-emoji';
 import { useLiveInterval } from '../../lib/use-live-interval';
@@ -17,8 +18,7 @@ import QueryError from '../../components/common/QueryError';
 type ThemeT = ReturnType<typeof useTheme>;
 
 const WARN = '#F5A623';
-const FILTERS = ['전체', '매수', '리밸런싱'] as const;
-type Filter = (typeof FILTERS)[number];
+const ALL = '전체';
 
 function usd(v: number, d = 2): string {
   return `$${v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d })}`;
@@ -45,7 +45,16 @@ function pendingRow(o: SpacexLatestOrderDto | null): SpacexLatestOrderDto | null
   return o.status === 'PENDING' || (o.status === 'FILLED' && !o.recorded) ? o : null;
 }
 
-function PendingRow({ o, today, theme }: { o: SpacexLatestOrderDto; today: string; theme: ThemeT }) {
+function SymbolBadge({ symbol }: { symbol: string }) {
+  const color = dcaColor(symbol);
+  return (
+    <View style={[styles.symBadge, { backgroundColor: color + '1F' }]}>
+      <Text style={{ color, fontSize: 9.5, fontWeight: '800' }}>{symbol}</Text>
+    </View>
+  );
+}
+
+function PendingRow({ o, symbol, today, theme }: { o: SpacexLatestOrderDto; symbol: string; today: string; theme: ThemeT }) {
   const date = o.orderedAt.slice(0, 10);
   const filled = o.status === 'FILLED';
   return (
@@ -56,6 +65,7 @@ function PendingRow({ o, today, theme }: { o: SpacexLatestOrderDto; today: strin
           <Text style={{ color: theme.textMuted, fontSize: 11.5 }}>
             {dateLabel(date)} · {date === today ? '오늘' : '최근'}
           </Text>
+          <SymbolBadge symbol={symbol} />
         </View>
         <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700' }}>{o.amount !== null ? usdTrunc(o.amount) : '시장가'}</Text>
       </View>
@@ -129,15 +139,18 @@ function EntrySheet({ entry, onClose }: { entry: SpacexEntryDto | null; onClose:
   );
 }
 
+/** 모으기 매수 내역 — 전 종목 기록(최신순) + 종목 필터 */
 export default function SpacexEntriesScreen() {
   const theme = useTheme();
   const interval = useLiveInterval(5_000);
-  const statusQ = useQuery({ queryKey: ['spacex-status'], queryFn: spacexApi.status, refetchInterval: interval });
-  const [filter, setFilter] = useState<Filter>('전체');
+  const entriesQ = useQuery({ queryKey: ['spacex-entries'], queryFn: spacexApi.entries, refetchInterval: interval });
+  // 종목 이름·현재가·접수 대기 주문은 전체 화면과 같은 요약을 같이 쓴다
+  const overviewQ = useQuery({ queryKey: ['dca-overview'], queryFn: spacexApi.overview, refetchInterval: interval });
+  const [filter, setFilter] = useState<string>(ALL);
   const [detail, setDetail] = useState<SpacexEntryDto | null>(null);
 
-  if (statusQ.isError && !statusQ.data) return <QueryError onRetry={() => void statusQ.refetch()} />;
-  if (statusQ.isLoading || !statusQ.data) {
+  if (entriesQ.isError && !entriesQ.data) return <QueryError onRetry={() => void entriesQ.refetch()} />;
+  if (entriesQ.isLoading || !entriesQ.data) {
     return (
       <View style={[styles.center, { backgroundColor: theme.bg }]}>
         <Loader size="large" />
@@ -145,57 +158,75 @@ export default function SpacexEntriesScreen() {
     );
   }
 
-  const s = statusQ.data;
-  const entries = s.entries;
-  const pending = pendingRow(s.latestOrder);
-
-  if (entries.length === 0 && !pending) {
-    return (
-      <View style={[styles.center, { backgroundColor: theme.bg }]}>
-        <EmptyState iconCode={TE.rocket} title="아직 기록이 없어요" />
-      </View>
-    );
-  }
-
-  const shown = entries.filter((e) => (filter === '전체' ? true : filter === '매수' ? !e.isRebalance : e.isRebalance));
-  const showPending = pending !== null && filter !== '리밸런싱';
+  const plans = overviewQ.data?.plans ?? [];
+  const entries = entriesQ.data;
   const today = todayLocal();
+  const labelOf = (symbol: string) => plans.find((p) => p.symbol === symbol)?.name ?? dcaLabel(symbol);
+  const symbols = plans.length > 0 ? plans.map((p) => p.symbol) : [...new Set(entries.map((e) => e.symbol))];
+  const options = [ALL, ...symbols.map(labelOf)];
+  const selected = filter === ALL ? null : (symbols.find((sym) => labelOf(sym) === filter) ?? null);
+
+  const shown = entries.filter((e) => selected === null || e.symbol === selected);
+  const pendings = plans
+    .filter((p) => selected === null || p.symbol === selected)
+    .map((p) => ({ symbol: p.symbol, o: pendingRow(p.latestOrder) }))
+    .filter((x): x is { symbol: string; o: SpacexLatestOrderDto } => x.o !== null);
+  const priceOf = (symbol: string) => plans.find((p) => p.symbol === symbol)?.currentPrice ?? null;
+  const principal = shown.reduce((sum, e) => sum + Number(e.amount), 0);
+  const selectedPlan = selected ? plans.find((p) => p.symbol === selected) : undefined;
 
   return (
     <ScrollView style={[styles.root, { backgroundColor: theme.bg }]} contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 12 }}>
+      <Segmented options={options} value={options.includes(filter) ? filter : ALL} onChange={setFilter} small alignment="fluid" />
+
       <View style={styles.sumBar}>
         <Text style={{ color: theme.textMuted, fontSize: 12 }}>
-          {entries.length}건 · 원금 <Text style={{ color: theme.text, fontWeight: '800' }}>{usdTrunc(s.totalPrincipal)}</Text>
+          {shown.length}건 · 원금 <Text style={{ color: theme.text, fontWeight: '800' }}>{usdTrunc(principal)}</Text>
         </Text>
-        {s.avgPrice !== null && (
+        {selectedPlan?.avgPrice != null && (
           <Text style={{ color: theme.textMuted, fontSize: 12 }}>
-            평균 체결가 <Text style={{ color: theme.text, fontWeight: '800' }}>{usd(s.avgPrice)}</Text>
+            평균 체결가 <Text style={{ color: theme.text, fontWeight: '800' }}>{usd(selectedPlan.avgPrice)}</Text>
           </Text>
         )}
       </View>
 
-      <Segmented options={[...FILTERS]} value={filter} onChange={(v) => setFilter(v as Filter)} small alignment="fluid" />
-
-      {shown.length === 0 && !showPending ? (
-        <View style={[styles.listCard, { backgroundColor: theme.card, borderColor: theme.border, padding: 24, alignItems: 'center' }]}>
-          <Text style={{ color: theme.textMuted, fontSize: 12.5 }}>{filter === '리밸런싱' ? '리밸런싱 기록이 없어요' : '기록이 없어요'}</Text>
+      {shown.length === 0 && pendings.length === 0 ? (
+        <View style={[styles.listCard, { backgroundColor: theme.card, borderColor: theme.border, padding: 24, alignItems: 'center', gap: 4 }]}>
+          {entries.length === 0 ? (
+            <EmptyState iconCode={TE.piggy} title="아직 기록이 없어요" />
+          ) : (
+            <>
+              <Text style={{ color: theme.text, fontSize: 13.5, fontWeight: '700' }}>아직 {filter} 매수 기록이 없어요</Text>
+              <Text style={{ color: theme.textMuted, fontSize: 12, textAlign: 'center', lineHeight: 17 }}>
+                {selectedPlan && selectedPlan.planStartDate > today
+                  ? `${Number(selectedPlan.planStartDate.slice(5, 7))}/${Number(selectedPlan.planStartDate.slice(8, 10))} 밤 첫 매수가 체결되면 다음날 오전 9시 10분에 들어와요`
+                  : '체결되면 다음날 오전 9시 10분에 들어와요'}
+              </Text>
+            </>
+          )}
         </View>
       ) : (
         <View style={[styles.listCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          {showPending && <PendingRow o={pending} today={today} theme={theme} />}
+          {pendings.map((p, i) => (
+            <View key={p.o.orderId} style={i > 0 ? { borderTopWidth: 1, borderColor: theme.border } : null}>
+              <PendingRow o={p.o} symbol={p.symbol} today={today} theme={theme} />
+            </View>
+          ))}
           {shown.map((e, i) => {
             const price = priceLine(e);
-            const vs = !e.isRebalance && e.price !== null && s.currentPrice !== null ? (s.currentPrice / e.price - 1) * 100 : null;
+            const current = priceOf(e.symbol);
+            const vs = !e.isRebalance && e.price !== null && current !== null ? (current / e.price - 1) * 100 : null;
             return (
               <Pressable
                 key={e.id}
                 onPress={() => setDetail(e)}
-                style={({ pressed }) => [styles.row, (i > 0 || showPending) && { borderTopWidth: 1, borderColor: theme.border }, pressed && { opacity: 0.6 }]}
+                style={({ pressed }) => [styles.row, (i > 0 || pendings.length > 0) && { borderTopWidth: 1, borderColor: theme.border }, pressed && { opacity: 0.6 }]}
               >
                 <View style={styles.rowTop}>
                   <View style={styles.rowLeft}>
-                    <View style={[styles.dot, { backgroundColor: e.isRebalance ? theme.danger : theme.brand }]} />
+                    <View style={[styles.dot, { backgroundColor: e.isRebalance ? theme.danger : dcaColor(e.symbol) }]} />
                     <Text style={{ color: theme.textMuted, fontSize: 11.5 }}>{dateLabel(e.date)}</Text>
+                    <SymbolBadge symbol={e.symbol} />
                     {e.isRebalance && (
                       <View style={[styles.badge, { backgroundColor: theme.danger }]}>
                         <Text style={styles.badgeText}>리밸런싱</Text>
@@ -222,7 +253,7 @@ export default function SpacexEntriesScreen() {
         </View>
       )}
 
-      {s.currentPrice !== null && filter !== '리밸런싱' && (
+      {shown.length > 0 && (
         <Text style={{ color: theme.textMuted, fontSize: 11, textAlign: 'center' }}>"현재가 대비"는 그 가격에 산 것이 지금 얼마나 올랐는지예요</Text>
       )}
       <EntrySheet entry={detail ? entries.find((x) => x.id === detail.id) ?? detail : null} onClose={() => setDetail(null)} />
@@ -245,4 +276,5 @@ const styles = StyleSheet.create({
   badge: { borderRadius: 999, paddingVertical: 1, paddingHorizontal: 6 },
   badgeText: { color: '#fff', fontSize: 9, fontWeight: '800' },
   statusPill: { borderRadius: 999, paddingVertical: 1, paddingHorizontal: 7 },
+  symBadge: { borderRadius: 5, paddingVertical: 1, paddingHorizontal: 5 },
 });

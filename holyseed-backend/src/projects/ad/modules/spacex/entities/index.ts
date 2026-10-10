@@ -1,2 +1,2 @@
 export * from './spacex-entry.entity';
-export * from './spacex-state.entity';
+export * from './dca-plan.entity';

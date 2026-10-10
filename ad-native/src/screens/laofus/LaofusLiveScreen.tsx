@@ -6,6 +6,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Loader from '../../components/ui/Loader';
 import { laofusRestApi, type LiveDto, type LiveOrderDto, type LiveSessionDto, type LiveSymbolDto } from '../../api/laofus';
 import { useTheme } from '../../lib/theme';
+import { dcaRoute } from '../../lib/dca';
 import { useLiveInterval, useNowTick } from '../../lib/use-live-interval';
 import { orderSideLabel } from '../../lib/laofus-order-label';
 import { freshnessTag, krw, sessionHint, signedPct, usd } from '../../lib/live-format';
@@ -136,12 +137,15 @@ export default function LaofusLiveScreen({ navigation }: Props) {
   const nowMs = useNowTick(interval !== false);
   const liveQ = useQuery({ queryKey: ['laofus-live'], queryFn: laofusRestApi.live, refetchInterval: interval });
 
-  /** 종목을 누르면 그 종목의 전략(무한매수법·VR) 또는 기록(스페이스X) 탭으로 이동 */
+  /** 종목을 누르면 그 종목의 전략(무한매수법·VR) 또는 모으기(스페이스X·UPRO) 화면으로 이동 */
   function openSymbol(symbol: string) {
     const tabs = navigation.getParent<BottomTabNavigationProp<LaofusTabParamList>>();
     if (symbol === 'TQQQ') tabs?.navigate('Strategy', { screen: 'VrOverview' });
     else if (symbol === 'SOXL') tabs?.navigate('Strategy', { screen: 'LaofusHome' });
-    else if (symbol === 'SPCX') tabs?.navigate('Records');
+    else {
+      const route = dcaRoute(symbol);
+      if (route) tabs?.navigate('Records', { screen: route });
+    }
   }
 
   async function onRefresh() {

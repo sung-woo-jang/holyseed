@@ -1,8 +1,8 @@
 import { Repository } from 'typeorm';
 import { TossClientService, TossOrder } from '@shared/toss/toss-client.service';
 import { TossPriceHubService } from '@shared/toss/toss-price-hub.service';
-import { SpacexEntry, SpacexState } from './entities';
-import { SpacexService } from './spacex.service';
+import { DcaPlan, SpacexEntry } from './entities';
+import { SpacexService, mondayOf, weeklyPrincipal } from './spacex.service';
 
 function candle(date: string, open: number, high: number, low: number, close: number) {
   return {
@@ -48,8 +48,13 @@ function order(
 describe('SpacexService', () => {
   let toss: { getCandles: jest.Mock; getOrders: jest.Mock };
   let hub: { getPrice: jest.Mock };
-  let entryRepo: { find: jest.Mock; count: jest.Mock; save: jest.Mock };
-  let stateRepo: { find: jest.Mock; create: jest.Mock; save: jest.Mock };
+  let entryRepo: { find: jest.Mock; count: jest.Mock; save: jest.Mock; create: jest.Mock };
+  let planRepo: { find: jest.Mock; create: jest.Mock; save: jest.Mock; createQueryBuilder: jest.Mock };
+  let insertBuilder: { insert: jest.Mock; values: jest.Mock; orIgnore: jest.Mock; execute: jest.Mock };
+  const plans = () => [
+    { id: 1, symbol: 'SPCX', name: '스페이스X', dailyAmount: 2, startDate: '2026-09-21', closedAt: null, sortOrder: 0 },
+    { id: 2, symbol: 'UPRO', name: 'UPRO', dailyAmount: 1, startDate: '2026-10-12', closedAt: null, sortOrder: 1 },
+  ];
   let service: SpacexService;
 
   beforeEach(() => {
@@ -78,15 +83,28 @@ describe('SpacexService', () => {
       find: jest.fn().mockResolvedValue([]),
       count: jest.fn().mockResolvedValue(0),
       save: jest.fn().mockImplementation(async (x: unknown) => x),
+      create: jest.fn((x: unknown) => x),
     };
-    stateRepo = { find: jest.fn().mockResolvedValue([{ closedAt: null }]), create: jest.fn(), save: jest.fn() };
+    insertBuilder = {
+      insert: jest.fn(() => insertBuilder),
+      values: jest.fn(() => insertBuilder),
+      orIgnore: jest.fn(() => insertBuilder),
+      execute: jest.fn().mockResolvedValue({}),
+    };
+    planRepo = {
+      find: jest.fn().mockResolvedValue(plans()),
+      create: jest.fn((x: unknown) => x),
+      save: jest.fn().mockImplementation(async (x: unknown) => x),
+      createQueryBuilder: jest.fn(() => insertBuilder),
+    };
     service = new SpacexService(
       entryRepo as unknown as Repository<SpacexEntry>,
-      stateRepo as unknown as Repository<SpacexState>,
+      planRepo as unknown as Repository<DcaPlan>,
       toss as unknown as TossClientService,
       hub as unknown as TossPriceHubService,
     );
     jest.spyOn(service['logger'], 'warn').mockImplementation(() => undefined);
+    jest.spyOn(service['logger'], 'log').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
@@ -362,6 +380,125 @@ describe('SpacexService', () => {
         },
       ]);
       await expect(service.getStatus()).resolves.toMatchObject({ daysCount: 1 });
+    });
+  });
+
+  describe('모으기 계획', () => {
+    it('기본 계획(SPCX·UPRO)이 없으면 만들고, 이미 있으면 건드리지 않는다', async () => {
+      planRepo.find.mockResolvedValueOnce([plans()[0]]).mockResolvedValueOnce(plans());
+
+      const res = await service.getPlans();
+
+      expect(insertBuilder.values).toHaveBeenCalledWith([
+        expect.objectContaining({ symbol: 'UPRO', dailyAmount: 1, startDate: '2026-10-12' }),
+      ]);
+      expect(insertBuilder.orIgnore).toHaveBeenCalled();
+      expect(res.map((p) => p.symbol)).toEqual(['SPCX', 'UPRO']);
+
+      insertBuilder.values.mockClear();
+      await service.getPlans();
+      expect(insertBuilder.values).not.toHaveBeenCalled();
+    });
+
+    it('계획에 없는 종목을 조회하면 404', async () => {
+      await expect(service.getStatus('QQQ')).rejects.toThrow('QQQ 모으기 계획이 없습니다.');
+    });
+  });
+
+  describe('syncFromToss', () => {
+    const filled = (id: string, symbol: string, at: string) => ({
+      ...order(id, 'FILLED', at, { filled: { qty: '0.01', amount: '1.99', avg: '100', at } }),
+      symbol,
+    });
+
+    it('종목마다 체결 내역을 기록하고, 모으기 시작일 이전 체결과 이미 기록한 주문은 건너뛴다', async () => {
+      entryRepo.find.mockResolvedValueOnce([{ orderId: 'spcx-old' }]).mockResolvedValue([]);
+      toss.getOrders.mockImplementation((_status: string, opts: { symbol: string }) =>
+        Promise.resolve({
+          orders:
+            opts.symbol === 'SPCX'
+              ? [
+                  filled('spcx-old', 'SPCX', '2026-09-30T23:00:00+09:00'),
+                  filled('spcx-new', 'SPCX', '2026-10-01T23:00:00+09:00'),
+                ]
+              : [
+                  filled('upro-before', 'UPRO', '2026-10-09T23:00:00+09:00'),
+                  filled('upro-1', 'UPRO', '2026-10-12T23:00:00+09:00'),
+                ],
+          nextCursor: null,
+          hasNext: false,
+        }),
+      );
+
+      const res = await service.syncFromToss();
+
+      expect(res).toEqual({ synced: 2, bySymbol: { SPCX: 1, UPRO: 1 } });
+      const saved = entryRepo.save.mock.calls.map(([e]) => e as { symbol: string; orderId: string; date: string });
+      expect(saved.map((e) => [e.symbol, e.orderId, e.date])).toEqual([
+        ['SPCX', 'spcx-new', '2026-10-01'],
+        ['UPRO', 'upro-1', '2026-10-12'],
+      ]);
+    });
+
+    it('한 종목 조회가 실패해도 다른 종목은 기록한다', async () => {
+      jest.spyOn(service['logger'], 'error').mockImplementation(() => undefined);
+      toss.getOrders.mockImplementation((_status: string, opts: { symbol: string }) =>
+        opts.symbol === 'SPCX'
+          ? Promise.reject(new Error('429'))
+          : Promise.resolve({
+              orders: [filled('upro-1', 'UPRO', '2026-10-12T23:00:00+09:00')],
+              nextCursor: null,
+              hasNext: false,
+            }),
+      );
+
+      expect(await service.syncFromToss()).toEqual({ synced: 1, bySymbol: { UPRO: 1 } });
+    });
+  });
+
+  describe('UPRO 같은 일반 종목의 일봉', () => {
+    it('상장 정보 없이, 전체 범위는 모으기 시작 30일 전부터 돌려준다', async () => {
+      toss.getCandles.mockResolvedValue({
+        candles: [candle('2026-08-01', 1, 1, 1, 1), candle('2026-09-15', 2, 2, 2, 2), candle('2026-10-01', 3, 3, 3, 3)],
+        nextBefore: 'more',
+      });
+
+      const res = await service.getCandles('all', 'UPRO');
+
+      expect(res.listing).toBeNull();
+      expect(res.candles.map((c) => c.date)).toEqual(['2026-09-15', '2026-10-01']);
+      // 최근 200거래일만 — 다음 페이지는 받지 않는다
+      expect(toss.getCandles).toHaveBeenCalledTimes(1);
+      expect(toss.getCandles).toHaveBeenCalledWith('UPRO', '1d', 200, undefined);
+    });
+  });
+
+  describe('주별 누적 원금', () => {
+    it('mondayOf는 그 주 월요일', () => {
+      expect(mondayOf('2026-10-10')).toBe('2026-10-05');
+      expect(mondayOf('2026-10-11')).toBe('2026-10-05');
+      expect(mondayOf('2026-10-12')).toBe('2026-10-12');
+    });
+
+    it('첫 기록 주부터 이번 주까지 종목별로 누적하고, 기록 없는 주는 직전 값을 잇는다', () => {
+      const e = (symbol: string, date: string, amount: number) => ({ symbol, date, amount });
+      const weeks = weeklyPrincipal(
+        [
+          e('SPCX', '2026-09-21', 2),
+          e('SPCX', '2026-09-25', 2),
+          e('SPCX', '2026-10-05', 2),
+          e('UPRO', '2026-10-12', 1),
+        ],
+        ['SPCX', 'UPRO'],
+        '2026-10-13',
+      );
+      expect(weeks).toEqual([
+        { weekStart: '2026-09-21', principal: { SPCX: 4, UPRO: 0 } },
+        { weekStart: '2026-09-28', principal: { SPCX: 4, UPRO: 0 } },
+        { weekStart: '2026-10-05', principal: { SPCX: 6, UPRO: 0 } },
+        { weekStart: '2026-10-12', principal: { SPCX: 6, UPRO: 1 } },
+      ]);
+      expect(weeklyPrincipal([], ['SPCX'], '2026-10-13')).toEqual([]);
     });
   });
 });

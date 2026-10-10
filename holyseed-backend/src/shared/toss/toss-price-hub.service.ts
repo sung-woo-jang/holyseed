@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { TossApiError, TossClientService } from './toss-client.service';
 
-export const HUB_SYMBOLS = ['TQQQ', 'SOXL', 'SPCX'] as const;
+export const HUB_SYMBOLS = ['TQQQ', 'SOXL', 'SPCX', 'UPRO'] as const;
 
 const FRESH_MS = 5_000;
 const STALE_AFTER_MS = 20_000;
@@ -19,7 +19,7 @@ export interface HubPrice {
 }
 
 /**
- * 화면용 가격 허브 — 3종목을 한 번의 `/prices?symbols=…` 호출로 조회해 5초간 재사용한다.
+ * 화면용 가격 허브 — 전 종목을 한 번의 `/prices?symbols=…` 호출로 조회해 5초간 재사용한다.
  * - 요청이 있을 때만 토스를 호출한다(보는 사람이 없으면 호출 0). 동시 요청은 하나로 합친다.
  * - 429를 받으면 30초간 호출을 멈추고 마지막 값을 stale로 내보낸다 → 한도가 빠듯할 때 주문 엔진에 양보.
  * - 주문 엔진(laofus·VR)의 가격·주문 조회는 이 서비스를 쓰지 않고 TossClientService를 직접 쓴다.

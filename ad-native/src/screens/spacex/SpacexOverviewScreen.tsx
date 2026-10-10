@@ -17,6 +17,7 @@ import {
   buildScenarios,
   buildTodayCard,
   buyEntries,
+  weekdayLabel,
   chartSeries,
   compareLumpSum,
   computeStats,
@@ -107,18 +108,19 @@ function calendarCell(state: CalendarState, theme: ThemeT): { bg: string; fg: st
   }
 }
 
-export default function SpacexOverviewScreen() {
+/** 모으기 종목 하나의 화면 — 스페이스X·UPRO가 같은 화면을 symbol만 바꿔 쓴다 */
+export default function SpacexOverviewScreen({ symbol }: { symbol: string }) {
   const theme = useTheme();
   const interval = useLiveInterval(5_000);
   const nowMs = useNowTick(interval !== false);
-  const statusQ = useQuery({ queryKey: ['spacex-status'], queryFn: spacexApi.status, refetchInterval: interval });
+  const statusQ = useQuery({ queryKey: ['spacex-status', symbol], queryFn: () => spacexApi.status(symbol), refetchInterval: interval });
   const liveQ = useQuery({ queryKey: ['laofus-live'], queryFn: laofusRestApi.live, refetchInterval: interval });
   const [rangeLabel, setRangeLabel] = useState<RangeLabel>('전체');
   const rangeKey = RANGES[rangeLabel];
-  const allCandlesQ = useQuery({ queryKey: ['spacex-candles', 'all'], queryFn: () => spacexApi.candles('all'), staleTime: 5 * 60_000 });
+  const allCandlesQ = useQuery({ queryKey: ['spacex-candles', symbol, 'all'], queryFn: () => spacexApi.candles('all', symbol), staleTime: 5 * 60_000 });
   const rangeCandlesQ = useQuery({
-    queryKey: ['spacex-candles', rangeKey],
-    queryFn: () => spacexApi.candles(rangeKey),
+    queryKey: ['spacex-candles', symbol, rangeKey],
+    queryFn: () => spacexApi.candles(rangeKey, symbol),
     staleTime: 5 * 60_000,
     enabled: rangeKey !== 'all',
   });
@@ -143,7 +145,9 @@ export default function SpacexOverviewScreen() {
     : 0;
   const lastRebalance = [...s.entries].find((e) => e.isRebalance);
 
-  const liveSpcx = liveQ.data?.symbols.find((x) => x.symbol === 'SPCX');
+  const liveSpcx = liveQ.data?.symbols.find((x) => x.symbol === symbol);
+  // 아직 첫 체결 전(계획만 있음) — 첫 매수 안내와 앞으로 쌓일 원금을 보여준다
+  const notStarted = s.entries.length === 0 && s.latestOrder === null;
   const price = liveSpcx?.price ?? s.currentPrice;
   const session = liveQ.data?.session ?? null;
   const buys = buyEntries(s.entries);
@@ -158,7 +162,7 @@ export default function SpacexOverviewScreen() {
     ? buildCalendar({
         buyDates: buys.map((b) => b.date),
         tradingDates: allCandlesQ.data.candles.map((c) => c.date),
-        startDate: s.startDate,
+        startDate: s.startDate ?? s.planStartDate,
         today,
         latestOrder: s.latestOrder,
       })
@@ -176,9 +180,9 @@ export default function SpacexOverviewScreen() {
   async function handleClose() {
     setClosing(true);
     try {
-      await spacexApi.close();
+      await spacexApi.close(symbol);
       setCloseConfirm(false);
-      setToast('투자를 종료 처리했어요');
+      setToast('모으기를 종료 처리했어요');
       statusQ.refetch();
     } catch (e) {
       setToast(getErrorMessage(e, '종료 처리에 실패했어요'));
@@ -193,14 +197,17 @@ export default function SpacexOverviewScreen() {
   return (
     <ScrollView style={[styles.root, { backgroundColor: theme.bg }]} contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 12 }}>
       <Text style={{ color: theme.textMuted, fontSize: 12 }}>
-        {s.startDate ? kstDate(s.startDate) : '-'} 시작 · {days}일째 · {isClosed ? `${kstDate(s.closedAt!)} 종료` : '진행 중'}
+        {s.startDate
+          ? `${kstDate(s.startDate)} 시작 · ${days}일째 · ${isClosed ? `${kstDate(s.closedAt!)} 종료` : '진행 중'}`
+          : `${kstDate(s.planStartDate)} 시작 예정`}
+        {` · 매일 ${usd(s.dailyAmount, 0)}`}
       </Text>
 
       {/* 성과 */}
       <Card theme={theme}>
         <View style={styles.rowBetween}>
           <View style={styles.rowCenter}>
-            <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>SPCX</Text>
+            <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800' }}>{symbol}</Text>
             {session && (
               <View style={[styles.pill, { backgroundColor: sessionC.bg }]}>
                 <Text style={{ color: sessionC.fg, fontSize: 11, fontWeight: '800' }}>{session.label}</Text>
@@ -237,8 +244,26 @@ export default function SpacexOverviewScreen() {
         </View>
       </Card>
 
+      {/* 첫 매수 전 */}
+      {!isClosed && notStarted && (
+        <Card theme={theme}>
+          <View style={styles.rowBetween}>
+            <Text style={[styles.cardTitle, { color: theme.text }]}>첫 매수</Text>
+            <View style={[styles.pill, { backgroundColor: theme.border }]}>
+              <Text style={{ color: theme.textMuted, fontSize: 11, fontWeight: '800' }}>예정</Text>
+            </View>
+          </View>
+          <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800', marginTop: 8 }}>
+            {s.planStartDate > today ? `${mmdd(s.planStartDate)}(${weekdayLabel(s.planStartDate)}) 밤` : '다음 거래일 밤'} {usd(s.dailyAmount)}
+          </Text>
+          <Text style={{ color: theme.textMuted, fontSize: 11.5, marginTop: 2, lineHeight: 17 }}>
+            토스 모으기가 미국장에서 소수점으로 사고, 다음날 오전 9시 10분에 이 화면에 기록돼요
+          </Text>
+        </Card>
+      )}
+
       {/* 오늘의 매수 */}
-      {!isClosed && (
+      {!isClosed && !notStarted && (
         <Card theme={theme}>
           <View style={styles.rowBetween}>
             <Text style={[styles.cardTitle, { color: theme.text }]}>{todayCard.title}</Text>
@@ -271,7 +296,7 @@ export default function SpacexOverviewScreen() {
               />
               <ChartLegend
                 items={[
-                  { kind: 'line', color: theme.dark ? '#9AA3B2' : '#4E5968', label: 'SPCX 종가' },
+                  { kind: 'line', color: theme.dark ? '#9AA3B2' : '#4E5968', label: `${symbol} 종가` },
                   ...(stats?.avgPrice != null ? [{ kind: 'dash' as const, color: theme.brand, label: '내 평단', value: `$${stats.avgPrice.toFixed(2)}` }] : []),
                   { kind: 'dot', color: theme.brand, label: '내 매수 체결' },
                   { kind: 'dot', color: '#FF3B30', label: '현재가' },
@@ -421,6 +446,28 @@ export default function SpacexOverviewScreen() {
         </Card>
       )}
 
+      {/* 첫 매수 전엔 수량·시나리오가 없으니 계획 금액으로 쌓일 원금만 */}
+      {!isClosed && !stats && (
+        <Card theme={theme}>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>앞으로 쌓일 원금</Text>
+          <View style={[styles.tileGrid, { marginTop: 10 }]}>
+            {[
+              ['한 달 뒤', 21],
+              ['3개월 뒤', 63],
+              ['1년 뒤', 252],
+            ].map(([label, tradingDays]) => (
+              <View key={label} style={[styles.projTile, { backgroundColor: theme.bg }]}>
+                <Text style={{ color: theme.textMuted, fontSize: 11 }}>{label}</Text>
+                <Text style={{ color: theme.text, fontSize: 15, fontWeight: '800', marginTop: 2 }}>
+                  약 ${Math.round(projectPrincipal(s.totalPrincipal, s.dailyAmount, Number(tradingDays))).toLocaleString('en-US')}
+                </Text>
+              </View>
+            ))}
+          </View>
+          <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 8 }}>거래일 21일을 한 달로 계산했어요</Text>
+        </Card>
+      )}
+
       {lastRebalance && (
         <View style={[styles.memoCard, { backgroundColor: theme.brandSoft, borderColor: theme.border }]}>
           <Text style={{ color: theme.brand, fontSize: 10.5, fontWeight: '800', marginBottom: 6 }}>최근 리밸런싱 메모</Text>
@@ -432,15 +479,15 @@ export default function SpacexOverviewScreen() {
       <View style={styles.btnRow}>
         {!isClosed && (
           <Pressable style={[styles.btn, styles.btnGhost, { borderColor: theme.border }]} onPress={() => setCloseConfirm(true)}>
-            <Text style={[styles.btnTextGhost, { color: theme.textMuted }]}>투자 종료</Text>
+            <Text style={[styles.btnTextGhost, { color: theme.textMuted }]}>{s.name} 모으기 종료</Text>
           </Pressable>
         )}
       </View>
 
       <ConfirmDialog
         visible={closeConfirm}
-        title="투자 종료"
-        description="종료하면 이후엔 조회만 가능해요. 계속할까요?"
+        title={`${s.name} 모으기 종료`}
+        description="종료하면 이후 체결은 기록하지 않고 조회만 가능해요. 토스 모으기도 따로 꺼 주세요. 계속할까요?"
         confirmText="종료"
         danger
         loading={closing}
@@ -474,6 +521,7 @@ const styles = StyleSheet.create({
   scenHead: { flex: 1, fontSize: 10.5, fontWeight: '600' },
   scenCell: { flex: 1, fontSize: 12, fontVariant: ['tabular-nums'] },
   memoCard: { borderWidth: 1, borderRadius: 12, padding: 13 },
+  projTile: { flex: 1, borderRadius: 10, padding: 10 },
   btnRow: { flexDirection: 'row', gap: 8 },
   btn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 10 },
   btnGhost: { borderWidth: 1 },

@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TossEmoji from '../components/common/TossEmoji';
 import LaofusHomeStack from './LaofusHomeStack';
 import StrategyStack, { type StrategyStackParamList } from './StrategyStack';
-import RecordsStack from './RecordsStack';
+import RecordsStack, { type RecordsStackParamList } from './RecordsStack';
 import AppMoreScreen from '../screens/AppMoreScreen';
 import { useTheme } from '../lib/theme';
 import { TE } from '../lib/toss-emoji';
@@ -12,14 +12,14 @@ import { TE } from '../lib/toss-emoji';
 export type LaofusTabParamList = {
   Home: undefined;
   Strategy: NavigatorScreenParams<StrategyStackParamList> | undefined;
-  Records: undefined;
+  Records: NavigatorScreenParams<RecordsStackParamList> | undefined;
   More: undefined;
 };
 
 const Tab = createBottomTabNavigator<LaofusTabParamList>();
 const BASE_TAB_BAR_HEIGHT = 52;
 
-/** "라오어" 앱 — 홈(총 자산·시세) · 전략(무한매수법·VR) · 기록(스페이스X) · 더보기 */
+/** "라오어" 앱 — 홈(총 자산·시세) · 전략(무한매수법·VR) · 모으기(스페이스X·UPRO) · 더보기 */
 export default function LaofusRootTabNavigator() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -54,7 +54,7 @@ export default function LaofusRootTabNavigator() {
       <Tab.Screen
         name="Records"
         component={RecordsStack}
-        options={{ tabBarLabel: '기록', tabBarIcon: ({ size }) => <TossEmoji code={TE.rocket} size={size} /> }}
+        options={{ tabBarLabel: '모으기', tabBarIcon: ({ size }) => <TossEmoji code={TE.piggy} size={size} /> }}
       />
       <Tab.Screen name="More" options={{ tabBarLabel: '더보기', tabBarIcon: ({ size }) => <TossEmoji code={TE.gear} size={size} /> }}>
         {() => <AppMoreScreen appName="라오어" />}

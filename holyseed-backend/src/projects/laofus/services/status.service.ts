@@ -22,6 +22,8 @@ export interface AssetTrendPoint {
   soxlQty: number;
   soxlValueUsd: number;
   soxlPrincipalUsd: number;
+  /** 전략(TQQQ·SOXL) 밖 보유분 평가금 — 모으기(SPCX·UPRO 등). stockUsd·수익률엔 포함하지 않음 */
+  dcaValueUsd: number;
   stockUsd: number;
   principalUsd: number;
   stockKrw: number;
@@ -232,6 +234,13 @@ export class LaofusStatusService {
       const soxlValueUsd = Math.round((soxl?.marketValueUsd ?? 0) * 100) / 100;
       const tqqqPrincipalUsd = Math.round((tqqq?.quantity ?? 0) * tqqqAvgPriceAsOf(s.date) * 100) / 100;
       const soxlPrincipalUsd = Math.round((soxl?.quantity ?? 0) * soxlAvgPriceAsOf(s.date) * 100) / 100;
+      // 전략(TQQQ·SOXL) 밖 보유분 = 모으기(SPCX·UPRO 등) — 총액엔 들어가지만 전략 수익률 계산에선 뺀다
+      const dcaValueUsd =
+        Math.round(
+          (s.holdingsJson ?? [])
+            .filter((h) => h.symbol !== 'TQQQ' && h.symbol !== 'SOXL')
+            .reduce((sum, h) => sum + (h.marketValueUsd ?? 0), 0) * 100,
+        ) / 100;
       const stockUsd = Math.round((tqqqValueUsd + soxlValueUsd) * 100) / 100;
       const principalUsd = Math.round((tqqqPrincipalUsd + soxlPrincipalUsd) * 100) / 100;
       const fx = Number(s.fxRate);
@@ -244,6 +253,7 @@ export class LaofusStatusService {
         soxlQty: soxl?.quantity ?? 0,
         soxlValueUsd,
         soxlPrincipalUsd,
+        dcaValueUsd,
         stockUsd,
         principalUsd,
         stockKrw: Math.round(stockUsd * fx),

@@ -1,10 +1,19 @@
-import { Column, Entity } from 'typeorm';
+import { Column, Entity, Index } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { BaseEntity } from '@common/entities/base.entity';
 import { numeric } from '../../../common/numeric.transformer';
 
+/**
+ * 모으기(소수점 적립 매수) 기록 — 처음엔 스페이스X 전용이라 테이블 이름이 spacex_entries로 남아 있다.
+ * symbol로 종목을 나누며, 종목 칸이 생기기 전 기록은 전부 SPCX다.
+ */
 @Entity('spacex_entries', { schema: 'ad' })
+@Index(['symbol', 'date'])
 export class SpacexEntry extends BaseEntity {
+  @ApiProperty({ description: '종목 (SPCX, UPRO …)', example: 'SPCX' })
+  @Column({ length: 10, default: 'SPCX' })
+  symbol: string;
+
   @ApiProperty({ description: '기록 날짜', example: '2026-09-26' })
   @Column({ type: 'date' })
   date: string;

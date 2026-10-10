@@ -30,7 +30,7 @@ describe('TossPriceHubService', () => {
     jest.useRealTimers();
   });
 
-  it('3종목을 한 번에 조회하고, 재시도 없이(retry:false) 호출한다', async () => {
+  it('전 종목(4개)을 한 번에 조회하고, 재시도 없이(retry:false) 호출한다', async () => {
     getPrices.mockResolvedValue(prices('79.44', '150.10', '151.30'));
 
     const p = await hub.getPrice('SOXL');
@@ -38,7 +38,7 @@ describe('TossPriceHubService', () => {
     expect(p.price).toBe(150.1);
     expect(p.stale).toBe(false);
     expect(getPrices).toHaveBeenCalledTimes(1);
-    expect(getPrices).toHaveBeenCalledWith(['TQQQ', 'SOXL', 'SPCX'], { retry: false });
+    expect(getPrices).toHaveBeenCalledWith(['TQQQ', 'SOXL', 'SPCX', 'UPRO'], { retry: false });
   });
 
   it('5초 안에는 값을 재사용하고, 지나면 다시 조회한다', async () => {

@@ -2,6 +2,8 @@ import { api } from '../lib/api';
 
 export interface SpacexEntryDto {
   id: number;
+  /** 종목 — 모으기 기록은 종목 공용(SPCX, UPRO …) */
+  symbol: string;
   date: string;
   amount: number;
   price: number | null;
@@ -52,6 +54,13 @@ export interface SpacexCandlesDto {
 }
 
 export interface SpacexStatusDto {
+  symbol: string;
+  name: string;
+  /** 계획상 1회 매수 금액($) */
+  dailyAmount: number;
+  /** 계획상 모으기 시작일 — 첫 체결 전에도 있음 */
+  planStartDate: string;
+  /** 첫 기록 날짜 — 아직 기록이 없으면 null */
   startDate: string | null;
   closedAt: string | null;
   totalPrincipal: number;
@@ -65,8 +74,36 @@ export interface SpacexStatusDto {
   entries: SpacexEntryDto[];
 }
 
+export interface DcaPlanSummaryDto {
+  symbol: string;
+  name: string;
+  dailyAmount: number;
+  planStartDate: string;
+  closedAt: string | null;
+  startDate: string | null;
+  buyCount: number;
+  daysCount: number;
+  totalPrincipal: number;
+  quantity: number;
+  avgPrice: number | null;
+  currentPrice: number | null;
+  currentValue: number | null;
+  lastEntry: SpacexEntryDto | null;
+  latestOrder: SpacexLatestOrderDto | null;
+}
+
+export interface DcaOverviewDto {
+  plans: DcaPlanSummaryDto[];
+  /** 주별 누적 원금 — 첫 기록 주부터 이번 주까지, 종목별 */
+  weekly: { weekStart: string; principal: Record<string, number> }[];
+}
+
+/** 모으기(스페이스X·UPRO …) — 서버 경로는 처음 이름 그대로 /spacex. symbol을 안 주면 서버가 SPCX로 본다 */
 export const spacexApi = {
-  status: () => api.get<SpacexStatusDto>('/spacex/status').then((r) => r.data),
-  candles: (range: 'all' | '1m' | '2w') => api.get<SpacexCandlesDto>('/spacex/candles', { params: { range } }).then((r) => r.data),
-  close: (date?: string) => api.post<{ closedAt: string | null }>('/spacex/close', { date }).then((r) => r.data),
+  overview: () => api.get<DcaOverviewDto>('/spacex/overview').then((r) => r.data),
+  entries: () => api.get<SpacexEntryDto[]>('/spacex/entries').then((r) => r.data),
+  status: (symbol: string) => api.get<SpacexStatusDto>('/spacex/status', { params: { symbol } }).then((r) => r.data),
+  candles: (range: 'all' | '1m' | '2w', symbol: string) =>
+    api.get<SpacexCandlesDto>('/spacex/candles', { params: { range, symbol } }).then((r) => r.data),
+  close: (symbol: string, date?: string) => api.post<{ closedAt: string | null }>('/spacex/close', { symbol, date }).then((r) => r.data),
 };

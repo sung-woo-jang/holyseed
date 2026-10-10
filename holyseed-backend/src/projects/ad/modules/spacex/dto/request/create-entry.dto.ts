@@ -2,6 +2,11 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsBoolean, IsDateString, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateSpacexEntryDto {
+  @ApiPropertyOptional({ description: '종목 — 비우면 SPCX(스페이스X)', example: 'UPRO' })
+  @IsOptional()
+  @IsString()
+  symbol?: string;
+
   @ApiProperty({ description: '기록 날짜', example: '2026-09-26' })
   @IsDateString({}, { message: '날짜는 YYYY-MM-DD 형식이어야 합니다.' })
   date: string;

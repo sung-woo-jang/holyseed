@@ -11,6 +11,7 @@ import {
   computeSellLocLegs,
   round2,
   round4,
+  worstCaseLocSpend,
   Decision,
   ImuState,
 } from '../core/engine';
@@ -103,6 +104,9 @@ export class LaofusEngineService {
     let tAfter = decisionIn.tAfter;
     if (decisionIn.action === 'BUY' && (decisionIn.kind === '전액' || decisionIn.kind === '절반')) {
       tAfter = round4(s.T + (decisionIn.kind === '절반' ? 0.5 : 1));
+    } else if (decisionIn.action === 'BUY' && decisionIn.kind === '분할') {
+      // 분할 사다리 체결은 T를 올리지 않는다 — 접수 시점 T로 되돌리면 같은 날 앞서 반영된 별지점·평단 체결의 T가 깎이므로 현재 T 유지
+      tAfter = s.T;
     } else if (decisionIn.action === 'SELL' && decisionIn.kind === '쿼터매도') {
       tAfter = round4(s.T * 0.75);
     }
@@ -194,7 +198,7 @@ export class LaofusEngineService {
       ? {
           action: 'BUY',
           amountUsd: Number(p.requestAmount),
-          kind: p.kind as '전액' | '절반' | '사이클시작',
+          kind: p.kind as '전액' | '절반' | '사이클시작' | '분할',
           tAfter: Number(p.tAfter),
         }
       : {
@@ -331,7 +335,7 @@ export class LaofusEngineService {
 
       if (!opts.live) {
         for (const leg of computeBuyLocLegs(s)) {
-          log(`[dry] LOC 매수 예정: ${leg.quantity}주 @ $${leg.price} (${leg.halfStep ? '절반' : '전액'} 단위)`);
+          log(`[dry] LOC 매수 예정: ${leg.quantity}주 @ $${leg.price} (${leg.ladder ? '분할' : leg.halfStep ? '절반' : '전액'} 단위)`);
         }
         for (const leg of computeSellLocLegs(s)) {
           log(`[dry] LOC 매도 예정: ${leg.quantity}주 @ $${leg.price} (${leg.kind})`);
@@ -346,7 +350,15 @@ export class LaofusEngineService {
       } else if (!opts.force && row.lastBuyDecisionUsDate === buyUsDate) {
         log(`매수 스킵: 오늘(${buyUsDate}) 이미 LOC 매수를 접수함`);
       } else {
-        const legs = computeBuyLocLegs(s);
+        // 가격 괴리로 인한 주문 거부(REJECTED) 대응(2026-09-15 실제 발생) — 현재가 대비
+        // leg 가격이 너무 멀면 기준가 근처로 눌러서 접수. 실제 체결가는 recordFill()이
+        // 토스 응답의 averageFilledPrice를 쓰므로 이 보정은 원가/평단 계산에 영향 없음.
+        // 분할 사다리는 기준가-20% 아래 단을 누르지 않고 아예 빼야 해서(눌러 올리면 예산 초과 체결) 기준가를 먼저 구한다.
+        const refPrice = await this.toss
+          .getPrice(SYMBOL)
+          .then((p) => Number(p.lastPrice))
+          .catch(() => null);
+        const legs = computeBuyLocLegs(s, refPrice ?? undefined);
         if (legs.length === 0) {
           log('매수 판단: 오늘 걸 LOC 없음 (리버스모드 대상이거나 1주도 안 됨)');
         } else {
@@ -356,13 +368,6 @@ export class LaofusEngineService {
           if (remainingPending > 0) {
             await this.event('info', `체결 대기 주문 ${remainingPending}건 있지만 매수는 그대로 진행`, runId);
           }
-          // 가격 괴리로 인한 주문 거부(REJECTED) 대응(2026-09-15 실제 발생) — 현재가 대비
-          // leg 가격이 너무 멀면 기준가 근처로 눌러서 접수. 실제 체결가는 recordFill()이
-          // 토스 응답의 averageFilledPrice를 쓰므로 이 보정은 원가/평단 계산에 영향 없음.
-          const refPrice = await this.toss
-            .getPrice(SYMBOL)
-            .then((p) => Number(p.lastPrice))
-            .catch(() => null);
           const orderLegs = legs.map((leg) => {
             const cap = refPrice !== null ? capLegPriceForDeviation(leg.price, refPrice) : { price: leg.price, capped: false };
             return { ...leg, orderPrice: cap.price, capped: cap.capped };
@@ -371,12 +376,12 @@ export class LaofusEngineService {
             if (leg.capped) {
               await this.event(
                 'warn',
-                `가격 괴리 보정(<큰수 매수>): ${leg.halfStep ? '절반' : '전액'} leg $${leg.price} → $${leg.orderPrice} (기준가 $${refPrice})`,
+                `가격 괴리 보정(<큰수 매수>): ${leg.ladder ? '분할' : leg.halfStep ? '절반' : '전액'} leg $${leg.price} → $${leg.orderPrice} (기준가 $${refPrice})`,
                 runId,
               );
             }
           }
-          const totalAmount = round2(orderLegs.reduce((a, leg) => a + leg.quantity * leg.orderPrice, 0));
+          const totalAmount = worstCaseLocSpend(orderLegs);
           const bp = Number(await this.toss.getBuyingPower('USD'));
           if (bp < totalAmount) {
             await this.event('error', `계좌 매수가능금액 $${bp} < 매수 LOC 합계 $${totalAmount} — 매수 스킵`, runId);
@@ -387,9 +392,17 @@ export class LaofusEngineService {
             let legIdx = 0;
             for (const leg of orderLegs) {
               legIdx += 1;
-              const kind = leg.halfStep ? '절반' : '전액';
+              const kind = leg.ladder ? '분할' : leg.halfStep ? '절반' : '전액';
               const clientOrderId = `imu-${usDate.replaceAll('-', '')}-b${legIdx}`;
-              const placed = await this.toss.buyLoc(SYMBOL, String(leg.quantity), String(leg.orderPrice), clientOrderId);
+              let placed: { orderId: string };
+              try {
+                placed = await this.toss.buyLoc(SYMBOL, String(leg.quantity), String(leg.orderPrice), clientOrderId);
+              } catch (e) {
+                // 기본 leg(별지점·평단) 실패는 기존처럼 런 전체 오류, 분할 사다리 실패는 그 단만 건너뛰고 계속
+                if (!leg.ladder) throw e;
+                await this.event('warn', `분할 LOC 접수 실패(건너뜀): ${leg.quantity}주 @ $${leg.orderPrice} — ${e instanceof Error ? e.message : e}`, runId);
+                continue;
+              }
               log(`LOC 매수 접수: ${leg.quantity}주 @ $${leg.orderPrice}${leg.capped ? ` (원래 $${leg.price})` : ''} (${kind}) — ${placed.orderId}`);
               await this.pendingRepo.save({
                 orderId: placed.orderId,
@@ -398,7 +411,7 @@ export class LaofusEngineService {
                 side: 'BUY',
                 kind,
                 tBefore: String(s.T),
-                tAfter: String(round4(s.T + (leg.halfStep ? 0.5 : 1))),
+                tAfter: String(leg.ladder ? s.T : round4(s.T + (leg.halfStep ? 0.5 : 1))),
                 requestAmount: String(round2(leg.quantity * leg.orderPrice)),
                 requestQuantity: null,
                 cycleId: cycleRow?.id ?? 0,

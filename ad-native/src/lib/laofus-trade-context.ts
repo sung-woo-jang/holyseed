@@ -209,7 +209,13 @@ export function describeOrders(args: {
     let detail = '';
     let conditionMet: boolean | null = null;
 
-    if (o.side === 'BUY' && o.leg != null && levels) {
+    if (o.side === 'BUY' && o.kind === '분할') {
+      // 분할 사다리 — 1주씩 한도가에 걸린 보너스 주문(주문 금액 = 한도가), 체결돼도 T는 오르지 않는다
+      const limit = round2(o.requestAmount ?? 0);
+      title = '매수 · 분할 LOC';
+      detail = `${usd(limit)} 이하 · 1주 (T +0)`;
+      if (candle) conditionMet = candle.c <= limit + 1e-9;
+    } else if (o.side === 'BUY' && o.leg != null && levels) {
       // leg 번호 대신 주문 금액이 어느 기준가(별지점/평단)의 정수배에 가까운지로 역할을 가른다 — 수동 보정 주문이 섞인 날도 틀리지 않게
       const amount = o.requestAmount ?? levels.buyStar;
       const candidates = [

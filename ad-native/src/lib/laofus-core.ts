@@ -16,7 +16,7 @@ export interface ImuState {
 export interface BuyDecision {
   action: 'BUY';
   amountUsd: number;
-  kind: '전액' | '절반' | '사이클시작';
+  kind: '전액' | '절반' | '사이클시작' | '분할';
   tAfter: number;
 }
 
@@ -114,6 +114,7 @@ export interface BuyLocLeg {
   price: number; // LOC 지정가
   quantity: number; // 온주(정수) 수량
   halfStep: boolean; // true=T+0.5 단위(전반전 2-leg 중 하나), false=T+1 단위(후반전 단일 leg)
+  ladder: boolean; // 분할 사다리 — 기본 leg 아래에 1주씩, 체결돼도 T 불변
 }
 
 export interface SellLocLeg {
@@ -124,9 +125,13 @@ export interface SellLocLeg {
 
 /**
  * 온주(정수) LOC 매수 — 그날 현재가를 관찰하지 않고 engine_state만으로 미리 걸어둘 매수 주문을 계산한다.
- * 전반전(T<SPLITS/2): 별지점가에 절반, 평단가에 나머지 절반. 후반전: 별지점가에 전액 1건.
+ * 하루 총 주 수 = floor(1회매수금 ÷ 종가) (백엔드 core/engine.ts와 동일 규칙):
+ * - 전반전(T<SPLITS/2): 별지점 leg = floor(1회매수금/2 ÷ 별지점가), 평단 leg = floor(1회매수금 ÷ 평단) − 별지점 leg
+ * - 후반전: 별지점 leg = floor(1회매수금 ÷ 별지점가)
+ * - 그 아래 분할: (기본 leg 총 수량 + k)번째 주를 1회매수금 ÷ 주 수 가격에 1주씩 (T 안 올림)
+ * refPrice(현재가)를 주면 −20% 아래로 내려가는 분할 단은 걸지 않는다.
  */
-export function computeBuyLocLegs(s: ImuState): BuyLocLeg[] {
+export function computeBuyLocLegs(s: ImuState, refPrice?: number): BuyLocLeg[] {
   if (s.T > SPLITS - 1) return [];
   if (s.T === 0 || s.quantity <= 0) return [];
 
@@ -134,18 +139,27 @@ export function computeBuyLocLegs(s: ImuState): BuyLocLeg[] {
   // 방법론 3-(5): 별지점이 매수·매도에서 겹치는 걸 막기 위해 매수 쪽 별지점만 0.01 낮춘다(매도는 그대로).
   const buyStarPrice = round2(ind.starPrice - 0.01);
   const firstHalf = s.T < SPLITS / 2;
-  const raw = firstHalf
-    ? [
-        { price: buyStarPrice, amount: round2(ind.oneBuyAmount / 2), halfStep: true },
-        { price: s.avgPrice, amount: round2(ind.oneBuyAmount / 2), halfStep: true },
-      ]
-    : [{ price: buyStarPrice, amount: ind.oneBuyAmount, halfStep: false }];
 
-  // 온주 매수는 "정수 구매"가 원칙 — 분할 배정 금액(전략에 배정된 가상 예산)이 1주 값보다 작거나
-  // 심지어 음수여도(급락으로 최소 1주 매수를 계속 강행하면서 가상 잔금이 마이너스로 몰릴 수 있음)
-  // leg 자체를 걸러내지 않는다. s.cash는 이 사이클에 배정된 가상 잔금일 뿐 계좌 전체 매수가능금액이
-  // 아니라서, 여기서 이걸 기준으로 leg를 미리 걸러내면 실제로는 충분히 살 수 있는 주문까지 스킵해버린다.
-  return raw.map((r) => ({ price: r.price, quantity: Math.max(Math.floor(r.amount / r.price), 1), halfStep: r.halfStep }));
+  const legs: BuyLocLeg[] = [];
+  if (firstHalf) {
+    const starQty = Math.max(Math.floor(round2(ind.oneBuyAmount / 2) / buyStarPrice), 1);
+    const avgQty = Math.max(Math.floor(ind.oneBuyAmount / s.avgPrice) - starQty, 1);
+    legs.push({ price: buyStarPrice, quantity: starQty, halfStep: true, ladder: false });
+    legs.push({ price: s.avgPrice, quantity: avgQty, halfStep: true, ladder: false });
+  } else {
+    const starQty = Math.max(Math.floor(ind.oneBuyAmount / buyStarPrice), 1);
+    legs.push({ price: buyStarPrice, quantity: starQty, halfStep: false, ladder: false });
+  }
+
+  if (ind.oneBuyAmount <= 0) return legs;
+  const lowerBound = refPrice !== undefined ? round2(refPrice * 0.8) : 0;
+  const baseQty = legs.reduce((a, l) => a + l.quantity, 0);
+  for (let k = baseQty + 1; k <= baseQty + 8; k++) {
+    const price = round2(ind.oneBuyAmount / k);
+    if (price < 0.01 || price < lowerBound) break;
+    legs.push({ price, quantity: 1, halfStep: false, ladder: true });
+  }
+  return legs;
 }
 
 /**

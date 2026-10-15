@@ -45,7 +45,7 @@ function Tile({ label, labelRight, value, sub, color, theme }: { label: string; 
 /** 온주 LOC 스탠딩 주문은 engine_state만으로 계산되고 현재가와 무관 — 매수/매도 legs를 그대로 나열해서 보여준다 */
 function LegsCard({ s, price, theme }: { s: ImuState; price: number | null; theme: ReturnType<typeof useTheme> }) {
   const distance = (legPrice: number) => (price ? signedPct(((legPrice - price) / price) * 100) : '');
-  const buyLegs = computeBuyLocLegs(s);
+  const buyLegs = computeBuyLocLegs(s, price ?? undefined);
   const sellLegs = computeSellLocLegs(s);
   if (buyLegs.length === 0 && sellLegs.length === 0) {
     return <Text style={{ color: theme.textMuted, fontSize: 13 }}>오늘 걸릴 주문 없음 (리버스모드 대상이거나 사이클 시작 대기)</Text>;
@@ -58,7 +58,7 @@ function LegsCard({ s, price, theme }: { s: ImuState; price: number | null; them
           <Text style={{ color: theme.text, fontSize: 13, fontWeight: '600', flex: 1 }}>
             {leg.quantity}주 @ {usd(leg.price)}
           </Text>
-          <Text style={{ color: theme.textMuted, fontSize: 11.5 }}>{leg.halfStep ? '절반' : '전액'}</Text>
+          <Text style={{ color: theme.textMuted, fontSize: 11.5 }}>{leg.ladder ? '분할' : leg.halfStep ? '절반' : '전액'}</Text>
           <Text style={[styles.legDistance, { color: theme.text }]}>{distance(leg.price)}</Text>
         </View>
       ))}

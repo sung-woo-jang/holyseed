@@ -23,7 +23,7 @@ export interface ImuState {
 export interface BuyDecision {
   action: 'BUY';
   amountUsd: number; // orderAmount
-  kind: '전액' | '절반' | '사이클시작';
+  kind: '전액' | '절반' | '사이클시작' | '분할';
   tAfter: number;
 }
 
@@ -121,26 +121,68 @@ export interface BuyLocLeg {
   price: number;
   quantity: number;
   halfStep: boolean;
+  /** 분할 사다리 leg — 기본 leg(별지점·평단) 아래에 1주씩 깔리며 체결돼도 T를 올리지 않는다 */
+  ladder: boolean;
 }
 
-export function computeBuyLocLegs(s: ImuState): BuyLocLeg[] {
+/** 분할 사다리 단수 — 방법론 매수표 예시가 7~8단 */
+const LADDER_STEPS = 8;
+
+/**
+ * 하루에 사는 총 주 수 = floor(1회매수금 ÷ 종가). 방법론 §5 매수표를 역산한 규칙:
+ * - 전반전: 별지점 leg = floor(1회매수금/2 ÷ 별지점가), 평단 leg = floor(1회매수금 ÷ 평단) − 별지점 leg 수량
+ * - 후반전: 별지점 leg = floor(1회매수금 ÷ 별지점가)
+ * - 그 아래 분할: (기본 leg 총 수량 + k)번째 주를 1회매수금 ÷ 그 주 수 가격에 1주씩 (T는 안 올림)
+ * 종가 p에서 체결되는 leg는 한도가 ≥ p인 것뿐이라 체결 주 수는 floor(1회매수금/p)이고 쓰는 돈은 1회매수금 이하다.
+ *
+ * refPrice(현재가)를 주면 증권사 괴리 한도(-20%) 아래로 내려가는 분할 단은 아예 걸지 않는다 —
+ * 한도가를 올려 걸면 더 높은 종가에서도 체결돼 1회매수금을 넘겨 사게 되므로 누르지 않고 뺀다.
+ */
+export function computeBuyLocLegs(s: ImuState, refPrice?: number): BuyLocLeg[] {
   if (s.T > SPLITS - 1) return [];
   if (s.T === 0 || s.quantity <= 0) return [];
 
   const ind = computeIndicators(s);
   const buyStarPrice = round2(ind.starPrice - 0.01);
   const firstHalf = s.T < SPLITS / 2;
-  const raw = firstHalf
-    ? [
-        { price: buyStarPrice, amount: round2(ind.oneBuyAmount / 2), halfStep: true },
-        { price: s.avgPrice, amount: round2(ind.oneBuyAmount / 2), halfStep: true },
-      ]
-    : [{ price: buyStarPrice, amount: ind.oneBuyAmount, halfStep: false }];
 
   // amount(가상 잔금 기준 배정액)가 0 이하여도(급락으로 최소 1주 매수를 계속 강행하면서 가상
   // 잔금이 마이너스로 몰릴 수 있음) leg 자체를 걸러내지 않는다 — 정수 매수 원칙상 항상 최소 1주는
   // 시도하고, 실제 매수 가능 여부는 engine.service.ts의 실계좌 buying power 체크가 담당한다.
-  return raw.map((r) => ({ price: r.price, quantity: Math.max(Math.floor(r.amount / r.price), 1), halfStep: r.halfStep }));
+  const legs: BuyLocLeg[] = [];
+  if (firstHalf) {
+    const starQty = Math.max(Math.floor(round2(ind.oneBuyAmount / 2) / buyStarPrice), 1);
+    const avgQty = Math.max(Math.floor(ind.oneBuyAmount / s.avgPrice) - starQty, 1);
+    legs.push({ price: buyStarPrice, quantity: starQty, halfStep: true, ladder: false });
+    legs.push({ price: s.avgPrice, quantity: avgQty, halfStep: true, ladder: false });
+  } else {
+    const starQty = Math.max(Math.floor(ind.oneBuyAmount / buyStarPrice), 1);
+    legs.push({ price: buyStarPrice, quantity: starQty, halfStep: false, ladder: false });
+  }
+
+  if (ind.oneBuyAmount <= 0) return legs;
+  const lowerBound = refPrice !== undefined ? round2(refPrice * (1 - MAX_PRICE_DEVIATION_PCT / 100)) : 0;
+  const baseQty = legs.reduce((a, l) => a + l.quantity, 0);
+  for (let k = baseQty + 1; k <= baseQty + LADDER_STEPS; k++) {
+    const price = round2(ind.oneBuyAmount / k);
+    if (price < 0.01 || price < lowerBound) break;
+    legs.push({ price, quantity: 1, halfStep: false, ladder: true });
+  }
+  return legs;
+}
+
+/**
+ * 접수할 LOC 매수 leg들이 최악의 종가에서 쓰는 돈 — LOC는 종가 한 값에 한도가 ≥ 종가인 leg가 전부 체결되므로
+ * 한도가 하나하나를 종가 후보로 놓고 (그 가격 이상 한도의 수량 합 × 그 가격)의 최댓값을 구한다.
+ * 분할 leg까지 한도가×수량을 단순 합산하면 실제 지출보다 훨씬 커져 매수가능금액 검사가 과하게 막힌다.
+ */
+export function worstCaseLocSpend(legs: { orderPrice: number; quantity: number }[]): number {
+  let worst = 0;
+  for (const cand of legs) {
+    const qty = legs.reduce((a, l) => a + (l.orderPrice >= cand.orderPrice ? l.quantity : 0), 0);
+    worst = Math.max(worst, qty * cand.orderPrice);
+  }
+  return round2(worst);
 }
 
 export interface SellLocLeg {

@@ -77,7 +77,7 @@ export interface LaofusOrderLogRow {
   cycleId: number;
   side: string;
   kind: string;
-  /** 엔진이 주문을 낸 순서: 매수 1=별지점·2=평단, 매도 1=쿼터·2=전량 (clientOrderId의 b1/b2/s1/s2) — 옛 방식 주문은 null */
+  /** 엔진이 주문을 낸 순서: 매수 1=별지점·2=평단·3~=분할 사다리, 매도 1=쿼터·2=전량 (clientOrderId의 b1/b2/s1/s2) — 옛 방식 주문은 null */
   leg: number | null;
   tBefore: number;
   tAfter: number;
@@ -92,7 +92,7 @@ export interface LaofusOrderLogRow {
 
 /** clientOrderId 형식 `imu-YYYYMMDD-b1` / `-s2` 에서 leg 번호 추출 */
 export function legOfClientOrderId(clientOrderId: string | null | undefined): number | null {
-  const m = /^imu-\d{8}-[bs](\d)$/.exec(clientOrderId ?? '');
+  const m = /^imu-\d{8}-[bs](\d+)$/.exec(clientOrderId ?? '');
   return m ? Number(m[1]) : null;
 }
 

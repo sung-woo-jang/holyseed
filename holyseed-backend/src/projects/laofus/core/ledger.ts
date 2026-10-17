@@ -69,13 +69,41 @@ export interface LedgerSummary {
   ext: { in: number; out: number; net: number; nIn: number; nOut: number; first: string | null };
   series: LedgerMonthPoint[];
   years: { y: string; i: number; o: number; n: number }[];
-  ex: { krwOut: number; usdIn: number; usdOut: number; krwIn: number; netUsd: number; netKrw: number; rAvg: number; rIn: number; rOut: number; nIn: number; nOut: number };
+  ex: {
+    krwOut: number;
+    usdIn: number;
+    usdOut: number;
+    krwIn: number;
+    netUsd: number;
+    netKrw: number;
+    rAvg: number;
+    rIn: number;
+    rOut: number;
+    nIn: number;
+    nOut: number;
+  };
   krw: { cash: number; pl: number };
   usd: { cash: number; mv: number; assets: number; real: number; unreal: number; inc: number; pl: number };
-  total: { val: number; pl: number; rate: number; xirr: number | null; stockKrw: number; incKrw: number; fxKrw: number; krwKrw: number };
+  total: {
+    val: number;
+    pl: number;
+    rate: number;
+    xirr: number | null;
+    stockKrw: number;
+    incKrw: number;
+    fxKrw: number;
+    krwKrw: number;
+  };
   hold: LedgerHolding[];
   stocks: LedgerStockPl[];
-  counts: { records: number; pending: number; pendingAmt: number; firstDate: string | null; lastDate: string | null; unquoted: number };
+  counts: {
+    records: number;
+    pending: number;
+    pendingAmt: number;
+    firstDate: string | null;
+    lastDate: string | null;
+    unquoted: number;
+  };
 }
 
 const EXT_IN = '외부입금';
@@ -102,7 +130,8 @@ function tradeOrderKey(r: LedgerRowInput): string {
 function xirr(flows: { date: Date; amount: number }[]): number | null {
   if (flows.length < 2) return null;
   const t0 = Math.min(...flows.map((f) => f.date.getTime()));
-  const npv = (r: number) => flows.reduce((a, f) => a + f.amount / (1 + r) ** ((f.date.getTime() - t0) / 86400e3 / 365), 0);
+  const npv = (r: number) =>
+    flows.reduce((a, f) => a + f.amount / (1 + r) ** ((f.date.getTime() - t0) / 86400e3 / 365), 0);
   let lo = -0.9;
   let hi = 5;
   if (npv(lo) * npv(hi) > 0) return null;
@@ -128,7 +157,9 @@ export function computeLedgerSummary(input: LedgerSummaryInput): LedgerSummary {
   const mid = fxMid;
 
   // ---- 외부 입출금
-  const ext = rows.filter((r) => r.category === EXT_IN || r.category === EXT_OUT).sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
+  const ext = rows
+    .filter((r) => r.category === EXT_IN || r.category === EXT_OUT)
+    .sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
   const extIn = ext.filter((r) => r.category === EXT_IN).reduce((a, r) => a + num(r.cashDelta), 0);
   const extOut = ext.filter((r) => r.category === EXT_OUT).reduce((a, r) => a - num(r.cashDelta), 0);
   const extNet = extIn - extOut;
@@ -181,19 +212,22 @@ export function computeLedgerSummary(input: LedgerSummaryInput): LedgerSummary {
   const netUsd = usdIn - usdOut;
   const netKrw = krwOut - krwIn;
   const rAvg = netUsd > 0 ? netKrw / netUsd : 0;
-  const count = (cur: 'KRW' | 'USD', cat: string) => rows.filter((r) => r.currency === cur && r.category === cat).length;
+  const count = (cur: 'KRW' | 'USD', cat: string) =>
+    rows.filter((r) => r.currency === cur && r.category === cat).length;
 
   // ---- 현금 (결제대기 체결은 이미 빠진 것으로 본다)
   const krwCash = rows.filter((r) => r.currency === 'KRW').reduce((a, r) => a + num(r.cashDelta), 0);
   const usdCash = rows.filter((r) => r.currency === 'USD').reduce((a, r) => a + num(r.cashDelta), 0);
 
   // ---- 종목별 이동평균 (달러 종목만. 원화 ETF는 원화 계좌 손익에 현금흐름으로 반영됨)
-  const trades = rows.filter((r) => r.currency === 'USD' && TRADE_CATEGORIES.has(r.category)).sort((a, b) => {
-    const ka = tradeOrderKey(a);
-    const kb = tradeOrderKey(b);
-    if (ka !== kb) return ka < kb ? -1 : 1;
-    return ledgerSeq(b.ledgerId) - ledgerSeq(a.ledgerId);
-  });
+  const trades = rows
+    .filter((r) => r.currency === 'USD' && TRADE_CATEGORIES.has(r.category))
+    .sort((a, b) => {
+      const ka = tradeOrderKey(a);
+      const kb = tradeOrderKey(b);
+      if (ka !== kb) return ka < kb ? -1 : 1;
+      return ledgerSeq(b.ledgerId) - ledgerSeq(a.ledgerId);
+    });
   const pos = new Map<string, Position>();
   for (const r of trades) {
     const code = r.stockCode ?? r.stockName ?? '?';
@@ -229,7 +263,16 @@ export function computeLedgerSummary(input: LedgerSummaryInput): LedgerSummary {
     if (!quote) unquoted += 1;
     const price = quote ? quote.price : p.cost / p.q;
     const mv = p.q * price;
-    hold.push({ sym: quote?.symbol ?? p.name, name: p.name, q: p.q, cost: round2(p.cost), price, mv: round2(mv), pl: round2(mv - p.cost), quoted: !!quote });
+    hold.push({
+      sym: quote?.symbol ?? p.name,
+      name: p.name,
+      q: p.q,
+      cost: round2(p.cost),
+      price,
+      mv: round2(mv),
+      pl: round2(mv - p.cost),
+      quoted: !!quote,
+    });
   }
   hold.sort((a, b) => b.mv - a.mv);
 
@@ -238,7 +281,9 @@ export function computeLedgerSummary(input: LedgerSummaryInput): LedgerSummary {
   const holdCost = hold.reduce((a, h) => a + h.cost, 0);
   const unreal = holdMv - holdCost;
   const inc = rows
-    .filter((r) => r.currency === 'USD' && (r.category === '배당' || r.category === '이자' || r.category === '세금환급'))
+    .filter(
+      (r) => r.currency === 'USD' && (r.category === '배당' || r.category === '이자' || r.category === '세금환급'),
+    )
     .reduce((a, r) => a + num(r.cashDelta), 0);
   const usdAssets = usdCash + holdMv;
   const usdPl = usdAssets - netUsd;
@@ -263,12 +308,39 @@ export function computeLedgerSummary(input: LedgerSummaryInput): LedgerSummary {
   return {
     asof: kstIso(now).slice(0, 10),
     fx: { rate: fxRate, mid },
-    ext: { in: extIn, out: extOut, net: extNet, nIn: ext.filter((r) => r.category === EXT_IN).length, nOut: ext.filter((r) => r.category === EXT_OUT).length, first: ext.length > 0 ? kstIso(ext[0].occurredAt).slice(0, 10) : null },
+    ext: {
+      in: extIn,
+      out: extOut,
+      net: extNet,
+      nIn: ext.filter((r) => r.category === EXT_IN).length,
+      nOut: ext.filter((r) => r.category === EXT_OUT).length,
+      first: ext.length > 0 ? kstIso(ext[0].occurredAt).slice(0, 10) : null,
+    },
     series,
     years: [...yearMap.entries()].sort().map(([y, v]) => ({ y, i: Math.round(v.i), o: Math.round(v.o), n: v.n })),
-    ex: { krwOut, usdIn, usdOut, krwIn, netUsd, netKrw, rAvg, rIn: usdIn > 0 ? krwOut / usdIn : 0, rOut: usdOut > 0 ? krwIn / usdOut : 0, nIn: count('USD', '환전입금'), nOut: count('USD', '환전출금') },
+    ex: {
+      krwOut,
+      usdIn,
+      usdOut,
+      krwIn,
+      netUsd,
+      netKrw,
+      rAvg,
+      rIn: usdIn > 0 ? krwOut / usdIn : 0,
+      rOut: usdOut > 0 ? krwIn / usdOut : 0,
+      nIn: count('USD', '환전입금'),
+      nOut: count('USD', '환전출금'),
+    },
     krw: { cash: krwCash, pl: krwPl },
-    usd: { cash: round2(usdCash), mv: round2(holdMv), assets: round2(usdAssets), real: round2(real), unreal: round2(unreal), inc: round2(inc), pl: round2(usdPl) },
+    usd: {
+      cash: round2(usdCash),
+      mv: round2(holdMv),
+      assets: round2(usdAssets),
+      real: round2(real),
+      unreal: round2(unreal),
+      inc: round2(inc),
+      pl: round2(usdPl),
+    },
     total: {
       val: Math.round(val),
       pl: Math.round(totalPl),

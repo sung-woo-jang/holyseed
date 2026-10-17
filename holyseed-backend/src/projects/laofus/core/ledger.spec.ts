@@ -1,6 +1,8 @@
 import { computeLedgerSummary, LedgerRowInput } from './ledger';
 
-const row = (p: Partial<LedgerRowInput> & Pick<LedgerRowInput, 'ledgerId' | 'category' | 'currency'>): LedgerRowInput => ({
+const row = (
+  p: Partial<LedgerRowInput> & Pick<LedgerRowInput, 'ledgerId' | 'category' | 'currency'>,
+): LedgerRowInput => ({
   occurredAt: new Date('2026-01-01T03:00:00Z'),
   stockName: null,
   stockCode: null,
@@ -15,9 +17,35 @@ describe('computeLedgerSummary — 넣은 돈과 손익 분해', () => {
     row({ ledgerId: 'KRW-1', currency: 'KRW', category: '외부입금', cashDelta: 2_800_000 }),
     row({ ledgerId: 'KRW-2', currency: 'KRW', category: '환전출금', cashDelta: -2_800_000 }),
     row({ ledgerId: 'USD-1', currency: 'USD', category: '환전입금', cashDelta: 2000 }),
-    row({ ledgerId: 'USD-2', currency: 'USD', category: '매수', stockName: 'A', stockCode: 'A', quantityDelta: 10, cashDelta: -1000, occurredAt: new Date('2026-01-05T03:00:00Z') }),
-    row({ ledgerId: 'USD-3', currency: 'USD', category: '매도', stockName: 'A', stockCode: 'A', quantityDelta: -4, cashDelta: 600, occurredAt: new Date('2026-02-05T03:00:00Z') }),
-    row({ ledgerId: 'USD-4', currency: 'USD', category: '배당', stockName: 'A', stockCode: 'A', cashDelta: 10, occurredAt: new Date('2026-02-06T03:00:00Z') }),
+    row({
+      ledgerId: 'USD-2',
+      currency: 'USD',
+      category: '매수',
+      stockName: 'A',
+      stockCode: 'A',
+      quantityDelta: 10,
+      cashDelta: -1000,
+      occurredAt: new Date('2026-01-05T03:00:00Z'),
+    }),
+    row({
+      ledgerId: 'USD-3',
+      currency: 'USD',
+      category: '매도',
+      stockName: 'A',
+      stockCode: 'A',
+      quantityDelta: -4,
+      cashDelta: 600,
+      occurredAt: new Date('2026-02-05T03:00:00Z'),
+    }),
+    row({
+      ledgerId: 'USD-4',
+      currency: 'USD',
+      category: '배당',
+      stockName: 'A',
+      stockCode: 'A',
+      cashDelta: 10,
+      occurredAt: new Date('2026-02-06T03:00:00Z'),
+    }),
   ];
   const base = { fxMid: 1500, fxRate: 1501, now: new Date('2026-03-10T03:00:00Z') };
 
@@ -49,8 +77,24 @@ describe('computeLedgerSummary — 넣은 돈과 손익 분해', () => {
   it('분할출고로 수량이 잠깐 0이 돼도 원가가 이어진다', () => {
     const split: LedgerRowInput[] = [
       ...rows,
-      row({ ledgerId: 'USD-5', currency: 'USD', category: '분할출고', stockName: 'A', stockCode: 'A', quantityDelta: -6, occurredAt: new Date('2026-02-10T03:00:00Z') }),
-      row({ ledgerId: 'USD-6', currency: 'USD', category: '분할입고', stockName: 'A', stockCode: 'A', quantityDelta: 12, occurredAt: new Date('2026-02-10T03:05:00Z') }),
+      row({
+        ledgerId: 'USD-5',
+        currency: 'USD',
+        category: '분할출고',
+        stockName: 'A',
+        stockCode: 'A',
+        quantityDelta: -6,
+        occurredAt: new Date('2026-02-10T03:00:00Z'),
+      }),
+      row({
+        ledgerId: 'USD-6',
+        currency: 'USD',
+        category: '분할입고',
+        stockName: 'A',
+        stockCode: 'A',
+        quantityDelta: 12,
+        occurredAt: new Date('2026-02-10T03:05:00Z'),
+      }),
     ];
     const s = computeLedgerSummary({ rows: split, quotes: new Map([['A', { symbol: 'A', price: 60 }]]), ...base });
     expect(s.hold[0]).toMatchObject({ q: 12, cost: 600, mv: 720, pl: 120 });
@@ -65,7 +109,20 @@ describe('computeLedgerSummary — 넣은 돈과 손익 분해', () => {
 
   it('결제대기 매수는 보유와 현금에 반영되고 대기 건수로 센다', () => {
     const s = computeLedgerSummary({
-      rows: [...rows, row({ ledgerId: 'P-1', currency: 'USD', category: '매수', stockName: 'A', stockCode: 'A', quantityDelta: 1, cashDelta: -100, status: '결제대기', occurredAt: new Date('2026-03-09T15:00:00Z') })],
+      rows: [
+        ...rows,
+        row({
+          ledgerId: 'P-1',
+          currency: 'USD',
+          category: '매수',
+          stockName: 'A',
+          stockCode: 'A',
+          quantityDelta: 1,
+          cashDelta: -100,
+          status: '결제대기',
+          occurredAt: new Date('2026-03-09T15:00:00Z'),
+        }),
+      ],
       quotes: new Map([['A', { symbol: 'A', price: 120 }]]),
       ...base,
     });

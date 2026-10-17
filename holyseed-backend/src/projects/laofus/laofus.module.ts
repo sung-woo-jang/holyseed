@@ -5,6 +5,8 @@ import { LaofusController } from './laofus.controller';
 import { LaofusEngineService } from './services/engine.service';
 import { LaofusStatusService } from './services/status.service';
 import { LaofusLiveService } from './services/live.service';
+import { LaofusLedgerService } from './services/ledger.service';
+import { LaofusLedgerEntry } from './entities/ledger-entry.entity';
 import { LaofusSchedulerService } from './services/scheduler.service';
 import { LaofusEngineState } from './entities/engine-state.entity';
 import { LaofusCycle } from './entities/cycle.entity';
@@ -29,11 +31,12 @@ import { VrFill } from '@/projects/ad/modules/vr/entities/vr-fill.entity';
       LaofusEvent,
       LaofusPendingOrder,
       LaofusAccountSnapshot,
+      LaofusLedgerEntry,
       VrFill,
     ]),
     TossModule,
   ],
   controllers: [LaofusController],
-  providers: [LaofusEngineService, LaofusStatusService, LaofusLiveService, LaofusSchedulerService],
+  providers: [LaofusEngineService, LaofusStatusService, LaofusLiveService, LaofusLedgerService, LaofusSchedulerService],
 })
 export class LaofusModule {}

@@ -212,6 +212,9 @@ export default function LaofusLiveScreen({ navigation }: Props) {
         <Pressable style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.card }]} onPress={() => navigation.navigate('LaofusAssetTrend')}>
           <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>자산 추이</Text>
         </Pressable>
+        <Pressable style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.card }]} onPress={() => navigation.navigate('LaofusLedger')}>
+          <Text style={{ color: theme.text, fontSize: 12.5, fontWeight: '700' }}>입금과 손익</Text>
+        </Pressable>
       </View>
 
       {(live.partial || anyStale) && (

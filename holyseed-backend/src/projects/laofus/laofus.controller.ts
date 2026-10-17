@@ -5,6 +5,7 @@ import { OwnerOnly, Public } from '@common/decorators';
 import { LaofusKeyGuard } from './laofus-key.guard';
 import { LaofusStatusService } from './services/status.service';
 import { LaofusLiveService } from './services/live.service';
+import { LaofusLedgerService } from './services/ledger.service';
 import { LaofusEngineService } from './services/engine.service';
 import { LaofusRunRequestDto } from './dto/run-request.dto';
 
@@ -19,6 +20,7 @@ export class LaofusController {
   constructor(
     private readonly status: LaofusStatusService,
     private readonly live: LaofusLiveService,
+    private readonly ledger: LaofusLedgerService,
     private readonly engine: LaofusEngineService,
   ) {}
 
@@ -64,6 +66,12 @@ export class LaofusController {
   @ApiOperation({ summary: '주문 내역 (OPEN 전체 + CLOSED 최근 20건, 60초 캐시)' })
   async getOrders() {
     return ok(await this.status.getOrders());
+  }
+
+  @Get('ledger')
+  @ApiOperation({ summary: '토스증권 원장 기반 넣은 돈·평가액·총손익 + 손익 구성 + 월별 입출금 + 종목별 실현손익 (읽기 전용)' })
+  async getLedger() {
+    return ok(await this.ledger.getSummary());
   }
 
   @Get('account-snapshots')

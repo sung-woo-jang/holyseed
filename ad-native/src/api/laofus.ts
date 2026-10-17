@@ -217,6 +217,33 @@ export interface OrderLogDto {
   placedAt: string;
 }
 
+/** 토스증권 원장 기반 넣은 돈·평가액·총손익 (GET /laofus/ledger) */
+export interface LedgerHoldingDto {
+  sym: string;
+  name: string;
+  q: number;
+  cost: number;
+  price: number;
+  mv: number;
+  pl: number;
+  quoted: boolean;
+}
+
+export interface LedgerSummaryDto {
+  asof: string;
+  fx: { rate: number; mid: number };
+  ext: { in: number; out: number; net: number; nIn: number; nOut: number; first: string | null };
+  series: { m: string; i: number; o: number; c: number }[];
+  years: { y: string; i: number; o: number; n: number }[];
+  ex: { krwOut: number; usdIn: number; usdOut: number; krwIn: number; netUsd: number; netKrw: number; rAvg: number; rIn: number; rOut: number; nIn: number; nOut: number };
+  krw: { cash: number; pl: number };
+  usd: { cash: number; mv: number; assets: number; real: number; unreal: number; inc: number; pl: number };
+  total: { val: number; pl: number; rate: number; xirr: number | null; stockKrw: number; incKrw: number; fxKrw: number; krwKrw: number };
+  hold: LedgerHoldingDto[];
+  stocks: { name: string; real: number; held: boolean; n: number }[];
+  counts: { records: number; pending: number; pendingAmt: number; firstDate: string | null; lastDate: string | null; unquoted: number };
+}
+
 export const laofusRestApi = {
   candles: (range: '1m' | '3m' | 'all' = 'all') => laofusApi.get<CandlesDto>('/candles', { params: { range } }).then((r) => r.data),
   orderLog: () => laofusApi.get<OrderLogDto[]>('/order-log').then((r) => r.data),
@@ -229,4 +256,5 @@ export const laofusRestApi = {
   accountSnapshots: () => laofusApi.get<AccountSnapshotDto[]>('/account-snapshots').then((r) => r.data),
   recordAccountSnapshot: () => laofusApi.post('/account-snapshot/run').then((r) => r.data),
   assetTrend: () => laofusApi.get<AssetTrendPoint[]>('/asset-trend').then((r) => r.data),
+  ledger: () => laofusApi.get<LedgerSummaryDto>('/ledger').then((r) => r.data),
 };

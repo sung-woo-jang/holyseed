@@ -35,40 +35,58 @@ export interface AssetTrendPoint {
 }
 
 /**
- * 같은 날 절반+절반 매수(LOC 2-leg 에뮬레이션이 둘 다 체결된 경우)를 화면용 전액 1건으로 병합.
- * DB trades 테이블 자체는 안 건드림 — 실제 주문 2건 나간 감사 기록은 보존, 조회 결과에서만 통합.
- * (2026-09 온주 LOC 전환 이후 computeBuyLocLegs가 "전액 매수" 판단을 별지점−0.01/평단 가격
- * 2건의 지정가로 미리 쪼개 걸어두는데, 마감가가 평단보다 낮으면 둘 다 체결돼 0.5+0.5=1.0으로
- * T는 정확히 맞지만 사이클 상세 화면엔 같은 날짜에 절반 2줄로 쪼개져 보이던 문제)
+ * 같은 날 매수 체결(★·평단·분할 사다리)을 화면용 하루 1건으로 병합.
+ * DB trades 테이블 자체는 안 건드림 — 실제 주문 여러 건 나간 감사 기록은 보존, 조회 결과에서만 통합.
+ * (한 날에 별지점/평단 2-leg가 둘 다 체결되거나, 분할 사다리 leg가 같이 체결되면 trades엔 행이 여러 개
+ * 생기지만 T는 하루치(+1)라서, 사이클 상세 화면엔 같은 날짜가 N차로 쪼개져 보이던 문제)
+ * 합친 행은 수량·금액 합계, 가격은 가중평균, T는 첫 행 tBefore → 마지막 행 tAfter, 나머지 최종 상태는 마지막 행 기준.
+ * 종류는 절반 체결만으로 T가 +1에 못 미치면 '절반', 그 외엔 '전액'.
  */
-function mergeSameDayHalfBuys(trades: LaofusTrade[]): LaofusTrade[] {
+const MERGEABLE_BUY_KINDS = ['절반', '전액', '분할'];
+
+export function mergeSameDayBuys(trades: LaofusTrade[]): LaofusTrade[] {
   const sorted = [...trades].sort((a, b) => a.seq - b.seq);
   const merged: LaofusTrade[] = [];
-  for (let i = 0; i < sorted.length; i++) {
-    const t = sorted[i];
-    const next = sorted[i + 1];
-    const pairs =
-      next &&
-      t.side === 'BUY' &&
-      next.side === 'BUY' &&
-      t.kind === '절반' &&
-      next.kind === '절반' &&
-      t.date === next.date &&
-      Number(next.tBefore) === Number(t.tAfter);
-    if (pairs) {
-      merged.push({
-        ...next, // avgAfter/qtyAfter/cashAfter/tAfter 등 최종 상태는 두번째 체결 기준
-        kind: '전액',
-        quantity: String(Number(t.quantity) + Number(next.quantity)),
-        amount: String(Math.round((Number(t.amount) + Number(next.amount)) * 100) / 100),
-        tBefore: t.tBefore,
-        note: `LOC 2-leg 병합 표시(원 체결 #${t.id}+#${next.id})`,
-      });
-      i++; // next는 이미 소비했으니 건너뜀
-    } else {
-      merged.push(t);
+  let group: LaofusTrade[] = [];
+
+  const flush = () => {
+    if (group.length === 0) return;
+    if (group.length === 1) {
+      merged.push(group[0]);
+      group = [];
+      return;
     }
+    const last = group[group.length - 1];
+    // 절반 체결만 있고 T가 하루치(+1)에 못 미치면(절반+분할) 절반으로 둔다
+    const halfOnly = group.some((g) => g.kind === '절반') && Number(last.tAfter) - Number(group[0].tBefore) < 1 - 1e-9;
+    const quantity = group.reduce((sum, g) => sum + Number(g.quantity), 0);
+    const amount = group.reduce((sum, g) => sum + Number(g.amount), 0);
+    merged.push({
+      ...last, // avgAfter/qtyAfter/cashAfter/tAfter 등 최종 상태는 마지막 체결 기준
+      kind: halfOnly ? '절반' : '전액',
+      quantity: String(quantity),
+      amount: String(Math.round(amount * 100) / 100),
+      price: String(Math.round((amount / quantity) * 10000) / 10000),
+      tBefore: group[0].tBefore,
+      note: `같은 날 체결 병합(원 체결 ${group.map((g) => `#${g.id}`).join('+')})`,
+    });
+    group = [];
+  };
+
+  for (const t of sorted) {
+    const prev = group[group.length - 1];
+    const joins =
+      prev &&
+      t.side === 'BUY' &&
+      prev.side === 'BUY' &&
+      MERGEABLE_BUY_KINDS.includes(t.kind) &&
+      MERGEABLE_BUY_KINDS.includes(prev.kind) &&
+      t.date === prev.date &&
+      Number(t.tBefore) === Number(prev.tAfter);
+    if (!joins) flush();
+    group.push(t);
   }
+  flush();
   return merged.map((t, i) => ({ ...t, seq: i + 1 })); // 화면용 N차 번호 재부여(공백 없이)
 }
 
@@ -317,8 +335,8 @@ export class LaofusStatusService {
       this.getLastRun(),
       this.pendingRepo.find({ where: { status: 'PENDING' }, order: { id: 'ASC' } }),
     ]);
-    // 같은 날 절반+절반 매수를 전액 1건으로 병합(화면용) — seq 순 정렬은 병합 헬퍼 내부에서 처리
-    for (const c of cycles) c.trades = mergeSameDayHalfBuys(c.trades ?? []);
+    // 같은 날 매수 체결(★·평단·분할)을 하루 1건으로 병합(화면용) — seq 순 정렬은 병합 헬퍼 내부에서 처리
+    for (const c of cycles) c.trades = mergeSameDayBuys(c.trades ?? []);
 
     let calendar: unknown = null;
     try {

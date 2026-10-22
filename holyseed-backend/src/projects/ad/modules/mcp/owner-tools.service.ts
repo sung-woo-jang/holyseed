@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { buildBuyLadder, buildSellLadder } from '../vr/core';
 
 /**
- * 소유자 전용 MCP 도구 — VR/근무일지/지출내역 REST API를 MCP 도구로 노출한다.
+ * 소유자 전용 MCP 도구 — VR/라오어(조회 전용)/근무일지/지출내역 REST API를 MCP 도구로 노출한다.
  * AD MCP(mcp.service.ts)가 소유자 계정(MCP_OWNER_EMAIL) 토큰으로 접속했을 때만 registerTools()를
  * 호출해서 도구를 얹는다. 호출은 AD MCP가 만든 소유자 명의 내부 JWT 클라이언트로 자기 REST API를
  * 부르므로 가드·검증·계산 로직을 그대로 재사용한다.
@@ -40,6 +40,16 @@ export class OwnerToolsMcpService {
 
   private unwrap(res: { data: any }) {
     return res.data?.data ?? res.data;
+  }
+
+  /**
+   * 라오어(SOXL 무한매수법) 조회 — 실주문 엔진은 laofus-backend(:8001)가 돌리므로 그쪽 /api/laofus를 부른다.
+   * 이 프로세스(:8000)의 /api/laofus는 같은 DB를 읽지만 engine.mode·nextRuns 등 엔진 상태가 dry-run/미가동으로 나와 브리핑이 틀어진다.
+   * 소유자 내부 JWT는 AD MCP가 만든 클라이언트의 기본 헤더를 그대로 쓰고 baseURL만 바꾼다.
+   */
+  private async laofusGet(api: AxiosInstance, path: string, params?: Record<string, unknown>) {
+    const baseURL = `${process.env.LAOFUS_INTERNAL_URL ?? 'http://127.0.0.1:8001'}/api/laofus`;
+    return this.unwrap(await api.get(path, { baseURL, params }));
   }
 
   private today(): string {
@@ -292,6 +302,148 @@ export class OwnerToolsMcpService {
         },
       },
       ({ live }) => this.call(async (api) => this.unwrap(await api.post('/vr/run', { live: live === true }))),
+    );
+
+    // ==================== 라오어 (SOXL 무한매수법, 조회 전용) ====================
+    // 엔진 실행(POST /laofus/run)·스냅샷 기록은 실주문/상태 변경이라 MCP에는 노출하지 않는다.
+
+    registerTool(
+      'laofus_get_status',
+      {
+        title: '라오어 종합 상태',
+        description:
+          '무한매수법(SOXL 20분할) 종합 상태: state(T, 평단, 보유수량, 잔금 cash, 사이클 종료 여부 등), 사이클별 거래 내역(같은 날 매수는 하루 1차로 합쳐서 표시), 미체결 보류 주문, 엔진 모드(live/dry-run)·다음 실행 시각·마지막 실행, 시장 캘린더, 최근 이벤트. 일일 브리핑은 이것부터 조회하세요. 응답이 커지지 않도록 기본은 최근 1개 사이클·이벤트 20개만 돌려줍니다.',
+        inputSchema: {
+          recentCycles: z
+            .number()
+            .int()
+            .min(1)
+            .max(50)
+            .optional()
+            .describe('돌려줄 최근 사이클 수 (기본 1, 현재 진행 중 사이클 포함)'),
+          eventLimit: z.number().int().min(0).max(100).optional().describe('돌려줄 최근 이벤트 수 (기본 20)'),
+        },
+      },
+      ({ recentCycles, eventLimit }) =>
+        this.call(async (api) => {
+          const data = await this.laofusGet(api, '/status');
+          if (Array.isArray(data?.cycles)) data.cycles = data.cycles.slice(0, recentCycles ?? 1);
+          if (Array.isArray(data?.events)) data.events = data.events.slice(0, eventLimit ?? 20);
+          return data;
+        }),
+    );
+
+    registerTool(
+      'laofus_get_live',
+      {
+        title: '라오어 실시간 현황',
+        description:
+          '3종목(SOXL·TQQQ 등) 실시간 시세, 보유 종목과 미체결 주문의 현재가 대비 거리, 장 상태를 조회합니다 (읽기 전용). 오늘 걸려 있는 주문이 체결될 가능성을 가늠할 때 씁니다.',
+        inputSchema: {},
+      },
+      () => this.call((api) => this.laofusGet(api, '/live')),
+    );
+
+    registerTool(
+      'laofus_get_price',
+      {
+        title: '라오어 SOXL 현재가',
+        description: 'SOXL 현재가를 조회합니다 (60초 캐시).',
+        inputSchema: {},
+      },
+      () => this.call((api) => this.laofusGet(api, '/price')),
+    );
+
+    registerTool(
+      'laofus_get_orders',
+      {
+        title: '라오어 주문 내역',
+        description: '토스증권 주문 내역: 미체결(OPEN) 전체 + 최근 체결/종료(CLOSED) 20건 (60초 캐시).',
+        inputSchema: {},
+      },
+      () => this.call((api) => this.laofusGet(api, '/orders')),
+    );
+
+    registerTool(
+      'laofus_get_order_log',
+      {
+        title: '라오어 엔진 주문 이력',
+        description:
+          '엔진이 낸 주문 이력: 종류(★/평단/분할 사다리 leg 번호, 쿼터매도/전량매도), 주문 금액·수량, 체결/미체결/거부 상태, T 변화. 오늘 몇 주를 어떤 가격에 주문했고 체결됐는지 확인할 때 씁니다.',
+        inputSchema: {},
+      },
+      () => this.call((api) => this.laofusGet(api, '/order-log')),
+    );
+
+    registerTool(
+      'laofus_get_order',
+      {
+        title: '라오어 주문 단건 상세',
+        description: '주문 한 건의 상세를 조회합니다 (laofus_get_order_log나 laofus_get_orders에서 얻은 orderId).',
+        inputSchema: {
+          orderId: z.string().describe('주문 ID'),
+        },
+      },
+      ({ orderId }) => this.call((api) => this.laofusGet(api, '/order', { orderId })),
+    );
+
+    registerTool(
+      'laofus_get_account',
+      {
+        title: '라오어 실계좌',
+        description:
+          '토스증권 실계좌: 보유 종목 전체(수량·평단·평가), 예수금, 환율 (60초 캐시). 무매 잔금은 계좌 예수금이 아니라 laofus_get_status의 state.cash 기준입니다.',
+        inputSchema: {},
+      },
+      () => this.call((api) => this.laofusGet(api, '/account')),
+    );
+
+    registerTool(
+      'laofus_get_events',
+      {
+        title: '라오어 엔진 이벤트 로그',
+        description:
+          '엔진 실행 로그를 커서 기반으로 조회합니다 (최신부터). 주문을 왜 내거나 내지 않았는지, 에러·경고가 있었는지 확인할 때 씁니다.',
+        inputSchema: {
+          cursor: z.number().optional().describe('이전 응답의 다음 커서 값 (생략 시 0, 최신부터)'),
+          level: z.enum(['all', 'info', 'warn', 'error']).optional().describe('로그 레벨 필터 (기본 all)'),
+        },
+      },
+      ({ cursor, level }) =>
+        this.call((api) => this.laofusGet(api, '/events', { cursor: cursor ?? 0, level: level ?? 'all' })),
+    );
+
+    registerTool(
+      'laofus_get_ledger',
+      {
+        title: '라오어 입금과 손익',
+        description:
+          '토스증권 원장 기준 원화 투자 원금(넣은 돈), 평가액, 총손익, 손익 구성(실현/평가/배당/환차), 월별 입출금, 종목별 실현손익. 원장은 수동으로 적재하므로 최근 입출금이 빠져 있을 수 있습니다(asof 필드 확인).',
+        inputSchema: {},
+      },
+      () => this.call((api) => this.laofusGet(api, '/ledger')),
+    );
+
+    registerTool(
+      'laofus_get_asset_trend',
+      {
+        title: '라오어·VR 자산 추이',
+        description: '라오어(SOXL)+VR(TQQQ) 결합 일별 평가금·원금 추이 (날짜 오름차순, 기간이 길면 응답이 큽니다).',
+        inputSchema: {},
+      },
+      () => this.call((api) => this.laofusGet(api, '/asset-trend')),
+    );
+
+    registerTool(
+      'laofus_get_candles',
+      {
+        title: '라오어 SOXL 캔들',
+        description: 'SOXL 일봉 캔들 (5분 캐시). 긴 기간은 응답이 크니 최근 추세만 필요하면 1m·3m로 좁히세요.',
+        inputSchema: {
+          range: z.enum(['1m', '3m', 'all', 'intraday']).optional().describe('조회 범위 (기본 3m)'),
+        },
+      },
+      ({ range }) => this.call((api) => this.laofusGet(api, '/candles', { range: range ?? '3m' })),
     );
 
     // ==================== 근무일지 ====================

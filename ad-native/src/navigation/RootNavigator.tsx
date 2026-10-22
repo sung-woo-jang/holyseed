@@ -12,6 +12,7 @@ import WorklogRootTabNavigator from './WorklogRootTabNavigator';
 import OnboardingScreen from '../screens/auth/OnboardingScreen';
 import BootErrorScreen from '../screens/auth/BootErrorScreen';
 import { navigationRef } from './navigationRef';
+import { isWidgetLinkActive } from '../lib/widget-link-state';
 
 export default function RootNavigator() {
   const theme = useTheme();
@@ -45,6 +46,8 @@ export default function RootNavigator() {
     else if (mode === 'assetDiary' && isAuthenticated && householdId !== null) target = 'Home';
     if (!target) return;
     const id = setTimeout(() => {
+      // 위젯을 눌러 들어온 경우엔 위젯이 고른 화면이 우선 — 첫 탭으로 되돌리지 않는다
+      if (isWidgetLinkActive()) return;
       if (navigationRef.isReady()) navigationRef.navigate(target as never);
     }, 0);
     return () => clearTimeout(id);
